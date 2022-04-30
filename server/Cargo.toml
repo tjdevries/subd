@@ -1,0 +1,15 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.57"
+axum = "0.5.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.79"
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite" ] }
+tokio = { version = "1.18", features = [ "macros", "rt" ] }
+tungstenite = "0.17.2"
