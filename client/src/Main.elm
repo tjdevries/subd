@@ -4,9 +4,10 @@ import Browser
 import Html exposing (Html, button, div, h1, input, li, text, ul)
 import Html.Attributes exposing (placeholder, type_, value)
 import Html.Events exposing (on, onClick, onInput)
-import Json.Decode as D exposing (Decoder, andThen, fail, field, int, map2, string, succeed)
-import Json.Encode exposing (Value)
-import Json.Decode exposing (oneOf)
+import Json.Decode exposing (Decoder, andThen, fail, field, int, map2, oneOf, string, succeed, Value)
+
+import Json.Decode as D
+import Json.Encode as E
 
 
 main : Program () Model Msg
@@ -38,39 +39,88 @@ type Msg
     | Send
 
 
+-- { "variant": "display", "data": "hello world" }
+-- { "variant": "increment", "data": 5 }
+
 type PossibleCommands
     = DisplayCmd String
-    | OtherCmd
+    | OtherCmd Int
     | ErrorCmd
 
-teej : Decoder PossibleCommands
-teej = 
-    oneOf [
-        point
-        ]
+displayCmdDecoder : Decoder PossibleCommands
+displayCmdDecoder = D.map DisplayCmd (D.field "data" D.string)
 
+otherCmdDecoder : Decoder PossibleCommands
+otherCmdDecoder = D.map OtherCmd (D.field "data" D.int)
+
+dependsStart : D.Decoder PossibleCommands
+dependsStart =
+  D.field "variant" D.string
+    |> D.andThen dependsWhatYouMeanHelp
+
+somethingElse : Decoder PossibleCommands
+somethingElse =
+    D.andThen dependsWhatYouMeanHelp (D.field "variant" D.string)
+
+dependsWhatYouMeanHelp : String -> D.Decoder PossibleCommands
+dependsWhatYouMeanHelp remaining =
+  case remaining of
+    "display" -> displayCmdDecoder
+    "other" -> otherCmdDecoder
+    _ -> D.fail "blabla"
+
+-- teej : Decoder PossibleCommands
+-- teej =
+--     oneOf
+--         [ displayCmd
+--         ]
+--
+-- -- "display", data should be a string
+-- displayCmd : Decoder PossibleCommands
+-- displayCmd =
+--     map2 makeDisplayCommand
+--         (field "variant" string)
+--         (field "data" string)
+--
+-- variantDisplayDecoder : Decoder String
+-- variantDisplayDecoder =
+--     (field "variant" string)
+--
+--
+-- litString : Decoder String
+-- litString =
+--     case decodeString (field "variant" string) of
+--         Ok "display" -> succeed "variant"
+--         _ -> fail "variant"
+--
+-- makeDisplayCommand : String -> String -> PossibleCommands
+-- makeDisplayCommand variant msg =
+--     case variant of
+--         "display" -> DisplayCmd msg
+--         _ -> ErrorCmd
+--
+-- alwaysSuceeed =
+--     succeed (DisplayCmd "Hello")
+--
+--
 -- (field "variant" string) returns "display"
 -- (field "data" string) returns "hello world"
-
-
-type alias PartialMsg =
-    { variant : String, data : String }
-
-
-point : Decoder PartialMsg
-point =
-    map2 PartialMsg
-        (field "variant" string)
-        (field "data" string)
-
-pointTeej : Decoder PossibleCommands
-pointTeej =
-    point
-
-
-
+--
+--
+-- type alias PartialMsg =
+--     { variant : String, data : String }
+--
+--
+-- point : Decoder PartialMsg
+-- point =
+--     map2 PartialMsg
+--         (field "variant" string)
+--         (field "data" string)
+--
+-- pointTeej : Decoder PossibleCommands
+-- pointTeej =
+--     point
 -- decodeString point """{ "x": 3, "y": 4 }""" == Ok { x = 3, y = 4 }
-
 
 
 jerseyMilker : Decoder PossibleCommands
@@ -84,83 +134,11 @@ msgMultiplex variant =
     case variant of
         -- "display" ->
         --     displayDecoder
-
         -- "other" ->
-
         _ ->
             fail <|
                 "hey dawg, plz use good names"
 
--- displayDecoder : Decoder PossibleCommands
--- displayDecoder = 
-    -- field "data" testing123
-    -- andThen testing123
-    -- map2
-    --     (field "data" string)
-
-    -- if x.variant == "display" then
-    --     displayFunc(x.data as DisplayCmd)
-    -- else if x.data == "other" then
-    --     otherFunc(x.data as OtherCmd)
-    -- else
-    --     error
-    -- end
-
-
--- testing123 x =
---     case D.decodeString (field "data" string) x of
---         Ok msg -> succeed (DisplayCmd msg)
---         _ -> succeed (DisplayCmd "OK")
-
-
-
-ebnIsCool : Decoder PossibleCommands
-ebnIsCool =
-    point
-        |> andThen ebnPart2
-
-
-ebnPart2 : PartialMsg -> Decoder PossibleCommands
-ebnPart2 pMsg =
-    case pMsg of
-        { variant, data } ->
-            case variant of
-                "display" ->
-                    succeed (DisplayCmd data)
-
-                _ ->
-                    fail "second level"
-
-
-
--- _ -> fail "Not today baby"
--- dependsStart : Decoder DependingOnWhatYouMean
--- dependsStart =
---   field "variant" string
---     |> andThen dependsWhatYouMeanHelp
---
--- dependsWhatYouMeanHelp : String -> Decoder DependingOnWhatYouMean
--- dependsWhatYouMeanHelp remaining =
---   case remaining of
---     "display" ->
---         case D.decodeString (field "data" string) remaining of
---             Ok msg -> succeed (DisplayCmd msg)
---             Err _ -> fail <| remaining
---         -- succeed (DisplayCmd "Yup, pretend this is from JSON")
---         -- succeed (DisplayCmd (field "data" string))
---
---     "not display" ->
---         succeed OptionTwo
---
---     _ ->
---       fail <|
---         "Trying to decode info, but version "
---         ++ remaining ++ " is not supported."
---
--- Use the `sendMessage` port when someone presses ENTER or clicks
--- the "Send" button. Check out index.html to see the corresponding
--- JS where this is piped into a WebSocket.
---
 
 
 type alias DisplayMsg =
@@ -194,7 +172,7 @@ update msg model =
         Recv message ->
             let
                 something =
-                    D.decodeString jerseyMilker message
+                    D.decodeString dependsStart message
             in
             case something of
                 Ok (DisplayCmd msgToDisplay) ->
@@ -205,6 +183,8 @@ update msg model =
 
                 Err errMsg ->
                     ( { model | messages = model.messages ++ [ Debug.toString errMsg ] }, Cmd.none )
+                _ -> 
+                    ( { model | messages = model.messages ++ [ "oh yeah, fallthrough" ] }, Cmd.none )
 
 
 

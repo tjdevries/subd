@@ -49,6 +49,10 @@
     // to the `messageReceiver` port.
     socket.addEventListener("message", function(event) {
         console.log("recv message", event);
+        // let parsed = JSON.parse(event.data);
+        // if (parsed.variant === "display") {
+        //   app.ports.displayReceiver.send(...)
+        // }
         app.ports.messageReceiver.send(event.data);
     });
   </script>

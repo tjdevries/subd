@@ -38,6 +38,16 @@ async fn main() -> Result<(), anyhow::Error> {
                     ))
                     .unwrap();
 
+                websocket
+                    .write_message(Message::Text(
+                        json!({
+                            "variant": "other",
+                            "data": 5,
+                        })
+                        .to_string(),
+                    ))
+                    .unwrap();
+
                 count = count + 1;
                 if count == 3 {
                     websocket

@@ -5161,27 +5161,36 @@ var $author$project$Main$subscriptions = function (_v0) {
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$field = _Json_decodeField;
 var $author$project$Main$DisplayCmd = function (a) {
 	return {$: 'DisplayCmd', a: a};
 };
-var $author$project$Main$displayDecoder = function () {
-	var _v0 = $elm$json$Json$Decode$decodeString(
-		A2($elm$json$Json$Decode$field, 'data', $elm$json$Json$Decode$string));
-	return $elm$json$Json$Decode$succeed(
-		$author$project$Main$DisplayCmd('OK'));
-}();
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $author$project$Main$displayCmdDecoder = A2(
+	$elm$json$Json$Decode$map,
+	$author$project$Main$DisplayCmd,
+	A2($elm$json$Json$Decode$field, 'data', $elm$json$Json$Decode$string));
 var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Main$msgMultiplex = function (variant) {
-	if (variant === 'display') {
-		return $author$project$Main$displayDecoder;
-	} else {
-		return $elm$json$Json$Decode$fail('hey dawg, plz use good names');
+var $author$project$Main$OtherCmd = function (a) {
+	return {$: 'OtherCmd', a: a};
+};
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $author$project$Main$otherCmdDecoder = A2(
+	$elm$json$Json$Decode$map,
+	$author$project$Main$OtherCmd,
+	A2($elm$json$Json$Decode$field, 'data', $elm$json$Json$Decode$int));
+var $author$project$Main$dependsWhatYouMeanHelp = function (remaining) {
+	switch (remaining) {
+		case 'display':
+			return $author$project$Main$displayCmdDecoder;
+		case 'other':
+			return $author$project$Main$otherCmdDecoder;
+		default:
+			return $elm$json$Json$Decode$fail('blabla');
 	}
 };
-var $author$project$Main$jerseyMilker = A2(
+var $author$project$Main$dependsStart = A2(
 	$elm$json$Json$Decode$andThen,
-	$author$project$Main$msgMultiplex,
+	$author$project$Main$dependsWhatYouMeanHelp,
 	A2($elm$json$Json$Decode$field, 'variant', $elm$json$Json$Decode$string));
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Main$sendMessage = _Platform_outgoingPort('sendMessage', $elm$json$Json$Encode$string);
@@ -5204,32 +5213,44 @@ var $author$project$Main$update = F2(
 					$author$project$Main$sendMessage(model.draft));
 			default:
 				var message = msg.a;
-				var something = A2($elm$json$Json$Decode$decodeString, $author$project$Main$jerseyMilker, message);
+				var something = A2($elm$json$Json$Decode$decodeString, $author$project$Main$dependsStart, message);
 				if (something.$ === 'Ok') {
-					if (something.a.$ === 'DisplayCmd') {
-						var msgToDisplay = something.a.a;
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{
-									messages: _Utils_ap(
-										model.messages,
-										_List_fromArray(
-											[msgToDisplay]))
-								}),
-							$elm$core$Platform$Cmd$none);
-					} else {
-						var _v2 = something.a;
-						return _Utils_Tuple2(
-							_Utils_update(
-								model,
-								{
-									messages: _Utils_ap(
-										model.messages,
-										_List_fromArray(
-											['oh yeah, part 2']))
-								}),
-							$elm$core$Platform$Cmd$none);
+					switch (something.a.$) {
+						case 'DisplayCmd':
+							var msgToDisplay = something.a.a;
+							return _Utils_Tuple2(
+								_Utils_update(
+									model,
+									{
+										messages: _Utils_ap(
+											model.messages,
+											_List_fromArray(
+												[msgToDisplay]))
+									}),
+								$elm$core$Platform$Cmd$none);
+						case 'ErrorCmd':
+							var _v2 = something.a;
+							return _Utils_Tuple2(
+								_Utils_update(
+									model,
+									{
+										messages: _Utils_ap(
+											model.messages,
+											_List_fromArray(
+												['oh yeah, part 2']))
+									}),
+								$elm$core$Platform$Cmd$none);
+						default:
+							return _Utils_Tuple2(
+								_Utils_update(
+									model,
+									{
+										messages: _Utils_ap(
+											model.messages,
+											_List_fromArray(
+												['oh yeah, fallthrough']))
+									}),
+								$elm$core$Platform$Cmd$none);
 					}
 				} else {
 					var errMsg = something.a;
