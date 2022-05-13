@@ -8,8 +8,20 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.57"
 axum = "0.5.4"
+chrono = "0.4.19"
+futures = "0.3.21"
+irc = "0.15.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.79"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite" ] }
 tokio = { version = "1.18", features = [ "macros", "rt" ] }
 tungstenite = "0.17.2"
+subd-db = { path = "crates/subd-db" }
+subd-gh = { path = "crates/subd-gh" }
+twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest" ]}
+reqwest = "0.11.10"
+obws = "0.9.1"
+either = "1.6.1"
+
+[workspace]
+members = ["crates/subd-db", "crates/subd-gh/"]

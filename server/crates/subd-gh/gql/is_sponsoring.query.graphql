@@ -1,0 +1,5 @@
+query IsSponsoring($name: String!) {
+  user(login: "tjdevries") {
+    isSponsoredBy(accountLogin: $name)
+  }
+}
