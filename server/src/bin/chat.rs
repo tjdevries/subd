@@ -106,16 +106,6 @@ async fn main() -> Result<()> {
 
     dbg!(&scene_item_properties);
 
-    let mut to_set = SceneItemProperties::default();
-    to_set.scene_name = Some("PC");
-    to_set.item = Either::Left("PC - Elgato");
-    to_set.visible = Some(false);
-
-    obs_client
-        .scene_items()
-        .set_scene_item_properties(to_set)
-        .await?;
-
     // let mut pc_settings = obs_client
     //     .sources()
     //     .get_source_settings::<serde_json::Value>("PC - Elgato", None)
@@ -233,32 +223,39 @@ async fn main() -> Result<()> {
                 let user = subd_db::get_user(&mut conn, &user_id).await?;
 
                 // TODO: SubscriptonTiers
-                if msg.contents.starts_with(":set doggo") {
-                    let can_control_dog_cam = if msg.user.subscriber > TwitchSubscriber::Tier0 {
-                        true
-                    } else {
-                        // match &user.github_user {
-                        //     Some(gh_user) => {
-                        //         let val = subd_gh::is_user_sponsoring(gh_user).await?;
-                        //         if val {
-                        //             println!("User is a github sponsor: {:?}", user.github_user);
-                        //         }
-                        //         val
-                        //     },
-                        //     None => false
-                        // }
-                        false
-                    };
+                let can_control_dog_cam = if msg.user.subscriber > TwitchSubscriber::Tier0 {
+                    true
+                } else {
+                    // match &user.github_user {
+                    //     Some(gh_user) => {
+                    //         let val = subd_gh::is_user_sponsoring(gh_user).await?;
+                    //         if val {
+                    //             println!("User is a github sponsor: {:?}", user.github_user);
+                    //         }
+                    //         val
+                    //     },
+                    //     None => false
+                    // }
+                    false
+                };
 
-                    if can_control_dog_cam {
-                        client.send_privmsg(
-                            "#teej_dv",
-                            format!("@{} -> sets doggo", msg.user.login),
-                        )?;
+                if msg.contents.starts_with(":set doggo") && can_control_dog_cam {
+                    client
+                        .send_privmsg("#teej_dv", format!("@{} -> sets doggo", msg.user.login))?;
 
-                        obs_client.scenes().set_current_scene("PC - Dog").await?;
-                    }
+                    obs_client.scenes().set_current_scene("PC - Dog").await?;
                     // TODO: Start a timer to set it back?
+                }
+
+                if msg.contents.starts_with(":hide background") && can_control_dog_cam {
+                    let mut to_set = SceneItemProperties::default();
+                    to_set.scene_name = Some("PC");
+                    to_set.item = Either::Left("PC - Elgato");
+                    to_set.visible = Some(false);
+                    obs_client
+                        .scene_items()
+                        .set_scene_item_properties(to_set)
+                        .await?;
                 }
 
                 let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
