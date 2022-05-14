@@ -1,5 +1,17 @@
 #![allow(dead_code)]
 
+// TODO:
+// - We could add twitter usernames
+//      - See if ppl are following.
+//      - Only allow chatters who retweeted my last tweet, everyone else gets timed out
+// - Channel points / Channel Redemptions
+
+// - Theme song:
+//      - Add a sound
+//          - Download the sound locally
+//          - Associated sound w/ user_id
+//      - Approve/Reject a sound
+
 use std::env;
 
 use anyhow::Result;
@@ -12,7 +24,6 @@ use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
-use serde_json::Value;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
 
@@ -70,22 +81,6 @@ fn get_subtier_from_message(message: &Message) -> TwitchSubscriber {
 
     x
 }
-
-// ({"active": Bool(true)
-//  "audio_output_mode": Number(0)
-//  "autorotation": Bool(true)
-//  "color_range": String("default")
-//  "color_space": String("default ")
-//  "frame_interval": Number(-1)
-//  "last_video_device_id": String()
-//  "res_type": Number(0)
-//  "video_device_id": String()
-//  "vide o_format": Number(0)})
-// struct PCElgatoSettings {
-//     active: bool,
-//     audio_output_mode: i32,
-//
-// }
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -214,32 +209,30 @@ async fn main() -> Result<()> {
                 //     .try_collect()
                 //     .await?;
                 // println!("Subs: {:?}", subs);
-                if &msg.user.login == "teej_dv" {
-                    continue;
-                }
 
                 let twitch_login = &msg.user.login;
                 let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
                 let user = subd_db::get_user(&mut conn, &user_id).await?;
 
                 // TODO: SubscriptonTiers
-                let can_control_dog_cam = if msg.user.subscriber > TwitchSubscriber::Tier0 {
+                let can_control_dog_cam = if msg.user.login == "teej_dv" {
+                    true
+                } else if msg.user.subscriber > TwitchSubscriber::Tier0 {
                     true
                 } else {
-                    // match &user.github_user {
-                    //     Some(gh_user) => {
-                    //         let val = subd_gh::is_user_sponsoring(gh_user).await?;
-                    //         if val {
-                    //             println!("User is a github sponsor: {:?}", user.github_user);
-                    //         }
-                    //         val
-                    //     },
-                    //     None => false
-                    // }
-                    false
+                    match &user.github_user {
+                        Some(gh_user) => {
+                            let val = subd_gh::is_user_sponsoring(gh_user).await?;
+                            if val {
+                                println!("User is a github sponsor: {:?}", user.github_user);
+                            }
+                            val
+                        }
+                        None => false,
+                    }
                 };
 
-                if msg.contents.starts_with(":set doggo") && can_control_dog_cam {
+                if msg.contents.starts_with(":show doggo") && can_control_dog_cam {
                     client
                         .send_privmsg("#teej_dv", format!("@{} -> sets doggo", msg.user.login))?;
 
@@ -247,9 +240,47 @@ async fn main() -> Result<()> {
                     // TODO: Start a timer to set it back?
                 }
 
+                if msg.contents.starts_with(":show space") {
+                    if can_control_dog_cam {
+                        client
+                            .send_privmsg("#teej_dv", format!("🚀🚀 @{} 🚀🚀", msg.user.login))?;
+
+                        obs_client
+                            .sources()
+                            .set_source_filter_visibility(SourceFilterVisibility {
+                                source_name: "PC - Elgato",
+                                filter_name: "SpaceFilter",
+                                filter_enabled: true,
+                            })
+                            .await?;
+                    } else {
+                        client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
+                    }
+                }
+
+                if msg.contents.starts_with(":hide space") {
+                    if can_control_dog_cam {
+                        client.send_privmsg(
+                            "#teej_dv",
+                            format!("'... Landing rocketship' @{}", msg.user.login),
+                        )?;
+
+                        obs_client
+                            .sources()
+                            .set_source_filter_visibility(SourceFilterVisibility {
+                                source_name: "PC - Elgato",
+                                filter_name: "SpaceFilter",
+                                filter_enabled: false,
+                            })
+                            .await?;
+                    } else {
+                        client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
+                    }
+                }
+
                 if msg.contents.starts_with(":hide background") && can_control_dog_cam {
                     let mut to_set = SceneItemProperties::default();
-                    to_set.scene_name = Some("PC");
+                    // to_set.scene_name = Some("PC");
                     to_set.item = Either::Left("PC - Elgato");
                     to_set.visible = Some(false);
                     obs_client
@@ -258,12 +289,24 @@ async fn main() -> Result<()> {
                         .await?;
                 }
 
+                if msg.contents.starts_with(":show background") && can_control_dog_cam {
+                    let mut to_set = SceneItemProperties::default();
+                    // to_set.scene_name = Some("PC");
+                    to_set.item = Either::Left("PC - Elgato");
+                    to_set.visible = Some(true);
+                    obs_client
+                        .scene_items()
+                        .set_scene_item_properties(to_set)
+                        .await?;
+                }
+
                 let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
                 if count == 0 {
-                    client.send_privmsg(
-                        "#teej_dv",
-                        format!("Hey @{}, thanks for stopping by<3", msg.user.login),
-                    )?;
+                    // TODO: We could do something fun sometimes when new ppl come in
+                    // client.send_privmsg(
+                    //     "#teej_dv",
+                    //     format!("Hey @{}, thanks for stopping by<3", msg.user.login),
+                    // )?;
                 } else {
                     // obs_client.scenes().set_current_scene("PC").await?;
                 }
