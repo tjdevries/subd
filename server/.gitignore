@@ -13,7 +13,7 @@ Cargo.lock
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
-subdb.db
+subd.db
 subd.db-shm
 subd.db-wal
 .env
