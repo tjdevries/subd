@@ -15,7 +15,8 @@
 use std::env;
 
 use anyhow::Result;
-use chrono::{DateTime, Utc};
+use chrono::{Utc};
+use chrono::DateTime;
 use either::Either;
 use futures::StreamExt;
 use irc::client::prelude::*;
@@ -26,28 +27,6 @@ use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
-
-#[derive(Debug)]
-struct TwitchMessage {
-    channel: String,
-    user: TwitchUser,
-    contents: String,
-    timestamp: DateTime<Utc>,
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-enum TwitchSubscriber {
-    Tier0,
-    Tier1,
-    Tier2,
-    Tier3,
-}
-
-#[derive(Debug)]
-struct TwitchUser {
-    login: String,
-    subscriber: TwitchSubscriber,
-}
 
 fn get_username_from_message(message: &Message) -> Option<String> {
     match &message.prefix {
@@ -340,4 +319,5 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
+}
 }
