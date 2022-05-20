@@ -1,3 +1,4 @@
+#![allow(unused_variables)]
 #![allow(dead_code)]
 
 // TODO:
@@ -15,8 +16,6 @@
 use std::env;
 
 use anyhow::Result;
-use chrono::{Utc};
-use chrono::DateTime;
 use either::Either;
 use futures::StreamExt;
 use irc::client::prelude::*;
@@ -25,141 +24,134 @@ use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
+use subd_twitch::TwitchMessage;
+use subd_twitch::TwitchSubscriber;
+use tokio::sync::broadcast;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
+use yew::html;
 
-fn get_username_from_message(message: &Message) -> Option<String> {
-    match &message.prefix {
-        Some(prefix) => match prefix {
-            Prefix::ServerName(_) => None,
-            Prefix::Nickname(_, username, _) => Some(username.clone()),
-        },
-        None => None,
+#[derive(Debug, Clone)]
+enum Event {
+    TwitchChatMessage(TwitchMessage),
+    TwitchSubscription,
+    GithubSponsorshipEvent,
+}
+
+const CONNECT_OBS: bool = false;
+const CONNECT_CHAT: bool = true;
+const CONNECT_HELIX: bool = false;
+
+async fn handle_twitch_msg(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+) -> Result<()> {
+    let mut conn = subd_db::get_handle().await;
+
+    loop {
+        let event = rx.recv().await?;
+        let msg = match event {
+            Event::TwitchChatMessage(msg) => msg,
+            _ => continue,
+        };
+
+        let twitch_login = &msg.user.login;
+        println!("Message: {:?}", msg);
+
+        subd_db::create_twitch_user_CHAT(&mut conn, &msg.user.id, &msg.user.login).await?;
+        subd_db::save_twitch_message(&mut conn, &msg.user.id, &msg.contents).await?;
+        println!("Saved!");
+
+        // let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
+        // let user = subd_db::get_user(&mut conn, &user_id).await?;
+        //
+        // let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
+        // println!("{} messages today", count);
+
+        // TODO: SubscriptonTiers
+        let can_control_dog_cam = if msg.user.login == "teej_dv" {
+            true
+        } else if msg.user.subscriber > TwitchSubscriber::Tier0 {
+            true
+        } else {
+            false
+            // match &user.github_user {
+            //     Some(gh_user) => {
+            //         let val = subd_gh::is_user_sponsoring(gh_user).await?;
+            //         if val {
+            //             println!("User is a github sponsor: {:?}", user.github_user);
+            //         }
+            //         val
+            //     }
+            //     None => false,
+            // }
+        };
+
+        /*
+        if msg.contents.starts_with(":show doggo") && can_control_dog_cam {
+            client.send_privmsg("#teej_dv", format!("@{} -> sets doggo", msg.user.login))?;
+
+            // TODO: Start a timer to set it back?
+        }
+
+        if msg.contents.starts_with(":show space") {
+            if can_control_dog_cam {
+                client.send_privmsg("#teej_dv", format!("🚀🚀 @{} 🚀🚀", msg.user.login))?;
+            } else {
+                client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
+            }
+        }
+
+        if msg.contents.starts_with(":hide space") {
+            if can_control_dog_cam {
+                client.send_privmsg(
+                    "#teej_dv",
+                    format!("'... Landing rocketship' @{}", msg.user.login),
+                )?;
+            } else {
+                client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
+            }
+        }
+        */
     }
-}
 
-fn get_subtier_from_message(message: &Message) -> TwitchSubscriber {
-    let x = message
-        .tags
-        .as_ref()
-        .unwrap_or(&vec![])
-        .iter()
-        .find_map(|tag| match tag.0.as_str() {
-            "subscriber" => match &tag.1 {
-                Some(text) => match text.as_str() {
-                    "1" => Some(TwitchSubscriber::Tier1),
-                    "2" => Some(TwitchSubscriber::Tier2),
-                    "3" => Some(TwitchSubscriber::Tier3),
-                    _ => None,
-                },
-                _ => None,
-            },
-            _ => None,
-        })
-        .unwrap_or(TwitchSubscriber::Tier0);
-
-    x
-}
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    // let obs_conn = tungstenite::client::connect("ws://192.168.4.22:4444")?;
-    // println!("{:?}", obs_conn);
-
-    // Connect to the OBS instance through obs-websocket.
-    let obs_client = OBSClient::connect("192.168.4.22", 4444).await?;
-
-    // Get and print out version information of OBS and obs-websocket.
-    let version = obs_client.general().get_version().await?;
-    println!("{:#?}", version);
-
-    let scene_item_properties = obs_client
-        .scene_items()
-        .get_scene_item_properties(Some("PC"), Either::Left("PC - Elgato"))
-        .await?;
-
-    dbg!(&scene_item_properties);
-
-    // let mut pc_settings = obs_client
-    //     .sources()
-    //     .get_source_settings::<serde_json::Value>("PC - Elgato", None)
-    //     .await?;
-    //
-    // println!("Settings: {:?}", pc_settings.source_settings);
-    // if pc_settings.source_name == "PC - Elgato" {
-    //     // return Ok(());
-    //     // *pc_settings
-    //     //     .source_settings
-    //     //     .get_mut(")
-    //     //     .unwrap()
-    //     //     .get_mut("active")
-    //     //     .unwrap() = Value::Bool(true);
-    //     pc_settings
-    //         .source_settings
-    //         .as_object_mut()
-    //         .unwrap()
-    //         .insert("active".to_string(), Value::Bool(true));
-    // }
-
-    // println!("Settings: {:?}", pc_settings.source_settings);
-    // obs_client
-    //     .sources()
-    //     .set_source_settings::<serde_json::Value, serde_json::Value>(
-    //         obws::requests::SourceSettings {
-    //             source_name: &pc_settings.source_name,
-    //             source_type: Some(&pc_settings.source_type),
-    //             source_settings: &pc_settings.source_settings,
-    //         },
+    // if msg.contents.starts_with("!set_github") {
+    //     subd_db::set_github_user_for_user(
+    //         &mut conn,
+    //         &user_id,
+    //         msg.contents.replace("!set_github", "").trim(),
     //     )
-    //     .await?;
-
-    // if pc_settings.source_name == "PC - Elgato" {
-    //     return Ok(());
+    //     .await
+    //     .unwrap_or_else(|e| println!("Nice try, didn't work: {:?}", e))
     // }
-    // pc_settings.source_settings.
 
-    // Turn on/off a filter for a scene
-    // obs_client
-    //     .sources()
-    //     .set_source_filter_visibility(SourceFilterVisibility {
-    //         source_name: "PC - Elgato",
-    //         filter_name: "ScrollTest",
-    //         filter_enabled: true,
-    //     })
-    //     .await?;
+    // println!("Saved: {:?}\n", msg);
+    // println!(
+    //     "We got a message {} {}, from {:?}",
+    //     chan, msg, message.prefix
+    // );
+}
 
-    // let obs_conn = TcpListener::bind(addr)
-    // let obs_conn = TcpStream::
+async fn handle_twitch_chat(
+    tx: broadcast::Sender<Event>,
+    _: broadcast::Receiver<Event>,
+) -> Result<()> {
+    let conn = subd_db::get_handle().await;
+
     // We can also load the Config at runtime via Config::load("path/to/config.toml")
-    let config = Config {
+    let mut client = IRCClient::from_config(Config {
         nickname: Some("teej_dv".to_owned()),
         server: Some("irc.twitch.tv".to_owned()),
         port: Some(6667),
         channels: vec!["#teej_dv".to_owned()],
         use_tls: Some(false),
-        password: Some(env::var("TWITCH_OAUTH").expect("$TWITCH_OAUTH must be set")),
+        password: Some(env::var("CHAT_OAUTH").expect("$CHAT_OAUTH must be set")),
         ..Config::default()
-    };
-
-    let helix: HelixClient<ReqwestClient> = HelixClient::default();
-    let token = UserToken::from_existing(
-        &helix,
-        AccessToken::new(
-            env::var("TWITCH_OAUTH")
-                .expect("$TWITCH_OAUTH must be set")
-                .replace("oauth:", "")
-                .to_string(),
-        ),
-        None, // Refresh Token
-        None, // Client Secret
-    )
+    })
     .await?;
-
-    let mut client = IRCClient::from_config(config).await?;
     client.identify()?;
 
     let mut stream = client.stream()?;
-    let mut conn = subd_db::get_handle().await;
 
     // Tell twitch we would like the additional metadata
     client.send_cap_req(&[
@@ -167,157 +159,122 @@ async fn main() -> Result<()> {
         Capability::Custom("twitch.tv/tags"),
     ])?;
 
-    // client.send_privmsg(target, message)
-    // client.send_
     while let Some(message) = stream.next().await.transpose()? {
         match &message.command {
             Command::PRIVMSG(chan, rawmsg) => {
-                let msg = TwitchMessage {
-                    channel: chan.clone(),
-                    user: TwitchUser {
-                        login: get_username_from_message(&message).unwrap(),
-                        subscriber: get_subtier_from_message(&message),
-                    },
-                    contents: rawmsg.clone(),
-                    timestamp: Utc::now(),
-                };
-
-                // let user = helix.get_user_from_login(msg.user.clone(), &token).await;
-                // let subs: Vec<helix::subscriptions::BroadcasterSubscription> = helix
-                //     .get_broadcaster_subscriptions(&token)
-                //     .try_collect()
-                //     .await?;
-                // println!("Subs: {:?}", subs);
-
-                let twitch_login = &msg.user.login;
-                let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
-                let user = subd_db::get_user(&mut conn, &user_id).await?;
-
-                // TODO: SubscriptonTiers
-                let can_control_dog_cam = if msg.user.login == "teej_dv" {
-                    true
-                } else if msg.user.subscriber > TwitchSubscriber::Tier0 {
-                    true
-                } else {
-                    match &user.github_user {
-                        Some(gh_user) => {
-                            let val = subd_gh::is_user_sponsoring(gh_user).await?;
-                            if val {
-                                println!("User is a github sponsor: {:?}", user.github_user);
-                            }
-                            val
-                        }
-                        None => false,
-                    }
-                };
-
-                if msg.contents.starts_with(":show doggo") && can_control_dog_cam {
-                    client
-                        .send_privmsg("#teej_dv", format!("@{} -> sets doggo", msg.user.login))?;
-
-                    obs_client.scenes().set_current_scene("PC - Dog").await?;
-                    // TODO: Start a timer to set it back?
-                }
-
-                if msg.contents.starts_with(":show space") {
-                    if can_control_dog_cam {
-                        client
-                            .send_privmsg("#teej_dv", format!("🚀🚀 @{} 🚀🚀", msg.user.login))?;
-
-                        obs_client
-                            .sources()
-                            .set_source_filter_visibility(SourceFilterVisibility {
-                                source_name: "PC - Elgato",
-                                filter_name: "SpaceFilter",
-                                filter_enabled: true,
-                            })
-                            .await?;
-                    } else {
-                        client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
-                    }
-                }
-
-                if msg.contents.starts_with(":hide space") {
-                    if can_control_dog_cam {
-                        client.send_privmsg(
-                            "#teej_dv",
-                            format!("'... Landing rocketship' @{}", msg.user.login),
-                        )?;
-
-                        obs_client
-                            .sources()
-                            .set_source_filter_visibility(SourceFilterVisibility {
-                                source_name: "PC - Elgato",
-                                filter_name: "SpaceFilter",
-                                filter_enabled: false,
-                            })
-                            .await?;
-                    } else {
-                        client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
-                    }
-                }
-
-                if msg.contents.starts_with(":hide background") && can_control_dog_cam {
-                    let mut to_set = SceneItemProperties::default();
-                    // to_set.scene_name = Some("PC");
-                    to_set.item = Either::Left("PC - Elgato");
-                    to_set.visible = Some(false);
-                    obs_client
-                        .scene_items()
-                        .set_scene_item_properties(to_set)
-                        .await?;
-                }
-
-                if msg.contents.starts_with(":show background") && can_control_dog_cam {
-                    let mut to_set = SceneItemProperties::default();
-                    // to_set.scene_name = Some("PC");
-                    to_set.item = Either::Left("PC - Elgato");
-                    to_set.visible = Some(true);
-                    obs_client
-                        .scene_items()
-                        .set_scene_item_properties(to_set)
-                        .await?;
-                }
-
-                let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
-                if count == 0 {
-                    // TODO: We could do something fun sometimes when new ppl come in
-                    // client.send_privmsg(
-                    //     "#teej_dv",
-                    //     format!("Hey @{}, thanks for stopping by<3", msg.user.login),
-                    // )?;
-                } else {
-                    // obs_client.scenes().set_current_scene("PC").await?;
-                }
-
-                if msg.contents.starts_with("!set_github") {
-                    subd_db::set_github_user_for_user(
-                        &mut conn,
-                        &user_id,
-                        msg.contents.replace("!set_github", "").trim(),
-                    )
-                    .await
-                    .unwrap_or_else(|e| println!("Nice try, didn't work: {:?}", e))
-                }
-
-                subd_db::save_twitch_message(&mut conn, &msg.user.login, &msg.contents).await?;
-                println!("Saved: {:?}\n", msg);
-                // println!(
-                //     "We got a message {} {}, from {:?}",
-                //     chan, msg, message.prefix
-                // );
+                tx.send(Event::TwitchChatMessage(message.into()))?;
             }
             _ => {}
         }
-        // match &message.tags {
-        //     Some(tags) => tags.iter().for_each(|tag| match tag.0.as_str() {
-        //     }),
-        //     None => {
-        //         print!("No Tags: {}", message);
-        //     }
-        // }
     }
 
     Ok(())
 }
+
+#[yew::function_component(App)]
+fn app() -> Html {
+    html! {
+        <h1>{ "Hello World" }</h1>
+    }
+}
+
+async fn handle_yew(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+) -> Result<()> {
+    loop {
+        let event = rx.recv().await?;
+        // yew::start_app::<App>();
+        println!("Event: {:?}", event);
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let mut channels = vec![];
+    let (tx, _) = broadcast::channel::<Event>(256);
+
+    let chat_tx = tx.clone();
+    let chat_rx = tx.subscribe();
+
+    channels.push(tokio::spawn(async move {
+        handle_twitch_chat(chat_tx, chat_rx)
+            .await
+            .expect("handling twitch chat to work?")
+    }));
+
+    let (msg_tx, msg_rx) = (tx.clone(), tx.subscribe());
+    channels.push(tokio::spawn(async move {
+        handle_twitch_msg(msg_tx, msg_rx)
+            .await
+            .expect("handling twitch msg to work")
+    }));
+
+    // tokio::spawn(async move {
+    //     assert_eq!(rx1.recv().await.unwrap(), 10);
+    //     assert_eq!(rx1.recv().await.unwrap(), 20);
+    // });
+
+    if CONNECT_OBS {
+        // Connect to the OBS instance through obs-websocket.
+        let obs_client = OBSClient::connect("192.168.4.22", 4444).await?;
+
+        // Get and print out version information of OBS and obs-websocket.
+        let version = obs_client.general().get_version().await?;
+        println!("OBS Connected: {:#?}", version.version);
+
+        // Can ignore the following, they were just things that I had working before
+        // that I didn't want to forget about later.
+        obs_client.scenes().set_current_scene("PC - Dog").await?;
+        obs_client
+            .sources()
+            .set_source_filter_visibility(SourceFilterVisibility {
+                source_name: "PC - Elgato",
+                filter_name: "SpaceFilter",
+                filter_enabled: true,
+            })
+            .await?;
+
+        obs_client
+            .sources()
+            .set_source_filter_visibility(SourceFilterVisibility {
+                source_name: "PC - Elgato",
+                filter_name: "SpaceFilter",
+                filter_enabled: false,
+            })
+            .await?;
+
+        let mut to_set = SceneItemProperties::default();
+        // to_set.scene_name = Some("PC");
+        to_set.item = Either::Left("PC - Elgato");
+        to_set.visible = Some(false);
+        obs_client
+            .scene_items()
+            .set_scene_item_properties(to_set)
+            .await?;
+    }
+
+    if CONNECT_HELIX {
+        // Get  twitch Helix client (don't need for now)
+        let helix: HelixClient<ReqwestClient> = HelixClient::default();
+        let token = UserToken::from_existing(
+            &helix,
+            AccessToken::new(
+                env::var("TWITCH_OAUTH")
+                    .expect("$TWITCH_OAUTH must be set")
+                    .replace("oauth:", "")
+                    .to_string(),
+            ),
+            None, // Refresh Token
+            None, // Client Secret
+        )
+        .await?;
+    }
+
+    for c in channels {
+        // Wait for all the channels to be done
+        c.await?;
+    }
+
+    Ok(())
 }

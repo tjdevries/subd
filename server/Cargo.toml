@@ -23,6 +23,7 @@ twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwe
 reqwest = "0.11.10"
 obws = "0.9.1"
 either = "1.6.1"
+yew = "0.19"
 
 [workspace]
 members = ["crates/*"]

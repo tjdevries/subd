@@ -97,13 +97,13 @@ pub async fn get_user(conn: &mut SqliteConnection, user_id: &UserID) -> Result<U
 
 pub async fn get_user_from_twitch_user(
     conn: &mut SqliteConnection,
-    twitch_user: &str,
+    twitch_user_id: &str,
 ) -> Result<UserID> {
     let id = sqlx::query!(
         r#"SELECT id
            FROM users
            WHERE twitch_id = ?"#,
-        twitch_user
+        twitch_user_id
     )
     .fetch_optional(&mut *conn)
     .await?;
@@ -111,13 +111,15 @@ pub async fn get_user_from_twitch_user(
     match id {
         Some(record) => Ok(record.id),
         None => {
-            todo!()
-            // let new_id = sqlx::query!(r#"INSERT INTO users (twitch_user) VALUES (?)"#, twitch_user)
-            //     .execute(&mut *conn)
-            //     .await?
-            //     .last_insert_rowid();
-            //
-            // Ok(new_id)
+            let new_id = sqlx::query!(
+                r#"INSERT INTO users (twitch_id) VALUES (?)"#,
+                twitch_user_id
+            )
+            .execute(&mut *conn)
+            .await?
+            .last_insert_rowid();
+
+            Ok(new_id)
         }
     }
 }
@@ -143,12 +145,25 @@ pub async fn get_message_count_from_today(
     .c)
 }
 
+pub async fn create_twitch_user_CHAT(
+    conn: &mut SqliteConnection,
+    twitch_user_id: &str,
+    twitch_user_login: &str,
+) -> Result<()> {
+    sqlx::query!("INSERT OR IGNORE INTO twitch_users (id, login, display_name, broadcaster_type, account_type )
+                 VALUES                              (?1, ?2,    ?3,           ?4              , ?5 )", 
+                 twitch_user_id, twitch_user_login, twitch_user_login, "", "")
+        .execute(&mut *conn)
+        .await.unwrap();
+    Ok(())
+}
+
 pub async fn save_twitch_message(
     conn: &mut SqliteConnection,
-    twitch_user: &str,
+    twitch_user_id: &str,
     message: &str,
-) -> Result<i64> {
-    let user_id = get_user_from_twitch_user(conn, twitch_user).await?;
+) -> Result<()> {
+    let user_id = get_user_from_twitch_user(conn, twitch_user_id).await?;
 
     sqlx::query!(
         r#"INSERT INTO TWITCH_CHAT_HISTORY (user_id, msg)
@@ -159,24 +174,11 @@ pub async fn save_twitch_message(
     .execute(&mut *conn)
     .await?;
 
-    // Insert the task, then obtain the ID of this row
-    //     let id = sqlx::query!(
-    //         r#"
-    // INSERT INTO NYX_LUL ( message )
-    // VALUES ( ?1 )
-    //         "#,
-    //         message
-    //     )
-    //     .execute(&mut conn)
-    //     .await?
-    //     .last_insert_rowid();
-    //
-    //     Ok(id)
-    Ok(1)
+    Ok(())
 }
 
-type TwitchUserID = i64;
-struct TwitchUser {
+pub type TwitchUserID = i64;
+pub struct TwitchUser {
     id: TwitchUserID,
     login: String,
     display_name: String,
