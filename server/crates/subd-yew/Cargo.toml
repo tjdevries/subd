@@ -1,0 +1,21 @@
+[package]
+name = "subd-yew"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+yew = "0.19.3"
+# This is cuz of wasm?
+getrandom = { version = "0.2", features = ["js"] }
+# ^^^^^^^
+tungstenite = "0.17.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.79"
+yew-hooks = "0.1.56"
+twitch-irc = { version = "4.0.0", default-features = false, features = [
+    "with-serde",
+] }
+wasm-logger = "0.2.0"
+log = "0.4.17"

@@ -74,7 +74,7 @@ pub async fn set_github_user_for_user(
 //     Ok(())
 // }
 
-pub async fn get_user(conn: &mut SqliteConnection, user_id: &UserID) -> Result<User> {
+pub async fn get_user(_conn: &mut SqliteConnection, _user_id: &UserID) -> Result<User> {
     todo!()
     // Ok(sqlx::query_as!(
     //     User,
@@ -145,7 +145,7 @@ pub async fn get_message_count_from_today(
     .c)
 }
 
-pub async fn create_twitch_user_CHAT(
+pub async fn create_twitch_user_chat(
     conn: &mut SqliteConnection,
     twitch_user_id: &str,
     twitch_user_login: &str,

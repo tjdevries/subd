@@ -17,23 +17,28 @@ use std::env;
 
 use anyhow::Result;
 use either::Either;
-use futures::StreamExt;
+use futures::SinkExt;
 use irc::client::prelude::*;
-use irc::client::Client as IRCClient;
 use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
-use subd_twitch::TwitchMessage;
-use subd_twitch::TwitchSubscriber;
+use subd_yew::YewTwitchMessage;
+use tokio::net::TcpListener;
+use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
-use yew::html;
+use twitch_irc::login::StaticLoginCredentials;
+use twitch_irc::message::PrivmsgMessage;
+use twitch_irc::message::ServerMessage;
+use twitch_irc::ClientConfig;
+use twitch_irc::SecureTCPTransport;
+use twitch_irc::TwitchIRCClient;
 
 #[derive(Debug, Clone)]
 enum Event {
-    TwitchChatMessage(TwitchMessage),
+    TwitchChatMessage(PrivmsgMessage),
     TwitchSubscription,
     GithubSponsorshipEvent,
 }
@@ -55,37 +60,17 @@ async fn handle_twitch_msg(
             _ => continue,
         };
 
-        let twitch_login = &msg.user.login;
-        println!("Message: {:?}", msg);
+        let twitch_login = &msg.sender.login;
+        println!("Message: {:?}", msg.message_text);
 
-        subd_db::create_twitch_user_CHAT(&mut conn, &msg.user.id, &msg.user.login).await?;
-        subd_db::save_twitch_message(&mut conn, &msg.user.id, &msg.contents).await?;
-        println!("Saved!");
+        subd_db::create_twitch_user_chat(&mut conn, &msg.sender.id, &msg.sender.login).await?;
+        subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
 
         // let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
         // let user = subd_db::get_user(&mut conn, &user_id).await?;
         //
         // let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
         // println!("{} messages today", count);
-
-        // TODO: SubscriptonTiers
-        let can_control_dog_cam = if msg.user.login == "teej_dv" {
-            true
-        } else if msg.user.subscriber > TwitchSubscriber::Tier0 {
-            true
-        } else {
-            false
-            // match &user.github_user {
-            //     Some(gh_user) => {
-            //         let val = subd_gh::is_user_sponsoring(gh_user).await?;
-            //         if val {
-            //             println!("User is a github sponsor: {:?}", user.github_user);
-            //         }
-            //         val
-            //     }
-            //     None => false,
-            // }
-        };
 
         /*
         if msg.contents.starts_with(":show doggo") && can_control_dog_cam {
@@ -137,56 +122,115 @@ async fn handle_twitch_chat(
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
     let conn = subd_db::get_handle().await;
+    println!("handle_twitch_chat: got conn");
 
     // We can also load the Config at runtime via Config::load("path/to/config.toml")
-    let mut client = IRCClient::from_config(Config {
-        nickname: Some("teej_dv".to_owned()),
-        server: Some("irc.twitch.tv".to_owned()),
-        port: Some(6667),
-        channels: vec!["#teej_dv".to_owned()],
-        use_tls: Some(false),
-        password: Some(env::var("CHAT_OAUTH").expect("$CHAT_OAUTH must be set")),
-        ..Config::default()
-    })
-    .await?;
-    client.identify()?;
+    // let mut client = IRCClient::from_config(Config {
+    //     nickname: Some("teej_dv".to_owned()),
+    //     server: Some("irc.twitch.tv".to_owned()),
+    //     port: Some(6667),
+    //     channels: vec!["#teej_dv".to_owned()],
+    //     use_tls: Some(false),
+    //     password: Some(env::var("CHAT_OAUTH").expect("$CHAT_OAUTH must be set")),
+    //     ..Config::default()
+    // })
 
-    let mut stream = client.stream()?;
+    let config = ClientConfig::default();
+    let (mut incoming_messages, client) =
+        TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+    client.join("teej_dv".to_owned()).unwrap();
 
-    // Tell twitch we would like the additional metadata
-    client.send_cap_req(&[
-        Capability::Custom("twitch.tv/commands"),
-        Capability::Custom("twitch.tv/tags"),
-    ])?;
+    println!("handle_twitch_chat: waiting for msgs...");
+    while let Some(message) = incoming_messages.recv().await {
+        // println!("handle_twitch_chat: got a message {:?}", message);
 
-    while let Some(message) = stream.next().await.transpose()? {
-        match &message.command {
-            Command::PRIVMSG(chan, rawmsg) => {
-                tx.send(Event::TwitchChatMessage(message.into()))?;
+        match message {
+            ServerMessage::Privmsg(private) => {
+                tx.send(Event::TwitchChatMessage(private))?;
             }
-            _ => {}
+            _ => {} // Command::PRIVMSG(chan, rawmsg) => {
+                    //     tx.send(Event::TwitchChatMessage(message.into()))?;
+                    // }
+                    // _ => {}
         }
     }
 
     Ok(())
 }
 
-#[yew::function_component(App)]
-fn app() -> Html {
-    html! {
-        <h1>{ "Hello World" }</h1>
-    }
-}
+async fn yew_inner_loop(stream: TcpStream, mut rx: broadcast::Receiver<Event>) -> Result<()> {
+    println!("GOT A NEW CONNECTION: {:?}", stream);
 
-async fn handle_yew(
-    tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-) -> Result<()> {
+    let addr = stream
+        .peer_addr()
+        .expect("connected streams should have a peer address");
+    println!("Peer address: {}", addr);
+
+    let mut ws_stream = tokio_tungstenite::accept_async(stream)
+        .await
+        .expect("Error during the websocket handshake occurred");
+
+    println!("New WebSocket connection: {}", addr);
+
+    // TODO: Better to split stream so that you can read and write at the same time
+    // let (write, read) = ws_stream.split();
+    // We should not forward messages other than text or binary.
+    // read.try_filter(|msg| future::ready(msg.is_text() || msg.is_binary()))
+    //     .forward(write)
+    //     .await
+    //     .expect("Failed to forward messages")
+
     loop {
         let event = rx.recv().await?;
+        let msg = match event {
+            Event::TwitchChatMessage(msg) => msg,
+            _ => continue,
+        };
+
+        // .send(tungstenite::Message::Text(&msg).unwrap())
+        // println!("Got a new message, trying to send... {}", msg.contents);
+        // let color = msg
+        //     .name_color
+        //     .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
+
+        let color = msg
+            .clone()
+            .name_color
+            .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
+        let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
+        println!("COLOR: {}", color_str);
+
+        ws_stream
+            .send(tungstenite::Message::Text(serde_json::to_string(&msg)?))
+            .await?;
+        //
+        // println!("... send message");
+
         // yew::start_app::<App>();
-        println!("Event: {:?}", event);
+
+        // stream.write(msg.contents).await
+        // println!("Event: {:?}", event);
     }
+
+    // Ok(())
+}
+
+async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>) -> Result<()> {
+    // let ws = tungstenite::connect("ws://127.0.0.1:9001").expect("To be able to open ws");
+    let ws = TcpListener::bind("192.168.4.97:9001").await?;
+    // let (mut socket, response) = connect(request)
+
+    while let Ok((stream, _)) = ws.accept().await {
+        let rx_clone = tx.subscribe();
+
+        tokio::spawn(async move {
+            yew_inner_loop(stream, rx_clone)
+                .await
+                .expect("handling inner loop OK")
+        });
+    }
+
+    Ok(())
 }
 
 #[tokio::main]
@@ -209,6 +253,15 @@ async fn main() -> Result<()> {
             .await
             .expect("handling twitch msg to work")
     }));
+
+    let (yew_tx, yew_rx) = (tx.clone(), tx.subscribe());
+    channels.push(tokio::spawn(async move {
+        handle_yew(yew_tx, yew_rx)
+            .await
+            .expect("handling yew to work")
+    }));
+
+    // handle_commands(...)
 
     // tokio::spawn(async move {
     //     assert_eq!(rx1.recv().await.unwrap(), 10);

@@ -4,6 +4,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use irc::proto::{Command, Message as IRCMessage, Prefix};
 use reqwest::Client as ReqwestClient;
+use serde::{Deserialize, Serialize};
 use twitch_api2::{
     helix::{
         moderation::{get_moderators, GetModeratorsRequest},
@@ -21,6 +22,7 @@ pub struct TwitchMessage {
     pub user: TwitchUser,
     pub contents: String,
     pub timestamp: DateTime<Utc>,
+    pub color: Option<String>,
 
     pub irc_message: IRCMessage,
 }
@@ -35,14 +37,14 @@ fn get_username_from_message(message: &IRCMessage) -> Option<String> {
     }
 }
 
-fn get_id_from_message(message: &IRCMessage) -> Option<String> {
+fn get_tag_contents(message: &IRCMessage, tag_name: &str) -> Option<String> {
     message
         .tags
         .as_ref()
         .unwrap_or(&vec![])
         .iter()
         .find_map(|tag| match tag.0.as_str() {
-            "user-id" => match &tag.1 {
+            tag_name => match &tag.1 {
                 Some(text) => Some(text.to_string()),
                 _ => None,
             },
@@ -50,27 +52,44 @@ fn get_id_from_message(message: &IRCMessage) -> Option<String> {
         })
 }
 
-fn get_subtier_from_message(message: &IRCMessage) -> TwitchSubscriber {
-    let x = message
-        .tags
-        .as_ref()
-        .unwrap_or(&vec![])
-        .iter()
-        .find_map(|tag| match tag.0.as_str() {
-            "subscriber" => match &tag.1 {
-                Some(text) => match text.as_str() {
-                    "1" => Some(TwitchSubscriber::Tier1),
-                    "2" => Some(TwitchSubscriber::Tier2),
-                    "3" => Some(TwitchSubscriber::Tier3),
-                    _ => None,
-                },
-                _ => None,
-            },
-            _ => None,
-        })
-        .unwrap_or(TwitchSubscriber::Tier0);
+fn get_id_from_message(message: &IRCMessage) -> Option<String> {
+    get_tag_contents(message, "user-id")
+}
 
-    x
+fn get_subtier_from_message(message: &IRCMessage) -> TwitchSubscriber {
+    let subscriber_text = get_tag_contents(message, "subscriber");
+
+    match subscriber_text {
+        Some(text) => match text.as_str() {
+            "1" => TwitchSubscriber::Tier1,
+            "2" => TwitchSubscriber::Tier2,
+            "3" => TwitchSubscriber::Tier3,
+            _ => TwitchSubscriber::Tier0,
+        },
+        _ => TwitchSubscriber::Tier0,
+    }
+}
+
+fn get_color_from_message(message: &IRCMessage) -> Option<String> {
+    get_tag_contents(message, "color")
+}
+
+impl From<&IRCMessage> for TwitchUser {
+    fn from(msg: &IRCMessage) -> Self {
+        let id = get_id_from_message(&msg).expect("Twitch chat messages must have ID");
+        let login =
+            get_username_from_message(&msg).expect("Twitch chat messages must have username");
+        let subscriber = get_subtier_from_message(&msg);
+        // let badges = get_badges_from_message(&msg);
+
+        Self {
+            id,
+            login,
+            subscriber,
+            founder: todo!(),
+            moderator: todo!(),
+        }
+    }
 }
 
 impl From<IRCMessage> for TwitchMessage {
@@ -82,19 +101,16 @@ impl From<IRCMessage> for TwitchMessage {
 
         TwitchMessage {
             channel: chan.clone(),
-            user: TwitchUser::new(
-                get_id_from_message(&msg).expect("Twitch chat messages must have ID"),
-                get_username_from_message(&msg).expect("Twitch chat messages must have username"),
-                get_subtier_from_message(&msg),
-            ),
+            user: (&msg).into(),
             contents: rawmsg.clone(),
             timestamp: Utc::now(),
             irc_message: msg.clone(),
+            color: get_color_from_message(&msg),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Serialize, Deserialize)]
 pub enum TwitchSubscriber {
     Tier0,
     Tier1,
@@ -102,12 +118,13 @@ pub enum TwitchSubscriber {
     Tier3,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TwitchUser {
     pub id: String,
     pub login: String,
     pub subscriber: TwitchSubscriber,
 
+    founder: Option<bool>,
     moderator: Option<bool>,
 }
 
@@ -118,6 +135,7 @@ impl TwitchUser {
             login,
             subscriber,
             moderator: None,
+            founder: None,
         }
     }
 }

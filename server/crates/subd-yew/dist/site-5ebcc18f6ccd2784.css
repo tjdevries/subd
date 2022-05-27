@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Bungee+Outline&family=Bungee+Shade&family=Creepster&family=Inter:wght@400;700&family=Sigmar+One&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
+body {
+  background-color: black;
+  color: white;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.teej-is-bad-at-css {
+  flex-direction: column-reverse;
+}
+
+.subd-message {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+}
+
+@keyframes pulse {
+  from {
+    background: red;
+  }
+  to {
+    background: blue;
+  }
+}
+.subd-message-moderator {
+  font-family: "Bungee Outline", cursive;
+  background: rgba(65, 223, 20, 0.5);
+  animation: 2000ms ease-in-out pulse infinite;
+}
