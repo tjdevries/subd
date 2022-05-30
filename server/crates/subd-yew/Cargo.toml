@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+subd-types = { path = "../subd-types/" }
 yew = "0.19.3"
 # This is cuz of wasm?
 getrandom = { version = "0.2", features = ["js"] }
@@ -19,3 +20,4 @@ twitch-irc = { version = "4.0.0", default-features = false, features = [
 ] }
 wasm-logger = "0.2.0"
 log = "0.4.17"
+chrono = { version = "0.4.19", features = [ "wasmbind" ] }

@@ -18,34 +18,25 @@ use std::env;
 use anyhow::Result;
 use either::Either;
 use futures::SinkExt;
-use irc::client::prelude::*;
 use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
-use subd_yew::YewTwitchMessage;
+use subd_types::Event;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
+use twitch_api2::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::PrivmsgMessage;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
-#[derive(Debug, Clone)]
-enum Event {
-    TwitchChatMessage(PrivmsgMessage),
-    TwitchSubscription,
-    GithubSponsorshipEvent,
-}
-
 const CONNECT_OBS: bool = false;
 const CONNECT_CHAT: bool = true;
-const CONNECT_HELIX: bool = false;
 
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
@@ -61,7 +52,10 @@ async fn handle_twitch_msg(
         };
 
         let twitch_login = &msg.sender.login;
-        println!("Message: {:?}", msg.message_text);
+        println!(
+            "Message: {:?} // Emojis: {:?}",
+            msg.message_text, msg.emotes
+        );
 
         subd_db::create_twitch_user_chat(&mut conn, &msg.sender.id, &msg.sender.login).await?;
         subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
@@ -158,19 +152,32 @@ async fn handle_twitch_chat(
     Ok(())
 }
 
-async fn yew_inner_loop(stream: TcpStream, mut rx: broadcast::Receiver<Event>) -> Result<()> {
-    println!("GOT A NEW CONNECTION: {:?}", stream);
+async fn handle_subcount(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+    subcount: usize,
+) -> Result<()> {
+    loop {
+        let event = rx.recv().await?;
+        let msg = match event {
+            Event::RequestTwitchSubCount => tx.send(Event::TwitchSubscriptionCount(subcount)),
+            _ => continue,
+        };
+    }
+}
 
+async fn yew_inner_loop(
+    stream: TcpStream,
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+) -> Result<()> {
     let addr = stream
         .peer_addr()
         .expect("connected streams should have a peer address");
-    println!("Peer address: {}", addr);
 
     let mut ws_stream = tokio_tungstenite::accept_async(stream)
         .await
         .expect("Error during the websocket handshake occurred");
-
-    println!("New WebSocket connection: {}", addr);
 
     // TODO: Better to split stream so that you can read and write at the same time
     // let (write, read) = ws_stream.split();
@@ -180,10 +187,18 @@ async fn yew_inner_loop(stream: TcpStream, mut rx: broadcast::Receiver<Event>) -
     //     .await
     //     .expect("Failed to forward messages")
 
+    // Get the current sub count
+    tx.send(Event::RequestTwitchSubCount)?;
+
+    println!("Looping new yew inner loop");
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
+            Event::TwitchChatMessage(_) | Event::TwitchSubscriptionCount(_) => {
+                ws_stream
+                    .send(tungstenite::Message::Text(serde_json::to_string(&event)?))
+                    .await?;
+            }
             _ => continue,
         };
 
@@ -192,24 +207,6 @@ async fn yew_inner_loop(stream: TcpStream, mut rx: broadcast::Receiver<Event>) -
         // let color = msg
         //     .name_color
         //     .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
-
-        let color = msg
-            .clone()
-            .name_color
-            .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
-        let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
-        println!("COLOR: {}", color_str);
-
-        ws_stream
-            .send(tungstenite::Message::Text(serde_json::to_string(&msg)?))
-            .await?;
-        //
-        // println!("... send message");
-
-        // yew::start_app::<App>();
-
-        // stream.write(msg.contents).await
-        // println!("Event: {:?}", event);
     }
 
     // Ok(())
@@ -221,10 +218,11 @@ async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>)
     // let (mut socket, response) = connect(request)
 
     while let Ok((stream, _)) = ws.accept().await {
+        let tx_clone = tx.clone();
         let rx_clone = tx.subscribe();
 
         tokio::spawn(async move {
-            yew_inner_loop(stream, rx_clone)
+            yew_inner_loop(stream, tx_clone, rx_clone)
                 .await
                 .expect("handling inner loop OK")
         });
@@ -233,40 +231,90 @@ async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>)
     Ok(())
 }
 
+async fn get_twitch_total_sub_count(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+    helix: HelixClient<'static, ReqwestClient>,
+) -> Result<()> {
+    let reqwest_client = helix.clone_client();
+    let token = UserToken::from_existing(
+        &reqwest_client,
+        AccessToken::new(
+            env::var("TWITCH_OAUTH")
+                .expect("$TWITCH_OAUTH must be set")
+                .replace("oauth:", "")
+                .to_string(),
+        ),
+        None, // Refresh Token
+        None, // Client Secret
+    )
+    .await
+    .unwrap();
+
+    loop {
+        let event = rx.recv().await?;
+        match event {
+            Event::RequestTwitchSubCount => {
+                let req = GetBroadcasterSubscriptionsRequest::builder()
+                    .broadcaster_id(token.user_id.clone())
+                    .first("1".to_string())
+                    .build();
+
+                let response = helix.req_get(req, &token).await.expect("yayayaya");
+                let subcount = response.total.unwrap();
+
+                tx.send(Event::TwitchSubscriptionCount(subcount as usize))?;
+            }
+            _ => continue,
+        };
+    }
+}
+
+macro_rules! oni_chan {
+    // ( $channels:ident, closure:expr ) => {{
+    //     let chan_tx = tx.clone();
+    //     let chan_rx = tx.subscribe();
+    //     $channels.push(tokio::spawn(async move { $tt(chan_tx, chan_rx) }));
+    // }};
+    ($channels:ident, $tx: ident, |$new_tx:ident, $new_rx:ident| $impl:block) => {{
+        let ($new_tx, $new_rx) = ($tx.clone(), $tx.subscribe());
+        $channels.push(tokio::spawn(async move { $impl }));
+    }};
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    let helix: HelixClient<ReqwestClient> = HelixClient::default();
+
     let mut channels = vec![];
-    let (tx, _) = broadcast::channel::<Event>(256);
+    let (base_tx, _) = broadcast::channel::<Event>(256);
 
-    let chat_tx = tx.clone();
-    let chat_rx = tx.subscribe();
-
-    channels.push(tokio::spawn(async move {
-        handle_twitch_chat(chat_tx, chat_rx)
+    oni_chan!(channels, base_tx, |tx, rx| {
+        handle_twitch_chat(tx, rx)
             .await
             .expect("handling twitch chat to work?")
-    }));
+    });
 
-    let (msg_tx, msg_rx) = (tx.clone(), tx.subscribe());
-    channels.push(tokio::spawn(async move {
-        handle_twitch_msg(msg_tx, msg_rx)
+    oni_chan!(channels, base_tx, |tx, rx| {
+        handle_twitch_msg(tx, rx)
             .await
-            .expect("handling twitch msg to work")
-    }));
+            .expect("handling twitch chat to work?")
+    });
 
-    let (yew_tx, yew_rx) = (tx.clone(), tx.subscribe());
+    let (yew_tx, yew_rx) = (base_tx.clone(), base_tx.subscribe());
     channels.push(tokio::spawn(async move {
         handle_yew(yew_tx, yew_rx)
             .await
             .expect("handling yew to work")
     }));
 
-    // handle_commands(...)
-
-    // tokio::spawn(async move {
-    //     assert_eq!(rx1.recv().await.unwrap(), 10);
-    //     assert_eq!(rx1.recv().await.unwrap(), 20);
-    // });
+    let subcount_tx = base_tx.clone();
+    let subcount_rx = base_tx.subscribe();
+    channels.push(tokio::spawn(async move {
+        get_twitch_total_sub_count(subcount_tx, subcount_rx, helix.clone())
+            .await
+            .expect("to run dat twitch sub count total good")
+    }));
 
     if CONNECT_OBS {
         // Connect to the OBS instance through obs-websocket.
@@ -305,23 +353,6 @@ async fn main() -> Result<()> {
             .scene_items()
             .set_scene_item_properties(to_set)
             .await?;
-    }
-
-    if CONNECT_HELIX {
-        // Get  twitch Helix client (don't need for now)
-        let helix: HelixClient<ReqwestClient> = HelixClient::default();
-        let token = UserToken::from_existing(
-            &helix,
-            AccessToken::new(
-                env::var("TWITCH_OAUTH")
-                    .expect("$TWITCH_OAUTH must be set")
-                    .replace("oauth:", "")
-                    .to_string(),
-            ),
-            None, // Refresh Token
-            None, // Client Secret
-        )
-        .await?;
     }
 
     for c in channels {
