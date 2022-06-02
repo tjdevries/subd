@@ -1,13 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Bungee+Outline&family=Bungee+Shade&family=Creepster&family=Inter:wght@400;700&family=Sigmar+One&display=swap");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
-
 body {
   background-color: black;
   color: white;
   margin: 0;
 }
 
-// Nyx told me to do this
 p {
   margin: 0;
 }
@@ -16,20 +14,15 @@ p {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(5, 1fr);
-  // grid-auto-rows: minmax(100px, auto);
-  // gap: 10px;
   height: 100vh;
   min-height: 100vh;
-
-  border: 1px solid white;
 }
 
 .subd-goal {
-  grid-column: 1 / 3;
+  grid-column: 1/3;
   grid-row: 5;
   font-family: "Sigmar One", cursive;
   font-size: 100px;
-
   display: flex;
   align-items: flex-end;
   align-self: flex-end;
@@ -40,8 +33,7 @@ p {
   display: flex;
   flex-direction: column-reverse;
   grid-column: 4;
-  grid-row: 1 / 4;
-  border: 1px solid green;
+  grid-row: 1/4;
   overflow-y: hidden;
 }
 
@@ -49,8 +41,6 @@ p {
   font-size: 32px;
   font-weight: 700;
   font-family: "Inter", sans-serif;
-  border: 1px solid blue;
-  // font-family: "Sigmar One", cursive;
 }
 
 @keyframes pulse {
@@ -61,9 +51,6 @@ p {
     background: blue;
   }
 }
-
 .subd-message-moderator {
-  // font-family: "Bungee Outline", cursive;
   background: rgba(65, 223, 20, 0.5);
-  // animation: 2000ms ease-in-out pulse infinite;
 }

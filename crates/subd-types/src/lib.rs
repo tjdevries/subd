@@ -11,4 +11,7 @@ pub enum Event {
 
     // Requests
     RequestTwitchSubCount,
+
+    // Control
+    Shutdown,
 }

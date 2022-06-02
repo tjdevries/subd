@@ -2,9 +2,6 @@
 #![allow(dead_code)]
 
 // TODO:
-// - We could add twitter usernames
-//      - See if ppl are following.
-//      - Only allow chatters who retweeted my last tweet, everyone else gets timed out
 // - Channel points / Channel Redemptions
 
 // - Theme song:
@@ -14,10 +11,12 @@
 //      - Approve/Reject a sound
 
 use std::env;
+use std::time::Duration;
 
 use anyhow::Result;
 use either::Either;
 use futures::SinkExt;
+use futures::StreamExt;
 use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
@@ -28,6 +27,8 @@ use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use twitch_api2::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
 use twitch_api2::helix::HelixClient;
+use twitch_api2::pubsub;
+use twitch_api2::pubsub::Topic;
 use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
@@ -36,7 +37,6 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
 const CONNECT_OBS: bool = false;
-const CONNECT_CHAT: bool = true;
 
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
@@ -118,52 +118,24 @@ async fn handle_twitch_chat(
     let conn = subd_db::get_handle().await;
     println!("handle_twitch_chat: got conn");
 
-    // We can also load the Config at runtime via Config::load("path/to/config.toml")
-    // let mut client = IRCClient::from_config(Config {
-    //     nickname: Some("teej_dv".to_owned()),
-    //     server: Some("irc.twitch.tv".to_owned()),
-    //     port: Some(6667),
-    //     channels: vec!["#teej_dv".to_owned()],
-    //     use_tls: Some(false),
-    //     password: Some(env::var("CHAT_OAUTH").expect("$CHAT_OAUTH must be set")),
-    //     ..Config::default()
-    // })
-
     let config = ClientConfig::default();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+
+    // TODO(generalize)
     client.join("teej_dv".to_owned()).unwrap();
 
     println!("handle_twitch_chat: waiting for msgs...");
     while let Some(message) = incoming_messages.recv().await {
-        // println!("handle_twitch_chat: got a message {:?}", message);
-
         match message {
             ServerMessage::Privmsg(private) => {
                 tx.send(Event::TwitchChatMessage(private))?;
             }
-            _ => {} // Command::PRIVMSG(chan, rawmsg) => {
-                    //     tx.send(Event::TwitchChatMessage(message.into()))?;
-                    // }
-                    // _ => {}
+            _ => {}
         }
     }
 
     Ok(())
-}
-
-async fn handle_subcount(
-    tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-    subcount: usize,
-) -> Result<()> {
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::RequestTwitchSubCount => tx.send(Event::TwitchSubscriptionCount(subcount)),
-            _ => continue,
-        };
-    }
 }
 
 async fn yew_inner_loop(
@@ -188,7 +160,7 @@ async fn yew_inner_loop(
     //     .expect("Failed to forward messages")
 
     // Get the current sub count
-    tx.send(Event::RequestTwitchSubCount)?;
+    // tx.send(Event::RequestTwitchSubCount)?;
 
     println!("Looping new yew inner loop");
     loop {
@@ -199,23 +171,17 @@ async fn yew_inner_loop(
                     .send(tungstenite::Message::Text(serde_json::to_string(&event)?))
                     .await?;
             }
+            Event::Shutdown => break,
             _ => continue,
         };
-
-        // .send(tungstenite::Message::Text(&msg).unwrap())
-        // println!("Got a new message, trying to send... {}", msg.contents);
-        // let color = msg
-        //     .name_color
-        //     .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
     }
 
-    // Ok(())
+    Ok(())
 }
 
 async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>) -> Result<()> {
-    // let ws = tungstenite::connect("ws://127.0.0.1:9001").expect("To be able to open ws");
+    // TODO(generalize)
     let ws = TcpListener::bind("192.168.4.97:9001").await?;
-    // let (mut socket, response) = connect(request)
 
     while let Ok((stream, _)) = ws.accept().await {
         let tx_clone = tx.clone();
@@ -231,11 +197,13 @@ async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>)
     Ok(())
 }
 
-async fn get_twitch_total_sub_count(
+async fn handle_twitch_sub_count(
     tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
-    helix: HelixClient<'static, ReqwestClient>,
+    // helix: HelixClient<'static, ReqwestClient>,
 ) -> Result<()> {
+    let helix: HelixClient<ReqwestClient> = HelixClient::default();
+
     let reqwest_client = helix.clone_client();
     let token = UserToken::from_existing(
         &reqwest_client,
@@ -270,51 +238,141 @@ async fn get_twitch_total_sub_count(
     }
 }
 
-macro_rules! oni_chan {
-    // ( $channels:ident, closure:expr ) => {{
-    //     let chan_tx = tx.clone();
-    //     let chan_rx = tx.subscribe();
-    //     $channels.push(tokio::spawn(async move { $tt(chan_tx, chan_rx) }));
-    // }};
-    ($channels:ident, $tx: ident, |$new_tx:ident, $new_rx:ident| $impl:block) => {{
-        let ($new_tx, $new_rx) = ($tx.clone(), $tx.subscribe());
-        $channels.push(tokio::spawn(async move { $impl }));
-    }};
+async fn handle_twitch_notifications(
+    tx: broadcast::Sender<Event>,
+    _: broadcast::Receiver<Event>,
+) -> Result<()> {
+    // Listen to subscriptions as well
+    let subscriptions = pubsub::channel_subscriptions::ChannelSubscribeEventsV1 {
+        channel_id: 114257969,
+    }
+    .into_topic();
+
+    let redeems = pubsub::channel_points::ChannelPointsChannelV1 {
+        channel_id: 114257969,
+    }
+    .into_topic();
+
+    // Create the topic command to send to twitch
+    let command = pubsub::listen_command(
+        // &[/* chat_mod_actions,  */ subsriptions],
+        &[redeems, subscriptions],
+        Some(
+            env::var("TWITCH_OAUTH")
+                .expect("$TWITCH_OAUTH must be set")
+                .replace("oauth:", "")
+                .as_str(),
+        ),
+        "randomsetofletters",
+    )
+    .expect("serializing failed");
+
+    // Send the message with your favorite websocket client
+
+    println!("trying to connect to stream...");
+    // let stream = TcpStream::connect("pubsub-edge.twitch.tv:443")
+    //     .await
+    //     .unwrap();
+    println!("part 1");
+    let (mut ws_stream, _resp) = tokio_tungstenite::connect_async("wss://pubsub-edge.twitch.tv")
+        .await
+        .expect("asdfasdfasdf");
+
+    println!("Got a stream??");
+    let written = ws_stream.send(tungstenite::Message::Text(command)).await?;
+    dbg!(written);
+
+    let ping = ws_stream
+        .send(tungstenite::Message::Text(
+            r#"{"type": "PING"}"#.to_string(),
+        ))
+        .await?;
+    dbg!(ping);
+
+    // let (write, read) = ws_stream.split();
+    // read.ne
+
+    while let Some(msg) = ws_stream.next().await {
+        println!("received new msg");
+        tokio::time::sleep(Duration::from_secs(5)).await;
+        println!("... waiting complete");
+        tx.send(Event::RequestTwitchSubCount)?;
+    }
+
+    // let ws = TcpListener::bind(TWITCH_PUBSUB_URL.as_str()).await?;
+    // let (mut stream, resp) = tungstenite::connect("wss://pubsub-edge.twitch.tv".to_string())?;
+    // println!("  Response: {:?}", resp);
+    //
+    // while let Ok(msg) = stream.read_message() {
+    //     match msg {
+    //         tungstenite::Message::Text(msg) => {
+    //             let parsed = pubsub::Response::parse(msg.as_str())?;
+    //             match parsed {
+    //                 pubsub::Response::Response(resp) => {
+    //                     println!("[handle_twitch_notifications] got new response: {:?}", resp);
+    //                 }
+    //                 pubsub::Response::Message { data } => {
+    //                     // println!("[handle_twitch_notifications] new msg data: {:?}", data);
+    //                     match data {
+    //                         pubsub::TopicData::ChannelPointsChannelV1 { topic, reply } => {
+    //                             println!("POINTS: {:?}", topic);
+    //                             tx.send(Event::RequestTwitchSubCount)?;
+    //                         }
+    //                         pubsub::TopicData::ChannelSubscribeEventsV1 { topic, reply } => {
+    //                             println!("SUBSCRIBE: {:?}", topic);
+    //                             tx.send(Event::RequestTwitchSubCount)?;
+    //                         }
+    //                         // pubsub::TopicData::ChatModeratorActions { topic, reply } => todo!(),
+    //                         // pubsub::TopicData::ChannelBitsEventsV2 { topic, reply } => todo!(),
+    //                         // pubsub::TopicData::ChannelBitsBadgeUnlocks { topic, reply } => todo!(),
+    //                         // pubsub::TopicData::AutoModQueue { topic, reply } => todo!(),
+    //                         // pubsub::TopicData::UserModerationNotifications { topic, reply } => todo!(),
+    //                         _ => continue,
+    //                     }
+    //                 }
+    //                 pubsub::Response::Pong => continue,
+    //                 pubsub::Response::Reconnect => todo!(),
+    //             }
+    //         }
+    //         _ => {
+    //             println!("unexpected new msg: {:?}", msg);
+    //         }
+    //     }
+    // }
+    //
+    println!("Oh no, exiting");
+
+    Ok(())
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let helix: HelixClient<ReqwestClient> = HelixClient::default();
-
     let mut channels = vec![];
     let (base_tx, _) = broadcast::channel::<Event>(256);
 
-    oni_chan!(channels, base_tx, |tx, rx| {
-        handle_twitch_chat(tx, rx)
-            .await
-            .expect("handling twitch chat to work?")
-    });
+    macro_rules! makechan {
+        // If it has (tx, rx) as signature, we can just do this
+        ($handle_func:ident) => {{
+            let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
+            channels.push(tokio::spawn(async move {
+                $handle_func(new_tx, new_rx)
+                    .await
+                    .expect("this should work")
+            }));
+        }};
 
-    oni_chan!(channels, base_tx, |tx, rx| {
-        handle_twitch_msg(tx, rx)
-            .await
-            .expect("handling twitch chat to work?")
-    });
+        // Otherwise, run it like this
+        (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
+            let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
+            channels.push(tokio::spawn(async move { $impl }));
+        }};
+    }
 
-    let (yew_tx, yew_rx) = (base_tx.clone(), base_tx.subscribe());
-    channels.push(tokio::spawn(async move {
-        handle_yew(yew_tx, yew_rx)
-            .await
-            .expect("handling yew to work")
-    }));
-
-    let subcount_tx = base_tx.clone();
-    let subcount_rx = base_tx.subscribe();
-    channels.push(tokio::spawn(async move {
-        get_twitch_total_sub_count(subcount_tx, subcount_rx, helix.clone())
-            .await
-            .expect("to run dat twitch sub count total good")
-    }));
+    makechan!(handle_twitch_chat);
+    makechan!(handle_twitch_msg);
+    makechan!(handle_yew);
+    makechan!(handle_twitch_sub_count);
+    makechan!(handle_twitch_notifications);
 
     if CONNECT_OBS {
         // Connect to the OBS instance through obs-websocket.
