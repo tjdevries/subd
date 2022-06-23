@@ -14,6 +14,7 @@ use std::env;
 use std::time::Duration;
 
 use anyhow::Result;
+use clap::Parser;
 use either::Either;
 use futures::SinkExt;
 use futures::StreamExt;
@@ -21,6 +22,9 @@ use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
+use server::commands;
+use subd_types::get_nyx_sub;
+use subd_types::get_prime_sub;
 use subd_types::Event;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
@@ -41,8 +45,12 @@ const CONNECT_OBS: bool = false;
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
+    sink: &rodio::Sink,
 ) -> Result<()> {
     let mut conn = subd_db::get_handle().await;
+
+    let config = get_chat_config();
+    let (_, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
     loop {
         let event = rx.recv().await?;
@@ -59,6 +67,25 @@ async fn handle_twitch_msg(
 
         subd_db::create_twitch_user_chat(&mut conn, &msg.sender.id, &msg.sender.login).await?;
         subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
+
+        let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
+        subd_db::maybe_play_user_themesong(&mut conn, &user_id, &sink).await?;
+
+        let splitmsg = msg
+            .message_text
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+
+        match splitmsg[0].as_str() {
+            "!echo" => {
+                let echo = commands::Echo::try_parse_from(&splitmsg);
+                if let Ok(echo) = echo {
+                    let _ = client.say("teej_dv".to_string(), echo.contents).await;
+                }
+            }
+            _ => {}
+        };
 
         // let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
         // let user = subd_db::get_user(&mut conn, &user_id).await?;
@@ -111,18 +138,30 @@ async fn handle_twitch_msg(
     // );
 }
 
+fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
+    ClientConfig::new_simple(StaticLoginCredentials::new(
+        "teej_dv_bot".to_string(),
+        Some(
+            env::var("TWITCHBOT_OAUTH")
+                .expect("$TWITCHBOT_OAUTH must be set")
+                .replace("oauth:", "")
+                .to_string(),
+        ),
+    ))
+}
+
 async fn handle_twitch_chat(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
     let conn = subd_db::get_handle().await;
-    println!("handle_twitch_chat: got conn");
 
-    let config = ClientConfig::default();
+    // Technically, this one just needs to be able to read chat
+    // this client won't send anything to chat.
+    let config = get_chat_config();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
 
-    // TODO(generalize)
     client.join("teej_dv".to_owned()).unwrap();
 
     println!("handle_twitch_chat: waiting for msgs...");
@@ -166,7 +205,9 @@ async fn yew_inner_loop(
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(_) | Event::TwitchSubscriptionCount(_) => {
+            Event::TwitchChatMessage(_)
+            | Event::TwitchSubscriptionCount(_)
+            | Event::TwitchSubscription(_) => {
                 ws_stream
                     .send(tungstenite::Message::Text(serde_json::to_string(&event)?))
                     .await?;
@@ -188,9 +229,12 @@ async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>)
         let rx_clone = tx.subscribe();
 
         tokio::spawn(async move {
-            yew_inner_loop(stream, tx_clone, rx_clone)
-                .await
-                .expect("handling inner loop OK")
+            match yew_inner_loop(stream, tx_clone, rx_clone).await {
+                Ok(_) => {}
+                Err(err) => println!("SOME YEW FAILED WITH: {:?}", err),
+            };
+
+            ()
         });
     }
 
@@ -263,7 +307,7 @@ async fn handle_twitch_notifications(
                 .replace("oauth:", "")
                 .as_str(),
         ),
-        "randomsetofletters",
+        "",
     )
     .expect("serializing failed");
 
@@ -293,6 +337,52 @@ async fn handle_twitch_notifications(
     // read.ne
 
     while let Some(msg) = ws_stream.next().await {
+        match msg {
+            Ok(msg) => {
+                match msg {
+                    tungstenite::Message::Text(msg) => {
+                        let parsed = pubsub::Response::parse(msg.as_str())?;
+                        match parsed {
+                            pubsub::Response::Response(resp) => {
+                                println!(
+                                    "[handle_twitch_notifications] got new response: {:?}",
+                                    resp
+                                );
+                            }
+                            pubsub::Response::Message { data } => {
+                                // println!("[handle_twitch_notifications] new msg data: {:?}", data);
+                                match data {
+                                    pubsub::TopicData::ChannelPointsChannelV1 { topic, reply } => {
+                                        println!("POINTS: {:?}", topic);
+                                        // tx.send(Event::RequestTwitchSubCount)?;
+                                    }
+                                    pubsub::TopicData::ChannelSubscribeEventsV1 {
+                                        topic,
+                                        reply,
+                                    } => {
+                                        println!("SUBSCRIBE: {:?}", topic);
+                                        tx.send(Event::TwitchSubscription((*reply).into()))?;
+                                        tx.send(Event::RequestTwitchSubCount)?;
+                                    }
+                                    // pubsub::TopicData::ChatModeratorActions { topic, reply } => todo!(),
+                                    // pubsub::TopicData::ChannelBitsEventsV2 { topic, reply } => todo!(),
+                                    // pubsub::TopicData::ChannelBitsBadgeUnlocks { topic, reply } => todo!(),
+                                    // pubsub::TopicData::AutoModQueue { topic, reply } => todo!(),
+                                    // pubsub::TopicData::UserModerationNotifications { topic, reply } => todo!(),
+                                    _ => continue,
+                                }
+                            }
+                            pubsub::Response::Pong => continue,
+                            pubsub::Response::Reconnect => todo!(),
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Err(err) => {
+                println!("Error in twitch notifications: {:?}", err);
+            }
+        }
         println!("received new msg");
         tokio::time::sleep(Duration::from_secs(5)).await;
         println!("... waiting complete");
@@ -368,8 +458,15 @@ async fn main() -> Result<()> {
         }};
     }
 
+    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+    let sink = rodio::Sink::try_new(&handle).unwrap();
+
     makechan!(handle_twitch_chat);
-    makechan!(handle_twitch_msg);
+    makechan!(|tx, rx| {
+        handle_twitch_msg(tx, rx, &sink)
+            .await
+            .expect("Handles twitch messages")
+    });
     makechan!(handle_yew);
     makechan!(handle_twitch_sub_count);
     makechan!(handle_twitch_notifications);
@@ -411,6 +508,23 @@ async fn main() -> Result<()> {
             .scene_items()
             .set_scene_item_properties(to_set)
             .await?;
+    }
+
+    {
+        let x = base_tx.clone();
+        tokio::spawn(async move {
+            println!("==> Sleeping...");
+            tokio::time::sleep(Duration::from_millis(3000)).await;
+            println!("... SENDING NYX SUB NOTI");
+            x.send(Event::TwitchSubscription(get_nyx_sub()))
+                .expect("to send message x 1");
+
+            println!("==> Sleeping x 2...");
+            tokio::time::sleep(Duration::from_millis(3000)).await;
+            println!("... x 2 SENDING NYX SUB NOTI");
+            x.send(Event::TwitchSubscription(get_prime_sub()))
+                .expect("to send message x 2");
+        });
     }
 
     for c in channels {

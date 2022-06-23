@@ -1,6 +1,11 @@
+use std::collections::VecDeque;
+
 use chrono::{self, Utc};
+use gloo_timers::callback::Timeout;
+use subd_types::get_nyx_sub;
 use subd_types::Event as SubdEvent;
-use twitch_irc::message::{Badge, PrivmsgMessage};
+use subd_yew::components::sub_notification::SubNotification;
+use twitch_irc::message::{Badge, Emote, PrivmsgMessage};
 // use yew::{function_component, html, use_effect_with_deps, Html};
 use yew::prelude::*;
 use yew_hooks::{use_list, use_web_socket};
@@ -9,13 +14,20 @@ use yew_hooks::{use_list, use_web_socket};
 //  Probably what we want to end up using to dispatch over Event
 // Might not need to though
 
+// https://static-cdn.jtvnw.net/emoticons/v2/<id>/<format>/<theme_mode>/<scale>
+fn make_emote_url(emote: &Emote) -> String {
+    format!(
+        "https://static-cdn.jtvnw.net/emoticons/v2/{}/default/dark/2.0",
+        emote.id
+    )
+}
+
 fn render_message(message: &PrivmsgMessage) -> Html {
     let color = message
         .name_color
         .clone()
         .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
 
-    log::info!("{:?}", message.badges);
     let is_moderator = message
         .badges
         .iter()
@@ -26,6 +38,48 @@ fn render_message(message: &PrivmsgMessage) -> Html {
         class_name = format!("{} {}", class_name, "subd-message-moderator");
     }
 
+    let contents = message.message_text.clone();
+    let mut pieces: Vec<Html> = vec![];
+
+    if message.emotes.is_empty() {
+        pieces.push(html! {
+            <p>
+             { contents }
+            </p>
+        });
+    } else {
+        let mut contents = contents.chars();
+        let mut last_emote_finish = 0;
+
+        let mut emotes = VecDeque::from(message.emotes.clone());
+        while let Some(emote) = emotes.pop_front() {
+            // Get the missing text contents
+            let segment = contents
+                .by_ref()
+                .take(emote.char_range.start - last_emote_finish)
+                .collect::<String>();
+            if !segment.is_empty() {
+                pieces.push(html! { <span> { segment } </span> });
+            }
+
+            pieces.push(html! { <img src={make_emote_url(&emote)} alt={"emote"} /> });
+
+            last_emote_finish = emote.char_range.end;
+
+            // This is just stupid skip cause i'm stupid and tired today
+            _ = contents
+                .by_ref()
+                .take(emote.char_range.len())
+                .collect::<String>();
+        }
+
+        let remaining = contents.collect::<String>();
+        if !remaining.is_empty() {
+            pieces.push(html! { <span> { remaining } </span> });
+        }
+        // pieces.push(html! { <p> { "You think i'll just show your emotes??" } </p> });
+    }
+
     let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
     html! {
         <div class={ class_name }>
@@ -34,7 +88,7 @@ fn render_message(message: &PrivmsgMessage) -> Html {
                 { message.sender.name.clone() }
             </span>
                 { ": " }
-                { message.message_text.clone() }
+                { pieces }
             </p>
         </div>
     }
@@ -113,12 +167,24 @@ fn reducer() -> Html {
     let history = use_list(default_messages());
     let subcount = use_state(|| 0);
 
+    let new_sub = use_state(|| None);
+
+    // let animation_state = use_state(|| true);
+    // {
+    //     let animation_state = animation_state.clone();
+    //     let timeout = Timeout::new(1_000, move || {
+    //         animation_state.set(false);
+    //     });
+    //     timeout.forget();
+    // }
+
     let ws = use_web_socket("ws://192.168.4.97:9001".to_string());
 
     {
         let history = history.clone();
         let ws = ws.clone();
         let subcount = subcount.clone();
+        let new_sub = new_sub.clone();
 
         // Receive message by depending on `ws.message`.
         use_effect_with_deps(
@@ -130,6 +196,11 @@ fn reducer() -> Html {
                     match event {
                         SubdEvent::TwitchChatMessage(twitch_msg) => history.push(twitch_msg),
                         SubdEvent::TwitchSubscriptionCount(count) => subcount.set(count),
+                        SubdEvent::TwitchSubscription(subscription) => {
+                            log::info!("Got a new subscription: {:?}", subscription);
+                            // handle_twitch_sub(subscription)
+                            new_sub.set(Some(subscription))
+                        }
                         _ => {}
                     }
                 }
@@ -142,6 +213,14 @@ fn reducer() -> Html {
     // TODO: Thiks is still not that good tho
     // TODO: Theme songs
     //          https://www.myinstants.com/media/sounds/movie_1.mp3
+
+    let notification = match &(*new_sub) {
+        Some(sub) => {
+            let sub = sub.clone();
+            html! { <SubNotification subscription={sub} /> }
+        }
+        None => html! {},
+    };
 
     html! {
         <div class={ "subd" }>
@@ -159,6 +238,7 @@ fn reducer() -> Html {
                 }
             }
             </div>
+            <> { notification } </>
         </div>
     }
 }

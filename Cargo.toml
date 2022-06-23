@@ -33,9 +33,17 @@ tokio-tungstenite = { version = "0.17.1", features = [ "native-tls" ] }
 reqwest = "0.11.10"
 obws = "0.9.1"
 either = "1.6.1"
+iter-skak = "0.1.0"
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
+clap = { version = "3.2.6", features = ["derive"] }
+ytextract = "0.11.0"
+youtube_dl = { version = "0.7.0", default-features = false, features = [ "yt-dlp" ] }
 
 [workspace]
 members = ["crates/*"]
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3
+
+[lib]
+path = "src/lib.rs"

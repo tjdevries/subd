@@ -88,6 +88,22 @@ CREATE TABLE TWITCH_CHAT_HISTORY (
     FOREIGN KEY(user_id) REFERENCES USERS(id)
 );
 
+CREATE TABLE USER_THEME_SONGS (
+    user_id INTEGER unique NOT NULL,
+    song BLOB NOT NULL,
+    start_seconds integer NOT NULL,
+    duration integer not null,
+
+    FOREIGN KEY(user_id) REFERENCES USERS(id)
+);
+
+CREATE TABLE USER_THEME_SONG_HISTORY (
+  user_id INTEGER unique NOT NULL,
+  played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY(user_id) REFERENCES USERS(id)
+)
+
 -- quickly look up user information in table.
 CREATE INDEX twitch_chat_history__user_id on TWITCH_CHAT_HISTORY (user_id);
 -- TODO: Should I use another index here to sort by datetime? maybe it will do automatically.
