@@ -1,12 +1,7 @@
 #![allow(dead_code)]
 
-use std::{
-    io::{BufReader, Cursor},
-    time::Duration,
-};
 
 use anyhow::Result;
-use rodio::{Sink, Source};
 use sqlx::{Connection, SqliteConnection};
 
 pub type UserID = i64;
@@ -179,61 +174,6 @@ pub async fn save_twitch_message(
     )
     .execute(&mut *conn)
     .await?;
-
-    Ok(())
-}
-
-pub async fn maybe_play_user_themesong(
-    conn: &mut SqliteConnection,
-    user_id: &UserID,
-    sink: &Sink,
-) -> Result<()> {
-    let played_count = sqlx::query!(
-        r#"
-            SELECT count(*) as result
-            FROM USER_THEME_SONG_HISTORY
-            WHERE date(played_at) = date('now') AND user_id = ?1;
-        "#,
-        user_id
-    )
-    .fetch_one(&mut *conn)
-    .await?;
-
-    if played_count.result > 0 {
-        println!("theme_song: WE ALREADY PLAYED: {:?}", user_id);
-        return Ok(());
-    }
-
-    let themesong = sqlx::query!(
-        "SELECT song, start_seconds, duration FROM user_theme_songs WHERE user_id = ?1",
-        user_id
-    )
-    .fetch_optional(&mut *conn)
-    .await?;
-
-    let themesong = match themesong {
-        Some(themesong) => themesong,
-        None => {
-            println!("theme_song: No themesong available for: {:?}", user_id);
-            return Ok(());
-        }
-    };
-
-    // Insert that we've played their theme song
-    sqlx::query!(
-        "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES (?1)",
-        user_id
-    )
-    .execute(&mut *conn)
-    .await?;
-
-    let x = Cursor::new(themesong.song);
-    let rodioer = rodio::Decoder::new(BufReader::new(x))
-        .unwrap()
-        .skip_duration(Duration::from_secs(themesong.start_seconds as u64))
-        .take_duration(Duration::from_secs(themesong.duration as u64));
-
-    sink.append(rodioer);
 
     Ok(())
 }

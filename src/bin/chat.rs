@@ -23,6 +23,7 @@ use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
 use server::commands;
+use server::themesong;
 use subd_types::get_nyx_sub;
 use subd_types::get_prime_sub;
 use subd_types::Event;
@@ -61,15 +62,15 @@ async fn handle_twitch_msg(
 
         let twitch_login = &msg.sender.login;
         println!(
-            "Message: {:?} // Emojis: {:?}",
-            msg.message_text, msg.emotes
+            "Message({:?}): {:?} // {:?}",
+            msg.sender.name, msg.message_text, msg.badges
         );
 
         subd_db::create_twitch_user_chat(&mut conn, &msg.sender.id, &msg.sender.login).await?;
         subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
 
         let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
-        subd_db::maybe_play_user_themesong(&mut conn, &user_id, &sink).await?;
+        themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
 
         let splitmsg = msg
             .message_text
@@ -87,11 +88,55 @@ async fn handle_twitch_msg(
             _ => {}
         };
 
-        // let user_id = subd_db::get_user_from_twitch_user(&mut conn, twitch_login).await?;
-        // let user = subd_db::get_user(&mut conn, &user_id).await?;
-        //
-        // let count = subd_db::get_message_count_from_today(&mut conn, &user_id).await?;
-        // println!("{} messages today", count);
+        if msg.message_text.starts_with("!themesong") {
+            if splitmsg.len() == 1 {
+                client
+                    .say(
+                        "teej_dv".to_string(),
+                        "format: !themesong <url> 00:00 00:00".to_string(),
+                    )
+                    .await?;
+                continue;
+            } else if splitmsg.len() != 4 {
+                let _ = client
+                    .say(
+                        "teej_dv".to_string(),
+                        "Incorrect themesong format".to_string(),
+                    )
+                    .await;
+            }
+
+            if msg.badges.iter().any(|badge| {
+                badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
+            }) {
+                match themesong::download_themesong(
+                    &mut conn,
+                    &user_id,
+                    splitmsg[1].as_str(),
+                    splitmsg[2].as_str(),
+                    splitmsg[3].as_str(),
+                )
+                .await
+                {
+                    Ok(_) => println!("Successfully downloaded themesong"),
+                    Err(err) => {
+                        client
+                            .say(
+                                "teej_dv".to_string(),
+                                format!("Failed to download: {:?}", err),
+                            )
+                            .await?;
+                    }
+                };
+            } else {
+                client
+                    .say(
+                        "teej_dv".to_string(),
+                        format!("You must be a sub/mod/VIP to do this"),
+                    )
+                    .await?;
+            }
+        }
 
         /*
         if msg.contents.starts_with(":show doggo") && can_control_dog_cam {

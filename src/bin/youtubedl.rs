@@ -1,24 +1,22 @@
+use server::themesong::{download_themesong, play_themesong};
+use subd_db::get_handle;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let start = 76;
-    let end = 82;
+    let mut db = get_handle().await;
 
-    // --external-downloader ffmpeg --external-downloader-args "ffmpeg_i:-ss 0 -to 10"
-    let dl = youtube_dl::YoutubeDl::new("https://youtu.be/bWcASV2sey0")
-        .extract_audio(true)
-        .extra_arg("--external-downloader")
-        .extra_arg("ffmpeg")
-        .extra_arg("--external-downloader-args")
-        .extra_arg(format!("ffmpeg_i:-ss {} -to {}", start, end))
-        .run()?;
+    let user_id = 4;
+    let url = "https://www.youtube.com/watch?v=jOpzP33_USs";
 
-    match dl {
-        youtube_dl::YoutubeDlOutput::SingleVideo(video) => {
-            println!("Video: {:?}", video);
-        }
-        youtube_dl::YoutubeDlOutput::Playlist(_) => unreachable!(),
+    if true {
+        download_themesong(&mut db, &user_id, url, "00:01:03", "00:01:10").await?;
     }
-    //  https://youtu.be/bWcASV2sey0
-    //  76, 6ish
+
+    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+    let sink = rodio::Sink::try_new(&handle).unwrap();
+
+    play_themesong(&mut db, &user_id, &sink).await?;
+    sink.sleep_until_end();
+
     Ok(())
 }

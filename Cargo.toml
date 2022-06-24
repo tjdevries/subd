@@ -37,7 +37,9 @@ iter-skak = "0.1.0"
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
 clap = { version = "3.2.6", features = ["derive"] }
 ytextract = "0.11.0"
-youtube_dl = { version = "0.7.0", default-features = false, features = [ "yt-dlp" ] }
+# youtube_dl = { version = "0.7.0", default-features = false, features = [ "yt-dlp" ] }
+youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
+psl = "2.0.89"
 
 [workspace]
 members = ["crates/*"]
