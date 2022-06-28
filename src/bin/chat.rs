@@ -27,6 +27,8 @@ use server::themesong;
 use subd_types::get_nyx_sub;
 use subd_types::get_prime_sub;
 use subd_types::Event;
+use subd_types::ThemesongDownload;
+use subd_types::ThemesongPlay;
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
@@ -46,7 +48,6 @@ const CONNECT_OBS: bool = false;
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
-    sink: &rodio::Sink,
 ) -> Result<()> {
     let mut conn = subd_db::get_handle().await;
 
@@ -70,7 +71,18 @@ async fn handle_twitch_msg(
         subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
 
         let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
-        themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
+
+        println!(
+            "  Should play themesong: {:?}",
+            themesong::should_play_themesong(&mut conn, &user_id, &msg).await?
+        );
+        if themesong::should_play_themesong(&mut conn, &user_id, &msg).await? {
+            println!("  Sending themesong");
+            tx.send(Event::ThemesongPlay(ThemesongPlay {
+                user_id,
+                display_name: msg.sender.name.clone(),
+            }))?;
+        }
 
         let splitmsg = msg
             .message_text
@@ -88,82 +100,24 @@ async fn handle_twitch_msg(
             _ => {}
         };
 
-        if msg.message_text.starts_with("!themesong") {
-            if splitmsg.len() == 1 {
-                client
-                    .say(
-                        "teej_dv".to_string(),
-                        "format: !themesong <url> 00:00 00:00".to_string(),
-                    )
-                    .await?;
-                continue;
-            } else if splitmsg.len() != 4 {
-                let _ = client
-                    .say(
-                        "teej_dv".to_string(),
-                        "Incorrect themesong format".to_string(),
-                    )
-                    .await;
-            }
-
-            if msg.badges.iter().any(|badge| {
-                badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
-            }) {
-                match themesong::download_themesong(
-                    &mut conn,
-                    &user_id,
-                    splitmsg[1].as_str(),
-                    splitmsg[2].as_str(),
-                    splitmsg[3].as_str(),
+        if msg.message_text.starts_with("!reset themesong")
+            && msg.badges.iter().any(|badge| badge.name == "moderator")
+        {
+            if splitmsg.len() != 3 {
+                say(
+                    &client,
+                    "Invalid reset themesong message format. Try: !reset themesong @name",
                 )
-                .await
-                {
-                    Ok(_) => println!("Successfully downloaded themesong"),
-                    Err(err) => {
-                        client
-                            .say(
-                                "teej_dv".to_string(),
-                                format!("Failed to download: {:?}", err),
-                            )
-                            .await?;
-                    }
-                };
-            } else {
-                client
-                    .say(
-                        "teej_dv".to_string(),
-                        format!("You must be a sub/mod/VIP to do this"),
-                    )
-                    .await?;
+                .await?;
+                continue;
             }
+
+            themesong::reset_themesong(&mut conn, splitmsg[2].as_str()).await?
         }
 
-        /*
-        if msg.contents.starts_with(":show doggo") && can_control_dog_cam {
-            client.send_privmsg("#teej_dv", format!("@{} -> sets doggo", msg.user.login))?;
-
-            // TODO: Start a timer to set it back?
+        if msg.message_text.starts_with("!themesong") {
+            tx.send(Event::ThemesongDownload(ThemesongDownload::Request { msg }))?;
         }
-
-        if msg.contents.starts_with(":show space") {
-            if can_control_dog_cam {
-                client.send_privmsg("#teej_dv", format!("🚀🚀 @{} 🚀🚀", msg.user.login))?;
-            } else {
-                client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
-            }
-        }
-
-        if msg.contents.starts_with(":hide space") {
-            if can_control_dog_cam {
-                client.send_privmsg(
-                    "#teej_dv",
-                    format!("'... Landing rocketship' @{}", msg.user.login),
-                )?;
-            } else {
-                client.send_privmsg("#teej_dv", "📻 Houston, we have a problem")?;
-            }
-        }
-        */
     }
 
     // if msg.contents.starts_with("!set_github") {
@@ -175,12 +129,6 @@ async fn handle_twitch_msg(
     //     .await
     //     .unwrap_or_else(|e| println!("Nice try, didn't work: {:?}", e))
     // }
-
-    // println!("Saved: {:?}\n", msg);
-    // println!(
-    //     "We got a message {} {}, from {:?}",
-    //     chan, msg, message.prefix
-    // );
 }
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
@@ -243,14 +191,12 @@ async fn yew_inner_loop(
     //     .await
     //     .expect("Failed to forward messages")
 
-    // Get the current sub count
-    // tx.send(Event::RequestTwitchSubCount)?;
-
     println!("Looping new yew inner loop");
     loop {
         let event = rx.recv().await?;
         let msg = match event {
             Event::TwitchChatMessage(_)
+            | Event::ThemesongDownload(_)
             | Event::TwitchSubscriptionCount(_)
             | Event::TwitchSubscription(_) => {
                 ws_stream
@@ -367,19 +313,12 @@ async fn handle_twitch_notifications(
         .await
         .expect("asdfasdfasdf");
 
-    println!("Got a stream??");
     let written = ws_stream.send(tungstenite::Message::Text(command)).await?;
-    dbg!(written);
-
     let ping = ws_stream
         .send(tungstenite::Message::Text(
             r#"{"type": "PING"}"#.to_string(),
         ))
         .await?;
-    dbg!(ping);
-
-    // let (write, read) = ws_stream.split();
-    // read.ne
 
     while let Some(msg) = ws_stream.next().await {
         match msg {
@@ -480,6 +419,115 @@ async fn handle_twitch_notifications(
     Ok(())
 }
 
+async fn handle_themesong_download(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+) -> Result<()> {
+    let mut conn = subd_db::get_handle().await;
+
+    let config = get_chat_config();
+    let (_, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+
+    loop {
+        let event = rx.recv().await?;
+        let msg = match event {
+            Event::ThemesongDownload(ThemesongDownload::Request { msg }) => msg,
+            _ => continue,
+        };
+
+        let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
+
+        let splitmsg = msg
+            .message_text
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+
+        if splitmsg.len() == 1 {
+            say(&client, "format: !themesong <url> 00:00.00 00:00.00").await?;
+            continue;
+        } else if splitmsg.len() != 4 {
+            say(
+                &client,
+                "Incorrect themesong format. Required: !themesong <url> 00:00 00:00",
+            )
+            .await?;
+            tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
+                display_name: msg.sender.name.clone(),
+                success: false,
+            }))?;
+            continue;
+        }
+
+        if msg.badges.iter().any(|badge| {
+            badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
+        }) {
+            // Notify that we are starting a download
+            tx.send(Event::ThemesongDownload(ThemesongDownload::Start {
+                display_name: msg.sender.name.clone(),
+            }))?;
+
+            match themesong::download_themesong(
+                &mut conn,
+                &user_id,
+                splitmsg[1].as_str(),
+                splitmsg[2].as_str(),
+                splitmsg[3].as_str(),
+            )
+            .await
+            {
+                Ok(_) => {
+                    println!("Successfully downloaded themesong");
+                    tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
+                        display_name: msg.sender.name.clone(),
+                        success: true,
+                    }))?;
+
+                    continue;
+                }
+                Err(err) => {
+                    say(&client, format!("Failed to download: {:?}", err)).await?;
+                    tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
+                        display_name: msg.sender.name.clone(),
+                        success: false,
+                    }))?;
+
+                    continue;
+                }
+            };
+        } else {
+            say(&client, "You must be a sub/mod/VIP to do this").await?;
+        }
+    }
+}
+
+async fn handle_themesong_play(
+    tx: broadcast::Sender<Event>,
+    mut rx: broadcast::Receiver<Event>,
+    sink: &rodio::Sink,
+) -> Result<()> {
+    let mut conn = subd_db::get_handle().await;
+
+    loop {
+        let event = rx.recv().await?;
+        let user_id = match event {
+            Event::ThemesongPlay(ThemesongPlay { user_id, .. }) => user_id,
+            _ => continue,
+        };
+
+        println!("=> Playing themesong");
+        themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
+    }
+}
+
+async fn say<T: twitch_irc::transport::Transport, L: twitch_irc::login::LoginCredentials>(
+    client: &TwitchIRCClient<T, L>,
+    msg: impl Into<String>,
+) -> Result<()> {
+    client.say("teej_dv".to_string(), msg.into()).await?;
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut channels = vec![];
@@ -507,14 +555,18 @@ async fn main() -> Result<()> {
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
     makechan!(handle_twitch_chat);
-    makechan!(|tx, rx| {
-        handle_twitch_msg(tx, rx, &sink)
-            .await
-            .expect("Handles twitch messages")
-    });
+    makechan!(handle_twitch_msg);
     makechan!(handle_yew);
     makechan!(handle_twitch_sub_count);
     makechan!(handle_twitch_notifications);
+
+    // Themesong functions
+    makechan!(handle_themesong_download);
+    makechan!(|tx, rx| {
+        handle_themesong_play(tx, rx, &sink)
+            .await
+            .expect("Handles playing themesongs")
+    });
 
     if CONNECT_OBS {
         // Connect to the OBS instance through obs-websocket.

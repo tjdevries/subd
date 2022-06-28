@@ -1,12 +1,10 @@
 use std::collections::VecDeque;
 
 use chrono::{self, Utc};
-use gloo_timers::callback::Timeout;
-use subd_types::get_nyx_sub;
 use subd_types::Event as SubdEvent;
 use subd_yew::components::sub_notification::SubNotification;
+use subd_yew::components::themesong_downloader::ThemesongDownloader;
 use twitch_irc::message::{Badge, Emote, PrivmsgMessage};
-// use yew::{function_component, html, use_effect_with_deps, Html};
 use yew::prelude::*;
 use yew_hooks::{use_list, use_web_socket};
 
@@ -168,6 +166,7 @@ fn reducer() -> Html {
     let subcount = use_state(|| 0);
 
     let new_sub = use_state(|| None);
+    let themesong = use_state(|| None);
 
     // let animation_state = use_state(|| true);
     // {
@@ -185,6 +184,7 @@ fn reducer() -> Html {
         let ws = ws.clone();
         let subcount = subcount.clone();
         let new_sub = new_sub.clone();
+        let themesong = themesong.clone();
 
         // Receive message by depending on `ws.message`.
         use_effect_with_deps(
@@ -201,6 +201,7 @@ fn reducer() -> Html {
                             // handle_twitch_sub(subscription)
                             new_sub.set(Some(subscription))
                         }
+                        SubdEvent::ThemesongDownload(download) => themesong.set(Some(download)),
                         _ => {}
                     }
                 }
@@ -222,6 +223,14 @@ fn reducer() -> Html {
         None => html! {},
     };
 
+    let themesong = match &(*themesong) {
+        Some(themesong) => {
+            let themesong = themesong.clone();
+            html! { <ThemesongDownloader themesong={themesong} /> }
+        }
+        None => html! {},
+    };
+
     html! {
         <div class={ "subd" }>
             <div class={"subd-goal"}>
@@ -239,6 +248,7 @@ fn reducer() -> Html {
             }
             </div>
             <> { notification } </>
+            <> { themesong } </>
         </div>
     }
 }

@@ -1,10 +1,9 @@
 #![allow(dead_code)]
 
-
 use anyhow::Result;
 use sqlx::{Connection, SqliteConnection};
+use subd_types::UserID;
 
-pub type UserID = i64;
 pub struct User {
     pub id: UserID,
     pub twitch_user: Option<String>,
@@ -122,6 +121,28 @@ pub async fn get_user_from_twitch_user(
 
             Ok(new_id)
         }
+    }
+}
+
+pub async fn get_user_from_twitch_user_name(
+    conn: &mut SqliteConnection,
+    display_name: &str,
+) -> Result<Option<UserID>> {
+    let record = sqlx::query!(
+        r#"
+        SELECT users.id
+            FROM users
+                JOIN twitch_users ON twitch_users.id = users.twitch_id
+            WHERE twitch_users.display_name = ?1;
+          "#,
+        display_name
+    )
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    match record {
+        Some(record) => Ok(Some(record.id)),
+        None => Ok(None),
     }
 }
 

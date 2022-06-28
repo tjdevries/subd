@@ -4,8 +4,9 @@ use anyhow::Result;
 use psl::Psl;
 use reqwest::Url;
 use sqlx::SqliteConnection;
-use subd_db::UserID;
+use subd_types::UserID;
 use tokio::{fs::File, io::AsyncReadExt};
+use twitch_irc::message::PrivmsgMessage;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
@@ -21,6 +22,17 @@ pub async fn play_themesong_for_today(
     if play_themesong(conn, user_id, sink).await? {
         mark_themesong_played(conn, user_id).await?;
     }
+
+    Ok(())
+}
+
+pub async fn reset_themesong(conn: &mut SqliteConnection, display_name: &str) -> Result<()> {
+    let display_name = display_name.replace("@", "").to_lowercase();
+    let user_id = subd_db::get_user_from_twitch_user_name(conn, display_name.as_str()).await?;
+
+    sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = ?1", user_id)
+        .execute(&mut *conn)
+        .await?;
 
     Ok(())
 }
@@ -63,7 +75,7 @@ pub async fn download_themesong(
     end: &str,
 ) -> Result<()> {
     validate_themesong(url)?;
-    validate_duration(start, end, 10)?;
+    validate_duration(start, end, 10.)?;
 
     println!("youtube_dl: Downloading == {:?}", url);
     youtube_dl::YoutubeDl::new(url)
@@ -105,6 +117,36 @@ pub async fn download_themesong(
     std::fs::remove_file(THEMESONG_LOCATION.to_string() + ".mp3")?;
 
     Ok(())
+}
+
+// TODO: We should probably not copy & paste this like this
+pub async fn should_play_themesong(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+    msg: &PrivmsgMessage,
+) -> Result<bool> {
+    if has_played_themesong_today(conn, user_id).await? {
+        return Ok(false);
+    }
+
+    // Only mods, founders & subs can do this
+    if !msg.badges.iter().any(|badge| {
+        badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
+    }) {
+        return Ok(false);
+    }
+
+    let themesong = sqlx::query!(
+        "SELECT song FROM user_theme_songs WHERE user_id = ?1",
+        user_id
+    )
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    match themesong {
+        Some(_) => Ok(true),
+        None => Ok(false),
+    }
 }
 
 // Play a themesong. Does not wait for sink to complete playing
@@ -163,7 +205,7 @@ pub fn validate_themesong(themesong_url: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn validate_duration(start: &str, end: &str, maxtime: i32) -> Result<()> {
+pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
     // 01:10, 01:23
 
     let (start_minutes, start_seconds) = start
@@ -174,10 +216,11 @@ pub fn validate_duration(start: &str, end: &str, maxtime: i32) -> Result<()> {
         .split_once(":")
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
-    let start = start_minutes.parse::<i32>()? * 60 + start_seconds.parse::<i32>()?;
-    let end = end_minutes.parse::<i32>()? * 60 + end_seconds.parse::<i32>()?;
+    // TODO: Support ms for ppl
+    let start = start_minutes.parse::<f64>()? * 60.0 + start_seconds.parse::<f64>()?;
+    let end = end_minutes.parse::<f64>()? * 60.0 + end_seconds.parse::<f64>()?;
 
-    if end - start <= 0 {
+    if end - start <= 0.0 {
         Err(anyhow::anyhow!("End must be after start"))
     } else if end - start > maxtime {
         Err(anyhow::anyhow!("Too long. Choose shorter clip"))
@@ -213,10 +256,11 @@ mod test {
 
     #[test]
     fn accepts_simple_timestamps() {
-        assert!(validate_duration("00:05", "00:10", 10).is_ok());
-        assert!(validate_duration("01:58", "02:05", 10).is_ok());
-        assert!(validate_duration("01:58", "02:05", 3).is_err());
-        assert!(validate_duration("00:05", "00:00", 10).is_err());
-        assert!(validate_duration("00:05", "00:50", 10).is_err());
+        assert!(validate_duration("00:05", "00:10", 10.0).is_ok());
+        assert!(validate_duration("01:58", "02:05", 10.0).is_ok());
+        assert!(validate_duration("01:58.231", "02:05.09", 10.).is_ok());
+        assert!(validate_duration("01:58", "02:05", 3.).is_err());
+        assert!(validate_duration("00:05", "00:00", 10.).is_err());
+        assert!(validate_duration("00:05", "00:50", 10.).is_err());
     }
 }

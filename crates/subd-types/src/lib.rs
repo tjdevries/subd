@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 use twitch_irc::message::PrivmsgMessage;
 
+pub type UserID = i64;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     // Info
@@ -10,11 +12,28 @@ pub enum Event {
     TwitchSubscription(TwitchSubscriptionEvent),
     GithubSponsorshipEvent,
 
+    // UserEvents
+    ThemesongDownload(ThemesongDownload),
+    ThemesongPlay(ThemesongPlay),
+
     // Requests
     RequestTwitchSubCount,
 
     // Control
     Shutdown,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ThemesongDownload {
+    Request { msg: PrivmsgMessage },
+    Start { display_name: String },
+    Finish { display_name: String, success: bool },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThemesongPlay {
+    pub user_id: UserID,
+    pub display_name: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
