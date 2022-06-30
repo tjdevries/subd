@@ -131,7 +131,7 @@ pub async fn should_play_themesong(
 
     // Only mods, founders & subs can do this
     if !msg.badges.iter().any(|badge| {
-        badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
+        badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber" || badge.name == "vip"
     }) {
         return Ok(false);
     }
