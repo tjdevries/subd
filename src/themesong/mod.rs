@@ -4,7 +4,7 @@ use anyhow::Result;
 use psl::Psl;
 use reqwest::Url;
 use sqlx::SqliteConnection;
-use subd_types::UserID;
+use subd_types::{UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt};
 use twitch_irc::message::PrivmsgMessage;
 
@@ -26,7 +26,7 @@ pub async fn play_themesong_for_today(
     Ok(())
 }
 
-pub async fn reset_themesong(conn: &mut SqliteConnection, display_name: &str) -> Result<()> {
+pub async fn delete_themesong(conn: &mut SqliteConnection, display_name: &str) -> Result<()> {
     let display_name = display_name.replace("@", "").to_lowercase();
     let user_id = subd_db::get_user_from_twitch_user_name(conn, display_name.as_str()).await?;
 
@@ -41,6 +41,18 @@ async fn mark_themesong_played(conn: &mut SqliteConnection, user_id: &UserID) ->
     // Insert that we've played their theme song
     sqlx::query!(
         "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES (?1)",
+        user_id
+    )
+    .execute(&mut *conn)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn mark_themesong_unplayed(conn: &mut SqliteConnection, user_id: &UserID) -> Result<()> {
+    // Insert that we've played their theme song
+    sqlx::query!(
+        "DELETE FROM USER_THEME_SONG_HISTORY WHERE user_id = (?1) AND date(played_at) = date(CURRENT_TIMESTAMP)",
         user_id
     )
     .execute(&mut *conn)
@@ -74,11 +86,17 @@ pub async fn download_themesong(
     start: &str,
     end: &str,
 ) -> Result<()> {
+    // TODO: Use temp_file and/or temp_dir for this
+    // TODO: Use ytextract to make sure that the video is < 1 hour or something like that
+    // TODO: Also could probably use --max-filesize as well or in place of ytextract
+
     validate_themesong(url)?;
     validate_duration(start, end, 10.)?;
 
+    let location = THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
+
     println!("youtube_dl: Downloading == {:?}", url);
-    youtube_dl::YoutubeDl::new(url)
+    dbg!(youtube_dl::YoutubeDl::new(url)
         .youtube_dl_path("yt-dlp")
         .extract_audio(true)
         .download(true)
@@ -90,13 +108,13 @@ pub async fn download_themesong(
         .extra_arg("--audio-format")
         .extra_arg("mp3")
         .extra_arg("-o")
-        .extra_arg(THEMESONG_LOCATION.to_string() + ".%(ext)s")
-        .run()?;
+        .extra_arg(location.clone() + ".%(ext)s"))
+    .run()?;
     println!("  Done!");
 
     let mut contents = vec![];
 
-    let mut f = File::open(THEMESONG_LOCATION.to_string() + ".mp3").await?;
+    let mut f = File::open(location.clone() + ".mp3").await?;
     f.read_to_end(&mut contents).await?;
 
     // Delete the previous theme song
@@ -114,25 +132,27 @@ pub async fn download_themesong(
     .await?;
 
     // And now delete the file
-    std::fs::remove_file(THEMESONG_LOCATION.to_string() + ".mp3")?;
+    std::fs::remove_file(location.clone() + ".mp3")?;
 
     Ok(())
 }
 
+pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
+    user_roles.is_github_sponsor
+        || user_roles.is_twitch_mod
+        || user_roles.is_twitch_sub
+        || user_roles.is_twitch_vip
+        || user_roles.is_twitch_founder
+}
+
 // TODO: We should probably not copy & paste this like this
-pub async fn should_play_themesong(
-    conn: &mut SqliteConnection,
-    user_id: &UserID,
-    msg: &PrivmsgMessage,
-) -> Result<bool> {
+pub async fn should_play_themesong(conn: &mut SqliteConnection, user_id: &UserID) -> Result<bool> {
     if has_played_themesong_today(conn, user_id).await? {
         return Ok(false);
     }
 
-    // Only mods, founders & subs can do this
-    if !msg.badges.iter().any(|badge| {
-        badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber" || badge.name == "vip"
-    }) {
+    let user_roles = subd_db::get_user_roles(conn, user_id).await?;
+    if !can_user_access_themesong(&user_roles) {
         return Ok(false);
     }
 

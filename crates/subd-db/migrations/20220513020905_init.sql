@@ -3,19 +3,21 @@ CREATE TABLE users (
     -- TODO: This should probably be something like a UUID
     id integer PRIMARY KEY UNIQUE NOT NULL,
 
-    -- I wonder if we should also have a UUID for this to track twitch users over time
-    -- and through name changes? (same for github_user)
-    -- TODO: Should this be user_id?
     twitch_id TEXT UNIQUE,
-
-    -- TODO: Switch to github_id if it exists
-    github_user TEXT UNIQUE,
+    github_id TEXT UNIQUE,
 
     -- TODO: Add this back in for metadata things
     -- last_updated DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 
-    FOREIGN KEY(twitch_id) REFERENCES twitch_users(id)
+    FOREIGN KEY(twitch_id) REFERENCES twitch_users(id),
+    FOREIGN KEY(github_id) REFERENCES github_users(id)
 );
+
+CREATE TABLE github_users (
+  id    TEXT PRIMARY KEY NOT NULL,
+  name  TEXT NOT NULL,
+  login TEXT NOT NULL
+)
 
 CREATE TABLE twitch_users (
   id                INTEGER PRIMARY KEY NOT NULL,
@@ -105,3 +107,22 @@ CREATE TABLE USER_THEME_SONG_HISTORY (
 -- quickly look up user information in table.
 CREATE INDEX twitch_chat_history__user_id on TWITCH_CHAT_HISTORY (user_id);
 -- TODO: Should I use another index here to sort by datetime? maybe it will do automatically.
+
+CREATE TABLE USER_ROLES (
+  user_id         INTEGER NOT NULL,
+  verified_date   DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  is_github_sponsor boolean NOT NULL,
+
+  is_twitch_mod     boolean NOT NULL,
+  is_twitch_vip     boolean NOT NULL,
+  is_twitch_founder boolean NOT NULL,
+  is_twitch_sub     boolean NOT NULL,
+
+  FOREIGN KEY(user_id) REFERENCES USERS(id)
+)
+
+-- CREATE TABLE KNOWN_BAD_GITHUB (
+--   user_id INTEGER NOT NULL,
+--   github_user TEXT
+-- )

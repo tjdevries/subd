@@ -28,12 +28,29 @@ pub enum ThemesongDownload {
     Request { msg: PrivmsgMessage },
     Start { display_name: String },
     Finish { display_name: String, success: bool },
+    Format { sender: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ThemesongPlay {
     pub user_id: UserID,
     pub display_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GithubUser {
+    pub id: String,
+    pub login: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UserRoles {
+    pub is_github_sponsor: bool,
+    pub is_twitch_mod: bool,
+    pub is_twitch_vip: bool,
+    pub is_twitch_founder: bool,
+    pub is_twitch_sub: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

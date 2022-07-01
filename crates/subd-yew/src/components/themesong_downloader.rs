@@ -16,7 +16,7 @@ impl Component for ThemesongDownloader {
     type Message = Msg;
     type Properties = Props;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {}
     }
 
@@ -54,6 +54,13 @@ impl Component for ThemesongDownloader {
                             { format!("Failed to downloaded themesong: {}", display_name) }
                         </div>
                     }
+                }
+            }
+            ThemesongDownload::Format { sender } => {
+                html! {
+                    <div class={"subd-themesong"}>
+                        { format!("{} says: !themesong <url> 00:00.00 00:00.00", sender) }
+                    </div>
                 }
             }
         }

@@ -1,4 +1,3 @@
-#![allow(unused_variables)]
 #![allow(dead_code)]
 
 // TODO:
@@ -24,6 +23,7 @@ use obws::Client as OBSClient;
 use reqwest::Client as ReqwestClient;
 use server::commands;
 use server::themesong;
+use server::users;
 use subd_types::get_nyx_sub;
 use subd_types::get_prime_sub;
 use subd_types::Event;
@@ -61,7 +61,6 @@ async fn handle_twitch_msg(
             _ => continue,
         };
 
-        let twitch_login = &msg.sender.login;
         println!(
             "Message({:?}): {:?} // {:?}",
             msg.sender.name, msg.message_text, msg.badges
@@ -71,13 +70,10 @@ async fn handle_twitch_msg(
         subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
 
         let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
+        users::update_user_roles_once_per_day(&mut conn, &user_id, &msg).await?;
 
-        println!(
-            "  Should play themesong: {:?}",
-            themesong::should_play_themesong(&mut conn, &user_id, &msg).await?
-        );
-        if themesong::should_play_themesong(&mut conn, &user_id, &msg).await? {
-            println!("  Sending themesong");
+        if themesong::should_play_themesong(&mut conn, &user_id).await? {
+            println!("  Sending themesong play event...");
             tx.send(Event::ThemesongPlay(ThemesongPlay {
                 user_id,
                 display_name: msg.sender.name.clone(),
@@ -100,6 +96,7 @@ async fn handle_twitch_msg(
             _ => {}
         };
 
+        // TODO(user_roles)
         if msg.message_text.starts_with("!reset themesong")
             && msg.badges.iter().any(|badge| badge.name == "moderator")
         {
@@ -112,11 +109,21 @@ async fn handle_twitch_msg(
                 continue;
             }
 
-            themesong::reset_themesong(&mut conn, splitmsg[2].as_str()).await?
+            themesong::delete_themesong(&mut conn, splitmsg[2].as_str()).await?
         }
 
         if msg.message_text.starts_with("!themesong") {
-            tx.send(Event::ThemesongDownload(ThemesongDownload::Request { msg }))?;
+            tx.send(Event::ThemesongDownload(ThemesongDownload::Request {
+                msg: msg.clone(),
+            }))?;
+        }
+
+        if msg.message_text.starts_with("!set ") {
+            println!("  ... doing set command: {:?}", msg.message_text);
+            let set_result = handle_set_command(&mut conn, &client, msg).await;
+            if let Err(err) = set_result {
+                say(&client, format!("Error while setting: {:?}", err)).await?;
+            }
         }
     }
 
@@ -129,6 +136,68 @@ async fn handle_twitch_msg(
     //     .await
     //     .unwrap_or_else(|e| println!("Nice try, didn't work: {:?}", e))
     // }
+}
+
+async fn handle_set_command<
+    T: twitch_irc::transport::Transport,
+    L: twitch_irc::login::LoginCredentials,
+>(
+    conn: &mut sqlx::SqliteConnection,
+    client: &TwitchIRCClient<T, L>,
+    msg: twitch_irc::message::PrivmsgMessage,
+) -> Result<()> {
+    let splitmsg = msg
+        .message_text
+        .split(" ")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
+
+    // !set github <login>
+    if splitmsg[1] == "github" {
+        println!("  ... split msg: {:?}", splitmsg);
+
+        if splitmsg.len() != 3 {
+            say(client, format!("@{}: !set github <login>", msg.sender.name)).await?;
+            return Ok(());
+        }
+
+        let user_id = subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
+
+        let github_login = splitmsg[2].clone();
+        subd_db::set_github_info_for_user(conn, &user_id, github_login.as_str()).await?;
+        say(
+            client,
+            format!(
+                "Succesfully set: twitch {} -> github {}",
+                msg.sender.name, github_login
+            ),
+        )
+        .await?;
+    }
+
+    // TODO(user_roles)
+    if !msg
+        .badges
+        .iter()
+        .any(|f| f.name == "broadcaster" || f.name == "moderator")
+    {
+        return Ok(());
+    }
+
+    if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
+        let twitch_user = splitmsg[3].replace("@", "");
+        let user_id = match subd_db::get_user_from_twitch_user_name(conn, &twitch_user).await? {
+            Some(user_id) => user_id,
+            None => return Ok(()),
+        };
+        themesong::mark_themesong_unplayed(conn, &user_id).await?;
+        println!(
+            "  Successfully marked themseong unplayed for: {:?}",
+            twitch_user
+        );
+    }
+
+    Ok(())
 }
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
@@ -147,8 +216,6 @@ async fn handle_twitch_chat(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let conn = subd_db::get_handle().await;
-
     // Technically, this one just needs to be able to read chat
     // this client won't send anything to chat.
     let config = get_chat_config();
@@ -172,10 +239,10 @@ async fn handle_twitch_chat(
 
 async fn yew_inner_loop(
     stream: TcpStream,
-    tx: broadcast::Sender<Event>,
+    _: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let addr = stream
+    stream
         .peer_addr()
         .expect("connected streams should have a peer address");
 
@@ -194,7 +261,7 @@ async fn yew_inner_loop(
     println!("Looping new yew inner loop");
     loop {
         let event = rx.recv().await?;
-        let msg = match event {
+        match event {
             Event::TwitchChatMessage(_)
             | Event::ThemesongDownload(_)
             | Event::TwitchSubscriptionCount(_)
@@ -277,6 +344,9 @@ async fn handle_twitch_notifications(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
+    // TODO(update_sub)
+    // let mut conn = subd_db::get_handle().await;
+
     // Listen to subscriptions as well
     let subscriptions = pubsub::channel_subscriptions::ChannelSubscribeEventsV1 {
         channel_id: 114257969,
@@ -313,8 +383,8 @@ async fn handle_twitch_notifications(
         .await
         .expect("asdfasdfasdf");
 
-    let written = ws_stream.send(tungstenite::Message::Text(command)).await?;
-    let ping = ws_stream
+    ws_stream.send(tungstenite::Message::Text(command)).await?;
+    ws_stream
         .send(tungstenite::Message::Text(
             r#"{"type": "PING"}"#.to_string(),
         ))
@@ -336,7 +406,10 @@ async fn handle_twitch_notifications(
                             pubsub::Response::Message { data } => {
                                 // println!("[handle_twitch_notifications] new msg data: {:?}", data);
                                 match data {
-                                    pubsub::TopicData::ChannelPointsChannelV1 { topic, reply } => {
+                                    pubsub::TopicData::ChannelPointsChannelV1 {
+                                        topic,
+                                        reply: _,
+                                    } => {
                                         println!("POINTS: {:?}", topic);
                                         // tx.send(Event::RequestTwitchSubCount)?;
                                     }
@@ -436,6 +509,7 @@ async fn handle_themesong_download(
         };
 
         let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
+        let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
 
         let splitmsg = msg
             .message_text
@@ -445,6 +519,9 @@ async fn handle_themesong_download(
 
         if splitmsg.len() == 1 {
             say(&client, "format: !themesong <url> 00:00.00 00:00.00").await?;
+            tx.send(Event::ThemesongDownload(ThemesongDownload::Format {
+                sender: msg.sender.name.clone(),
+            }))?;
             continue;
         } else if splitmsg.len() != 4 {
             say(
@@ -459,9 +536,7 @@ async fn handle_themesong_download(
             continue;
         }
 
-        if msg.badges.iter().any(|badge| {
-            badge.name == "moderator" || badge.name == "founder" || badge.name == "subscriber"
-        }) {
+        if themesong::can_user_access_themesong(&user_roles) {
             // Notify that we are starting a download
             tx.send(Event::ThemesongDownload(ThemesongDownload::Start {
                 display_name: msg.sender.name.clone(),
@@ -496,13 +571,17 @@ async fn handle_themesong_download(
                 }
             };
         } else {
-            say(&client, "You must be a sub/mod/VIP to do this").await?;
+            say(
+                &client,
+                "You must be a GH Sponsor or sub/mod/VIP to do this",
+            )
+            .await?;
         }
     }
 }
 
 async fn handle_themesong_play(
-    tx: broadcast::Sender<Event>,
+    _: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
     sink: &rodio::Sink,
 ) -> Result<()> {

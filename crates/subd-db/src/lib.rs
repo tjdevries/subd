@@ -2,7 +2,7 @@
 
 use anyhow::Result;
 use sqlx::{Connection, SqliteConnection};
-use subd_types::UserID;
+use subd_types::{GithubUser, UserID, UserRoles};
 
 pub struct User {
     pub id: UserID,
@@ -30,26 +30,93 @@ pub async fn get_handle() -> SqliteConnection {
         .expect("To connect to the database")
 }
 
-pub async fn set_github_user_for_user(
+pub async fn set_github_info_for_user(
     conn: &mut SqliteConnection,
     user: &UserID,
-    github_user: &str,
+    github_login: &str,
 ) -> Result<()> {
-    // Make sure that the user exists
-    sqlx::query!("INSERT OR IGNORE INTO users (id) VALUES ( ?1 )", user)
-        .execute(&mut *conn)
-        .await?;
+    let github_user = subd_gh::get_github_user(github_login)
+        .await?
+        .ok_or(anyhow::anyhow!(
+            "Could not find github user: {:?}",
+            github_login
+        ))?;
 
-    // Update user to have twitch_user name
     sqlx::query!(
-        "UPDATE users SET github_user = ?2 WHERE id = ?1",
+        "
+        INSERT INTO github_users (id, login, name) VALUES (?1, ?2, ?3)
+            ON CONFLICT(id) DO UPDATE SET login=?2, name=?3
+        ",
+        github_user.id,
+        github_user.login,
+        github_user.name
+    )
+    .execute(&mut *conn)
+    .await?;
+
+    // let result = sqlx::query!("SELECT id from github_users WHERE id = ?1", github_user.id)
+    //     .fetch_optional(&mut *conn)
+    //     .await?;
+    // if result.is_some() {
+    //     sqlx::query!(
+    //         "UPDATE github_users set (id, login, name) = (?1, ?2, ?3) WHERE id = ?1",
+    //         github_user.id,
+    //         github_user.login,
+    //         github_user.name
+    //     )
+    //     .execute(&mut *conn)
+    //     .await?;
+    // } else {
+    //     // Add github_user info to github_users
+    //     // TODO: Probably should delete any existing github user? sqlx::query!("DELETE
+    //     sqlx::query!(
+    //         "INSERT INTO github_users (id, login, name) VALUES (?1, ?2, ?3)",
+    //         github_user.id,
+    //         github_user.login,
+    //         github_user.name
+    //     )
+    //     .execute(&mut *conn)
+    //     .await?;
+    // }
+
+    // Update user to have github_user name
+    sqlx::query!(
+        "UPDATE users SET github_id = ?2 WHERE id = ?1",
         user,
-        github_user
+        github_user.id
     )
     .execute(&mut *conn)
     .await?;
 
     Ok(())
+}
+
+pub async fn get_github_info_for_user(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+) -> Result<Option<GithubUser>> {
+    // TODO: Rewrite this as one query
+    let record = sqlx::query!("SELECT github_id FROM USERS WHERE id = ?1", user_id)
+        .fetch_one(&mut *conn)
+        .await?;
+
+    let github_id = match record.github_id {
+        Some(github_id) => github_id,
+        None => return Ok(None),
+    };
+
+    let record = sqlx::query!(
+        "SELECT id, login, name FROM github_users WHERE id = ?1",
+        github_id
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+
+    Ok(Some(GithubUser {
+        id: record.id,
+        login: record.login,
+        name: record.name,
+    }))
 }
 
 // async fn set_twitch_user_for_user(
@@ -128,6 +195,8 @@ pub async fn get_user_from_twitch_user_name(
     conn: &mut SqliteConnection,
     display_name: &str,
 ) -> Result<Option<UserID>> {
+    let display_name = display_name.to_lowercase();
+
     let record = sqlx::query!(
         r#"
         SELECT users.id
@@ -231,6 +300,61 @@ async fn get_twitch_user(conn: &mut SqliteConnection, id: TwitchUserID) -> Resul
             .fetch_one(&mut *conn)
             .await?,
     )
+}
+
+pub async fn set_user_roles(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+    roles: UserRoles,
+) -> Result<()> {
+    sqlx::query!(
+        "INSERT INTO user_roles (
+            user_id, 
+            is_github_sponsor,
+            is_twitch_mod,
+            is_twitch_vip,
+            is_twitch_founder,
+            is_twitch_sub
+        ) VALUES (
+            ?1,
+            ?2,
+            ?3,
+            ?4,
+            ?5,
+            ?6
+        )",
+        user_id,
+        roles.is_github_sponsor,
+        roles.is_twitch_mod,
+        roles.is_twitch_vip,
+        roles.is_twitch_founder,
+        roles.is_twitch_sub,
+    )
+    .execute(&mut *conn)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_user_roles(conn: &mut SqliteConnection, user_id: &UserID) -> Result<UserRoles> {
+    Ok(sqlx::query_as!(
+        UserRoles,
+        "
+SELECT 
+    is_github_sponsor,
+    is_twitch_mod,
+    is_twitch_vip,
+    is_twitch_founder,
+    is_twitch_sub
+FROM user_roles WHERE user_id = ?1
+ORDER BY verified_date DESC
+LIMIT 1
+        ",
+        user_id
+    )
+    .fetch_optional(&mut *conn)
+    .await?
+    .unwrap_or_default())
 }
 
 #[cfg(test)]

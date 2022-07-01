@@ -16,4 +16,5 @@ Cargo.lock
 subd.db
 subd.db-shm
 subd.db-wal
+subd.*.db
 .env

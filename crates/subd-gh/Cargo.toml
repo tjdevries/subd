@@ -6,6 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+subd-types = { path = "../subd-types/" }
+
 tokio = { version = "1.18", features = [ "rt-multi-thread", "macros", "rt" ] }
 graphql_client = { version = "0.10.0", features = [ "reqwest" ] }
 reqwest = "0.11.10"
