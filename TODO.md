@@ -1,2 +1,2 @@
-- Investigate offline mode (so you don't have to build w/ a DB conectin):
+- Investigate offline mode (so you don't have to build w/ a DB connection):
   - https://github.com/launchbadge/sqlx/tree/HEAD/sqlx-cli#enable-building-in-offline-mode-with-query
