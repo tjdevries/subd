@@ -17,7 +17,7 @@ CREATE TABLE github_users (
   id    TEXT PRIMARY KEY NOT NULL,
   name  TEXT NOT NULL,
   login TEXT NOT NULL
-)
+);
 
 CREATE TABLE twitch_users (
   id                INTEGER PRIMARY KEY NOT NULL,
@@ -38,7 +38,6 @@ CREATE TABLE twitch_users (
   -- description	string	User’s channel description.
   -- email	string	User’s verified email address. Returned if the request includes the user:read:email scope.
   -- view_count	integer	Total number of views of the user’s channel.
-
 );
 
 
@@ -65,13 +64,13 @@ CREATE TABLE twitch_gifted_subscriptions (
 CREATE TABLE twitch_subscriptions (
   user_id     INTEGER NOT NULL,
 
-  -- 0 to 3, Twitch Sub Tiers (0 represents 
+  -- 0 to 3, Twitch Sub Tiers (0 represents
   tier        INTEGER NOT NULL CHECK(tier >= 0 AND tier <= 3),
 
   -- if gift_id is NOT NULL, then the sub is a gift
   gift_id     INTEGER,
 
-  -- Start Date can be NULL, because we may not have been running when the 
+  -- Start Date can be NULL, because we may not have been running when the
   start_date  DATETIME,
   -- noted date is when we mark down that this subscription is active
   noted_date  DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -102,7 +101,7 @@ CREATE TABLE USER_THEME_SONG_HISTORY (
   played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY(user_id) REFERENCES USERS(id)
-)
+);
 
 -- quickly look up user information in table.
 CREATE INDEX twitch_chat_history__user_id on TWITCH_CHAT_HISTORY (user_id);
@@ -120,9 +119,9 @@ CREATE TABLE USER_ROLES (
   is_twitch_sub     boolean NOT NULL,
 
   FOREIGN KEY(user_id) REFERENCES USERS(id)
-)
+);
 
 -- CREATE TABLE KNOWN_BAD_GITHUB (
 --   user_id INTEGER NOT NULL,
 --   github_user TEXT
--- )
+-- );
