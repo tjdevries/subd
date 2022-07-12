@@ -111,12 +111,15 @@ CREATE TABLE USER_ROLES (
   user_id         INTEGER NOT NULL,
   verified_date   DATETIME DEFAULT CURRENT_TIMESTAMP,
 
+  -- probably should add is_owner or similar, for the user who owns the channel
+
   is_github_sponsor boolean NOT NULL,
 
   is_twitch_mod     boolean NOT NULL,
   is_twitch_vip     boolean NOT NULL,
   is_twitch_founder boolean NOT NULL,
   is_twitch_sub     boolean NOT NULL,
+  is_twitch_staff   boolean NOT NULL, 
 
   FOREIGN KEY(user_id) REFERENCES USERS(id)
 );

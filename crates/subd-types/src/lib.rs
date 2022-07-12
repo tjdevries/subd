@@ -19,8 +19,38 @@ pub enum Event {
     // Requests
     RequestTwitchSubCount,
 
+    /// Backend Only
+    LunchBytesVoting(LunchBytesCommand),
+
+    /// Backend -> Front Status message
+    LunchBytesStatus(LunchBytesStatus),
+
     // Control
     Shutdown,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum LunchBytesCommand {
+    VoteUp { id: u32, weight: u32 },
+    VoteDown { id: u32, weight: u32 },
+    VoteDuplicate { id: u32 },
+    Suggest { text: String },
+    Show,
+    Hide,
+    MarkComplete,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LunchBytesStatus {
+    pub enabled: bool,
+    pub topics: Vec<LunchBytesTopic>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LunchBytesTopic {
+    pub id: u32,
+    pub text: String,
+    pub votes: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -31,10 +61,16 @@ pub enum ThemesongDownload {
     Format { sender: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ThemesongPlay {
-    pub user_id: UserID,
-    pub display_name: String,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ThemesongPlay {
+    Start {
+        user_id: UserID,
+        display_name: String,
+    },
+
+    Finish {
+        user_id: UserID,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,6 +87,7 @@ pub struct UserRoles {
     pub is_twitch_vip: bool,
     pub is_twitch_founder: bool,
     pub is_twitch_sub: bool,
+    pub is_twitch_staff: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -6,7 +6,6 @@ use reqwest::Url;
 use sqlx::SqliteConnection;
 use subd_types::{UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt};
-use twitch_irc::message::PrivmsgMessage;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
@@ -90,17 +89,22 @@ pub async fn download_themesong(
     // TODO: Use ytextract to make sure that the video is < 1 hour or something like that
     // TODO: Also could probably use --max-filesize as well or in place of ytextract
 
-    validate_themesong(url)?;
+    let url = validate_themesong(url)?;
     validate_duration(start, end, 10.)?;
 
     let location = THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
 
     println!("youtube_dl: Downloading == {:?}", url);
+
+    // TODO: .extra_arg("-f bestaudio")
     dbg!(youtube_dl::YoutubeDl::new(url)
         .youtube_dl_path("yt-dlp")
         .extract_audio(true)
         .download(true)
-        // .extra_arg("-f bestaudio")
+        // Don't allow downloading playlists
+        .extra_arg("--no-playlist")
+        // Don't continue a paused download, always restart
+        .extra_arg("--no-continue")
         .extra_arg("--downloader")
         .extra_arg("ffmpeg")
         .extra_arg("--downloader-args")
@@ -110,6 +114,7 @@ pub async fn download_themesong(
         .extra_arg("-o")
         .extra_arg(location.clone() + ".%(ext)s"))
     .run()?;
+
     println!("  Done!");
 
     let mut contents = vec![];
@@ -191,13 +196,18 @@ pub async fn play_themesong(
     };
 
     let rodioer = rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song))).unwrap();
+    // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
+    // do that yet, this probably wouldn't work with queued themesongs (for example)
+    // rodioer.total_duration();
+
     sink.append(rodioer);
 
     Ok(true)
 }
 
-pub fn validate_themesong(themesong_url: &str) -> Result<()> {
-    let parsed = Url::parse(themesong_url)?;
+pub fn validate_themesong(themesong_url: &str) -> Result<String> {
+    let mut themesong_url = themesong_url.to_string();
+    let mut parsed = Url::parse(themesong_url.as_str())?;
 
     let domain = match parsed.domain() {
         Some(domain) => domain,
@@ -219,10 +229,26 @@ pub fn validate_themesong(themesong_url: &str) -> Result<()> {
         ));
     }
 
+    if domain == "youtube.com" {
+        let cloned = parsed.clone();
+        let v = cloned.query_pairs().find(|(name, _)| name == "v");
+        if let Some((name, value)) = v {
+            parsed.query_pairs_mut().clear().append_pair(&name, &value);
+            themesong_url = parsed.to_string();
+        } else {
+            return Err(anyhow::anyhow!("Missing v for YouTube link"));
+        }
+    } else if domain == "youtu.be" {
+        if parsed.query_pairs().count() > 0 {
+            parsed.query_pairs_mut().clear();
+        }
+
+        themesong_url = parsed.to_string();
+    }
+
     // TODO: If ppl are being stinkers, we may have to check the length
     // and information about the video before allowing the download
-
-    Ok(())
+    Ok(themesong_url)
 }
 
 pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
@@ -272,6 +298,30 @@ mod test {
             "https://beginworld.website-us-east-1.linodeobjects.com/commands/stupac62.html"
         )
         .is_ok())
+    }
+
+    #[test]
+    fn accepts_youtu_be_links_with_no_v() {
+        assert_eq!(
+            validate_themesong("https://youtu.be/QMVIJhC9Veg").unwrap(),
+            "https://youtu.be/QMVIJhC9Veg".to_string()
+        );
+
+        assert_eq!(
+            validate_themesong("https://youtu.be/QMVIJhC9Veg?anything=asdf").unwrap(),
+            "https://youtu.be/QMVIJhC9Veg?".to_string()
+        );
+    }
+
+    #[test]
+    fn acceps_playlists_but_strips_url() {
+        assert_eq!(
+            validate_themesong(
+                "https://www.youtube.com/watch?v=XZtL7PsJAoc&list=RDXZtL7PsJAoc&start_radio=1"
+            )
+            .unwrap(),
+            "https://www.youtube.com/watch?v=XZtL7PsJAoc".to_string()
+        )
     }
 
     #[test]

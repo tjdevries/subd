@@ -314,14 +314,16 @@ pub async fn set_user_roles(
             is_twitch_mod,
             is_twitch_vip,
             is_twitch_founder,
-            is_twitch_sub
+            is_twitch_sub,
+            is_twitch_staff
         ) VALUES (
             ?1,
             ?2,
             ?3,
             ?4,
             ?5,
-            ?6
+            ?6,
+            ?7
         )",
         user_id,
         roles.is_github_sponsor,
@@ -329,6 +331,7 @@ pub async fn set_user_roles(
         roles.is_twitch_vip,
         roles.is_twitch_founder,
         roles.is_twitch_sub,
+        roles.is_twitch_staff,
     )
     .execute(&mut *conn)
     .await?;
@@ -345,8 +348,10 @@ SELECT
     is_twitch_mod,
     is_twitch_vip,
     is_twitch_founder,
-    is_twitch_sub
-FROM user_roles WHERE user_id = ?1
+    is_twitch_sub,
+    is_twitch_staff
+FROM user_roles
+    WHERE user_id = ?1
 ORDER BY verified_date DESC
 LIMIT 1
         ",

@@ -3,6 +3,18 @@ use sqlx::SqliteConnection;
 use subd_types::{UserID, UserRoles};
 use twitch_irc::message::PrivmsgMessage;
 
+// Query for finding if anyone with this tag has messaged today
+// SELECT count(*) as c
+//   WHERE exists(
+//     SELECT *
+//     FROM TWITCH_CHAT_HISTORY
+//       INNER JOIN TWITCH_USERS on TWITCH_USERS.id = USERS.twitch_id
+//       INNER JOIN USERS on TWITCH_CHAT_HISTORY.user_id = USERS.id
+//       INNER JOIN USER_ROLES on TWITCH_CHAT_HISTORY.user_id = USER_ROLES.user_id
+//     WHERE
+//       USER_ROLES.is_twitch_mod = true
+//   )
+
 pub async fn update_user_roles_once_per_day(
     conn: &mut SqliteConnection,
     user_id: &UserID,
@@ -37,12 +49,14 @@ fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
     let is_twitch_vip = msg.badges.iter().any(|b| b.name == "vip");
     let is_twitch_founder = msg.badges.iter().any(|b| b.name == "founder");
     let is_twitch_sub = msg.badges.iter().any(|b| b.name == "subscriber");
+    let is_twitch_staff = msg.badges.iter().any(|b| b.name == "staff");
 
     UserRoles {
         is_twitch_mod,
         is_twitch_vip,
         is_twitch_founder,
         is_twitch_sub,
+        is_twitch_staff,
         is_github_sponsor: false,
     }
 }

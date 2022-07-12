@@ -40,6 +40,7 @@ ytextract = "0.11.0"
 # youtube_dl = { version = "0.7.0", default-features = false, features = [ "yt-dlp" ] }
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
 psl = "2.0.89"
+once_cell = "1.13.0"
 
 [workspace]
 members = ["crates/*"]

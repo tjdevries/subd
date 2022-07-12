@@ -48,7 +48,6 @@ impl Component for SubNotification {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        log::info!("Calling update: {:?}", msg);
         match msg {
             Msg::ShowNotification => {
                 self.state = State::Show;

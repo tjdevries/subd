@@ -9,7 +9,10 @@
 //          - Associated sound w/ user_id
 //      - Approve/Reject a sound
 
+use std::cmp::max;
+use std::cmp::min;
 use std::env;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -20,13 +23,14 @@ use futures::StreamExt;
 use obws::requests::SceneItemProperties;
 use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
+use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 use server::commands;
 use server::themesong;
 use server::users;
-use subd_types::get_nyx_sub;
-use subd_types::get_prime_sub;
 use subd_types::Event;
+use subd_types::LunchBytesStatus;
+use subd_types::LunchBytesTopic;
 use subd_types::ThemesongDownload;
 use subd_types::ThemesongPlay;
 use tokio::net::TcpListener;
@@ -44,6 +48,16 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
 const CONNECT_OBS: bool = false;
+
+fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
+    static INSTANCE: OnceCell<Mutex<LunchBytesStatus>> = OnceCell::new();
+    INSTANCE.get_or_init(|| {
+        Mutex::new(LunchBytesStatus {
+            enabled: true,
+            topics: vec![],
+        })
+    })
+}
 
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
@@ -74,7 +88,7 @@ async fn handle_twitch_msg(
 
         if themesong::should_play_themesong(&mut conn, &user_id).await? {
             println!("  Sending themesong play event...");
-            tx.send(Event::ThemesongPlay(ThemesongPlay {
+            tx.send(Event::ThemesongPlay(ThemesongPlay::Start {
                 user_id,
                 display_name: msg.sender.name.clone(),
             }))?;
@@ -92,6 +106,66 @@ async fn handle_twitch_msg(
                 if let Ok(echo) = echo {
                     let _ = client.say("teej_dv".to_string(), echo.contents).await;
                 }
+            }
+            "!lb" => {
+                let status = get_lb_status();
+                let mut status = status.lock().unwrap();
+                let len = status.topics.len() as u32;
+                match splitmsg[1].as_str() {
+                    "show" => {
+                        status.enabled = true;
+                    }
+                    "hide" => {
+                        status.enabled = false;
+                    }
+                    "suggest" => status.topics.push(LunchBytesTopic {
+                        id: len + 1,
+                        text: splitmsg[2..].join(" "),
+                        votes: 1,
+                    }),
+                    "+" | "^" => {
+                        if splitmsg.len() < 3 {
+                            continue;
+                        }
+
+                        let id = match splitmsg[2].as_str().parse::<usize>() {
+                            Ok(id) => id,
+                            Err(_) => continue,
+                        };
+
+                        if id == 0 {
+                            continue;
+                        }
+
+                        match status.topics.get_mut(id - 1) {
+                            Some(topic) => topic.votes += 1,
+                            None => continue,
+                        }
+                    }
+
+                    "-" | "v" => {
+                        if splitmsg.len() < 3 {
+                            continue;
+                        }
+
+                        let id = match splitmsg[2].as_str().parse::<usize>() {
+                            Ok(id) => id,
+                            Err(_) => continue,
+                        };
+
+                        if id == 0 {
+                            continue;
+                        }
+
+                        match status.topics.get_mut(id - 1) {
+                            Some(topic) => topic.votes = max(0, topic.votes - 1),
+                            None => continue,
+                        }
+                    }
+                    _ => {}
+                };
+
+                tx.send(Event::LunchBytesStatus(status.clone()))?;
             }
             _ => {}
         };
@@ -239,7 +313,7 @@ async fn handle_twitch_chat(
 
 async fn yew_inner_loop(
     stream: TcpStream,
-    _: broadcast::Sender<Event>,
+    tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
     stream
@@ -249,6 +323,11 @@ async fn yew_inner_loop(
     let mut ws_stream = tokio_tungstenite::accept_async(stream)
         .await
         .expect("Error during the websocket handshake occurred");
+
+    tx.send(Event::RequestTwitchSubCount)?;
+    tx.send(Event::LunchBytesStatus(
+        get_lb_status().lock().unwrap().clone(),
+    ))?;
 
     // TODO: Better to split stream so that you can read and write at the same time
     // let (write, read) = ws_stream.split();
@@ -265,6 +344,7 @@ async fn yew_inner_loop(
             Event::TwitchChatMessage(_)
             | Event::ThemesongDownload(_)
             | Event::TwitchSubscriptionCount(_)
+            | Event::LunchBytesStatus(_)
             | Event::TwitchSubscription(_) => {
                 ws_stream
                     .send(tungstenite::Message::Text(serde_json::to_string(&event)?))
@@ -590,7 +670,7 @@ async fn handle_themesong_play(
     loop {
         let event = rx.recv().await?;
         let user_id = match event {
-            Event::ThemesongPlay(ThemesongPlay { user_id, .. }) => user_id,
+            Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => user_id,
             _ => continue,
         };
 
@@ -686,22 +766,23 @@ async fn main() -> Result<()> {
             .await?;
     }
 
-    {
-        let x = base_tx.clone();
-        tokio::spawn(async move {
-            println!("==> Sleeping...");
-            tokio::time::sleep(Duration::from_millis(3000)).await;
-            println!("... SENDING NYX SUB NOTI");
-            x.send(Event::TwitchSubscription(get_nyx_sub()))
-                .expect("to send message x 1");
-
-            println!("==> Sleeping x 2...");
-            tokio::time::sleep(Duration::from_millis(3000)).await;
-            println!("... x 2 SENDING NYX SUB NOTI");
-            x.send(Event::TwitchSubscription(get_prime_sub()))
-                .expect("to send message x 2");
-        });
-    }
+    // TOOD: Can add this back when we're testing twitch subs again.
+    // {
+    //     let x = base_tx.clone();
+    //     tokio::spawn(async move {
+    //         println!("==> Sleeping...");
+    //         tokio::time::sleep(Duration::from_millis(3000)).await;
+    //         println!("... SENDING NYX SUB NOTI");
+    //         x.send(Event::TwitchSubscription(get_nyx_sub()))
+    //             .expect("to send message x 1");
+    //
+    //         println!("==> Sleeping x 2...");
+    //         tokio::time::sleep(Duration::from_millis(3000)).await;
+    //         println!("... x 2 SENDING NYX SUB NOTI");
+    //         x.send(Event::TwitchSubscription(get_prime_sub()))
+    //             .expect("to send message x 2");
+    //     });
+    // }
 
     for c in channels {
         // Wait for all the channels to be done

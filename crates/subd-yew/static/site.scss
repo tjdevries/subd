@@ -24,9 +24,77 @@ p {
   // border: 1px solid white;
 }
 
+.subd-topics {
+  grid-column: 3 / 5;
+  grid-row: 1 / 4;
+  font-family: "Inter", cursive;
+  font-size: 25px;
+  text-align: left;
+  color: cyan;
+  background-color: hsla(175, 20%, 20%, 0.8);
+  // opacity: 0.25;
+
+  .subd-topics-header {
+    color: cyan;
+    font-weight: bold;
+
+    .subd-topics-header-id,
+    .subd-topics-header-topic {
+      border-bottom: 2px solid cyan;
+    }
+  }
+
+  ul {
+    display: grid;
+    grid-template-columns: auto;
+
+    row-gap: 0.3em;
+    column-gap: 0em;
+  }
+
+  li {
+    color: pink;
+    display: grid;
+    grid-template-columns: 1fr 8fr 4fr;
+    align-items: center;
+
+    .subd-bar {
+      color: black;
+      font-style: bold;
+      height: 100%;
+
+      // font-family: "Sigmar One", cursive;
+      // font-weight: normal;
+
+      background: linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 1) 0%,
+        rgba(248, 255, 0, 0.7223536387211135) var(--percentage),
+        rgba(255, 0, 0, 0) var(--percentage)
+      );
+    }
+  }
+}
+
 .subd-themesong {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  font-family: "Inter", cursive;
+  font-size: 25px;
+
+  text-align: center;
+
+  display: flex;
+  align-self: flex-end;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid yellow;
+}
+
+.subd-themesong-player {
   grid-column: 2 / 3;
-  grid-row: 2;
+  grid-row: 5;
   font-family: "Inter", cursive;
   font-size: 25px;
 

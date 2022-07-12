@@ -1,12 +1,16 @@
 use std::collections::VecDeque;
 
 use chrono::{self, Utc};
-use subd_types::Event as SubdEvent;
+use subd_types::{Event as SubdEvent, LunchBytesStatus};
+use subd_yew::components::lunchbytes::{self, status, status::TopicProps};
 use subd_yew::components::sub_notification::SubNotification;
 use subd_yew::components::themesong_downloader::ThemesongDownloader;
+use subd_yew::components::themesong_player::ThemesongPlayer;
 use twitch_irc::message::{Badge, Emote, PrivmsgMessage};
 use yew::prelude::*;
 use yew_hooks::{use_list, use_web_socket};
+
+const SHOULD_DEFAULT_MESSAGES: bool = false;
 
 // use_reducer or use_reducer_eq
 //  Probably what we want to end up using to dispatch over Event
@@ -93,6 +97,10 @@ fn render_message(message: &PrivmsgMessage) -> Html {
 }
 
 fn default_messages() -> Vec<PrivmsgMessage> {
+    if !SHOULD_DEFAULT_MESSAGES {
+        return vec![];
+    }
+
     vec![
         PrivmsgMessage {
             channel_login: "teej_dv".into(),
@@ -160,24 +168,23 @@ fn default_messages() -> Vec<PrivmsgMessage> {
     ]
 }
 
+// fn print_type_of<T>(_: &T) -> String {
+//     format!("{}", std::any::type_name::<T>())
+// }
+
 #[function_component(UseReducer)]
 fn reducer() -> Html {
+    let ws = use_web_socket("ws://192.168.4.97:9001".to_string());
     let history = use_list(default_messages());
     let subcount = use_state(|| 0);
 
     let new_sub = use_state(|| None);
     let themesong = use_state(|| None);
-
-    // let animation_state = use_state(|| true);
-    // {
-    //     let animation_state = animation_state.clone();
-    //     let timeout = Timeout::new(1_000, move || {
-    //         animation_state.set(false);
-    //     });
-    //     timeout.forget();
-    // }
-
-    let ws = use_web_socket("ws://192.168.4.97:9001".to_string());
+    let player = use_state(|| None);
+    let lb_status = use_state(|| LunchBytesStatus {
+        enabled: false,
+        topics: vec![],
+    });
 
     {
         let history = history.clone();
@@ -185,6 +192,8 @@ fn reducer() -> Html {
         let subcount = subcount.clone();
         let new_sub = new_sub.clone();
         let themesong = themesong.clone();
+        let player = player.clone();
+        let lb_status = lb_status.clone();
 
         // Receive message by depending on `ws.message`.
         use_effect_with_deps(
@@ -201,7 +210,26 @@ fn reducer() -> Html {
                             // handle_twitch_sub(subscription)
                             new_sub.set(Some(subscription))
                         }
-                        SubdEvent::ThemesongDownload(download) => themesong.set(Some(download)),
+                        SubdEvent::ThemesongDownload(download) => {
+                            let download_type = match download {
+                                subd_types::ThemesongDownload::Request { .. } => "Request",
+                                subd_types::ThemesongDownload::Start { .. } => "Start",
+                                subd_types::ThemesongDownload::Finish { .. } => "Finish",
+                                subd_types::ThemesongDownload::Format { .. } => "Format",
+                            };
+                            log::info!("New download request: {:?}", download_type);
+                            themesong.set(Some(download))
+                        }
+                        SubdEvent::ThemesongPlay(play) => player.set(Some(play)),
+                        SubdEvent::LunchBytesStatus(mut lunchbytes_status) => {
+                            // Sort by votes
+                            lunchbytes_status
+                                .topics
+                                .sort_by(|a, b| b.votes.cmp(&a.votes));
+
+                            lb_status.set(lunchbytes_status)
+                        }
+
                         _ => {}
                     }
                 }
@@ -231,6 +259,30 @@ fn reducer() -> Html {
         None => html! {},
     };
 
+    let player = match &(*player) {
+        Some(play) => {
+            let play = play.clone();
+            html! { <ThemesongPlayer play={play} />}
+        }
+        None => html! {},
+    };
+
+    // TODO: Consider using max instead
+    // let total_votes = lb_status.topics.iter().map(|t| t.votes).max().unwrap_or(1);
+    let total_votes = lb_status.topics.iter().map(|t| t.votes).sum::<i32>() + 1;
+    let status_props = status::StatusProps {
+        enabled: lb_status.enabled,
+        topics: lb_status
+            .topics
+            .iter()
+            .map(|t| status::TopicProps {
+                id: t.id,
+                text: t.text.clone(),
+                percentage: t.votes as f32 / total_votes as f32,
+            })
+            .collect(),
+    };
+
     html! {
         <div class={ "subd" }>
             <div class={"subd-goal"}>
@@ -249,6 +301,8 @@ fn reducer() -> Html {
             </div>
             <> { notification } </>
             <> { themesong } </>
+            <> { player } </>
+            <> <lunchbytes::status::Status ..status_props/> </>
         </div>
     }
 }
