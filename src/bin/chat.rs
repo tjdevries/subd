@@ -275,7 +275,7 @@ async fn handle_set_command<
 }
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
     ClientConfig::new_simple(StaticLoginCredentials::new(
         twitch_username.to_string(),
         Some(subd_types::consts::get_twitch_bot_oauth()),
