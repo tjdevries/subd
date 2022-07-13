@@ -75,17 +75,17 @@ pub fn get_database_url() -> String {
 }
 
 pub fn get_twitch_broadcaster_username() -> String {
-    dotenv::var("TWITCH_BROADCASTER_USERNAME").expect("TWITCH_BROADCASTER_USERNAME to exist")
+    dotenv::var("SUBD_TWITCH_BROADCASTER_USERNAME").expect("SUBD_TWITCH_BROADCASTER_USERNAME to exist")
 }
 
 pub fn get_twitch_broadcaster_channel_id() -> String {
-    dotenv::var("TWITCH_BROADCASTER_CHANNEL_ID").expect("TWITCH_BROADCASTER_CHANNEL_ID to exist")
+    dotenv::var("SUBD_TWITCH_BROADCASTER_CHANNEL_ID").expect("SUBD_TWITCH_BROADCASTER_CHANNEL_ID to exist")
 }
 
 pub fn get_twitch_bot_username() -> String {
-    dotenv::var("TWITCH_BOT_USERNAME").expect("TWITCH_BOT_USERNAME to exist")
+    dotenv::var("SUBD_TWITCH_BOT_USERNAME").expect("SUBD_TWITCH_BOT_USERNAME to exist")
 }
 
 pub fn get_twitch_bot_channel_id() -> String {
-    dotenv::var("TWITCH_BOT_CHANNEL_ID").expect("TWITCH_BOT_CHANNEL_ID to exist")
+    dotenv::var("SUBD_TWITCH_BOT_CHANNEL_ID").expect("SUBD_TWITCH_BOT_CHANNEL_ID to exist")
 }
