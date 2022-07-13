@@ -55,13 +55,19 @@ pub fn get_twitch_broadcaster_refresh() -> Option<RefreshToken> {
         .clone()
 }
 
+/// Get the broadcaster's github token.
+///
+/// Will return "token <TOKEN>". If the env variable has "token " to start with, it will not
+/// duplicate the "token token <TOKEN>" but instead still just return "token <TOKEN>"
 pub fn get_github_broadcaster_token() -> String {
     // TODO: Lazy
     // TODO: Should return an option probably and just quit from github functions if you don't have
     // it. As many tokens as possible should not be required (will make things a lot easier later
     // if we have this strategy from the start).
     String::from("token ")
-        + &std::env::var("SUBD_GITHUB_TOKEN").expect("Should have GITHUB_ACCESS token")
+        + &dotenv::var("SUBD_GITHUB_TOKEN")
+            .expect("Should have GITHUB_ACCESS token")
+            .replace("token ", "")
 }
 
 pub fn get_database_url() -> String {
