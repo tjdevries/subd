@@ -99,11 +99,12 @@ async fn handle_twitch_msg(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
+        let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
         match splitmsg[0].as_str() {
             "!echo" => {
                 let echo = commands::Echo::try_parse_from(&splitmsg);
                 if let Ok(echo) = echo {
-                    let _ = client.say("teej_dv".to_string(), echo.contents).await;
+                    let _ = client.say(twitch_username, echo.contents).await;
                 }
             }
             "!lb" => {
@@ -274,8 +275,9 @@ async fn handle_set_command<
 }
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
     ClientConfig::new_simple(StaticLoginCredentials::new(
-        "teej_dv_bot".to_string(),
+        twitch_username,
         Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
 }
@@ -289,8 +291,9 @@ async fn handle_twitch_chat(
     let config = get_chat_config();
     let (mut incoming_messages, client) =
         TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
 
-    client.join("teej_dv".to_owned()).unwrap();
+    client.join(twitch_username.to_owned()).unwrap();
 
     println!("handle_twitch_chat: waiting for msgs...");
     while let Some(message) = incoming_messages.recv().await {
@@ -354,6 +357,7 @@ async fn yew_inner_loop(
 
 async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>) -> Result<()> {
     // TODO(generalize)
+    // This needs to localhost
     let ws = TcpListener::bind("192.168.4.97:9001").await?;
 
     while let Ok((stream, _)) = ws.accept().await {
@@ -383,6 +387,8 @@ async fn handle_twitch_sub_count(
     let reqwest_client = helix.clone_client();
     let token = UserToken::from_existing(
         &reqwest_client,
+
+        // So here's what ain't working
         subd_types::consts::get_twitch_broadcaster_oauth(),
         subd_types::consts::get_twitch_broadcaster_refresh(),
         None, // Client Secret
@@ -414,13 +420,16 @@ async fn handle_twitch_notifications(
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
     // Listen to subscriptions as well
+
+    // Is it OK cloning the string here?
+    let channel_id = subd_types::consts::get_twitch_broadcaster_channel_id().parse::<u32>().unwrap();
     let subscriptions = pubsub::channel_subscriptions::ChannelSubscribeEventsV1 {
-        channel_id: 114257969,
+        channel_id,
     }
     .into_topic();
 
     let redeems = pubsub::channel_points::ChannelPointsChannelV1 {
-        channel_id: 114257969,
+        channel_id,
     }
     .into_topic();
 
@@ -659,7 +668,8 @@ async fn say<T: twitch_irc::transport::Transport, L: twitch_irc::login::LoginCre
     client: &TwitchIRCClient<T, L>,
     msg: impl Into<String>,
 ) -> Result<()> {
-    client.say("teej_dv".to_string(), msg.into()).await?;
+    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+    client.say(twitch_username.to_string(), msg.into()).await?;
     Ok(())
 }
 
