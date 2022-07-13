@@ -1,7 +1,6 @@
 use std::io::{BufReader, Cursor};
 
 use subd_db::get_handle;
-use tokio::fs;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

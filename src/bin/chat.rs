@@ -45,13 +45,16 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
-const CONNECT_OBS: bool = false;
+// DO make this an ENV Var
+const CONNECT_OBS: bool = true;
 
 // TEMP: We will remove this once we have this in the database.
 fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
     static INSTANCE: OnceCell<Mutex<LunchBytesStatus>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
+        // Not sure what I changed for this to happen
         Mutex::new(LunchBytesStatus {
+        // Mutex::new(&LunchBytesStatus {
             enabled: true,
             topics: vec![],
         })
@@ -714,21 +717,25 @@ async fn main() -> Result<()> {
     });
 
     if CONNECT_OBS {
-        // Connect to the OBS instance through obs-websocket.
-        let obs_client = OBSClient::connect("192.168.4.22", 4444).await?;
+        print!("Attempting to Connect to OBS\n");
+
+        let obs_test_scene = subd_types::consts::get_obs_test_scene();
+        let obs_test_filter = subd_types::consts::get_obs_test_filter();
+        let obs_test_source = subd_types::consts::get_obs_test_source();
+        let obs_websocket_port = subd_types::consts::get_obs_websocket_port().parse::<u16>().unwrap();
+        let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+        let obs_client = OBSClient::connect(obs_websocket_address, obs_websocket_port).await?;
 
         // Get and print out version information of OBS and obs-websocket.
         let version = obs_client.general().get_version().await?;
         println!("OBS Connected: {:#?}", version.version);
 
-        // Can ignore the following, they were just things that I had working before
-        // that I didn't want to forget about later.
-        obs_client.scenes().set_current_scene("PC - Dog").await?;
+        obs_client.scenes().set_current_scene(&obs_test_scene).await?;
         obs_client
             .sources()
             .set_source_filter_visibility(SourceFilterVisibility {
-                source_name: "PC - Elgato",
-                filter_name: "SpaceFilter",
+                source_name: &obs_test_source,
+                filter_name: &obs_test_filter,
                 filter_enabled: true,
             })
             .await?;
@@ -736,15 +743,14 @@ async fn main() -> Result<()> {
         obs_client
             .sources()
             .set_source_filter_visibility(SourceFilterVisibility {
-                source_name: "PC - Elgato",
-                filter_name: "SpaceFilter",
+                source_name: &obs_test_source,
+                filter_name: &obs_test_filter,
                 filter_enabled: false,
             })
             .await?;
 
         let mut to_set = SceneItemProperties::default();
-        // to_set.scene_name = Some("PC");
-        to_set.item = Either::Left("PC - Elgato");
+        to_set.item = Either::Left(&obs_test_source);
         to_set.visible = Some(false);
         obs_client
             .scene_items()
