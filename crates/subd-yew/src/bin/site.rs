@@ -103,7 +103,7 @@ fn default_messages() -> Vec<PrivmsgMessage> {
 
     // TODO(should this be bot or broadcaster?)
     // TODO(are we ok with the cloning???)
-    let channel_username = subd_types::consts::get_twitch_broadcaster_username().to_string();
+    let channel_username = subd_types::consts::get_twitch_broadcaster_username();
     vec![
         PrivmsgMessage {
             channel_login: channel_username.clone().into(),

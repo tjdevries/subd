@@ -104,7 +104,7 @@ async fn handle_twitch_msg(
             "!echo" => {
                 let echo = commands::Echo::try_parse_from(&splitmsg);
                 if let Ok(echo) = echo {
-                    let _ = client.say(twitch_username.to_string(), echo.contents).await;
+                    let _ = client.say(twitch_username, echo.contents).await;
                 }
             }
             "!lb" => {
@@ -277,7 +277,7 @@ async fn handle_set_command<
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
     ClientConfig::new_simple(StaticLoginCredentials::new(
-        twitch_username.to_string(),
+        twitch_username,
         Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
 }
@@ -422,7 +422,7 @@ async fn handle_twitch_notifications(
     // Listen to subscriptions as well
 
     // Is it OK cloning the string here?
-    let channel_id = subd_types::consts::get_twitch_broadcaster_channel_id().to_string().parse::<u32>().unwrap();
+    let channel_id = subd_types::consts::get_twitch_broadcaster_channel_id().parse::<u32>().unwrap();
     let subscriptions = pubsub::channel_subscriptions::ChannelSubscribeEventsV1 {
         channel_id,
     }
