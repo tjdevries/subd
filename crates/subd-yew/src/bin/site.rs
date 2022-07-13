@@ -85,13 +85,10 @@ fn render_message(message: &PrivmsgMessage) -> Html {
     let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
     html! {
         <div class={ class_name }>
-            <p>
-            <span style={ format!("color:{}", color_str) }>
+            <span style={ format!("color: {}", color_str) }>
                 { message.sender.name.clone() }
             </span>
-                { ": " }
-                { pieces }
-            </p>
+            { ": " } { pieces }
         </div>
     }
 }
@@ -286,7 +283,9 @@ fn reducer() -> Html {
     html! {
         <div class={ "subd" }>
             <div class={"subd-goal"}>
-                <p>{ format!("{} / 420", *subcount) }</p>
+                <div>
+                    <p>{ format!("{}/420", *subcount) }</p>
+                </div>
             </div>
             <div class={"subd-chat"}>
             {

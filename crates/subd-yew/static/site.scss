@@ -1,46 +1,146 @@
 @import url("https://fonts.googleapis.com/css2?family=Bungee+Outline&family=Bungee+Shade&family=Creepster&family=Inter:wght@400;700&family=Sigmar+One&display=swap");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
 
+:root {
+  --clr-red: 359 93.9% 61.6%; // #F94144
+  --clr-yellow: 42 93.4% 64.3%; // #F9C74F
+  --clr-orange: 33 94% 54.5%; // #F8961E
+  --clr-blue: 208 24.7% 20%; // #263440
+  --clr-fg: 206 25.3% 83.7%; // #CBD7E0
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   background-color: black;
   color: white;
-  margin: 0;
-}
 
-// Nyx told me to do this
-p {
-  margin: 0;
+  font-family: "Inter", sans-serif;
 }
 
 .subd {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(5, 1fr);
-  // grid-auto-rows: minmax(100px, auto);
-  // gap: 10px;
   height: 100vh;
-  min-height: 100vh;
-
-  // border: 1px solid white;
 }
 
+// ------ SUB NOTIFICATION ------
+.subd-notification {
+  --font-size: 1em;
+
+  grid-column: 2 / 4;
+  grid-row: 1;
+  align-self: flex-start;
+  justify-self: center;
+  margin-top: 1em;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5em;
+
+  font-size: var(--font-size);
+  padding: 1em;
+
+  background: hsl(var(--clr-blue));
+  border-radius: 1em;
+
+  svg {
+    height: 75px;
+    aspect-ratio: 1 / 1;
+  }
+}
+
+.subd-notification-big {
+  --font-size: 2em;
+}
+
+.subd-notification-imp {
+  background: linear-gradient(
+    45deg,
+    hsl(var(--clr-red)) 0%,
+    hsl(var(--clr-orange)) 100%
+  );
+}
+
+// ------ SUB GOAL ------
+.subd-goal {
+  grid-column: 1 / 1;
+  grid-row: 5;
+  align-self: flex-end;
+
+  font-family: "Sigmar One", cursive;
+  font-size: 50px;
+
+  display: flex;
+  padding: 0.25em;
+  div {
+    padding: 0.2em 0.4em;
+    background: hsl(var(--clr-blue) / 0.8);
+    border-radius: 0.75em;
+  }
+}
+
+// ------ CHAT ------
+.subd-chat {
+  display: flex;
+  flex-direction: column-reverse;
+  grid-column: 4;
+  grid-row: 1 / 3;
+  overflow-y: hidden;
+  overflow-wrap: break-word;
+  gap: 0.5em;
+}
+
+.subd-message {
+  --bg: var(--clr-orange);
+
+  font-size: 24px;
+  font-weight: 700;
+  border-radius: 0.5em;
+  padding: 0.2em;
+  background: hsl(var(--bg) / 0.8);
+
+  span {
+    background: invert;
+  }
+}
+
+.subd-message-moderator {
+  --bg: var(--clr-red);
+}
+
+// ------ LB TOPICS ------
 .subd-topics {
+  --bg: hsl(var(--clr-blue) / 0.8);
+
   grid-column: 3 / 5;
   grid-row: 1 / 4;
-  font-family: "Inter", cursive;
   font-size: 25px;
-  text-align: left;
-  color: cyan;
-  background-color: hsla(175, 20%, 20%, 0.8);
-  // opacity: 0.25;
+  color: hsla(190, 50%, 85%, 0.8);
+  background-color: var(--bg);
+  border-radius: 0.5em;
+  padding: 0.5em 1em;
+
+  h1 {
+    text-align: center;
+  }
 
   .subd-topics-header {
-    color: cyan;
+    color: #eeeeee;
     font-weight: bold;
 
-    .subd-topics-header-id,
-    .subd-topics-header-topic {
-      border-bottom: 2px solid cyan;
+    border-bottom: 2px solid #aaaaaa;
+
+    span {
+      margin-bottom: 0.2em;
     }
   }
 
@@ -53,118 +153,36 @@ p {
   }
 
   li {
-    color: pink;
+    color: hsl(var(--clr-fg));
     display: grid;
     grid-template-columns: 1fr 8fr 4fr;
     align-items: center;
 
     .subd-bar {
-      color: black;
-      font-style: bold;
-      height: 100%;
+      display: flex;
+      gap: 0.4em;
+      align-items: center;
 
-      // font-family: "Sigmar One", cursive;
-      // font-weight: normal;
+      div {
+        color: black;
+        font-style: bold;
+        height: 0.5em;
+        border-radius: 2em;
+        flex-grow: 1;
 
-      background: linear-gradient(
-        90deg,
-        rgba(255, 0, 0, 1) 0%,
-        rgba(248, 255, 0, 0.7223536387211135) var(--percentage),
-        rgba(255, 0, 0, 0) var(--percentage)
-      );
+        background: linear-gradient(
+          to right,
+          hsl(var(--clr-red)) 0%,
+          hsl(var(--clr-orange)) var(--percentage),
+          var(--bg) var(--percentage) 100%
+        );
+        outline: solid 3px hsl(var(--clr-orange));
+      }
+
+      span {
+        font-size: 0.75em;
+        color: hsl(var(--clr-orange));
+      }
     }
   }
-}
-
-.subd-themesong {
-  grid-column: 2 / 4;
-  grid-row: 1;
-  font-family: "Inter", cursive;
-  font-size: 25px;
-
-  text-align: center;
-
-  display: flex;
-  align-self: flex-end;
-  align-items: center;
-  justify-content: center;
-
-  border: 1px solid yellow;
-}
-
-.subd-themesong-player {
-  grid-column: 2 / 3;
-  grid-row: 5;
-  font-family: "Inter", cursive;
-  font-size: 25px;
-
-  display: flex;
-  align-items: flex-end;
-  align-self: flex-end;
-  justify-content: flex-start;
-}
-
-.subd-notification {
-  grid-column: 1 / 3;
-  grid-row: 1;
-  font-family: "Inter", cursive;
-  font-size: 50px;
-
-  display: flex;
-  align-items: flex-end;
-  align-self: flex-end;
-  justify-content: flex-start;
-}
-
-.subd-goal {
-  grid-column: 1 / 3;
-  grid-row: 5;
-  font-family: "Sigmar One", cursive;
-  font-size: 100px;
-
-  display: flex;
-  align-items: flex-end;
-  align-self: flex-end;
-  justify-content: flex-start;
-}
-
-.subd-chat {
-  display: flex;
-  flex-direction: column-reverse;
-  grid-column: 4;
-  grid-row: 1 / 4;
-  // border: 1px solid green;
-  overflow-y: hidden;
-  // overflow-x: hidden;
-  // word-wrap: break-
-  overflow-wrap: break-word;
-
-  // TODO: I want the emotes and the text to be centered, like how twitch does it.
-  // align-items: center;
-  // justify-content: center;
-}
-
-.subd-message {
-  font-size: 32px;
-  font-weight: 700;
-  font-family: "Inter", sans-serif;
-  // vertical-align: middle;
-  // text-align: center;
-  // border: 1px solid blue;
-  // font-family: "Sigmar One", cursive;
-}
-
-@keyframes pulse {
-  from {
-    background: red;
-  }
-  to {
-    background: blue;
-  }
-}
-
-.subd-message-moderator {
-  // font-family: "Bungee Outline", cursive;
-  background: rgba(65, 223, 20, 0.5);
-  // animation: 2000ms ease-in-out pulse infinite;
 }
