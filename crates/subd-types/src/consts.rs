@@ -73,3 +73,19 @@ pub fn get_github_broadcaster_token() -> String {
 pub fn get_database_url() -> String {
     dotenv::var("DATABASE_URL").expect("DATABASE_URL to exist")
 }
+
+pub fn get_twitch_broadcaster_username() -> String {
+    dotenv::var("TWITCH_BROADCASTER_USERNAME").expect("TWITCH_BROADCASTER_USERNAME to exist")
+}
+
+pub fn get_twitch_broadcaster_channel_id() -> String {
+    dotenv::var("TWITCH_BROADCASTER_CHANNEL_ID").expect("TWITCH_BROADCASTER_CHANNEL_ID to exist")
+}
+
+pub fn get_twitch_bot_username() -> String {
+    dotenv::var("TWITCH_BOT_USERNAME").expect("TWITCH_BOT_USERNAME to exist")
+}
+
+pub fn get_twitch_bot_channel_id() -> String {
+    dotenv::var("TWITCH_BOT_CHANNEL_ID").expect("TWITCH_BOT_CHANNEL_ID to exist")
+}

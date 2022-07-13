@@ -10,7 +10,7 @@ resetdb:
 	sqlx migrate run --source crates/subd-db/migrations
 
 serve:
-	trunk serve
+	trunk serve crates/subd-yew/index.html
 
 release:
 	trunk build --release.

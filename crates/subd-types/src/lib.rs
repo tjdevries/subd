@@ -117,45 +117,46 @@ impl TwitchSubscriptionEvent {
     }
 }
 
-// const MY_CHANNEL: UserId = 114257969;
-
 pub fn get_nyx_sub() -> TwitchSubscriptionEvent {
-    let message = r##"
-{
-    "benefit_end_month": 11,
-    "user_name": "nyxkrage",
-    "display_name": "NyxKrage",
-    "channel_name": "teej_dv",
-    "user_id": "1234",
-    "channel_id": "27620241",
-    "time": "2020-10-20T22:17:43.242793831Z",
-    "sub_message": {
+    let twitch_username = consts::get_twitch_broadcaster_username();
+    let twitch_channel_id = consts::get_twitch_broadcaster_channel_id();
+    let message = serde_json::json!(
+    {
+        "channel_name": twitch_username,
+        "benefit_end_month": 11,
+        "user_name": "nyxkrage",
+        "display_name": "NyxKrage",
+        "channel_id": twitch_channel_id,
+        "user_id": "1234",
+        "time": "2020-10-20T22:17:43.242793831Z",
+        "sub_message": {
         "message": "You are my favorite streamer",
-        "emotes": null
-    },
-    "sub_plan": "1000",
-    "sub_plan_name": "Channel Subscription (emilgardis)",
-    "months": 0,
-    "cumulative_months": 1,
-    "context": "sub",
-    "is_gift": false,
-    "multi_month_duration": 0
-}
-"##;
+        "emotes": null,
+        },
+        "sub_plan": "1000",
+        "sub_plan_name": "Channel Subscription (emilgardis)",
+        "months": 0,
+        "cumulative_months": 1,
+        "context": "sub",
+        "is_gift": false,
+        "multi_month_duration": 0,
+    });
 
-    let subscription = serde_json::from_str(message).unwrap();
+    let subscription = serde_json::from_value(message).unwrap();
     TwitchSubscriptionEvent { subscription }
 }
 
 pub fn get_prime_sub() -> TwitchSubscriptionEvent {
-    let message = r##"
+    let twitch_username = consts::get_twitch_broadcaster_username();
+    let twitch_channel_id = consts::get_twitch_broadcaster_channel_id();
+    let message = serde_json::json!(
 {
     "benefit_end_month": 11,
     "user_name": "theprimeagen",
     "display_name": "ThePrimeagen",
-    "channel_name": "teej_dv",
+    "channel_name": twitch_username,
+    "channel_id": twitch_channel_id,
     "user_id": "1234",
-    "channel_id": "27620241",
     "time": "2020-10-20T22:17:43.242793831Z",
     "sub_message": {
         "message": "You are my favorite streamer",
@@ -168,9 +169,8 @@ pub fn get_prime_sub() -> TwitchSubscriptionEvent {
     "context": "sub",
     "is_gift": false,
     "multi_month_duration": 0
-}
-"##;
+});
 
-    let subscription = serde_json::from_str(message).unwrap();
+    let subscription = serde_json::from_value(message).unwrap();
     TwitchSubscriptionEvent { subscription }
 }

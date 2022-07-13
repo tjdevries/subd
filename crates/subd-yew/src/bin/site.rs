@@ -101,9 +101,12 @@ fn default_messages() -> Vec<PrivmsgMessage> {
         return vec![];
     }
 
+    // TODO(should this be bot or broadcaster?)
+    // TODO(are we ok with the cloning???)
+    let channel_username = subd_types::consts::get_twitch_broadcaster_username().to_string();
     vec![
         PrivmsgMessage {
-            channel_login: "teej_dv".into(),
+            channel_login: channel_username.clone().into(),
             channel_id: "_".into(),
             message_text: "Wow, Sorry for my bad behavior. I'll shape up now".into(),
             is_action: false,
@@ -126,7 +129,7 @@ fn default_messages() -> Vec<PrivmsgMessage> {
             source: twitch_irc::message::IRCMessage::new_simple("this is a lie".into(), vec![]),
         },
         PrivmsgMessage {
-            channel_login: "teej_dv".into(),
+            channel_login: channel_username.clone().into(),
             channel_id: "_".into(),
             message_text: "... wish I was a mod Sadge".into(),
             is_action: false,
@@ -146,7 +149,7 @@ fn default_messages() -> Vec<PrivmsgMessage> {
             source: twitch_irc::message::IRCMessage::new_simple("this is a lie".into(), vec![]),
         },
         PrivmsgMessage {
-            channel_login: "teej_dv".into(),
+            channel_login: channel_username.clone().into(),
             channel_id: "_".into(),
             message_text: "Oh hey I'm Oetzi and I'm super nice!".into(),
             is_action: false,
@@ -174,7 +177,9 @@ fn default_messages() -> Vec<PrivmsgMessage> {
 
 #[function_component(UseReducer)]
 fn reducer() -> Html {
+    // This needs to be generic
     let ws = use_web_socket("ws://192.168.4.97:9001".to_string());
+
     let history = use_list(default_messages());
     let subcount = use_state(|| 0);
 
