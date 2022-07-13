@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 use twitch_irc::message::PrivmsgMessage;
 
+pub mod consts;
+
 pub type UserID = i64;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

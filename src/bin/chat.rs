@@ -10,8 +10,6 @@
 //      - Approve/Reject a sound
 
 use std::cmp::max;
-use std::cmp::min;
-use std::env;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -40,7 +38,7 @@ use twitch_api2::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
 use twitch_api2::helix::HelixClient;
 use twitch_api2::pubsub;
 use twitch_api2::pubsub::Topic;
-use twitch_api2::twitch_oauth2::{AccessToken, UserToken};
+use twitch_api2::twitch_oauth2::UserToken;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
@@ -49,6 +47,7 @@ use twitch_irc::TwitchIRCClient;
 
 const CONNECT_OBS: bool = false;
 
+// TEMP: We will remove this once we have this in the database.
 fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
     static INSTANCE: OnceCell<Mutex<LunchBytesStatus>> = OnceCell::new();
     INSTANCE.get_or_init(|| {
@@ -277,12 +276,7 @@ async fn handle_set_command<
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     ClientConfig::new_simple(StaticLoginCredentials::new(
         "teej_dv_bot".to_string(),
-        Some(
-            env::var("TWITCHBOT_OAUTH")
-                .expect("$TWITCHBOT_OAUTH must be set")
-                .replace("oauth:", "")
-                .to_string(),
-        ),
+        Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
 }
 
@@ -389,13 +383,8 @@ async fn handle_twitch_sub_count(
     let reqwest_client = helix.clone_client();
     let token = UserToken::from_existing(
         &reqwest_client,
-        AccessToken::new(
-            env::var("TWITCH_OAUTH")
-                .expect("$TWITCH_OAUTH must be set")
-                .replace("oauth:", "")
-                .to_string(),
-        ),
-        None, // Refresh Token
+        subd_types::consts::get_twitch_broadcaster_oauth(),
+        subd_types::consts::get_twitch_broadcaster_refresh(),
         None, // Client Secret
     )
     .await
@@ -424,9 +413,6 @@ async fn handle_twitch_notifications(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    // TODO(update_sub)
-    // let mut conn = subd_db::get_handle().await;
-
     // Listen to subscriptions as well
     let subscriptions = pubsub::channel_subscriptions::ChannelSubscribeEventsV1 {
         channel_id: 114257969,
@@ -440,24 +426,14 @@ async fn handle_twitch_notifications(
 
     // Create the topic command to send to twitch
     let command = pubsub::listen_command(
-        // &[/* chat_mod_actions,  */ subsriptions],
         &[redeems, subscriptions],
-        Some(
-            env::var("TWITCH_OAUTH")
-                .expect("$TWITCH_OAUTH must be set")
-                .replace("oauth:", "")
-                .as_str(),
-        ),
+        Some(subd_types::consts::get_twitch_broadcaster_raw().as_str()),
         "",
     )
     .expect("serializing failed");
 
     // Send the message with your favorite websocket client
-
     println!("trying to connect to stream...");
-    // let stream = TcpStream::connect("pubsub-edge.twitch.tv:443")
-    //     .await
-    //     .unwrap();
     println!("part 1");
     let (mut ws_stream, _resp) = tokio_tungstenite::connect_async("wss://pubsub-edge.twitch.tv")
         .await

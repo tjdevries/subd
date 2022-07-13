@@ -22,9 +22,7 @@ pub struct IsSponsoring;
 pub struct GetUser;
 
 pub async fn get_github_user(login: &str) -> Result<Option<GithubUser>> {
-    let gh_token = String::from("token ")
-        + &std::env::var("GITHUB_ACCESS").expect("Should have GITHUB_ACCESS token");
-
+    let gh_token = subd_types::consts::get_github_broadcaster_token();
     let request_body = GetUser::build_query(get_user::Variables {
         login: login.to_string(),
     });
@@ -61,9 +59,7 @@ pub async fn get_github_user(login: &str) -> Result<Option<GithubUser>> {
 
 pub async fn is_user_sponsoring(github_user: &str) -> Result<bool> {
     // TODO: Could probably make this static
-    let gh_token = String::from("token ")
-        + &std::env::var("GITHUB_ACCESS").expect("Should have GITHUB_ACCESS token");
-
+    let gh_token = subd_types::consts::get_github_broadcaster_token();
     let request_body = IsSponsoring::build_query(is_sponsoring::Variables {
         name: github_user.to_string(),
     });

@@ -23,3 +23,7 @@ We are developing this on my twitch stream: [teej_dv](https://twitch.tv/teej_dv)
 
 Currently, we are building the different building blocks we need to start creating interesting information.
 Not much to see our try out here at this time.
+
+## Development / Running
+
+There are several steps requied to set up `subd`. See [Developers](./DEVELOPERS.md) for more information.
