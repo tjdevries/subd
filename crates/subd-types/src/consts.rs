@@ -89,3 +89,23 @@ pub fn get_twitch_bot_username() -> String {
 pub fn get_twitch_bot_channel_id() -> String {
     dotenv::var("SUBD_TWITCH_BOT_CHANNEL_ID").expect("SUBD_TWITCH_BOT_CHANNEL_ID to exist")
 }
+
+pub fn get_obs_websocket_address() -> String {
+    dotenv::var("SUBD_OBS_WEBSOCKET_ADDRESS").expect("SUBD_OBS_WEBSOCKET_ADDRESS to exist")
+}
+
+pub fn get_obs_websocket_port() -> String {
+    dotenv::var("SUBD_OBS_WEBSOCKET_PORT").expect("SUBD_OBS_WEBSOCKET_PORT to exist")
+}
+
+pub fn get_obs_test_scene() -> String {
+    dotenv::var("SUBD_OBS_TEST_SCENE").expect("SUBD_OBS_TEST_SCENE to exist")
+}
+
+pub fn get_obs_test_source() -> String {
+    dotenv::var("SUBD_OBS_TEST_SOURCE").expect("SUBD_OBS_TEST_SOURCE to exist")
+}
+
+pub fn get_obs_test_filter() -> String {
+    dotenv::var("SUBD_OBS_TEST_FILTER").expect("SUBD_OBS_TEST_FILTER to exist")
+}

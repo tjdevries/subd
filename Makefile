@@ -1,7 +1,7 @@
 default:
 	cargo build
 
-chat default:
+chat:
 	cargo run --bin chat
 
 resetdb:
