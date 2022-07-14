@@ -2,11 +2,12 @@
 @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
 
 :root {
-  --clr-red: 359 93.9% 61.6%; // #F94144
-  --clr-yellow: 42 93.4% 64.3%; // #F9C74F
-  --clr-orange: 33 94% 54.5%; // #F8961E
-  --clr-blue: 208 24.7% 20%; // #263440
-  --clr-fg: 206 25.3% 83.7%; // #CBD7E0
+  // NOTE: All the colors here are in HSL
+  --clr-red: 359, 93.9%, 61.6%; // #F94144
+  --clr-yellow: 42, 93.4%, 64.3%; // #F9C74F
+  --clr-orange: 33, 94%, 54.5%; // #F8961E
+  --clr-blue: 208, 24.7%, 20%; // #263440
+  --clr-fg: 206, 25.3%, 83.7%; // #CBD7E0
 }
 
 *,
@@ -34,6 +35,7 @@ body {
 // ------ SUB NOTIFICATION ------
 .subd-notification {
   --font-size: 1em;
+  --bg: hsl(var(--clr-blue));
 
   grid-column: 2 / 4;
   grid-row: 1;
@@ -49,7 +51,7 @@ body {
   font-size: var(--font-size);
   padding: 1em;
 
-  background: hsl(var(--clr-blue));
+  background: var(--bg);
   border-radius: 1em;
 
   svg {
@@ -63,7 +65,7 @@ body {
 }
 
 .subd-notification-imp {
-  background: linear-gradient(
+  --bg: linear-gradient(
     45deg,
     hsl(var(--clr-red)) 0%,
     hsl(var(--clr-orange)) 100%
@@ -83,7 +85,7 @@ body {
   padding: 0.25em;
   div {
     padding: 0.2em 0.4em;
-    background: hsl(var(--clr-blue) / 0.8);
+    background-color: hsl(var(--clr-blue), 0.8);
     border-radius: 0.75em;
   }
 }
@@ -100,17 +102,13 @@ body {
 }
 
 .subd-message {
-  --bg: var(--clr-orange);
+  --bg: var(--clr-blue);
 
   font-size: 24px;
   font-weight: 700;
   border-radius: 0.5em;
   padding: 0.2em;
-  background: hsl(var(--bg) / 0.8);
-
-  span {
-    background: invert;
-  }
+  background-color: hsl(var(--bg), 0.8);
 }
 
 .subd-message-moderator {
@@ -119,7 +117,7 @@ body {
 
 // ------ LB TOPICS ------
 .subd-topics {
-  --bg: hsl(var(--clr-blue) / 0.8);
+  --bg: hsl(var(--clr-blue), 0.8);
 
   grid-column: 3 / 5;
   grid-row: 1 / 4;
