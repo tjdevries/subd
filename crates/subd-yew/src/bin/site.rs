@@ -1,3 +1,4 @@
+use std::cmp::max;
 use std::collections::VecDeque;
 
 use chrono::{self, Utc};
@@ -85,13 +86,11 @@ fn render_message(message: &PrivmsgMessage) -> Html {
     let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
     html! {
         <div class={ class_name }>
-            <p>
             <span style={ format!("color:{}", color_str) }>
                 { message.sender.name.clone() }
             </span>
-                { ": " }
-                { pieces }
-            </p>
+            { ": " }
+            { pieces }
         </div>
     }
 }
@@ -272,7 +271,7 @@ fn reducer() -> Html {
 
     // TODO: Consider using max instead
     // let total_votes = lb_status.topics.iter().map(|t| t.votes).max().unwrap_or(1);
-    let total_votes = lb_status.topics.iter().map(|t| t.votes).sum::<i32>() + 1;
+    let total_votes = max(lb_status.topics.iter().map(|t| t.votes).sum::<i32>(), 1);
     let status_props = status::StatusProps {
         enabled: lb_status.enabled,
         topics: lb_status

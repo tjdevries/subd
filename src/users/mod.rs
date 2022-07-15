@@ -19,7 +19,7 @@ pub async fn update_user_roles_once_per_day(
     conn: &mut SqliteConnection,
     user_id: &UserID,
     msg: &PrivmsgMessage,
-) -> Result<()> {
+) -> Result<UserRoles> {
     let user_roles = subd_db::get_user_roles(conn, user_id).await?;
     let twitch_roles = get_twitch_roles_from_msg(msg);
 
@@ -28,24 +28,42 @@ pub async fn update_user_roles_once_per_day(
         && user_roles.is_twitch_founder == twitch_roles.is_twitch_founder
         && user_roles.is_twitch_sub == twitch_roles.is_twitch_sub
     {
-        let record = sqlx::query!(
-        "select user_id from USER_ROLES where user_id = ?1 AND date(verified_date) = date(CURRENT_TIMESTAMP)",
-        user_id).fetch_optional(&mut *conn).await?;
+        let record = sqlx::query_as!(
+            UserRoles,
+            "
+            select
+                is_github_sponsor,
+                is_twitch_mod,
+                is_twitch_vip,
+                is_twitch_founder,
+                is_twitch_sub,
+                is_twitch_staff
+            FROM USER_ROLES
+            WHERE
+              user_id = ?1 AND date(verified_date) = date(CURRENT_TIMESTAMP)
+              ORDER BY verified_date DESC
+            ",
+            user_id
+        )
+        .fetch_optional(&mut *conn)
+        .await?;
 
         // If we have any record, that means we've updated already today,
         // so don't do that again
-        if record.is_some() {
-            return Ok(());
+        if let Some(record) = record {
+            return Ok(record);
         }
     }
 
-    update_user_roles(conn, user_id, msg).await?;
-
-    Ok(())
+    Ok(update_user_roles(conn, user_id, msg).await?)
 }
 
 fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
-    let is_twitch_mod = msg.badges.iter().any(|b| b.name == "moderator");
+    let is_twitch_mod = msg
+        .badges
+        .iter()
+        .any(|b| b.name == "moderator" || b.name == "broadcaster");
+
     let is_twitch_vip = msg.badges.iter().any(|b| b.name == "vip");
     let is_twitch_founder = msg.badges.iter().any(|b| b.name == "founder");
     let is_twitch_sub = msg.badges.iter().any(|b| b.name == "subscriber");
@@ -84,14 +102,14 @@ async fn update_user_roles(
     conn: &mut SqliteConnection,
     user_id: &UserID,
     msg: &PrivmsgMessage,
-) -> Result<()> {
+) -> Result<UserRoles> {
     let user_roles = get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
 
     println!(
         "  Updating User Roles: {} -> {:?}",
         msg.sender.name, user_roles
     );
-    subd_db::set_user_roles(conn, user_id, user_roles).await?;
+    subd_db::set_user_roles(conn, user_id, &user_roles).await?;
 
-    Ok(())
+    Ok(user_roles)
 }

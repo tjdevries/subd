@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use twitch_api2::pubsub::channel_points::Redemption;
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 use twitch_irc::message::PrivmsgMessage;
 
@@ -14,12 +15,18 @@ pub enum Event {
     TwitchSubscription(TwitchSubscriptionEvent),
     GithubSponsorshipEvent,
 
+    // OBS
+    ObsSetScene {
+        scene: String,
+    },
+
     // UserEvents
     ThemesongDownload(ThemesongDownload),
     ThemesongPlay(ThemesongPlay),
 
     // Requests
     RequestTwitchSubCount,
+    TwitchChannelPointsRedeem(Redemption),
 
     /// Backend Only
     LunchBytesVoting(LunchBytesCommand),
@@ -92,6 +99,28 @@ pub struct UserRoles {
     pub is_twitch_staff: bool,
 }
 
+impl UserRoles {
+    pub fn is_moderator(&self) -> bool {
+        self.is_twitch_mod
+    }
+
+    pub fn support_amount(&self) -> f64 {
+        let mut amount = 0.;
+
+        // TODO: Should get sponsor tier
+        if self.is_github_sponsor {
+            amount += 5.;
+        }
+
+        // TODO: Should get twitch sub tier
+        if self.is_twitch_sub {
+            amount += 2.5;
+        }
+
+        amount
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TwitchSubscriptionEvent {
     subscription: ChannelSubscribeEventsV1Reply,
@@ -150,26 +179,26 @@ pub fn get_prime_sub() -> TwitchSubscriptionEvent {
     let twitch_username = consts::get_twitch_broadcaster_username();
     let twitch_channel_id = consts::get_twitch_broadcaster_channel_id();
     let message = serde_json::json!(
-{
-    "benefit_end_month": 11,
-    "user_name": "theprimeagen",
-    "display_name": "ThePrimeagen",
-    "channel_name": twitch_username,
-    "channel_id": twitch_channel_id,
-    "user_id": "1234",
-    "time": "2020-10-20T22:17:43.242793831Z",
-    "sub_message": {
-        "message": "You are my favorite streamer",
-        "emotes": null
-    },
-    "sub_plan": "1000",
-    "sub_plan_name": "Channel Subscription (emilgardis)",
-    "months": 0,
-    "cumulative_months": 1,
-    "context": "sub",
-    "is_gift": false,
-    "multi_month_duration": 0
-});
+    {
+        "benefit_end_month": 11,
+        "user_name": "theprimeagen",
+        "display_name": "ThePrimeagen",
+        "channel_name": twitch_username,
+        "channel_id": twitch_channel_id,
+        "user_id": "1234",
+        "time": "2020-10-20T22:17:43.242793831Z",
+        "sub_message": {
+            "message": "You are my favorite streamer",
+            "emotes": null
+        },
+        "sub_plan": "1000",
+        "sub_plan_name": "Channel Subscription (emilgardis)",
+        "months": 0,
+        "cumulative_months": 1,
+        "context": "sub",
+        "is_gift": false,
+        "multi_month_duration": 0
+    });
 
     let subscription = serde_json::from_value(message).unwrap();
     TwitchSubscriptionEvent { subscription }

@@ -14,7 +14,9 @@ fn topic(props: &TopicProps) -> Html {
             <span>{props.id}</span>
             <span>{props.text.clone()}</span>
             <div class="subd-bar" style={format!("--percentage: {}%", props.percentage * 100.)}>
+                <div></div>
             </div>
+            <span class="subd-bar-votes">{format!("{:.0}%", props.percentage * 100.)}</span>
         </>
     }
 }
@@ -57,7 +59,7 @@ impl Component for Status {
                     <li class="subd-topics-header">
                         <span class="subd-topics-header-id"> {"ID"} </span>
                         <span class="subd-topics-header-topic"> {"Topic Name"} </span>
-                        <span></span>
+                        <span class="subd-topics-header-votes"> {"Vote %"}</span>
                     </li>
                     { topics }
                 </ul>
