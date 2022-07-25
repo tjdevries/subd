@@ -1,3 +1,8 @@
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Display,
+};
+
 use serde::{Deserialize, Serialize};
 use twitch_api2::pubsub::channel_points::Redemption;
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
@@ -34,8 +39,23 @@ pub enum Event {
     /// Backend -> Front Status message
     LunchBytesStatus(LunchBytesStatus),
 
+    /// Raffle Stuff
+    RaffleStatus(RaffleStatus),
+
     // Control
     Shutdown,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum RaffleStatus {
+    Disabled,
+    Ongoing {
+        title: String,
+        entries: HashMap<String, usize>,
+    },
+    Winner {
+        users: HashSet<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -97,6 +117,33 @@ pub struct UserRoles {
     pub is_twitch_founder: bool,
     pub is_twitch_sub: bool,
     pub is_twitch_staff: bool,
+}
+
+impl Display for UserRoles {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut truths = vec![];
+
+        if self.is_github_sponsor {
+            truths.push("github_sponsor");
+        }
+        if self.is_twitch_mod {
+            truths.push("twitch_mod");
+        }
+        if self.is_twitch_vip {
+            truths.push("twitch_vip");
+        }
+        if self.is_twitch_founder {
+            truths.push("twitch_founder");
+        }
+        if self.is_twitch_sub {
+            truths.push("twitch_sub");
+        }
+        if self.is_twitch_staff {
+            truths.push("twitch_staff");
+        }
+
+        write!(f, "{}", truths.join(","))
+    }
 }
 
 impl UserRoles {

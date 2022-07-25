@@ -205,3 +205,21 @@ body {
   background: rgba(65, 223, 20, 0.5);
   // animation: 2000ms ease-in-out pulse infinite;
 }
+
+.raffle {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+}
+
+.raffle-winners {
+  font-size: 64px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column-reverse;
+  grid-column: 2 / 3;
+  grid-row: 3;
+  text-align: center;
+  justify-items: center;
+}

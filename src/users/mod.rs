@@ -1,6 +1,7 @@
 use anyhow::Result;
 use sqlx::SqliteConnection;
 use subd_types::{UserID, UserRoles};
+use tracing::info;
 use twitch_irc::message::PrivmsgMessage;
 
 // Query for finding if anyone with this tag has messaged today
@@ -105,10 +106,7 @@ async fn update_user_roles(
 ) -> Result<UserRoles> {
     let user_roles = get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
 
-    println!(
-        "  Updating User Roles: {} -> {:?}",
-        msg.sender.name, user_roles
-    );
+    info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
     subd_db::set_user_roles(conn, user_id, &user_roles).await?;
 
     Ok(user_roles)
