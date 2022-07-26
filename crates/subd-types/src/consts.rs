@@ -75,11 +75,13 @@ pub fn get_database_url() -> String {
 }
 
 pub fn get_twitch_broadcaster_username() -> String {
-    dotenv::var("SUBD_TWITCH_BROADCASTER_USERNAME").expect("SUBD_TWITCH_BROADCASTER_USERNAME to exist")
+    dotenv::var("SUBD_TWITCH_BROADCASTER_USERNAME")
+        .expect("SUBD_TWITCH_BROADCASTER_USERNAME to exist")
 }
 
 pub fn get_twitch_broadcaster_channel_id() -> String {
-    dotenv::var("SUBD_TWITCH_BROADCASTER_CHANNEL_ID").expect("SUBD_TWITCH_BROADCASTER_CHANNEL_ID to exist")
+    dotenv::var("SUBD_TWITCH_BROADCASTER_CHANNEL_ID")
+        .expect("SUBD_TWITCH_BROADCASTER_CHANNEL_ID to exist")
 }
 
 pub fn get_twitch_bot_username() -> String {
