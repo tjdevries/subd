@@ -1,8 +1,10 @@
+use std::cmp::max;
 use std::collections::VecDeque;
 
 use chrono::{self, Utc};
 use subd_types::{Event as SubdEvent, LunchBytesStatus};
-use subd_yew::components::lunchbytes::{self, status, status::TopicProps};
+use subd_yew::components::lunchbytes::{self, status};
+use subd_yew::components::raffle::RaffleComponent;
 use subd_yew::components::sub_notification::SubNotification;
 use subd_yew::components::themesong_downloader::ThemesongDownloader;
 use subd_yew::components::themesong_player::ThemesongPlayer;
@@ -85,23 +87,22 @@ fn render_message(message: &PrivmsgMessage) -> Html {
     let color_str = format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b);
     html! {
         <div class={ class_name }>
-            <p>
             <span style={ format!("color:{}", color_str) }>
                 { message.sender.name.clone() }
             </span>
-                { ": " }
-                { pieces }
-            </p>
+            { ": " }
+            { pieces }
         </div>
     }
 }
 
 fn default_messages() -> Vec<PrivmsgMessage> {
-    if !SHOULD_DEFAULT_MESSAGES {
-        return vec![];
-    }
+    // if !SHOULD_DEFAULT_MESSAGES {
+    //     return vec![];
+    // }
 
-    let channel_username = subd_types::consts::get_twitch_broadcaster_username();
+    // let channel_username = subd_types::consts::get_twitch_broadcaster_username();
+    let channel_username = "teej_dv".to_string();
     vec![
         PrivmsgMessage {
             channel_login: channel_username.clone().into(),
@@ -188,6 +189,7 @@ fn reducer() -> Html {
         enabled: false,
         topics: vec![],
     });
+    let raffle_status = use_state(|| subd_types::RaffleStatus::Disabled);
 
     {
         let history = history.clone();
@@ -197,6 +199,7 @@ fn reducer() -> Html {
         let themesong = themesong.clone();
         let player = player.clone();
         let lb_status = lb_status.clone();
+        let raffle_status = raffle_status.clone();
 
         // Receive message by depending on `ws.message`.
         use_effect_with_deps(
@@ -231,6 +234,9 @@ fn reducer() -> Html {
                                 .sort_by(|a, b| b.votes.cmp(&a.votes));
 
                             lb_status.set(lunchbytes_status)
+                        }
+                        SubdEvent::RaffleStatus(raffle_msg) => {
+                            raffle_status.set(raffle_msg);
                         }
 
                         _ => {}
@@ -270,9 +276,11 @@ fn reducer() -> Html {
         None => html! {},
     };
 
+    let raffle_html = html! { <RaffleComponent raffle_status={(*raffle_status).clone()} /> };
+
     // TODO: Consider using max instead
     // let total_votes = lb_status.topics.iter().map(|t| t.votes).max().unwrap_or(1);
-    let total_votes = lb_status.topics.iter().map(|t| t.votes).sum::<i32>() + 1;
+    let total_votes = max(lb_status.topics.iter().map(|t| t.votes).sum::<i32>(), 1);
     let status_props = status::StatusProps {
         enabled: lb_status.enabled,
         topics: lb_status
@@ -286,11 +294,12 @@ fn reducer() -> Html {
             .collect(),
     };
 
+    // <div class={"subd-goal"}>
+    //     <p>{ format!("{} / 420", *subcount) }</p>
+    // </div>
+
     html! {
         <div class={ "subd" }>
-            <div class={"subd-goal"}>
-                <p>{ format!("{} / 420", *subcount) }</p>
-            </div>
             <div class={"subd-chat"}>
             {
                 {
@@ -305,6 +314,7 @@ fn reducer() -> Html {
             <> { notification } </>
             <> { themesong } </>
             <> { player } </>
+            <> { raffle_html } </>
             <> <lunchbytes::status::Status ..status_props/> </>
         </div>
     }

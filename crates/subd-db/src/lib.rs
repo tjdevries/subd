@@ -270,9 +270,9 @@ pub async fn save_twitch_message(
 
 pub type TwitchUserID = i64;
 pub struct TwitchUser {
-    id: TwitchUserID,
-    login: String,
-    display_name: String,
+    pub id: TwitchUserID,
+    pub login: String,
+    pub display_name: String,
     broadcaster_type: String,
     account_type: String,
     offline_image_url: Option<String>,
@@ -294,18 +294,27 @@ async fn create_twitch_user(conn: &mut SqliteConnection, twitch_user: TwitchUser
     Ok(())
 }
 
-async fn get_twitch_user(conn: &mut SqliteConnection, id: TwitchUserID) -> Result<TwitchUser> {
-    Ok(
-        sqlx::query_as!(TwitchUser, "SELECT * FROM twitch_users WHERE id = ?", id)
-            .fetch_one(&mut *conn)
-            .await?,
+pub async fn get_twitch_user_from_user_id(
+    conn: &mut SqliteConnection,
+    id: UserID,
+) -> Result<TwitchUser> {
+    Ok(sqlx::query_as!(
+        TwitchUser,
+        "SELECT twitch_users.*
+            FROM twitch_users
+                INNER JOIN users on twitch_users.id = users.twitch_id
+            WHERE users.id = ?
+        ",
+        id
     )
+    .fetch_one(&mut *conn)
+    .await?)
 }
 
 pub async fn set_user_roles(
     conn: &mut SqliteConnection,
     user_id: &UserID,
-    roles: UserRoles,
+    roles: &UserRoles,
 ) -> Result<()> {
     sqlx::query!(
         "INSERT INTO user_roles (

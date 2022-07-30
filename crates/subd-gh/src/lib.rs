@@ -2,6 +2,7 @@ use anyhow::Result;
 use graphql_client::{GraphQLQuery, Response};
 use hyper::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
 use subd_types::GithubUser;
+use tracing::warn;
 
 // The paths are relative to the directory where your `Cargo.toml` is located.
 // Both json and the GraphQL schema language are supported as sources for the schema
@@ -76,7 +77,7 @@ pub async fn is_user_sponsoring(github_user: &str) -> Result<bool> {
 
     let response_body: Response<is_sponsoring::ResponseData> = res.json().await?;
     if let Some(errors) = response_body.errors {
-        println!("ERRORS: {:?}", errors);
+        warn!(errors = ?errors, "failed to get github information");
         return Ok(false);
     }
 

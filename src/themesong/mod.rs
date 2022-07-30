@@ -6,6 +6,7 @@ use reqwest::Url;
 use sqlx::SqliteConnection;
 use subd_types::{UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt};
+use tracing::info;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
@@ -78,9 +79,11 @@ pub async fn has_played_themesong_today(
     Ok(played_count.result > 0)
 }
 
+#[tracing::instrument(skip(conn))]
 pub async fn download_themesong(
     conn: &mut SqliteConnection,
     user_id: &UserID,
+    user_name: &str,
     url: &str,
     start: &str,
     end: &str,
@@ -90,14 +93,18 @@ pub async fn download_themesong(
     // TODO: Also could probably use --max-filesize as well or in place of ytextract
 
     let url = validate_themesong(url)?;
-    validate_duration(start, end, 10.)?;
+    let duration = match user_name {
+        "conni2461" => 30.0,
+        _ => 10.0,
+    };
+    validate_duration(start, end, duration)?;
 
     let location = THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
 
-    println!("youtube_dl: Downloading == {:?}", url);
+    info!("downloading");
 
     // TODO: .extra_arg("-f bestaudio")
-    dbg!(youtube_dl::YoutubeDl::new(url)
+    youtube_dl::YoutubeDl::new(url)
         .youtube_dl_path("yt-dlp")
         .extract_audio(true)
         .download(true)
@@ -112,10 +119,10 @@ pub async fn download_themesong(
         .extra_arg("--audio-format")
         .extra_arg("mp3")
         .extra_arg("-o")
-        .extra_arg(location.clone() + ".%(ext)s"))
-    .run()?;
+        .extra_arg(location.clone() + ".%(ext)s")
+        .run()?;
 
-    println!("  Done!");
+    info!("successfully downloaded yt clip");
 
     let mut contents = vec![];
 

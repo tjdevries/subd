@@ -1,15 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Bungee+Outline&family=Bungee+Shade&family=Creepster&family=Inter:wght@400;700&family=Sigmar+One&display=swap");
 @import url("https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css");
 
+:root {
+  // NOTE: All the colors here are in HSL
+  --color-red: 359, 93.9%, 61.6%; // #F94144
+  --color-yellow: 42, 93.4%, 64.3%; // #F9C74F
+  --color-orange: 33, 94%, 54.5%; // #F8961E
+  --color-blue: 208, 24.7%, 20%; // #263440
+  --color-fg: 206, 25.3%, 83.7%; // #CBD7E0
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
   background-color: black;
   color: white;
-  margin: 0;
-}
-
-// Nyx told me to do this
-p {
-  margin: 0;
+  font-family: "Inter", sans-serif;
 }
 
 .subd {
@@ -25,23 +37,32 @@ p {
 }
 
 .subd-topics {
+  --bg: hsl(var(--color-blue), 0.8);
+
   grid-column: 3 / 5;
   grid-row: 1 / 4;
-  font-family: "Inter", cursive;
+
+  border-radius: 0.5em;
+  padding: 0.5em 1em;
+
   font-size: 25px;
   text-align: left;
-  color: cyan;
-  background-color: hsla(175, 20%, 20%, 0.8);
+  color: hsla(190, 50%, 85%, 0.8);
+  background-color: var(--bg);
   // opacity: 0.25;
 
   .subd-topics-header {
-    color: cyan;
+    color: #eeeeee;
     font-weight: bold;
+    border-bottom: 2px solid #aaaaaa;
 
-    .subd-topics-header-id,
-    .subd-topics-header-topic {
-      border-bottom: 2px solid cyan;
+    span {
+      margin-bottom: 0.2em;
     }
+  }
+
+  h1 {
+    text-align: center;
   }
 
   ul {
@@ -53,25 +74,41 @@ p {
   }
 
   li {
-    color: pink;
+    color: var(--color-fg);
     display: grid;
-    grid-template-columns: 1fr 8fr 4fr;
+    grid-template-columns: 1fr 8fr 4fr 1fr;
     align-items: center;
 
     .subd-bar {
-      color: black;
-      font-style: bold;
+      display: flex;
       height: 100%;
+      gap: 0.4em;
+      align-items: center;
+
+      div {
+        color: black;
+        font-style: bold;
+        height: 0.5em;
+        border-radius: 2em;
+        flex-grow: 1;
+
+        background: linear-gradient(
+          to right,
+          hsl(var(--color-red)) 0%,
+          hsl(var(--color-orange)) var(--percentage),
+          var(--bg) var(--percentage) 100%
+        );
+        outline: solid 3px hsl(var(--color-orange));
+      }
 
       // font-family: "Sigmar One", cursive;
       // font-weight: normal;
+    }
 
-      background: linear-gradient(
-        90deg,
-        rgba(255, 0, 0, 1) 0%,
-        rgba(248, 255, 0, 0.7223536387211135) var(--percentage),
-        rgba(255, 0, 0, 0) var(--percentage)
-      );
+    .subd-bar-votes {
+      font-size: 0.75em;
+      color: hsl(var(--color-orange));
+      text-align: right;
     }
   }
 }
@@ -167,4 +204,22 @@ p {
   // font-family: "Bungee Outline", cursive;
   background: rgba(65, 223, 20, 0.5);
   // animation: 2000ms ease-in-out pulse infinite;
+}
+
+.raffle {
+  font-size: 32px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+}
+
+.raffle-winners {
+  font-size: 64px;
+  font-weight: 700;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column-reverse;
+  grid-column: 2 / 3;
+  grid-row: 3;
+  text-align: center;
+  justify-items: center;
 }
