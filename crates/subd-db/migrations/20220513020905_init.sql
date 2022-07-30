@@ -50,34 +50,53 @@ CREATE TABLE twitch_moderators (
   FOREIGN KEY(user_id)      REFERENCES twitch_users(id)
 );
 
-CREATE TABLE twitch_gifted_subscriptions (
+CREATE TABLE TWITCH_GIFT_SUBSCRIPTION_EVENTS (
   id integer PRIMARY KEY AUTOINCREMENT,
-  broadcaster_id  INTEGER NOT NULL,
-  user_id         INTEGER NOT NULL,
-  gifter_id       INTEGER NOT NULL,
 
-  FOREIGN KEY(broadcaster_id)   REFERENCES twitch_users(id),
-  FOREIGN KEY(user_id)        REFERENCES twitch_users(id),
-  FOREIGN KEY(gifter_id)      REFERENCES twitch_users(id)
-);
+  channel_id INTEGER NOT NULL,
+  created_at DATETIME NOT NULL,
 
-CREATE TABLE twitch_subscriptions (
-  user_id     INTEGER NOT NULL,
+  recipient_user_id INTEGER NOT NULL,
+  recipient_twitch_user_id INTEGER NOT NULL,
 
-  -- 0 to 3, Twitch Sub Tiers (0 represents
-  tier        INTEGER NOT NULL CHECK(tier >= 0 AND tier <= 3),
+  gifting_user_id INTEGER NOT NULL,
+  gifting_twitch_user_id INTEGER NOT NULL,
 
-  -- if gift_id is NOT NULL, then the sub is a gift
-  gift_id     INTEGER,
+)
 
-  -- Start Date can be NULL, because we may not have been running when the
-  start_date  DATETIME,
-  -- noted date is when we mark down that this subscription is active
-  noted_date  DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
+CREATE TABLE TWITCH_SUBSCRIPTION_EVENTS (
+  id integer PRIMARY KEY AUTOINCREMENT,
 
-  PRIMARY KEY (user_id, tier, start_date),
-  FOREIGN KEY(user_id)      REFERENCES twitch_users(id),
-  FOREIGN KEY(gift_id)      REFERENCES twitch_gifted_subscriptions(id)
+  user_id INTEGER NOT NULL,
+  twitch_user_id INTEGER PRIMARY KEY NOT NULL,
+  channel_id INTEGER NOT NULL,
+  created_at DATETIME NOT NULL,
+
+  -- This is `multi_month_duration` but we just set
+  -- the duration to 1 if there is no multi_month_duration
+  -- present in the message
+  -- multi_month_duration vs month vs. benefit_end_month ??
+  month_duration INTEGER NOT NULL,
+
+  cumulative_months INTEGER NOT NULL,
+
+  -- We can try and just calculate this from looking back in time to see
+  -- what other events have happened for this user.
+  --
+  -- But, if user does not hide this info, then we'll get it in the
+  -- message
+  streak_months INTEGER NOT NULL,
+
+  -- TODO: We could remove is_gift. It's just that if
+  -- twitch_gift_subscription_id  is not null then we know it is
+  -- gifted.
+  is_gift BOOLEAN NOT NULL,
+  twitch_gift_subscription_id INTEGER,
+
+  FOREIGN KEY(user_id)            REFERENCES users(id),
+  FOREIGN KEY(twitch_user_id)     REFERENCES twitch_users(id),
+  FOREIGN KEY(twitch_gift_subscription_id)
+    REFERENCES TWITCH_GIFT_SUBSCRIPTION_EVENTS(id)
 );
 
 CREATE TABLE TWITCH_CHAT_HISTORY (
