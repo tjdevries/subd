@@ -60,15 +60,15 @@ CREATE TABLE TWITCH_GIFT_SUBSCRIPTION_EVENTS (
   recipient_twitch_user_id INTEGER NOT NULL,
 
   gifting_user_id INTEGER NOT NULL,
-  gifting_twitch_user_id INTEGER NOT NULL,
+  gifting_twitch_user_id INTEGER NOT NULL
 
-)
+);
 
 CREATE TABLE TWITCH_SUBSCRIPTION_EVENTS (
   id integer PRIMARY KEY AUTOINCREMENT,
 
   user_id INTEGER NOT NULL,
-  twitch_user_id INTEGER PRIMARY KEY NOT NULL,
+  twitch_user_id INTEGER NOT NULL,
   channel_id INTEGER NOT NULL,
   created_at DATETIME NOT NULL,
 
@@ -90,7 +90,6 @@ CREATE TABLE TWITCH_SUBSCRIPTION_EVENTS (
   -- TODO: We could remove is_gift. It's just that if
   -- twitch_gift_subscription_id  is not null then we know it is
   -- gifted.
-  is_gift BOOLEAN NOT NULL,
   twitch_gift_subscription_id INTEGER,
 
   FOREIGN KEY(user_id)            REFERENCES users(id),

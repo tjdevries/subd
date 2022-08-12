@@ -10,6 +10,7 @@ subd-db = { path = "crates/subd-db" }
 subd-gh = { path = "crates/subd-gh" }
 subd-twitch = { path = "crates/subd-twitch" }
 subd-types = { path = "crates/subd-types" }
+subd-macros = { path = "crates/subd-macros" }
 
 # Twitch Deps
 twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest", "pubsub" ]}

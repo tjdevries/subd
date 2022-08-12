@@ -150,9 +150,9 @@ pub async fn download_themesong(
 }
 
 pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
-    user_roles.is_github_sponsor
+    user_roles.is_github_sponsor()
         || user_roles.is_twitch_mod
-        || user_roles.is_twitch_sub
+        || user_roles.temp_is_twitch_sub()
         || user_roles.is_twitch_vip
         || user_roles.is_twitch_founder
 }
