@@ -1,5 +1,13 @@
 #![allow(dead_code, unused_imports)]
 
+// Some questions for next time:
+// - how do we do joins? (and prevent endless querires)
+// - how do we do lists of things?
+//      - get all messages for user (sqlx)
+//      - impl some sqlx stuff for these structs?
+// - create, read, update, delete
+// - think about: joins, many2many, many2one, one2many, constraints, indexes
+
 // use subd_macros::UpdateAttr;
 use subd_macros::database_model;
 
@@ -19,6 +27,7 @@ mod user_model {
         #[immutable]
         id: UserID,
 
+        #[immutable]
         twitch_id: Option<TwitchID>,
         github_id: Option<GithubID>,
     }
@@ -37,6 +46,7 @@ mod user_model {
         }
 
         pub fn save(self) -> Self {
+            // sqlx::query!("INSERT INTO X VALUES (...) WHERE X ...)
             self
         }
     }
@@ -105,6 +115,8 @@ async fn main() -> anyhow::Result<()> {
         github_id: Some(Some("github-foo".to_string())),
         ..Default::default()
     });
+
+    println!("Original user: {:?}", user);
 
     println!("updated_user: {:#?}", new_user);
     Ok(())
