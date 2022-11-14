@@ -39,12 +39,9 @@ pub async fn set_github_info_for_user(
     user: &UserID,
     github_login: &str,
 ) -> Result<()> {
-    let github_user = subd_gh::get_github_user(github_login)
-        .await?
-        .ok_or(anyhow::anyhow!(
-            "Could not find github user: {:?}",
-            github_login
-        ))?;
+    let github_user = subd_gh::get_github_user(github_login).await?.ok_or(
+        anyhow::anyhow!("Could not find github user: {:?}", github_login),
+    )?;
 
     sqlx::query!(
         "
@@ -100,9 +97,10 @@ pub async fn get_github_info_for_user(
     user_id: &UserID,
 ) -> Result<Option<GithubUser>> {
     // TODO: Rewrite this as one query
-    let record = sqlx::query!("SELECT github_id FROM USERS WHERE id = ?1", user_id)
-        .fetch_one(&mut *conn)
-        .await?;
+    let record =
+        sqlx::query!("SELECT github_id FROM USERS WHERE id = ?1", user_id)
+            .fetch_one(&mut *conn)
+            .await?;
 
     let github_id = match record.github_id {
         Some(github_id) => github_id,
@@ -145,7 +143,10 @@ pub async fn get_github_info_for_user(
 //     Ok(())
 // }
 
-pub async fn get_user(_conn: &mut SqliteConnection, _user_id: &UserID) -> Result<User> {
+pub async fn get_user(
+    _conn: &mut SqliteConnection,
+    _user_id: &UserID,
+) -> Result<User> {
     todo!()
     // Ok(sqlx::query_as!(
     //     User,
@@ -284,7 +285,10 @@ pub struct TwitchUser {
     pub account_created_at: Option<String>,
 }
 
-async fn create_twitch_user(conn: &mut SqliteConnection, twitch_user: TwitchUser) -> Result<()> {
+async fn create_twitch_user(
+    conn: &mut SqliteConnection,
+    twitch_user: TwitchUser,
+) -> Result<()> {
     sqlx::query!(
         "INSERT INTO twitch_users (id, login, display_name, broadcaster_type, account_type)
             VALUES ( ?1, ?2, ?3, '', '' )",
@@ -359,7 +363,10 @@ pub async fn set_user_roles(
     Ok(())
 }
 
-pub async fn get_user_roles(conn: &mut SqliteConnection, user_id: &UserID) -> Result<UserRoles> {
+pub async fn get_user_roles(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+) -> Result<UserRoles> {
     struct UserRoleRow {
         is_github_sponsor: bool,
         is_twitch_mod: bool,

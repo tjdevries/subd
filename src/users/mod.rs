@@ -97,10 +97,13 @@ async fn get_user_role_from_user_id_and_msg(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let is_github_sponsor = match subd_db::get_github_info_for_user(&mut *conn, user_id).await? {
-        Some(github_user) => subd_gh::is_user_sponsoring(&github_user.login).await?,
-        None => false,
-    };
+    let is_github_sponsor =
+        match subd_db::get_github_info_for_user(&mut *conn, user_id).await? {
+            Some(github_user) => {
+                subd_gh::is_user_sponsoring(&github_user.login).await?
+            }
+            None => false,
+        };
 
     let mut twitch_roles = get_twitch_roles_from_msg(msg);
     if is_github_sponsor {
@@ -117,7 +120,8 @@ async fn update_user_roles(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let user_roles = get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
+    let user_roles =
+        get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
 
     info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
     subd_db::set_user_roles(conn, user_id, &user_roles).await?;

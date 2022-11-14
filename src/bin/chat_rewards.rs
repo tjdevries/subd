@@ -1,8 +1,9 @@
 use reqwest::Client as ReqwestClient;
 use twitch_api2::{
     helix::points::{
-        CreateCustomRewardBody, CreateCustomRewardRequest, GetCustomRewardRequest,
-        UpdateCustomRewardBody, UpdateCustomRewardRequest,
+        CreateCustomRewardBody, CreateCustomRewardRequest,
+        GetCustomRewardRequest, UpdateCustomRewardBody,
+        UpdateCustomRewardRequest,
     },
     twitch_oauth2::UserToken,
     HelixClient,
@@ -52,7 +53,8 @@ async fn main() -> anyhow::Result<()> {
             .is_enabled(Some(true))
             .build();
 
-        let to_send = helix.req_patch(req, body, &token).await.expect("sent good");
+        let to_send =
+            helix.req_patch(req, body, &token).await.expect("sent good");
         dbg!(to_send);
     } else {
         let req = GetCustomRewardRequest::builder()

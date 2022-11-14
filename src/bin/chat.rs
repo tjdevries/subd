@@ -76,7 +76,10 @@ async fn handle_twitch_msg(
     let mut conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+    let (_, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(config);
 
     loop {
         let event = rx.recv().await?;
@@ -93,11 +96,25 @@ async fn handle_twitch_msg(
             .join(",");
         info!(sender = %msg.sender.name, badges = %badges, "{}", msg.message_text);
 
-        subd_db::create_twitch_user_chat(&mut conn, &msg.sender.id, &msg.sender.login).await?;
-        subd_db::save_twitch_message(&mut conn, &msg.sender.id, &msg.message_text).await?;
+        subd_db::create_twitch_user_chat(
+            &mut conn,
+            &msg.sender.id,
+            &msg.sender.login,
+        )
+        .await?;
+        subd_db::save_twitch_message(
+            &mut conn,
+            &msg.sender.id,
+            &msg.message_text,
+        )
+        .await?;
 
-        let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
-        let user_roles = users::update_user_roles_once_per_day(&mut conn, &user_id, &msg).await?;
+        let user_id =
+            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
+                .await?;
+        let user_roles =
+            users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
+                .await?;
 
         if themesong::should_play_themesong(&mut conn, &user_id).await? {
             println!("  Sending themesong play event...");
@@ -113,7 +130,8 @@ async fn handle_twitch_msg(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+        let twitch_username =
+            subd_types::consts::get_twitch_broadcaster_username();
         match splitmsg[0].as_str() {
             "!echo" => {
                 let echo = commands::Echo::try_parse_from(&splitmsg);
@@ -144,7 +162,8 @@ async fn handle_twitch_msg(
                     "suggest" => {
                         let text = splitmsg[2..].join(" ");
                         if text.is_inappropriate() {
-                            let analysis = Censor::from_str(text.as_str()).analyze();
+                            let analysis =
+                                Censor::from_str(text.as_str()).analyze();
                             println!("Text Is: {:?} -> {:?}", text, analysis);
                             continue;
                         }
@@ -190,7 +209,9 @@ async fn handle_twitch_msg(
                         }
 
                         match status.topics.get_mut(id - 1) {
-                            Some(topic) => topic.votes = max(0, topic.votes - 1),
+                            Some(topic) => {
+                                topic.votes = max(0, topic.votes - 1)
+                            }
                             None => continue,
                         }
                     }
@@ -200,11 +221,19 @@ async fn handle_twitch_msg(
                 tx.send(Event::LunchBytesStatus(status.clone()))?;
             }
             "!raffle" => {
-                let result =
-                    server::raffle::handle(&tx, &user_id, &msg.sender.name, &msg.message_text)
-                        .await;
+                let result = server::raffle::handle(
+                    &tx,
+                    &user_id,
+                    &msg.sender.name,
+                    &msg.message_text,
+                )
+                .await;
                 if let Err(err) = result {
-                    say(&client, format!("Error while doing raffle: {:?}", err)).await?;
+                    say(
+                        &client,
+                        format!("Error while doing raffle: {:?}", err),
+                    )
+                    .await?;
                 }
             }
             _ => {}
@@ -273,14 +302,21 @@ async fn handle_set_command<
         println!("  ... split msg: {:?}", splitmsg);
 
         if splitmsg.len() != 3 {
-            say(client, format!("@{}: !set github <login>", msg.sender.name)).await?;
+            say(client, format!("@{}: !set github <login>", msg.sender.name))
+                .await?;
             return Ok(());
         }
 
-        let user_id = subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
+        let user_id =
+            subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
 
         let github_login = splitmsg[2].clone();
-        subd_db::set_github_info_for_user(conn, &user_id, github_login.as_str()).await?;
+        subd_db::set_github_info_for_user(
+            conn,
+            &user_id,
+            github_login.as_str(),
+        )
+        .await?;
         say(
             client,
             format!(
@@ -304,10 +340,13 @@ async fn handle_set_command<
 
     if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
         let twitch_user = splitmsg[3].replace("@", "");
-        let user_id = match subd_db::get_user_from_twitch_user_name(conn, &twitch_user).await? {
-            Some(user_id) => user_id,
-            None => return Ok(()),
-        };
+        let user_id =
+            match subd_db::get_user_from_twitch_user_name(conn, &twitch_user)
+                .await?
+            {
+                Some(user_id) => user_id,
+                None => return Ok(()),
+            };
         themesong::mark_themesong_unplayed(conn, &user_id).await?;
         println!(
             "  Successfully marked themseong unplayed for: {:?}",
@@ -334,8 +373,10 @@ async fn handle_twitch_chat(
     // Technically, this one just needs to be able to read chat
     // this client won't send anything to chat.
     let config = get_chat_config();
-    let (mut incoming_messages, client) =
-        TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+    let (mut incoming_messages, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(config);
     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
 
     client.join(twitch_username.to_owned()).unwrap();
@@ -390,7 +431,9 @@ async fn yew_inner_loop(
             | Event::RaffleStatus(_)
             | Event::TwitchSubscription(_) => {
                 ws_stream
-                    .send(tungstenite::Message::Text(serde_json::to_string(&event)?))
+                    .send(tungstenite::Message::Text(serde_json::to_string(
+                        &event,
+                    )?))
                     .await?;
             }
             Event::Shutdown => break,
@@ -401,7 +444,10 @@ async fn yew_inner_loop(
     Ok(())
 }
 
-async fn handle_yew(tx: broadcast::Sender<Event>, _: broadcast::Receiver<Event>) -> Result<()> {
+async fn handle_yew(
+    tx: broadcast::Sender<Event>,
+    _: broadcast::Receiver<Event>,
+) -> Result<()> {
     // TODO(generalize)
     // This needs to localhost
     let ws = TcpListener::bind("192.168.4.97:9001").await?;
@@ -450,7 +496,8 @@ async fn handle_twitch_sub_count(
                     .first("1".to_string())
                     .build();
 
-                let response = helix.req_get(req, &token).await.expect("yayayaya");
+                let response =
+                    helix.req_get(req, &token).await.expect("yayayaya");
                 let subcount = response.total.unwrap();
 
                 tx.send(Event::TwitchSubscriptionCount(subcount as usize))?;
@@ -472,9 +519,11 @@ async fn handle_twitch_notifications(
         .parse::<u32>()
         .unwrap();
     let subscriptions =
-        pubsub::channel_subscriptions::ChannelSubscribeEventsV1 { channel_id }.into_topic();
+        pubsub::channel_subscriptions::ChannelSubscribeEventsV1 { channel_id }
+            .into_topic();
 
-    let redeems = pubsub::channel_points::ChannelPointsChannelV1 { channel_id }.into_topic();
+    let redeems = pubsub::channel_points::ChannelPointsChannelV1 { channel_id }
+        .into_topic();
 
     // Create the topic command to send to twitch
     let command = pubsub::listen_command(
@@ -486,9 +535,10 @@ async fn handle_twitch_notifications(
 
     // Send the message with your favorite websocket client
     info!("trying to connect to stream");
-    let (mut ws_stream, _resp) = tokio_tungstenite::connect_async("wss://pubsub-edge.twitch.tv")
-        .await
-        .expect("asdfasdfasdf");
+    let (mut ws_stream, _resp) =
+        tokio_tungstenite::connect_async("wss://pubsub-edge.twitch.tv")
+            .await
+            .expect("asdfasdfasdf");
 
     ws_stream.send(tungstenite::Message::Text(command)).await?;
     ws_stream
@@ -512,7 +562,10 @@ async fn handle_twitch_notifications(
                     }
                     pubsub::Response::Message { data } => {
                         match data {
-                            pubsub::TopicData::ChannelPointsChannelV1 { topic, reply } => {
+                            pubsub::TopicData::ChannelPointsChannelV1 {
+                                topic,
+                                reply,
+                            } => {
                                 use pubsub::channel_points::ChannelPointsChannelV1Reply;
                                 info!(topic = ?topic, "channel point redemption");
                                 match *reply {
@@ -530,9 +583,14 @@ async fn handle_twitch_notifications(
                                     _ => {}
                                 }
                             }
-                            pubsub::TopicData::ChannelSubscribeEventsV1 { topic, reply } => {
+                            pubsub::TopicData::ChannelSubscribeEventsV1 {
+                                topic,
+                                reply,
+                            } => {
                                 info!(topic = ?topic, "subscription event");
-                                tx.send(Event::TwitchSubscription((*reply).into()))?;
+                                tx.send(Event::TwitchSubscription(
+                                    (*reply).into(),
+                                ))?;
                                 tx.send(Event::RequestTwitchSubCount)?;
                             }
                             // pubsub::TopicData::ChatModeratorActions { topic, reply } => todo!(),
@@ -612,7 +670,8 @@ async fn handle_obs_stuff(
         .parse::<u16>()
         .unwrap();
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
-    let obs_client = OBSClient::connect(obs_websocket_address, obs_websocket_port).await?;
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port).await?;
 
     loop {
         let event = rx.recv().await?;
@@ -627,7 +686,8 @@ async fn handle_obs_stuff(
                     "Mandatory Crab Dance" => {
                         // TODO: Mute system audio to stream
                         // TODO: Mute linux PC audio to stream
-                        server::obs::set_scene(&obs_client, "PC - Crab Rave").await?;
+                        server::obs::set_scene(&obs_client, "PC - Crab Rave")
+                            .await?;
                     }
                     _ => {}
                 }
@@ -651,10 +711,20 @@ async fn handle_obs_stuff(
                 match splitmsg[0].as_str() {
                     "!mute" => match splitmsg[1].as_str() {
                         "on" => {
-                            server::obs::set_audio_status(&obs_client, "Mic/Aux", false).await?
+                            server::obs::set_audio_status(
+                                &obs_client,
+                                "Mic/Aux",
+                                false,
+                            )
+                            .await?
                         }
                         "off" => {
-                            server::obs::set_audio_status(&obs_client, "Mic/Aux", true).await?
+                            server::obs::set_audio_status(
+                                &obs_client,
+                                "Mic/Aux",
+                                true,
+                            )
+                            .await?
                         }
                         _ => {}
                     },
@@ -679,7 +749,8 @@ async fn handle_obs_stuff(
                         server::obs::set_scene(&obs_client, $scene).await?;
                         let tx = tx.clone();
                         tokio::spawn(async move {
-                            tokio::time::sleep(Duration::from_secs($time)).await;
+                            tokio::time::sleep(Duration::from_secs($time))
+                                .await;
                             tx.send(Event::ObsSetScene {
                                 scene: "PC".to_string(),
                             })
@@ -687,7 +758,9 @@ async fn handle_obs_stuff(
                         });
                     };
                 }
-                let twitch_user = subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
+                let twitch_user =
+                    subd_db::get_twitch_user_from_user_id(&mut conn, user_id)
+                        .await?;
                 match twitch_user.display_name.to_lowercase().as_ref() {
                     "theprimeagen" => {
                         set_scene!("Prime Dancing");
@@ -720,7 +793,10 @@ async fn handle_themesong_download(
     let mut conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<SecureTCPTransport, StaticLoginCredentials>::new(config);
+    let (_, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(config);
 
     loop {
         let event = rx.recv().await?;
@@ -729,7 +805,9 @@ async fn handle_themesong_download(
             _ => continue,
         };
 
-        let user_id = subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id).await?;
+        let user_id =
+            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
+                .await?;
         let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
 
         let splitmsg = msg
@@ -775,19 +853,24 @@ async fn handle_themesong_download(
             {
                 Ok(_) => {
                     println!("Successfully downloaded themesong");
-                    tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
-                        display_name: msg.sender.name.clone(),
-                        success: true,
-                    }))?;
+                    tx.send(Event::ThemesongDownload(
+                        ThemesongDownload::Finish {
+                            display_name: msg.sender.name.clone(),
+                            success: true,
+                        },
+                    ))?;
 
                     continue;
                 }
                 Err(err) => {
-                    say(&client, format!("Failed to download: {:?}", err)).await?;
-                    tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
-                        display_name: msg.sender.name.clone(),
-                        success: false,
-                    }))?;
+                    say(&client, format!("Failed to download: {:?}", err))
+                        .await?;
+                    tx.send(Event::ThemesongDownload(
+                        ThemesongDownload::Finish {
+                            display_name: msg.sender.name.clone(),
+                            success: false,
+                        },
+                    ))?;
 
                     continue;
                 }
@@ -812,13 +895,16 @@ async fn handle_themesong_play(
     loop {
         let event = rx.recv().await?;
         let user_id = match event {
-            Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => user_id,
+            Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
+                user_id
+            }
             _ => continue,
         };
 
         println!("=> Playing themesong");
         themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
-        let twitch_user = subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
+        let twitch_user =
+            subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
         match twitch_user.display_name.as_ref() {
             "theprimeagen" => {
                 println!("Wow, theprimeagen is here")
@@ -828,7 +914,10 @@ async fn handle_themesong_play(
     }
 }
 
-async fn say<T: twitch_irc::transport::Transport, L: twitch_irc::login::LoginCredentials>(
+async fn say<
+    T: twitch_irc::transport::Transport,
+    L: twitch_irc::login::LoginCredentials,
+>(
     client: &TwitchIRCClient<T, L>,
     msg: impl Into<String>,
 ) -> Result<()> {
@@ -917,8 +1006,11 @@ async fn main() -> Result<()> {
         let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
             .parse::<u16>()
             .unwrap();
-        let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
-        let obs_client = OBSClient::connect(obs_websocket_address, obs_websocket_port).await?;
+        let obs_websocket_address =
+            subd_types::consts::get_obs_websocket_address();
+        let obs_client =
+            OBSClient::connect(obs_websocket_address, obs_websocket_port)
+                .await?;
 
         // Get and print out version information of OBS and obs-websocket.
         let version = obs_client.general().get_version().await?;

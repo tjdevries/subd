@@ -29,7 +29,10 @@ pub trait DatabaseModel {
 #[async_trait]
 pub trait DatabaseModelWithKey: DatabaseModel + Sized {
     type Key;
-    async fn read(conn: &mut SqliteConnection, id: Self::Key) -> Result<Option<Self>>;
+    async fn read(
+        conn: &mut SqliteConnection,
+        id: Self::Key,
+    ) -> Result<Option<Self>>;
 }
 
 #[database_model]
@@ -46,7 +49,10 @@ mod user_model {
 }
 
 impl user_model::Model {
-    pub async fn read(conn: &mut SqliteConnection, id: UserID) -> Result<Option<Self>> {
+    pub async fn read(
+        conn: &mut SqliteConnection,
+        id: UserID,
+    ) -> Result<Option<Self>> {
         let x = sqlx::query!(
             r#"
             SELECT id, twitch_id, github_id

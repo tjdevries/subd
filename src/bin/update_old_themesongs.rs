@@ -9,9 +9,9 @@ use anyhow::Result;
 //   WHERE msg LIKE '!themesong https%'
 //     GROUP BY TWITCH_CHAT_HISTORY.user_id
 //     ORDER BY timestamp DESC, TWITCH_CHAT_HISTORY.user_id DESC;
-// 
+//
 // -- select * from USER_THEME_SONGS;
-// 
+//
 // -- SELECT COUNT(*) FROM TWITCH_CHAT_HISTORY WHERE user_id = 138;
 #[tokio::main]
 async fn main() -> Result<()> {

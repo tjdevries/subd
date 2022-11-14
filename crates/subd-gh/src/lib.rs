@@ -75,7 +75,8 @@ pub async fn is_user_sponsoring(github_user: &str) -> Result<bool> {
         .send()
         .await?;
 
-    let response_body: Response<is_sponsoring::ResponseData> = res.json().await?;
+    let response_body: Response<is_sponsoring::ResponseData> =
+        res.json().await?;
     if let Some(errors) = response_body.errors {
         warn!(errors = ?errors, "failed to get github information");
         return Ok(false);

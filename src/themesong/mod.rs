@@ -26,9 +26,14 @@ pub async fn play_themesong_for_today(
     Ok(())
 }
 
-pub async fn delete_themesong(conn: &mut SqliteConnection, display_name: &str) -> Result<()> {
+pub async fn delete_themesong(
+    conn: &mut SqliteConnection,
+    display_name: &str,
+) -> Result<()> {
     let display_name = display_name.replace("@", "").to_lowercase();
-    let user_id = subd_db::get_user_from_twitch_user_name(conn, display_name.as_str()).await?;
+    let user_id =
+        subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
+            .await?;
 
     sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = ?1", user_id)
         .execute(&mut *conn)
@@ -37,7 +42,10 @@ pub async fn delete_themesong(conn: &mut SqliteConnection, display_name: &str) -
     Ok(())
 }
 
-async fn mark_themesong_played(conn: &mut SqliteConnection, user_id: &UserID) -> Result<()> {
+async fn mark_themesong_played(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+) -> Result<()> {
     // Insert that we've played their theme song
     sqlx::query!(
         "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES (?1)",
@@ -49,7 +57,10 @@ async fn mark_themesong_played(conn: &mut SqliteConnection, user_id: &UserID) ->
     Ok(())
 }
 
-pub async fn mark_themesong_unplayed(conn: &mut SqliteConnection, user_id: &UserID) -> Result<()> {
+pub async fn mark_themesong_unplayed(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+) -> Result<()> {
     // Insert that we've played their theme song
     sqlx::query!(
         "DELETE FROM USER_THEME_SONG_HISTORY WHERE user_id = (?1) AND date(played_at) = date(CURRENT_TIMESTAMP)",
@@ -100,7 +111,8 @@ pub async fn download_themesong(
     };
     validate_duration(start, end, duration)?;
 
-    let location = THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
+    let location =
+        THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
 
     info!("downloading");
 
@@ -159,7 +171,10 @@ pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
 }
 
 // TODO: We should probably not copy & paste this like this
-pub async fn should_play_themesong(conn: &mut SqliteConnection, user_id: &UserID) -> Result<bool> {
+pub async fn should_play_themesong(
+    conn: &mut SqliteConnection,
+    user_id: &UserID,
+) -> Result<bool> {
     if has_played_themesong_today(conn, user_id).await? {
         return Ok(false);
     }
@@ -203,7 +218,9 @@ pub async fn play_themesong(
         }
     };
 
-    let rodioer = rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song))).unwrap();
+    let rodioer =
+        rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
+            .unwrap();
     // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
     // do that yet, this probably wouldn't work with queued themesongs (for example)
     // rodioer.total_duration();
@@ -273,8 +290,10 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
     // TODO: Support ms for ppl
-    let start = start_minutes.parse::<f64>()? * 60.0 + start_seconds.parse::<f64>()?;
-    let end = end_minutes.parse::<f64>()? * 60.0 + end_seconds.parse::<f64>()?;
+    let start =
+        start_minutes.parse::<f64>()? * 60.0 + start_seconds.parse::<f64>()?;
+    let end =
+        end_minutes.parse::<f64>()? * 60.0 + end_seconds.parse::<f64>()?;
 
     if end - start <= 0.0 {
         Err(anyhow::anyhow!("End must be after start"))
@@ -291,7 +310,10 @@ mod test {
 
     #[test]
     fn accepts_youtube_dot_com() {
-        assert!(validate_themesong("https://www.youtube.com/watch?v=SkypZuY6ZvA").is_ok())
+        assert!(validate_themesong(
+            "https://www.youtube.com/watch?v=SkypZuY6ZvA"
+        )
+        .is_ok())
     }
 
     #[test]
@@ -318,7 +340,8 @@ mod test {
         );
 
         assert_eq!(
-            validate_themesong("https://youtu.be/QMVIJhC9Veg?anything=asdf").unwrap(),
+            validate_themesong("https://youtu.be/QMVIJhC9Veg?anything=asdf")
+                .unwrap(),
             "https://youtu.be/QMVIJhC9Veg?".to_string()
         );
     }

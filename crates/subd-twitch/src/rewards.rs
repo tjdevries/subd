@@ -1,8 +1,8 @@
 use anyhow::Result;
 use twitch_api2::{
     helix::points::{
-        CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
-        UpdateCustomRewardRequest,
+        CreateCustomRewardBody, CreateCustomRewardRequest,
+        UpdateCustomRewardBody, UpdateCustomRewardRequest,
     },
     twitch_oauth2::UserToken,
     HelixClient,
@@ -27,7 +27,11 @@ where
         Self { client, token }
     }
 
-    pub async fn set_reward_status(&self, id: &str, status: bool) -> Result<()> {
+    pub async fn set_reward_status(
+        &self,
+        id: &str,
+        status: bool,
+    ) -> Result<()> {
         let req = UpdateCustomRewardRequest::builder()
             .broadcaster_id(self.token.user_id.clone())
             .id(id)

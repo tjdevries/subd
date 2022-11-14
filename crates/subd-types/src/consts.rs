@@ -46,7 +46,8 @@ pub fn get_twitch_broadcaster_oauth() -> AccessToken {
 }
 
 pub fn get_twitch_broadcaster_refresh() -> Option<RefreshToken> {
-    static TWITCH_BROADCASTER_REFRESH: OnceCell<Option<RefreshToken>> = OnceCell::new();
+    static TWITCH_BROADCASTER_REFRESH: OnceCell<Option<RefreshToken>> =
+        OnceCell::new();
     TWITCH_BROADCASTER_REFRESH
         .get_or_init(|| match dotenv::var("SUBD_TWITCH_BOT_REFRESH").ok() {
             Some(token) => Some(RefreshToken::new(token)),
@@ -85,19 +86,23 @@ pub fn get_twitch_broadcaster_channel_id() -> String {
 }
 
 pub fn get_twitch_bot_username() -> String {
-    dotenv::var("SUBD_TWITCH_BOT_USERNAME").expect("SUBD_TWITCH_BOT_USERNAME to exist")
+    dotenv::var("SUBD_TWITCH_BOT_USERNAME")
+        .expect("SUBD_TWITCH_BOT_USERNAME to exist")
 }
 
 pub fn get_twitch_bot_channel_id() -> String {
-    dotenv::var("SUBD_TWITCH_BOT_CHANNEL_ID").expect("SUBD_TWITCH_BOT_CHANNEL_ID to exist")
+    dotenv::var("SUBD_TWITCH_BOT_CHANNEL_ID")
+        .expect("SUBD_TWITCH_BOT_CHANNEL_ID to exist")
 }
 
 pub fn get_obs_websocket_address() -> String {
-    dotenv::var("SUBD_OBS_WEBSOCKET_ADDRESS").expect("SUBD_OBS_WEBSOCKET_ADDRESS to exist")
+    dotenv::var("SUBD_OBS_WEBSOCKET_ADDRESS")
+        .expect("SUBD_OBS_WEBSOCKET_ADDRESS to exist")
 }
 
 pub fn get_obs_websocket_port() -> String {
-    dotenv::var("SUBD_OBS_WEBSOCKET_PORT").expect("SUBD_OBS_WEBSOCKET_PORT to exist")
+    dotenv::var("SUBD_OBS_WEBSOCKET_PORT")
+        .expect("SUBD_OBS_WEBSOCKET_PORT to exist")
 }
 
 pub fn get_obs_test_scene() -> String {

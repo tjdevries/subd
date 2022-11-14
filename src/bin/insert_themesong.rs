@@ -14,9 +14,10 @@ async fn main() -> anyhow::Result<()> {
     // )
     // .execute(&mut db)
     // .await?;
-    let result = sqlx::query!("SELECT song FROM user_theme_songs WHERE user_id = 117")
-        .fetch_one(&mut db)
-        .await?;
+    let result =
+        sqlx::query!("SELECT song FROM user_theme_songs WHERE user_id = 117")
+            .fetch_one(&mut db)
+            .await?;
 
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();

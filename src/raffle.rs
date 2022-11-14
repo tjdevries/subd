@@ -135,11 +135,11 @@ pub async fn handle(
     let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
 
     if contents == "!raffle" {
-        if !status
-            .lock()
-            .unwrap()
-            .enter_user(user_id, user_name, &user_roles)?
-        {
+        if !status.lock().unwrap().enter_user(
+            user_id,
+            user_name,
+            &user_roles,
+        )? {
             return Ok(());
         }
     } else {
@@ -153,7 +153,8 @@ pub async fn handle(
         let is_mod = user_roles.is_moderator();
         match (is_mod, splitmsg[1].as_str()) {
             (true, "start") => {
-                let count = splitmsg.get(2).unwrap_or(&"1".to_string()).parse()?;
+                let count =
+                    splitmsg.get(2).unwrap_or(&"1".to_string()).parse()?;
                 let winners = status.lock().unwrap().start(count);
                 println!("=======================================");
                 println!("WINNERS: {:?}", winners);
@@ -161,7 +162,10 @@ pub async fn handle(
 
                 let mut users = HashSet::new();
                 for winner in winners.iter() {
-                    let user = subd_db::get_twitch_user_from_user_id(&mut conn, *winner).await?;
+                    let user = subd_db::get_twitch_user_from_user_id(
+                        &mut conn, *winner,
+                    )
+                    .await?;
                     users.insert(user.display_name);
                 }
                 tx.send(Event::RaffleStatus(RaffleStatus::Winner { users }))?;
@@ -183,11 +187,11 @@ pub async fn handle(
                 status.lock().unwrap().close();
             }
             (_, "enter") => {
-                if !status
-                    .lock()
-                    .unwrap()
-                    .enter_user(user_id, user_name, &user_roles)?
-                {
+                if !status.lock().unwrap().enter_user(
+                    user_id,
+                    user_name,
+                    &user_roles,
+                )? {
                     return Ok(());
                 }
                 // println!("User Entered: {:?}", entered);

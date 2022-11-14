@@ -30,14 +30,17 @@ use syn::Visibility;
 #[proc_macro_attribute]
 pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as ItemMod);
-    let input_content = input.content.expect("Must have content inside of module").1;
+    let input_content =
+        input.content.expect("Must have content inside of module").1;
 
     let name = input.ident;
     let mut models = vec![];
     let mut content = vec![];
     for item in input_content {
         match item {
-            syn::Item::Struct(s) if s.ident.to_string() == "Model" => models.push(s),
+            syn::Item::Struct(s) if s.ident.to_string() == "Model" => {
+                models.push(s)
+            }
             _ => content.push(item),
         };
     }
@@ -58,7 +61,8 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                     .iter()
                     .find(|a| {
                         a.path.segments.len() == 1
-                            && a.path.segments[0].ident.to_string() == "immutable"
+                            && a.path.segments[0].ident.to_string()
+                                == "immutable"
                     })
                     .is_some()
                 {
@@ -72,7 +76,9 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                     },
                 });
                 let ty = f.ty.clone();
-                new_field.ty = syn::Type::Verbatim(TokenStream::from(quote!(Option<#ty>)).into());
+                new_field.ty = syn::Type::Verbatim(
+                    TokenStream::from(quote!(Option<#ty>)).into(),
+                );
 
                 named.push(new_field);
             });

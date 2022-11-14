@@ -66,7 +66,9 @@ fn render_message(message: &PrivmsgMessage) -> Html {
                 pieces.push(html! { <span> { segment } </span> });
             }
 
-            pieces.push(html! { <img src={make_emote_url(&emote)} alt={"emote"} /> });
+            pieces.push(
+                html! { <img src={make_emote_url(&emote)} alt={"emote"} /> },
+            );
 
             last_emote_finish = emote.char_range.end;
 
@@ -107,7 +109,8 @@ fn default_messages() -> Vec<PrivmsgMessage> {
         PrivmsgMessage {
             channel_login: channel_username.clone().into(),
             channel_id: "_".into(),
-            message_text: "Wow, Sorry for my bad behavior. I'll shape up now".into(),
+            message_text: "Wow, Sorry for my bad behavior. I'll shape up now"
+                .into(),
             is_action: false,
             sender: twitch_irc::message::TwitchUserBasics {
                 id: "TODO".into(),
@@ -125,7 +128,10 @@ fn default_messages() -> Vec<PrivmsgMessage> {
             emotes: vec![],
             message_id: "_".into(),
             server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple("this is a lie".into(), vec![]),
+            source: twitch_irc::message::IRCMessage::new_simple(
+                "this is a lie".into(),
+                vec![],
+            ),
         },
         PrivmsgMessage {
             channel_login: channel_username.clone().into(),
@@ -145,7 +151,10 @@ fn default_messages() -> Vec<PrivmsgMessage> {
             emotes: vec![],
             message_id: "_".into(),
             server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple("this is a lie".into(), vec![]),
+            source: twitch_irc::message::IRCMessage::new_simple(
+                "this is a lie".into(),
+                vec![],
+            ),
         },
         PrivmsgMessage {
             channel_login: channel_username.clone().into(),
@@ -165,7 +174,10 @@ fn default_messages() -> Vec<PrivmsgMessage> {
             emotes: vec![],
             message_id: "_".into(),
             server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple("this is a lie".into(), vec![]),
+            source: twitch_irc::message::IRCMessage::new_simple(
+                "this is a lie".into(),
+                vec![],
+            ),
         },
     ]
 }
@@ -205,28 +217,48 @@ fn reducer() -> Html {
         use_effect_with_deps(
             move |message| {
                 if let Some(message) = &**message {
-                    let event: SubdEvent =
-                        serde_json::from_str(message).expect("got a twitch message");
+                    let event: SubdEvent = serde_json::from_str(message)
+                        .expect("got a twitch message");
 
                     match event {
-                        SubdEvent::TwitchChatMessage(twitch_msg) => history.push(twitch_msg),
-                        SubdEvent::TwitchSubscriptionCount(count) => subcount.set(count),
+                        SubdEvent::TwitchChatMessage(twitch_msg) => {
+                            history.push(twitch_msg)
+                        }
+                        SubdEvent::TwitchSubscriptionCount(count) => {
+                            subcount.set(count)
+                        }
                         SubdEvent::TwitchSubscription(subscription) => {
-                            log::info!("Got a new subscription: {:?}", subscription);
+                            log::info!(
+                                "Got a new subscription: {:?}",
+                                subscription
+                            );
                             // handle_twitch_sub(subscription)
                             new_sub.set(Some(subscription))
                         }
                         SubdEvent::ThemesongDownload(download) => {
                             let download_type = match download {
-                                subd_types::ThemesongDownload::Request { .. } => "Request",
-                                subd_types::ThemesongDownload::Start { .. } => "Start",
-                                subd_types::ThemesongDownload::Finish { .. } => "Finish",
-                                subd_types::ThemesongDownload::Format { .. } => "Format",
+                                subd_types::ThemesongDownload::Request {
+                                    ..
+                                } => "Request",
+                                subd_types::ThemesongDownload::Start {
+                                    ..
+                                } => "Start",
+                                subd_types::ThemesongDownload::Finish {
+                                    ..
+                                } => "Finish",
+                                subd_types::ThemesongDownload::Format {
+                                    ..
+                                } => "Format",
                             };
-                            log::info!("New download request: {:?}", download_type);
+                            log::info!(
+                                "New download request: {:?}",
+                                download_type
+                            );
                             themesong.set(Some(download))
                         }
-                        SubdEvent::ThemesongPlay(play) => player.set(Some(play)),
+                        SubdEvent::ThemesongPlay(play) => {
+                            player.set(Some(play))
+                        }
                         SubdEvent::LunchBytesStatus(mut lunchbytes_status) => {
                             // Sort by votes
                             lunchbytes_status
@@ -276,11 +308,13 @@ fn reducer() -> Html {
         None => html! {},
     };
 
-    let raffle_html = html! { <RaffleComponent raffle_status={(*raffle_status).clone()} /> };
+    let raffle_html =
+        html! { <RaffleComponent raffle_status={(*raffle_status).clone()} /> };
 
     // TODO: Consider using max instead
     // let total_votes = lb_status.topics.iter().map(|t| t.votes).max().unwrap_or(1);
-    let total_votes = max(lb_status.topics.iter().map(|t| t.votes).sum::<i32>(), 1);
+    let total_votes =
+        max(lb_status.topics.iter().map(|t| t.votes).sum::<i32>(), 1);
     let status_props = status::StatusProps {
         enabled: lb_status.enabled,
         topics: lb_status
