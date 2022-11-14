@@ -4,9 +4,13 @@ use quote::quote;
 use syn::parse_macro_input;
 use syn::punctuated::Punctuated;
 use syn::FieldsNamed;
+use syn::FnArg;
 use syn::Ident;
 use syn::ItemMod;
-use syn::Type;
+use syn::Pat;
+use syn::PatIdent;
+use syn::PatType;
+use syn::Token;
 use syn::VisPublic;
 use syn::Visibility;
 
@@ -24,7 +28,7 @@ use syn::Visibility;
 // }
 
 #[proc_macro_attribute]
-pub fn database_model(attr: TokenStream, tokens: TokenStream) -> TokenStream {
+pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as ItemMod);
     let input_content = input.content.expect("Must have content inside of module").1;
 
@@ -81,6 +85,32 @@ pub fn database_model(attr: TokenStream, tokens: TokenStream) -> TokenStream {
         _ => panic!("Only NamedFields are allowed"),
     };
 
+    let mut new_args: Punctuated<FnArg, Token![,]> = Punctuated::new();
+    model.fields.iter().for_each(|f| match &f.ident {
+        Some(ident) => new_args.push(FnArg::Typed(PatType {
+            attrs: vec![],
+            pat: Box::new(Pat::Ident(PatIdent {
+                attrs: vec![],
+                by_ref: None,
+                mutability: None,
+                ident: ident.clone(),
+                subpat: None,
+            })),
+            colon_token: f.colon_token.unwrap(),
+            ty: Box::new(f.ty.clone()),
+        })),
+        None => (),
+    });
+
+    let self_body = model
+        .fields
+        .iter()
+        .filter_map(|f| match &f.ident {
+            Some(ident) => Some(ident.clone()),
+            None => None,
+        })
+        .collect::<Punctuated<Ident, Token![,]>>();
+
     // Remove attrs (todo, only immutable attrs)
     model.fields.iter_mut().for_each(|f| f.attrs = vec![]);
 
@@ -108,9 +138,14 @@ pub fn database_model(attr: TokenStream, tokens: TokenStream) -> TokenStream {
             #(#content)*
 
             impl Model {
-                pub fn update(mut self, updates: ModelUpdate) -> Self {
+                pub fn new(#new_args) -> Self {
+                    Self { #self_body }
+                }
+
+                pub async fn update(mut self, conn: &mut SqliteConnection, updates: ModelUpdate) -> Result<Self> {
                     #(#model_update_identifiers)*
-                    self.save()
+                    self.save(conn).await?;
+                    Ok(self)
                 }
             }
         }

@@ -67,16 +67,17 @@ pub async fn has_played_themesong_today(
 ) -> Result<bool> {
     let played_count = sqlx::query!(
         r#"
-            SELECT count(*) as result
-            FROM USER_THEME_SONG_HISTORY
-            WHERE date(played_at) = date('now') AND user_id = ?1;
+        SELECT count(*) AS RESULT
+          FROM user_theme_song_history
+          WHERE date(played_at) = date('now')
+            AND user_id = ?1;
         "#,
         user_id
     )
     .fetch_one(&mut *conn)
     .await?;
 
-    Ok(played_count.result > 0)
+    Ok(played_count.RESULT > 0)
 }
 
 #[tracing::instrument(skip(conn))]
@@ -151,10 +152,10 @@ pub async fn download_themesong(
 
 pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
     user_roles.is_github_sponsor()
-        || user_roles.is_twitch_mod
-        || user_roles.temp_is_twitch_sub()
-        || user_roles.is_twitch_vip
-        || user_roles.is_twitch_founder
+        || user_roles.is_twitch_mod()
+        || user_roles.is_twitch_sub()
+        || user_roles.is_twitch_vip()
+        || user_roles.is_twitch_founder()
 }
 
 // TODO: We should probably not copy & paste this like this
@@ -229,10 +230,12 @@ pub fn validate_themesong(themesong_url: &str) -> Result<String> {
         || domain == "youtu.be"
         || domain == "twitch.tv"
         || domain == "twitter.com"
-        || domain == "beginworld.website-us-east-1.linodeobjects.com")
+        || domain == "beginworld.website-us-east-1.linodeobjects.com"
+        || domain == "media1.vocaroo.com")
     {
         return Err(anyhow::anyhow!(
-            "invalid host. must be youtube.com or clips.twitch.tv"
+            "invalid host. must be youtube.com or clips.twitch.tv -> {:?}",
+            domain
         ));
     }
 

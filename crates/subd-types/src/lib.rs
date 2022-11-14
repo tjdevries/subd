@@ -132,41 +132,13 @@ pub enum Role {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserRoles {
     pub roles: HashSet<Role>,
-    pub github_sponsor: bool,
-    pub is_twitch_mod: bool,
-    pub is_twitch_vip: bool,
-    pub is_twitch_founder: bool,
-    pub is_twitch_staff: bool,
 }
-//
-// trait DatabaseModel {}
-//
-// #[async_trait]
-// trait DatabaseModelWithPrimaryKey
-// where
-//     Self: Sized,
-// {
-//     type TKey;
-//     async fn save(self) -> Result<()>;
-//     async fn read(key: Self::TKey) -> Result<Option<Self>>;
-// }
-//
-// impl DatabaseModel for UserRoles {}
-//
-// #[async_trait]
-// impl DatabaseModelWithPrimaryKey for UserRoles {
-//     type TKey = UserID;
-//
-//     async fn save(self) -> Result<()> {
-//         Ok(())
-//     }
-//
-//     async fn read(_: UserID) -> Result<Option<Self>> {
-//         Ok(None)
-//     }
-// }
 
 impl UserRoles {
+    pub fn add_role(&mut self, role: Role) -> () {
+        self.roles.insert(role);
+    }
+
     pub fn is_github_sponsor(&self) -> bool {
         self.roles
             .iter()
@@ -174,23 +146,23 @@ impl UserRoles {
             .is_some()
     }
 
-    pub fn temp_is_twitch_mod(&self) -> bool {
+    pub fn is_twitch_mod(&self) -> bool {
         self.roles.contains(&Role::TwitchMod)
     }
 
-    pub fn temp_is_twitch_vip(&self) -> bool {
+    pub fn is_twitch_vip(&self) -> bool {
         self.roles.contains(&Role::TwitchVIP)
     }
 
-    pub fn temp_is_twitch_founder(&self) -> bool {
+    pub fn is_twitch_founder(&self) -> bool {
         self.roles.contains(&Role::TwitchFounder)
     }
 
-    pub fn temp_is_twitch_staff(&self) -> bool {
+    pub fn is_twitch_staff(&self) -> bool {
         self.roles.contains(&Role::TwitchStaff)
     }
 
-    pub fn temp_is_twitch_sub(&self) -> bool {
+    pub fn is_twitch_sub(&self) -> bool {
         self.roles
             .iter()
             .find(|r| matches!(r, Role::TwitchSub(_)))
@@ -205,21 +177,21 @@ impl Display for UserRoles {
         if self.is_github_sponsor() {
             truths.push("github_sponsor");
         }
-        // if self.is_twitch_mod() {
-        //     truths.push("twitch_mod");
-        // }
-        // if self.is_twitch_vip() {
-        //     truths.push("twitch_vip");
-        // }
-        // if self.is_twitch_founder() {
-        //     truths.push("twitch_founder");
-        // }
-        // if self.is_twitch_sub() {
-        //     truths.push("twitch_sub");
-        // }
-        // if self.is_twitch_staff() {
-        //     truths.push("twitch_staff");
-        // }
+        if self.is_twitch_mod() {
+            truths.push("twitch_mod");
+        }
+        if self.is_twitch_vip() {
+            truths.push("twitch_vip");
+        }
+        if self.is_twitch_founder() {
+            truths.push("twitch_founder");
+        }
+        if self.is_twitch_sub() {
+            truths.push("twitch_sub");
+        }
+        if self.is_twitch_staff() {
+            truths.push("twitch_staff");
+        }
 
         write!(f, "{}", truths.join(","))
     }
@@ -227,8 +199,7 @@ impl Display for UserRoles {
 
 impl UserRoles {
     pub fn is_moderator(&self) -> bool {
-        // self.is_twitch_mod()
-        false
+        self.is_twitch_mod()
     }
 
     pub fn support_amount(&self) -> f64 {
@@ -240,9 +211,9 @@ impl UserRoles {
         }
 
         // TODO: Should get twitch sub tier
-        // if self.is_twitch_sub() {
-        //     amount += 2.5;
-        // }
+        if self.is_twitch_sub() {
+            amount += 2.5;
+        }
 
         amount
     }

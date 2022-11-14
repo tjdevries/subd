@@ -25,15 +25,13 @@ pub async fn update_user_roles_once_per_day(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let _user_roles = subd_db::get_user_roles(conn, user_id).await?;
-    let _twitch_roles = get_twitch_roles_from_msg(msg);
+    let user_roles = subd_db::get_user_roles(conn, user_id).await?;
+    let twitch_roles = get_twitch_roles_from_msg(msg);
 
-    todo!()
-
-    // if user_roles.is_twitch_mod == twitch_roles.is_twitch_mod
-    //     && user_roles.is_twitch_vip == twitch_roles.is_twitch_vip
-    //     && user_roles.is_twitch_founder == twitch_roles.is_twitch_founder
-    //     && user_roles.is_twitch_sub == twitch_roles.is_twitch_sub
+    // if user_roles.is_twitch_mod() == twitch_roles.is_twitch_mod()
+    //     && user_roles.is_twitch_vip() == twitch_roles.is_twitch_vip()
+    //     && user_roles.is_twitch_founder() == twitch_roles.is_twitch_founder()
+    //     && user_roles.is_twitch_sub() == twitch_roles.is_twitch_sub()
     // {
     //     let record = sqlx::query_as!(
     //         UserRoles,
@@ -62,7 +60,7 @@ pub async fn update_user_roles_once_per_day(
     //     }
     // }
 
-    // Ok(update_user_roles(conn, user_id, msg).await?)
+    Ok(update_user_roles(conn, user_id, msg).await?)
 }
 
 fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
@@ -89,7 +87,7 @@ fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
     }
 
     UserRoles {
-        roles: HashSet::new(),
+        roles,
         ..Default::default()
     }
 }
@@ -104,11 +102,14 @@ async fn get_user_role_from_user_id_and_msg(
         None => false,
     };
 
-    let twitch_roles = get_twitch_roles_from_msg(msg);
-    Ok(UserRoles {
-        github_sponsor: is_github_sponsor,
-        ..twitch_roles
-    })
+    let mut twitch_roles = get_twitch_roles_from_msg(msg);
+    if is_github_sponsor {
+        twitch_roles.add_role(Role::GithubSponsor {
+            tier: "UNKNOWN".to_string(),
+        });
+    }
+
+    Ok(twitch_roles)
 }
 
 async fn update_user_roles(

@@ -8,16 +8,29 @@
 // - create, read, update, delete
 // - think about: joins, many2many, many2one, one2many, constraints, indexes
 
+use sqlx::{Connection, SqliteConnection};
 // use subd_macros::UpdateAttr;
 use subd_macros::database_model;
 
-// use anyhow::Result;
+use anyhow::Result;
+use async_trait::async_trait;
 
-type UserID = i32;
+type UserID = i64;
 type TwitchID = String;
 type GithubID = String;
 
-pub trait DatabaseModel {}
+// TODO: I don't think I like these traits, they don't seem to give me anything
+// on the other end. I'd rather just call methods directly on the models.
+#[async_trait]
+pub trait DatabaseModel {
+    async fn save(conn: &mut impl Connection) -> Result<()>;
+}
+
+#[async_trait]
+pub trait DatabaseModelWithKey: DatabaseModel + Sized {
+    type Key;
+    async fn read(conn: &mut SqliteConnection, id: Self::Key) -> Result<Option<Self>>;
+}
 
 #[database_model]
 mod user_model {
@@ -25,75 +38,47 @@ mod user_model {
 
     pub struct Model {
         #[immutable]
-        id: UserID,
+        pub(super) id: UserID,
 
-        #[immutable]
-        twitch_id: Option<TwitchID>,
-        github_id: Option<GithubID>,
-    }
-
-    impl Model {
-        pub fn new(id: UserID, twitch_id: Option<TwitchID>, github_id: Option<GithubID>) -> Self {
-            Self {
-                id,
-                twitch_id,
-                github_id,
-            }
-        }
-
-        pub fn read(_id: UserID) -> Self {
-            Default::default()
-        }
-
-        pub fn save(self) -> Self {
-            // sqlx::query!("INSERT INTO X VALUES (...) WHERE X ...)
-            self
-        }
+        pub(super) twitch_id: Option<TwitchID>,
+        pub(super) github_id: Option<GithubID>,
     }
 }
 
-//
-// #[derive(Default)]
-// struct UpdateUser {
-//     // id: UserID,
-//     twitch_id: Option<Option<TwitchID>>,
-//     github_id: Option<Option<GithubID>>,
-// }
-//
-// impl User {
-//     fn create(self) -> Self {
-//         // do some db stuff and validation
-//         self
-//     }
-//
-//     fn save(self) -> Self {
-//         // do some db stuff
-//         self
-//     }
-//
-//     fn update(mut self, update: UpdateUser) -> Self {
-//         if let Some(twitch_id) = update.twitch_id {
-//             self.twitch_id = twitch_id
-//         }
-//
-//         if let Some(github_id) = update.github_id {
-//             self.github_id = github_id
-//         }
-//
-//         self.save()
-//     }
-//
-//     fn delete(id: UserID) -> () {
-//         //
-//     }
-//
-//     fn get_by_id(id: UserID) -> Result<Option<Self>> {
-//         // run some db stuff
-//         Ok(Some(Default::default()))
-//     }
-// }
+impl user_model::Model {
+    pub async fn read(conn: &mut SqliteConnection, id: UserID) -> Result<Option<Self>> {
+        let x = sqlx::query!(
+            r#"
+            SELECT id, twitch_id, github_id
+              FROM users
+              WHERE id = ?1
+            "#,
+            id
+        )
+        .fetch_optional(conn)
+        .await?;
 
-//
+        Ok(x.map(|x| Self::new(x.id, x.twitch_id, x.github_id)))
+    }
+
+    pub async fn save(&self, conn: &mut SqliteConnection) -> Result<()> {
+        sqlx::query!(
+            r#"
+            INSERT INTO users (id, twitch_id, github_id)
+              VALUES (?1, ?2, ?3) ON CONFLICT (id) DO
+              UPDATE
+              SET twitch_id=?2, github_id=?3
+            "#,
+            self.id,
+            self.twitch_id,
+            self.github_id
+        )
+        .execute(&mut *conn)
+        .await?;
+
+        Ok(())
+    }
+}
 
 // Model:
 //  id
@@ -107,16 +92,23 @@ mod user_model {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let mut conn = subd_db::get_handle().await;
+
+    // Create or retreivew a user
     let user = user_model::Model::new(1, Some("twitch-1234".to_string()), None);
-    println!("original user: {:?}", user);
 
-    // found out we had github user
-    let new_user = user.update(user_model::ModelUpdate {
-        github_id: Some(Some("github-foo".to_string())),
-        ..Default::default()
-    });
+    // Update user
+    let new_user_result = user
+        .update(
+            &mut conn,
+            user_model::ModelUpdate {
+                github_id: Some(Some("github-foo".to_string())),
+                ..Default::default()
+            },
+        )
+        .await;
 
-    println!("Original user: {:?}", user);
+    let new_user = new_user_result.unwrap();
 
     println!("updated_user: {:#?}", new_user);
     Ok(())
