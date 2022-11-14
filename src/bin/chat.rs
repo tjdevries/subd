@@ -19,8 +19,8 @@ use clap::Parser;
 use either::Either;
 use futures::SinkExt;
 use futures::StreamExt;
-use obws::requests::SceneItemProperties;
-use obws::requests::SourceFilterVisibility;
+// use obws::requests::SceneItemProperties;
+// use obws::requests::SourceFilterVisibility;
 use obws::Client as OBSClient;
 use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
@@ -51,9 +51,6 @@ use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-
-// DO make this an ENV Var
-const CONNECT_OBS: bool = false;
 
 // TEMP: We will remove this once we have this in the database.
 fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
@@ -671,117 +668,122 @@ async fn handle_obs_stuff(
         .unwrap();
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let obs_client =
-        OBSClient::connect(obs_websocket_address, obs_websocket_port).await?;
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
 
-    loop {
-        let event = rx.recv().await?;
-        match event {
-            Event::ObsSetScene { scene, .. } => {
-                server::obs::set_scene(&obs_client, scene.as_str()).await?;
-            }
-            Event::TwitchChannelPointsRedeem(redemption) => {
-                println!("Redemption: {:?}", redemption);
+    let version = obs_client.general().version().await?;
+    println!("OBS version: {:?}", version);
+    // obs_client.scenes().set_current_program_scene()
 
-                match redemption.reward.title.as_ref() {
-                    "Mandatory Crab Dance" => {
-                        // TODO: Mute system audio to stream
-                        // TODO: Mute linux PC audio to stream
-                        server::obs::set_scene(&obs_client, "PC - Crab Rave")
-                            .await?;
-                    }
-                    _ => {}
-                }
-            }
-            Event::TwitchChatMessage(msg) => {
-                let splitmsg = msg
-                    .message_text
-                    .split(" ")
-                    .map(|s| s.to_string())
-                    .collect::<Vec<String>>();
-
-                if splitmsg.len() > 0 {
-                    continue;
-                }
-
-                if splitmsg.len() != 2 {
-                    continue;
-                }
-
-                println!("Am i getting here?");
-                match splitmsg[0].as_str() {
-                    "!mute" => match splitmsg[1].as_str() {
-                        "on" => {
-                            server::obs::set_audio_status(
-                                &obs_client,
-                                "Mic/Aux",
-                                false,
-                            )
-                            .await?
-                        }
-                        "off" => {
-                            server::obs::set_audio_status(
-                                &obs_client,
-                                "Mic/Aux",
-                                true,
-                            )
-                            .await?
-                        }
-                        _ => {}
-                    },
-                    _ => {}
-                }
-            }
-            Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
-                macro_rules! set_scene {
-                    ($scene: expr) => {
-                        server::obs::set_scene(&obs_client, $scene).await?;
-                        let tx = tx.clone();
-                        tokio::spawn(async move {
-                            tokio::time::sleep(Duration::from_secs(10)).await;
-                            tx.send(Event::ObsSetScene {
-                                scene: "PC".to_string(),
-                            })
-                            .expect("To be able to set to PC");
-                        });
-                    };
-
-                    ($scene: expr, $time: expr) => {
-                        server::obs::set_scene(&obs_client, $scene).await?;
-                        let tx = tx.clone();
-                        tokio::spawn(async move {
-                            tokio::time::sleep(Duration::from_secs($time))
-                                .await;
-                            tx.send(Event::ObsSetScene {
-                                scene: "PC".to_string(),
-                            })
-                            .expect("To be able to set to PC");
-                        });
-                    };
-                }
-                let twitch_user =
-                    subd_db::get_twitch_user_from_user_id(&mut conn, user_id)
-                        .await?;
-                match twitch_user.display_name.to_lowercase().as_ref() {
-                    "theprimeagen" => {
-                        set_scene!("Prime Dancing");
-                    }
-                    "bashbunni" => {
-                        set_scene!("Themesong Bash");
-                    }
-                    "conni2461" => {
-                        set_scene!("PC - Daylight", 26);
-                    }
-                    _ => {
-                        // server::obs::set_scene(&obs_client, "Prime Dancing").await?;
-                    }
-                }
-            }
-            Event::Shutdown => {
-                break;
-            }
-            _ => continue,
-        };
-    }
+    // loop {
+    //     let event = rx.recv().await?;
+    //     match event {
+    //         Event::ObsSetScene { scene, .. } => {
+    //             server::obs::set_scene(&obs_client, scene.as_str()).await?;
+    //         }
+    //         Event::TwitchChannelPointsRedeem(redemption) => {
+    //             println!("Redemption: {:?}", redemption);
+    //
+    //             match redemption.reward.title.as_ref() {
+    //                 "Mandatory Crab Dance" => {
+    //                     // TODO: Mute system audio to stream
+    //                     // TODO: Mute linux PC audio to stream
+    //                     server::obs::set_scene(&obs_client, "PC - Crab Rave")
+    //                         .await?;
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //         Event::TwitchChatMessage(msg) => {
+    //             let splitmsg = msg
+    //                 .message_text
+    //                 .split(" ")
+    //                 .map(|s| s.to_string())
+    //                 .collect::<Vec<String>>();
+    //
+    //             if splitmsg.len() > 0 {
+    //                 continue;
+    //             }
+    //
+    //             if splitmsg.len() != 2 {
+    //                 continue;
+    //             }
+    //
+    //             println!("Am i getting here?");
+    //             match splitmsg[0].as_str() {
+    //                 "!mute" => match splitmsg[1].as_str() {
+    //                     "on" => {
+    //                         server::obs::set_audio_status(
+    //                             &obs_client,
+    //                             "Mic/Aux",
+    //                             false,
+    //                         )
+    //                         .await?
+    //                     }
+    //                     "off" => {
+    //                         server::obs::set_audio_status(
+    //                             &obs_client,
+    //                             "Mic/Aux",
+    //                             true,
+    //                         )
+    //                         .await?
+    //                     }
+    //                     _ => {}
+    //                 },
+    //                 _ => {}
+    //             }
+    //         }
+    //         Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
+    //             macro_rules! set_scene {
+    //                 ($scene: expr) => {
+    //                     server::obs::set_scene(&obs_client, $scene).await?;
+    //                     let tx = tx.clone();
+    //                     tokio::spawn(async move {
+    //                         tokio::time::sleep(Duration::from_secs(10)).await;
+    //                         tx.send(Event::ObsSetScene {
+    //                             scene: "PC".to_string(),
+    //                         })
+    //                         .expect("To be able to set to PC");
+    //                     });
+    //                 };
+    //
+    //                 ($scene: expr, $time: expr) => {
+    //                     server::obs::set_scene(&obs_client, $scene).await?;
+    //                     let tx = tx.clone();
+    //                     tokio::spawn(async move {
+    //                         tokio::time::sleep(Duration::from_secs($time))
+    //                             .await;
+    //                         tx.send(Event::ObsSetScene {
+    //                             scene: "PC".to_string(),
+    //                         })
+    //                         .expect("To be able to set to PC");
+    //                     });
+    //                 };
+    //             }
+    //             let twitch_user =
+    //                 subd_db::get_twitch_user_from_user_id(&mut conn, user_id)
+    //                     .await?;
+    //             match twitch_user.display_name.to_lowercase().as_ref() {
+    //                 "theprimeagen" => {
+    //                     set_scene!("Prime Dancing");
+    //                 }
+    //                 "bashbunni" => {
+    //                     set_scene!("Themesong Bash");
+    //                 }
+    //                 "conni2461" => {
+    //                     set_scene!("PC - Daylight", 26);
+    //                 }
+    //                 _ => {
+    //                     // server::obs::set_scene(&obs_client, "Prime Dancing").await?;
+    //                 }
+    //             }
+    //         }
+    //         Event::Shutdown => {
+    //             break;
+    //         }
+    //         _ => continue,
+    //     };
+    // }
 
     Ok(())
 }
@@ -996,56 +998,6 @@ async fn main() -> Result<()> {
             .await
             .expect("Handles playing themesongs")
     });
-
-    if CONNECT_OBS {
-        print!("Attempting to Connect to OBS\n");
-
-        let obs_test_scene = subd_types::consts::get_obs_test_scene();
-        let obs_test_filter = subd_types::consts::get_obs_test_filter();
-        let obs_test_source = subd_types::consts::get_obs_test_source();
-        let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
-            .parse::<u16>()
-            .unwrap();
-        let obs_websocket_address =
-            subd_types::consts::get_obs_websocket_address();
-        let obs_client =
-            OBSClient::connect(obs_websocket_address, obs_websocket_port)
-                .await?;
-
-        // Get and print out version information of OBS and obs-websocket.
-        let version = obs_client.general().get_version().await?;
-        println!("OBS Connected: {:#?}", version.version);
-
-        obs_client
-            .scenes()
-            .set_current_scene(&obs_test_scene)
-            .await?;
-        obs_client
-            .sources()
-            .set_source_filter_visibility(SourceFilterVisibility {
-                source_name: &obs_test_source,
-                filter_name: &obs_test_filter,
-                filter_enabled: true,
-            })
-            .await?;
-
-        obs_client
-            .sources()
-            .set_source_filter_visibility(SourceFilterVisibility {
-                source_name: &obs_test_source,
-                filter_name: &obs_test_filter,
-                filter_enabled: false,
-            })
-            .await?;
-
-        let mut to_set = SceneItemProperties::default();
-        to_set.item = Either::Left(&obs_test_source);
-        to_set.visible = Some(false);
-        obs_client
-            .scene_items()
-            .set_scene_item_properties(to_set)
-            .await?;
-    }
 
     // TOOD: Can add this back when we're testing twitch subs again.
     // {
