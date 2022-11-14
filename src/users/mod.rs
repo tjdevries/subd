@@ -1,6 +1,10 @@
+#![allow(dead_code)]
+
+use std::collections::HashSet;
+
 use anyhow::Result;
 use sqlx::SqliteConnection;
-use subd_types::{UserID, UserRoles};
+use subd_types::{Role, TwitchSubLevel, UserID, UserRoles};
 use tracing::info;
 use twitch_irc::message::PrivmsgMessage;
 
@@ -24,59 +28,67 @@ pub async fn update_user_roles_once_per_day(
     let user_roles = subd_db::get_user_roles(conn, user_id).await?;
     let twitch_roles = get_twitch_roles_from_msg(msg);
 
-    if user_roles.is_twitch_mod == twitch_roles.is_twitch_mod
-        && user_roles.is_twitch_vip == twitch_roles.is_twitch_vip
-        && user_roles.is_twitch_founder == twitch_roles.is_twitch_founder
-        && user_roles.is_twitch_sub == twitch_roles.is_twitch_sub
-    {
-        let record = sqlx::query_as!(
-            UserRoles,
-            "
-            select
-                is_github_sponsor,
-                is_twitch_mod,
-                is_twitch_vip,
-                is_twitch_founder,
-                is_twitch_sub,
-                is_twitch_staff
-            FROM USER_ROLES
-            WHERE
-              user_id = ?1 AND date(verified_date) = date(CURRENT_TIMESTAMP)
-              ORDER BY verified_date DESC
-            ",
-            user_id
-        )
-        .fetch_optional(&mut *conn)
-        .await?;
-
-        // If we have any record, that means we've updated already today,
-        // so don't do that again
-        if let Some(record) = record {
-            return Ok(record);
-        }
-    }
+    // if user_roles.is_twitch_mod() == twitch_roles.is_twitch_mod()
+    //     && user_roles.is_twitch_vip() == twitch_roles.is_twitch_vip()
+    //     && user_roles.is_twitch_founder() == twitch_roles.is_twitch_founder()
+    //     && user_roles.is_twitch_sub() == twitch_roles.is_twitch_sub()
+    // {
+    //     let record = sqlx::query_as!(
+    //         UserRoles,
+    //         "
+    //         select
+    //             is_github_sponsor,
+    //             is_twitch_mod,
+    //             is_twitch_vip,
+    //             is_twitch_founder,
+    //             is_twitch_sub,
+    //             is_twitch_staff
+    //         FROM USER_ROLES
+    //         WHERE
+    //           user_id = ?1 AND date(verified_date) = date(CURRENT_TIMESTAMP)
+    //           ORDER BY verified_date DESC
+    //         ",
+    //         user_id
+    //     )
+    //     .fetch_optional(&mut *conn)
+    //     .await?;
+    //
+    //     // If we have any record, that means we've updated already today,
+    //     // so don't do that again
+    //     if let Some(record) = record {
+    //         return Ok(record);
+    //     }
+    // }
 
     Ok(update_user_roles(conn, user_id, msg).await?)
 }
 
 fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
-    let is_twitch_mod = msg
+    let mut roles = HashSet::new();
+    if msg
         .badges
         .iter()
-        .any(|b| b.name == "moderator" || b.name == "broadcaster");
+        .any(|b| b.name == "moderator" || b.name == "broadcaster")
+    {
+        roles.insert(Role::TwitchMod);
+    }
 
-    let is_twitch_vip = msg.badges.iter().any(|b| b.name == "vip");
-    let is_twitch_founder = msg.badges.iter().any(|b| b.name == "founder");
-    let is_twitch_sub = msg.badges.iter().any(|b| b.name == "subscriber");
-    let is_twitch_staff = msg.badges.iter().any(|b| b.name == "staff");
+    if msg.badges.iter().any(|b| b.name == "vip") {
+        roles.insert(Role::TwitchVIP);
+    }
+    if msg.badges.iter().any(|b| b.name == "founder") {
+        roles.insert(Role::TwitchFounder);
+    }
+    if msg.badges.iter().any(|b| b.name == "subscriber") {
+        roles.insert(Role::TwitchSub(TwitchSubLevel::Unknown));
+    }
+    if msg.badges.iter().any(|b| b.name == "staff") {
+        roles.insert(Role::TwitchStaff);
+    }
 
     UserRoles {
-        is_twitch_mod,
-        is_twitch_vip,
-        is_twitch_founder,
-        is_twitch_sub,
-        is_twitch_staff,
-        is_github_sponsor: false,
+        roles,
+        ..Default::default()
     }
 }
 
@@ -85,18 +97,19 @@ async fn get_user_role_from_user_id_and_msg(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let github_user = subd_db::get_github_info_for_user(&mut *conn, user_id).await?;
-    let is_github_sponsor = if let Some(github_user) = github_user {
-        subd_gh::is_user_sponsoring(&github_user.login).await?
-    } else {
-        false
+    let is_github_sponsor = match subd_db::get_github_info_for_user(&mut *conn, user_id).await? {
+        Some(github_user) => subd_gh::is_user_sponsoring(&github_user.login).await?,
+        None => false,
     };
 
-    let twitch_roles = get_twitch_roles_from_msg(msg);
-    Ok(UserRoles {
-        is_github_sponsor,
-        ..twitch_roles
-    })
+    let mut twitch_roles = get_twitch_roles_from_msg(msg);
+    if is_github_sponsor {
+        twitch_roles.add_role(Role::GithubSponsor {
+            tier: "UNKNOWN".to_string(),
+        });
+    }
+
+    Ok(twitch_roles)
 }
 
 async fn update_user_roles(
