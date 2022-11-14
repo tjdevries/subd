@@ -1,6 +1,6 @@
 [toolchain]
 channel = "nightly"
-version = "nightly-2022-11-13"
+version = "nightly-2022-11-11"
 components = [ "rustfmt", "rust-analyzer" ]
 targets = [ "wasm32-unknown-unknown", "x86_64-unknown-linux-gnu" ]
 profile = "minimal"

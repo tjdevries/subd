@@ -186,10 +186,17 @@ fn default_messages() -> Vec<PrivmsgMessage> {
 //     format!("{}", std::any::type_name::<T>())
 // }
 
+#[derive(Properties, PartialEq)]
+pub struct Props {
+    pub ws_address: String,
+}
+
 #[function_component(UseReducer)]
-fn reducer() -> Html {
+fn reducer(props: &Props) -> Html {
+    log::info!("ws_address: {}", props.ws_address);
+
     // This needs to be generic
-    let ws = use_web_socket("ws://192.168.4.97:9001".to_string());
+    let ws = use_web_socket(props.ws_address.clone());
 
     let history = use_list(default_messages());
     let subcount = use_state(|| 0);
@@ -355,6 +362,32 @@ fn reducer() -> Html {
 }
 
 fn main() {
+    // TODO: This is a bad hack... but for now it works OK.
+    //  This is to make it work for me & begin during dev.
+    //  We'll figure out a better way for this later.
+    let env_file = include_str!("../../../../.env");
+
+    // Get the address!
+    let ws_address = env_file
+        .lines()
+        .find(|l| l.starts_with("SUBD_YEW_WS_ADDRESS"))
+        .expect("ws_address")
+        .split_once("=")
+        .expect("ws_addres =")
+        .1
+        .trim_matches('"');
+
+    let ws_port = env_file
+        .lines()
+        .find(|l| l.starts_with("SUBD_YEW_WS_PORT"))
+        .unwrap()
+        .split_once("=")
+        .unwrap()
+        .1
+        .trim_matches('"');
+
     wasm_logger::init(wasm_logger::Config::default());
-    yew::start_app::<UseReducer>();
+    yew::start_app_with_props::<UseReducer>(Props {
+        ws_address: format!("ws://{}:{}", ws_address, ws_port),
+    });
 }
