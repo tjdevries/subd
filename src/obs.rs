@@ -6,9 +6,9 @@ pub async fn set_scene(obs_conn: &obws::Client, scene: &str) -> Result<()> {
 }
 
 pub async fn set_audio_status(
-    obs_conn: &obws::Client,
-    name: &str,
-    status: bool,
+    _obs_conn: &obws::Client,
+    _name: &str,
+    _status: bool,
 ) -> Result<()> {
     // obs_conn.sources().(name, !status).await?;
     Ok(())

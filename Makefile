@@ -1,8 +1,13 @@
 default:
-	cargo build
+	cargo build --bin begin
+	# cargo build
+	# cargo check
 
 chat:
 	cargo run --bin chat
+
+begin:
+	cargo run --bin begin
 
 resetdb:
 	sqlx db drop -y
