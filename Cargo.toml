@@ -13,19 +13,15 @@ subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
 
 # Twitch Deps
-twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest", "pubsub" ]}
-twitch-irc = { version = "4.0.0", default-features = false, features = [
-    "with-serde",
-    "refreshing-token-rustls-native-roots",
-    "transport-tcp-rustls-native-roots"
-] }
+twitch-irc.workspace = true
+twitch_api2.workspace = true
 
-anyhow = "1.0.57"
+anyhow.workspace = true
+once_cell.workspace = true
 axum = "0.5.4"
-chrono = { version = "0.4.19", features = [ "serde" ] }
+serde.workspace = true
+serde_json.workspace = true
 futures = "0.3.21"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.79"
 sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite" ] }
 tokio = { version = "1.18", features = [ "macros", "rt" ] }
 tungstenite = { version = "0.17.2", features = [ "native-tls" ] }
@@ -33,25 +29,43 @@ tokio-tungstenite = { version = "0.17.1", features = [ "native-tls" ] }
 reqwest = "0.11.10"
 obws = "0.10"
 either = "1.6.1"
-iter-skak = "0.1.0"
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
 clap = { version = "3.2.6", features = ["derive"] }
 ytextract = "0.11.0"
 # youtube_dl = { version = "0.7.0", default-features = false, features = [ "yt-dlp" ] }
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
 psl = "2.0.89"
-once_cell = "1.13.0"
-dotenv = "0.15.0"
+dotenv.workspace = true
 rustrict = { version = "0.4.18", features = [ "customize" ] }
 
+# iter-skak = "0.1.0"
+
 # Tracing related crates
-tracing = "0.1"
-tracing-subscriber = "0.2"
+tracing.workspace = true
+tracing-subscriber.workspace = true
 rand = "0.8.5"
-async-trait = "0.1.57"
+async-trait.workspace = true
 
 [workspace]
 members = ["crates/*"]
+
+[workspace.dependencies]
+anyhow = "1.0.57"
+async-trait = "0.1.57"
+chrono = { version = "0.4.19", features = [ "serde" ] }
+dotenv = "0.15.0"
+once_cell = "1.13.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.79"
+tracing = "0.1"
+tracing-subscriber = "0.2"
+
+twitch-irc = { version = "4.0.0", default-features = false, features = [
+    "with-serde",
+    "refreshing-token-rustls-native-roots",
+    "transport-tcp-rustls-native-roots"
+] }
+twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest", "pubsub" ]}
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3
