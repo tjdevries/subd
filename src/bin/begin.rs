@@ -466,46 +466,6 @@ async fn handle_yew(
     Ok(())
 }
 
-async fn handle_twitch_sub_count(
-    tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-    // helix: HelixClient<'static, ReqwestClient>,
-) -> Result<()> {
-    let helix: HelixClient<ReqwestClient> = HelixClient::default();
-
-    let reqwest_client = helix.clone_client();
-    let token = UserToken::from_existing(
-        &reqwest_client,
-        // So here's what ain't working
-        subd_types::consts::get_twitch_broadcaster_oauth(),
-        subd_types::consts::get_twitch_broadcaster_refresh(),
-        None, // Client Secret
-    )
-    .await
-    .unwrap();
-
-    loop {
-        let event = rx.recv().await?;
-        match event {
-            Event::RequestTwitchSubCount => {
-                let req = GetBroadcasterSubscriptionsRequest::builder()
-                    .broadcaster_id(token.user_id.clone())
-                    .first("1".to_string())
-                    .build();
-
-                let response = helix
-                    .req_get(req, &token)
-                    .await
-                    .expect("Error Fetching Twitch Subs");
-                let subcount = response.total.unwrap();
-
-                tx.send(Event::TwitchSubscriptionCount(subcount as usize))?;
-            }
-            _ => continue,
-        };
-    }
-}
-
 #[tracing::instrument(skip(tx))]
 async fn handle_twitch_notifications(
     tx: broadcast::Sender<Event>,
@@ -989,7 +949,6 @@ async fn main() -> Result<()> {
     makechan!(handle_twitch_chat);
     makechan!(handle_twitch_msg);
     makechan!(handle_yew);
-    makechan!(handle_twitch_sub_count);
     makechan!(handle_twitch_notifications);
     makechan!(handle_obs_stuff);
 

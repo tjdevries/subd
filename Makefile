@@ -4,6 +4,9 @@ default:
 chat:
 	cargo run --bin chat
 
+begin:
+	cargo run --bin begin
+
 resetdb:
 	sqlx db drop -y
 	sqlx db create
