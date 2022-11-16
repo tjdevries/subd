@@ -129,6 +129,7 @@ async fn handle_twitch_msg(
 
         let twitch_username =
             subd_types::consts::get_twitch_broadcaster_username();
+
         match splitmsg[0].as_str() {
             "!echo" => {
                 let echo = commands::Echo::try_parse_from(&splitmsg);

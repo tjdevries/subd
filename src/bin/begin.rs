@@ -573,6 +573,8 @@ async fn handle_twitch_notifications(
         tx.send(Event::RequestTwitchSubCount)?;
     }
 
+    // tx.send()
+
     // let ws = TcpListener::bind(TWITCH_PUBSUB_URL.as_str()).await?;
     // let (mut stream, resp) = tungstenite::connect("wss://pubsub-edge.twitch.tv".to_string())?;
     // println!("  Response: {:?}", resp);
@@ -619,6 +621,7 @@ async fn handle_twitch_notifications(
     Ok(())
 }
 
+// Here you wait for OBS Events, that are commands to trigger OBS
 async fn handle_obs_stuff(
     tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
@@ -635,119 +638,61 @@ async fn handle_obs_stuff(
 
     let version = obs_client.general().version().await?;
     println!("OBS version: {:?}", version);
-    // obs_client.scenes().set_current_program_scene()
 
-    // loop {
-    //     let event = rx.recv().await?;
-    //     match event {
-    //         Event::ObsSetScene { scene, .. } => {
-    //             server::obs::set_scene(&obs_client, scene.as_str()).await?;
-    //         }
-    //         Event::TwitchChannelPointsRedeem(redemption) => {
-    //             println!("Redemption: {:?}", redemption);
-    //
-    //             match redemption.reward.title.as_ref() {
-    //                 "Mandatory Crab Dance" => {
-    //                     // TODO: Mute system audio to stream
-    //                     // TODO: Mute linux PC audio to stream
-    //                     server::obs::set_scene(&obs_client, "PC - Crab Rave")
-    //                         .await?;
-    //                 }
-    //                 _ => {}
-    //             }
-    //         }
-    //         Event::TwitchChatMessage(msg) => {
-    //             let splitmsg = msg
-    //                 .message_text
-    //                 .split(" ")
-    //                 .map(|s| s.to_string())
-    //                 .collect::<Vec<String>>();
-    //
-    //             if splitmsg.len() > 0 {
-    //                 continue;
-    //             }
-    //
-    //             if splitmsg.len() != 2 {
-    //                 continue;
-    //             }
-    //
-    //             println!("Am i getting here?");
-    //             match splitmsg[0].as_str() {
-    //                 "!mute" => match splitmsg[1].as_str() {
-    //                     "on" => {
-    //                         server::obs::set_audio_status(
-    //                             &obs_client,
-    //                             "Mic/Aux",
-    //                             false,
-    //                         )
-    //                         .await?
-    //                     }
-    //                     "off" => {
-    //                         server::obs::set_audio_status(
-    //                             &obs_client,
-    //                             "Mic/Aux",
-    //                             true,
-    //                         )
-    //                         .await?
-    //                     }
-    //                     _ => {}
-    //                 },
-    //                 _ => {}
-    //             }
-    //         }
-    //         Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
-    //             macro_rules! set_scene {
-    //                 ($scene: expr) => {
-    //                     server::obs::set_scene(&obs_client, $scene).await?;
-    //                     let tx = tx.clone();
-    //                     tokio::spawn(async move {
-    //                         tokio::time::sleep(Duration::from_secs(10)).await;
-    //                         tx.send(Event::ObsSetScene {
-    //                             scene: "PC".to_string(),
-    //                         })
-    //                         .expect("To be able to set to PC");
-    //                     });
-    //                 };
-    //
-    //                 ($scene: expr, $time: expr) => {
-    //                     server::obs::set_scene(&obs_client, $scene).await?;
-    //                     let tx = tx.clone();
-    //                     tokio::spawn(async move {
-    //                         tokio::time::sleep(Duration::from_secs($time))
-    //                             .await;
-    //                         tx.send(Event::ObsSetScene {
-    //                             scene: "PC".to_string(),
-    //                         })
-    //                         .expect("To be able to set to PC");
-    //                     });
-    //                 };
-    //             }
-    //             let twitch_user =
-    //                 subd_db::get_twitch_user_from_user_id(&mut conn, user_id)
-    //                     .await?;
-    //             match twitch_user.display_name.to_lowercase().as_ref() {
-    //                 "theprimeagen" => {
-    //                     set_scene!("Prime Dancing");
-    //                 }
-    //                 "bashbunni" => {
-    //                     set_scene!("Themesong Bash");
-    //                 }
-    //                 "conni2461" => {
-    //                     set_scene!("PC - Daylight", 26);
-    //                 }
-    //                 _ => {
-    //                     // server::obs::set_scene(&obs_client, "Prime Dancing").await?;
-    //                 }
-    //             }
-    //         }
-    //         Event::Shutdown => {
-    //             break;
-    //         }
-    //         _ => continue,
-    //     };
-    // }
+    let obs_test_scene = "Primary";
+    obs_client
+        .scenes()
+        .set_current_program_scene(&obs_test_scene)
+        .await?;
 
-    Ok(())
+    loop {
+        let event = rx.recv().await?;
+        let msg = match event {
+            Event::TwitchChatMessage(msg) => msg,
+            _ => continue,
+        };
+
+        let badges = msg
+            .badges
+            .iter()
+            .map(|b| b.name.as_str())
+            .collect::<Vec<&str>>()
+            .join(",");
+        info!(sender = %msg.sender.name, badges = %badges, "{}", msg.message_text);
+
+        subd_db::create_twitch_user_chat(
+            &mut conn,
+            &msg.sender.id,
+            &msg.sender.login,
+        )
+        .await?;
+        subd_db::save_twitch_message(
+            &mut conn,
+            &msg.sender.id,
+            &msg.message_text,
+        )
+        .await?;
+
+        let splitmsg = msg
+            .message_text
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+
+        match splitmsg[0].as_str() {
+            "!sbf" => {
+                obs_client.scenes().set_current_program_scene("SBF").await?;
+            }
+            "!one" => {
+                let obs_test_scene = "Primary";
+                obs_client
+                    .scenes()
+                    .set_current_program_scene(&obs_test_scene)
+                    .await?;
+            }
+            _ => {}
+        }
+    }
 }
 
 async fn handle_themesong_download(
