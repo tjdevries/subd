@@ -26,7 +26,7 @@ pub enum State {
 pub struct RaffleComponent {
     state: State,
     timeout: Option<Timeout>,
-    _existing_names: HashSet<String>,
+    existing_names: HashSet<String>,
 }
 
 impl RaffleComponent {

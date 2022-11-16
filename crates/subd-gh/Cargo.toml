@@ -8,10 +8,11 @@ edition = "2021"
 [dependencies]
 subd-types = { path = "../subd-types/" }
 
-tokio = { version = "1.18", features = [ "rt-multi-thread", "macros", "rt" ] }
-graphql_client = { version = "0.10.0", features = [ "reqwest" ] }
-reqwest = "0.11.10"
-serde = "1.0.137"
-anyhow = "1.0.57"
+tokio.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+
 hyper = "0.14.18"
-tracing = "0.1"
+graphql_client = { version = "0.10.0", features = [ "reqwest" ] }
