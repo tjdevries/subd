@@ -8,6 +8,14 @@
 //          - Download the sound locally
 //          - Associated sound w/ user_id
 //      - Approve/Reject a sound
+//
+use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::*;
+use std::fs;
+
+use rodio::{source::Source, Decoder, Devices, OutputStream};
+use std::fs::File;
+use std::io::BufReader;
 
 use anyhow::anyhow;
 use anyhow::Result;
@@ -95,7 +103,39 @@ async fn handle_twitch_msg(
                     let _ = client.say(twitch_username, echo.contents).await;
                 }
             }
-            _ => {}
+            _ => {
+                let paths = fs::read_dir("./MP3s").unwrap();
+                let example = splitmsg[0].as_str();
+                // We need to strip off the beginning
+                let full_name = format!("./MP3s/{}.mp3", example);
+                println!("{}", full_name);
+                // let full_name2 = full_name.clone();
+                // println!("{}", full_name);
+                for path in paths {
+                    if path.unwrap().path().display().to_string() == full_name {
+                        println!("BIG!!! WIN");
+
+                        let (_stream, stream_handle) =
+                            get_output_stream("pulse");
+
+                        let (_stream, stream_handle) =
+                            OutputStream::try_default().unwrap();
+                        // Load a sound from a file, using a path relative to Cargo.toml
+                        // let file =
+                        //     BufReader::new(File::open(full_name2).unwrap());
+                        let file = BufReader::new(
+                            File::open(format!("./MP3s/{}.mp3", example))
+                                .unwrap(),
+                        );
+
+                        let source = Decoder::new(file).unwrap();
+                        stream_handle.play_raw(source.convert_samples());
+                        std::thread::sleep(std::time::Duration::from_secs(5));
+                        // std::thread::sleep(std::time::Duration::from_secs(5));
+                        // Can we play sounds
+                    }
+                }
+            }
         };
     }
 }
@@ -302,8 +342,36 @@ async fn handle_obs_stuff(
         let hotkey = splitmsg[0].as_str();
         println!("HotKey: {hotkey}");
 
+        // let themesong = sqlx::query!(
+        //     "SELECT song FROM user_theme_songs WHERE user_id = ?1",
+        //     user_id
+        // )
+        // .fetch_optional(&mut *conn)
+        // .await?;
+
+        // What is song???
+
+        // let themesong = match themesong {
+        //     Some(themesong) => themesong,
+        //     None => {
+        //         println!("theme_song: No themesong available for: {:?}", user_id);
+        //         return Ok(false);
+        //     }
+        // };
+
+        // let rodioer =
+        //     rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
+        //         .unwrap();
+        // // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
+        // // do that yet, this probably wouldn't work with queued themesongs (for example)
+        // // rodioer.total_duration();
+
+        // sink.append(rodioer);
+
         // thread 'tokio-runtime-worker' panicked at 'this should work: API error: CannotAct', src/bin/begin.rs:369:5
 
+        // we need conn, user_id and sink
+        // themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
         // "key": "OBS_KEY_H",
         match splitmsg[0].as_str() {
             "!chat" => {
@@ -356,8 +424,94 @@ async fn say<
     Ok(())
 }
 
+// https://stackoverflow.com/questions/71468954/rust-rodio-get-a-list-of-outputdevices
+
+fn list_host_devices() {
+    let host = cpal::default_host();
+    let devices = host.output_devices().unwrap();
+    for device in devices {
+        let dev: rodio::Device = device.into();
+        let devName: String = dev.name().unwrap();
+        println!(" # Device : {}", devName);
+    }
+}
+
+fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
+    let host = cpal::default_host();
+    let devices = host.output_devices().unwrap();
+
+    // If this because we fail here???
+    // let stream_handle OutputStreamHandle = OutputStreamHandle{mixer: ""};
+    // I don't want to try default!!!
+    let (mut _stream, mut stream_handle) = OutputStream::try_default().unwrap();
+    for device in devices {
+        let dev: rodio::Device = device.into();
+        let dev_name: String = dev.name().unwrap();
+        if dev_name == device_name {
+            println!("Device found: {}", dev_name);
+            (_stream, stream_handle) =
+                OutputStream::try_from_device(&dev).unwrap();
+        }
+    }
+    return (_stream, stream_handle);
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    // let devices = Devices {}.as_inner();
+    // println!("DEVICES: {:?}", devices);
+    // list_host_devices();
+
+    // # Device : pulse
+    // # Device : hdmi:CARD=HDMI,DEV=0
+    // # Device : hdmi:CARD=HDMI,DEV=1
+    // # Device : hdmi:CARD=HDMI,DEV=2
+    // # Device : hdmi:CARD=HDMI,DEV=3
+    // # Device : hdmi:CARD=HDMI,DEV=4
+    // # Device : hdmi:CARD=HDMI,DEV=5
+    // # Device : sysdefault:CARD=Generic
+    // # Device : front:CARD=Generic,DEV=0
+    // ALSA lib pcm_route.c:877:(find_matching_chmap) Found no matching channel map
+    // # Device : surround21:CARD=Generic,DEV=0
+    // # Device : surround40:CARD=Generic,DEV=0
+    // ALSA lib pcm_route.c:877:(find_matching_chmap) Found no matching channel map
+    // # Device : surround41:CARD=Generic,DEV=0
+    // ALSA lib pcm_route.c:877:(find_matching_chmap) Found no matching channel map
+    // # Device : surround50:CARD=Generic,DEV=0
+    // # Device : surround51:CARD=Generic,DEV=0
+    // # Device : surround71:CARD=Generic,DEV=0
+    // # Device : iec958:CARD=Generic,DEV=0
+
+    // Look if a file matched in a directory
+    let (_stream, stream_handle) = get_output_stream("pulse");
+    // let (_stream, stream_handle) = get_output_stream("hdmi:CARD=HDMI,DEV=0");
+    // let (_stream, stream_handle) = get_output_stream("sysdefault:CARD=Generic");
+    // let sink = Sink::try_new(&stream_handle).unwrap();
+
+    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // Load a sound from a file, using a path relative to Cargo.toml
+    let file = BufReader::new(File::open("./MP3s/dontmakefun.mp3").unwrap());
+
+    let source = Decoder::new(file).unwrap();
+    stream_handle.play_raw(source.convert_samples());
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
+    // let file = BufReader::new(File::open("./MP3s/abc.mp3").unwrap());
+    // let source = Decoder::new(file).unwrap();
+    // stream_handle.play_raw(source.convert_samples());
+    // std::thread::sleep(std::time::Duration::from_secs(5));
+
+    // We need to strip off the beginning
+    let paths = fs::read_dir("./MP3s").unwrap();
+    let example = "abc";
+    let full_name = format!("./MP3s/{}.mp3", example);
+    println!("{}", full_name);
+    for path in paths {
+        if path.unwrap().path().display().to_string() == full_name {
+            println!("BIUG WIN")
+        }
+    }
+
     tracing_subscriber::fmt()
         // .with_max_level(Level::TRACE)
         .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
