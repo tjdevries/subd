@@ -35,7 +35,7 @@ impl Component for Status {
     type Message = Msg;
     type Properties = StatusProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {}
     }
 

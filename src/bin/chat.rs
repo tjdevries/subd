@@ -11,12 +11,10 @@
 
 use std::cmp::max;
 use std::sync::Mutex;
-use std::time::Duration;
 
 use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
-use either::Either;
 use futures::SinkExt;
 use futures::StreamExt;
 // use obws::requests::SceneItemProperties;
@@ -661,10 +659,10 @@ async fn handle_twitch_notifications(
 }
 
 async fn handle_obs_stuff(
-    tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
+    _tx: broadcast::Sender<Event>,
+    mut _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
+    let mut _conn = subd_db::get_handle().await;
 
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()

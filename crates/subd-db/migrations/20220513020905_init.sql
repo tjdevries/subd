@@ -137,7 +137,7 @@ CREATE TABLE USER_ROLES (
   is_twitch_vip     boolean NOT NULL,
   is_twitch_founder boolean NOT NULL,
   is_twitch_sub     boolean NOT NULL,
-  is_twitch_staff   boolean NOT NULL, 
+  is_twitch_staff   boolean NOT NULL,
 
   FOREIGN KEY(user_id) REFERENCES USERS(id)
 );

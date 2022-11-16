@@ -25,8 +25,8 @@ pub async fn update_user_roles_once_per_day(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let user_roles = subd_db::get_user_roles(conn, user_id).await?;
-    let twitch_roles = get_twitch_roles_from_msg(msg);
+    let _user_roles = subd_db::get_user_roles(conn, user_id).await?;
+    let _twitch_roles = get_twitch_roles_from_msg(msg);
 
     // if user_roles.is_twitch_mod() == twitch_roles.is_twitch_mod()
     //     && user_roles.is_twitch_vip() == twitch_roles.is_twitch_vip()
@@ -123,7 +123,7 @@ async fn update_user_roles(
     let user_roles =
         get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
 
-    info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
+    // info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
     subd_db::set_user_roles(conn, user_id, &user_roles).await?;
 
     Ok(user_roles)

@@ -12,7 +12,7 @@ use twitch_irc::message::{Badge, Emote, PrivmsgMessage};
 use yew::prelude::*;
 use yew_hooks::{use_list, use_web_socket};
 
-const SHOULD_DEFAULT_MESSAGES: bool = false;
+// const SHOULD_DEFAULT_MESSAGES: bool = false;
 
 // use_reducer or use_reducer_eq
 //  Probably what we want to end up using to dispatch over Event
