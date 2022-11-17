@@ -199,7 +199,7 @@ pub struct MoveOpacitySettings {
     value_type: i32,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Default)]
 pub struct StreamFXSettings {
     #[serde(rename = "Camera.Mode")]
     camera_mode: i32,
@@ -296,10 +296,10 @@ async fn handle_obs_stuff(
                 id: 5,
                 name: "BeginCam".to_string(),
             },
-            Scene {
-                id: 4,
-                name: "Screen".to_string(),
-            },
+            // Scene {
+            //     id: 4,
+            //     name: "Screen".to_string(),
+            // },
             Scene {
                 id: 12,
                 name: "twitchchat".to_string(),
@@ -447,6 +447,67 @@ async fn handle_obs_stuff(
         };
 
         match splitmsg[0].as_str() {
+            "!rand" => {
+                let amount = splitmsg[1].as_str();
+
+                // how do I handle that
+                let float_amount = match amount.parse::<f32>() {
+                    Ok(val) => val,
+                    Err(_) => {
+                        continue;
+                    }
+                };
+
+                // How do I convert this amount to float
+                // Now I need to use this
+                let settings: StreamFXSettings = StreamFXSettings {
+                    camera_mode: 1,
+                    commit: "g0f114f56".to_string(),
+                    position_x: -0.009999999776482582,
+                    position_y: float_amount,
+                    // position_y: -30.0,
+                    position_z: 0.019999999552965164,
+                    rotation_x: 243.92999267578125,
+                    rotation_y: -4.289999961853027,
+                    rotation_z: -2.140000104904175,
+                    version: 51539607703,
+                };
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "YaBoi",
+                    settings,
+                    overlay: None,
+                };
+                obs_client
+                    .filters()
+                    .set_settings(new_settings)
+                    .await
+                    .unwrap();
+            }
+            "!return" => {
+                let settings: StreamFXSettings = StreamFXSettings {
+                    camera_mode: 1,
+                    commit: "g0f114f56".to_string(),
+                    position_x: 0.0,
+                    position_y: 0.0,
+                    position_z: 0.0,
+                    rotation_x: 0.0,
+                    rotation_y: 0.0,
+                    rotation_z: 0.0,
+                    version: 51539607703,
+                };
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "YaBoi",
+                    settings,
+                    overlay: None,
+                };
+                obs_client
+                    .filters()
+                    .set_settings(new_settings)
+                    .await
+                    .unwrap();
+            }
             "!fade" => {
                 let opacity_settings = MoveOpacitySettings {
                     duration: 3000,
