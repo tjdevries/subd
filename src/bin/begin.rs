@@ -4,6 +4,11 @@ use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs;
 
+use rand::Rng;
+use serde::Serialize;
+
+use rand::thread_rng as rng;
+
 use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
 use std::io::BufReader;
@@ -143,6 +148,8 @@ async fn handle_twitch_msg(
                         );
 
                         let source = Decoder::new(file).unwrap();
+
+                        // Is this outputing the ALSA message????
                         stream_handle
                             .play_raw(source.convert_samples())
                             .expect("ok");
@@ -166,6 +173,57 @@ async fn change_scene(
 }
 
 // ==============================================================================
+
+#[derive(Debug)]
+pub struct Scene {
+    id: i64,
+    name: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct StreamFXSettings {
+    #[serde(rename = "Camera.Mode")]
+    camera_mode: i32,
+    #[serde(rename = "Commit")]
+    commit: String,
+    #[serde(rename = "Position.X")]
+    position_x: f32,
+    #[serde(rename = "Position.Y")]
+    position_y: f32,
+    #[serde(rename = "Position.Z")]
+    position_z: f32,
+    #[serde(rename = "Rotation.X")]
+    rotation_x: f32,
+    #[serde(rename = "Rotation.Y")]
+    rotation_y: f32,
+    #[serde(rename = "Rotation.Z")]
+    rotation_z: f32,
+    #[serde(rename = "Version")]
+    version: i64,
+}
+
+// "id": "streamfx-filter-transform",
+// "mixers": 0,
+// "monitoring_type": 0,
+// "muted": false,
+// "name": "YaBoi",
+// "prev_ver": 469827586,
+// "private_settings": {},
+// "push-to-mute": false,
+// "push-to-mute-delay": 0,
+// "push-to-talk": false,
+// "push-to-talk-delay": 0,
+// "settings": {
+//     "Camera.Mode": 1,
+//     "Commit": "g0f114f56",
+//     "Position.X": -0.01,
+//     "Position.Y": -30.0,
+//     "Position.Z": 0.02,
+//     "Rotation.X": 43.93,
+//     "Rotation.Y": -4.29,
+//     "Rotation.Z": -2.14,
+//     "Version": 51539607703
+// },
 
 // Here you wait for OBS Events, that are commands to trigger OBS
 async fn handle_obs_stuff(
@@ -199,44 +257,77 @@ async fn handle_obs_stuff(
         // Switch to Scenes
         // TODO: Update Filters
 
-        let filter_name = "Cool";
-        // let filter_name = "Hot";
-        // let filter_name = "Nice";
-        // let filter_name = "Close";
-        // let filter_name = "YaBoi";
         // let filter_name = "WHA";
 
-        let filter_details =
-            obs_client.filters().get("BeginCam", filter_name).await?;
+        // cafce25: if you use rand::seq::SliceRandom; you can options.choose(rng()) to choose one of a slice
+        let filter_options = ["Cool"];
+        // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
+
+        let scene_options2 = [
+            Scene {
+                id: 5,
+                name: "BeginCam".to_string(),
+            },
+            Scene {
+                id: 4,
+                name: "Screen".to_string(),
+            },
+            Scene {
+                id: 12,
+                name: "twitchchat".to_string(),
+            },
+        ];
+        // let scene_options = [5, 4, 12];
+        let choosen_scene =
+            &scene_options2[rng().gen_range(0..scene_options2.len())];
+
+        println!("CHOOSEN SCENE: {:?}", choosen_scene);
+
+        let option = filter_options[rng().gen_range(0..filter_options.len())];
+        let filter_name = option;
+
+        let filter_details = obs_client
+            .filters()
+            .get(&choosen_scene.name.clone(), filter_name)
+            .await?;
+        println!("Details {:?}", filter_details);
         if DEBUG {
             println!("Details {:?}", filter_details);
         }
 
         // Enable Filter
         let filter_enabled = obws::requests::filters::SetEnabled {
-            source: "BeginCam",
+            source: &choosen_scene.name.clone(),
             filter: filter_name,
             enabled: !filter_details.enabled,
         };
         obs_client.filters().set_enabled(filter_enabled).await?;
 
-        // let item_id = 4; // Jonah
-        // let item_id = 4; // Screen
-        let item_id = 1; // BeginCam
         let details = obs_client
             .scene_items()
-            .transform(obs_test_scene, item_id) // BeginCam???
+            .transform(obs_test_scene, choosen_scene.id)
             .await?;
-        // if DEBUG {
-        println!("Details {:?}", details);
-        // }
+        if DEBUG {
+            println!("Details {:?}", details);
+        }
 
+        // cafce25: no gen_range will return a value of the range
+        //
         // TODO: Move this out!!!
         // Update a Scene's Settings
-        let new_rot = details.rotation + 0.2;
+        // let rand_rot = rng.gen_range(0..100) as f32;
+        // e.g. `thread_rng().gen::<i32>()`, or cached locally, e.g.
+        let new_rot = details.rotation + (rng().gen_range(0..10) as f32);
+        // rng.gen::<f32>();
+        // let new_rot = details.rotation + 2.0;
 
-        let new_scale_x = details.scale_x + (details.scale_x * 0.01);
-        let new_scale_y = details.scale_y + (details.scale_y * 0.01);
+        // let rand_scale = rng.gen_range(0..100) as f32;
+        let new_scale_x = details.scale_x + (details.scale_x * 0.05);
+        let new_scale_y = details.scale_y + (details.scale_y * 0.05);
+        // let new_scale_x =
+        //     details.scale_x + (details.scale_x * (rand_scale / 100.0));
+        // let new_scale_y =
+        //     details.scale_y + (details.scale_y * (rand_scale / 100.0));
         let new_scale = obws::requests::scene_items::Scale {
             x: Some(new_scale_x),
             y: Some(new_scale_y),
@@ -244,6 +335,10 @@ async fn handle_obs_stuff(
 
         let new_x = details.position_x - (details.position_x * 0.005);
         let new_y = details.position_y - (details.position_y * 0.02);
+        // let new_x =
+        //     details.position_x - (details.position_x * (rand_scale * 0.005));
+        // let new_y =
+        //     details.position_y - (details.position_y * (rand_scale * 0.02));
         let new_position = obws::requests::scene_items::Position {
             x: Some(new_x),
             y: Some(new_y),
@@ -258,13 +353,67 @@ async fn handle_obs_stuff(
         };
         let set_transform = SetTransform {
             scene: "Primary",
-            item_id,
+            item_id: choosen_scene.id,
             transform: scene_transform,
         };
+        let _res =
+            match obs_client.scene_items().set_transform(set_transform).await {
+                Ok(_) => {
+                    println!("I AM DUMB");
+                }
+                Err(_) => {}
+            };
+
+        // pub const TEST_BROWSER: &str = "OBWS-TEST-Browser";
+        // let settings = client
+        //     .settings::<serde_json::Value>(TEST_BROWSER)
+        //     .await?
+        //     .settings;
+        // client
+        //     .set_settings(SetSettings {
+        //         input: TEST_BROWSER,
+        //         settings: &settings,
+        //         overlay: Some(false),
+        //     })
+        //     .await?;
+
+        // [SourceFilter { enabled: true, index: 0, kind: "chroma_key_filter_v2", name: "Chroma Key", settings: Object {"similarity": Number(431)} },
+        // let filters = obs_client.filters().list("BeginCam").await?;
+        // println!("Filters: {:?}", filters);
+
+        let settings = StreamFXSettings {
+            camera_mode: 1,
+            commit: "g0f114f56".to_string(),
+            position_x: -0.01,
+            position_y: -30.0,
+            position_z: 0.02,
+            rotation_x: 243.93,
+            rotation_y: -4.29,
+            rotation_z: -2.14,
+            version: 51539607703,
+        };
+        let new_settings = obws::requests::filters::SetSettings {
+            source: "BeginCam",
+            filter: "YaBoi",
+            settings,
+            overlay: None,
+        };
+
         obs_client
-            .scene_items()
-            .set_transform(set_transform)
-            .await?;
+            .filters()
+            .set_settings(new_settings)
+            .await
+            .unwrap();
+
+        // pub struct SetSettings<'a, T> {
+        //     pub source: &'a str,
+        //     pub filter: &'a str,
+        //     pub settings: T,
+        //     pub overlay: Option<bool>,
+        // }
+
+        //
+        // Down Here let's update some Filters
 
         // ===================================================
 
@@ -284,6 +433,16 @@ async fn handle_obs_stuff(
         };
 
         match splitmsg[0].as_str() {
+            "!ya" => {
+                let yaboi_details =
+                    obs_client.filters().get("BeginCam", "YaBoi").await?;
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: "BeginCam",
+                    filter: "YaBoi",
+                    enabled: !yaboi_details.enabled,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
             "!chat" => {
                 obs_client
                     .hotkeys()
