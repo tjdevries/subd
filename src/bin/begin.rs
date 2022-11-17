@@ -146,6 +146,8 @@ async fn handle_twitch_msg(
                         stream_handle
                             .play_raw(source.convert_samples())
                             .expect("ok");
+
+                        // There's a better a way of doing this
                         std::thread::sleep(std::time::Duration::from_secs(5));
                     }
                 }
@@ -182,13 +184,8 @@ async fn handle_obs_stuff(
     change_scene(&obs_client, &obs_test_scene).await?;
 
     let items = obs_client.scene_items().list(obs_test_scene).await?;
-    let details = obs_client
-        .scene_items()
-        .transform(obs_test_scene, 5) // BeginCam???
-        .await?;
     if DEBUG {
         println!("Items: {:?}", items);
-        println!("Details {:?}", details);
     }
 
     loop {
@@ -198,52 +195,76 @@ async fn handle_obs_stuff(
             _ => continue,
         };
 
+        // Flip filters
+        // Switch to Scenes
+        // TODO: Update Filters
+
+        let filter_name = "Cool";
+        // let filter_name = "Hot";
+        // let filter_name = "Nice";
+        // let filter_name = "Close";
+        // let filter_name = "YaBoi";
+        // let filter_name = "WHA";
+
         let filter_details =
-            obs_client.filters().get("BeginCam", "Hot").await?;
+            obs_client.filters().get("BeginCam", filter_name).await?;
         if DEBUG {
             println!("Details {:?}", filter_details);
         }
-        // On Every Message!!!
-        //
+
         // Enable Filter
         let filter_enabled = obws::requests::filters::SetEnabled {
             source: "BeginCam",
-            filter: "Hot",
+            filter: filter_name,
             enabled: !filter_details.enabled,
         };
         obs_client.filters().set_enabled(filter_enabled).await?;
 
-        // This was Failing
+        // let item_id = 4; // Jonah
+        // let item_id = 4; // Screen
+        let item_id = 1; // BeginCam
+        let details = obs_client
+            .scene_items()
+            .transform(obs_test_scene, item_id) // BeginCam???
+            .await?;
+        // if DEBUG {
+        println!("Details {:?}", details);
+        // }
+
         // TODO: Move this out!!!
         // Update a Scene's Settings
-        // let new_rot = details.rotation + 2.0;
-        // let new_scale_x = details.scale_x + 5.2;
-        // let new_scale_y = details.scale_y + 5.2;
-        // let new_scale = obws::requests::scene_items::Scale {
-        //     x: Some(new_scale_x),
-        //     y: Some(new_scale_y),
-        // };
-        // let scene_transform = SceneItemTransform {
-        //     rotation: None,
-        //     // rotation: Some(new_rot),
-        //     alignment: None,
-        //     bounds: None,
-        //     crop: None,
-        //     scale: None,
-        //     // scale: Some(new_scale),
-        //     position: None,
-        // };
-        // let set_transform = SetTransform {
-        //     scene: "Primary",
-        //     item_id: 1, // BeginCam
-        //     // item_id: 4, // Screen
-        //     // item_id: 43, // jonah
-        //     transform: scene_transform,
-        // };
-        // obs_client
-        //     .scene_items()
-        //     .set_transform(set_transform)
-        //     .await?;
+        let new_rot = details.rotation + 0.2;
+
+        let new_scale_x = details.scale_x + (details.scale_x * 0.01);
+        let new_scale_y = details.scale_y + (details.scale_y * 0.01);
+        let new_scale = obws::requests::scene_items::Scale {
+            x: Some(new_scale_x),
+            y: Some(new_scale_y),
+        };
+
+        let new_x = details.position_x - (details.position_x * 0.005);
+        let new_y = details.position_y - (details.position_y * 0.02);
+        let new_position = obws::requests::scene_items::Position {
+            x: Some(new_x),
+            y: Some(new_y),
+        };
+        let scene_transform = SceneItemTransform {
+            rotation: Some(new_rot),
+            alignment: None,
+            bounds: None,
+            crop: None,
+            scale: Some(new_scale),
+            position: Some(new_position),
+        };
+        let set_transform = SetTransform {
+            scene: "Primary",
+            item_id,
+            transform: scene_transform,
+        };
+        obs_client
+            .scene_items()
+            .set_transform(set_transform)
+            .await?;
 
         // ===================================================
 
