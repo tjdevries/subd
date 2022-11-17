@@ -13,7 +13,7 @@ use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs;
 
-use rodio::{source::Source, Decoder, Devices, OutputStream};
+use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
 use std::io::BufReader;
 
@@ -106,20 +106,19 @@ async fn handle_twitch_msg(
             _ => {
                 let paths = fs::read_dir("./MP3s").unwrap();
                 let example = splitmsg[0].as_str();
-                // We need to strip off the beginning
                 let full_name = format!("./MP3s/{}.mp3", example);
                 println!("{}", full_name);
-                // let full_name2 = full_name.clone();
-                // println!("{}", full_name);
                 for path in paths {
                     if path.unwrap().path().display().to_string() == full_name {
                         println!("BIG!!! WIN");
 
+                        // This works for Begin
                         let (_stream, stream_handle) =
                             get_output_stream("pulse");
 
-                        let (_stream, stream_handle) =
-                            OutputStream::try_default().unwrap();
+                        // This works for Mac
+                        // let (_stream, stream_handle) =
+                        //     OutputStream::try_default().unwrap();
                         // Load a sound from a file, using a path relative to Cargo.toml
                         // let file =
                         //     BufReader::new(File::open(full_name2).unwrap());
@@ -129,10 +128,10 @@ async fn handle_twitch_msg(
                         );
 
                         let source = Decoder::new(file).unwrap();
-                        stream_handle.play_raw(source.convert_samples());
+                        stream_handle
+                            .play_raw(source.convert_samples())
+                            .expect("ok");
                         std::thread::sleep(std::time::Duration::from_secs(5));
-                        // std::thread::sleep(std::time::Duration::from_secs(5));
-                        // Can we play sounds
                     }
                 }
             }
@@ -275,6 +274,35 @@ async fn handle_obs_stuff(
         .set_current_program_scene(&obs_test_scene)
         .await?;
 
+    println!("WAHT IS GOIUNG ON");
+    let items = obs_client.scene_items().list("Primary").await?;
+    println!("Items: {:?}", items);
+
+    // So we we hitting the right Set Transform??
+    let scene_transform = SceneItemTransform {
+        rotation: Some(33.0),
+        alignment: None,
+        bounds: None,
+        crop: None,
+        scale: None,
+        position: None,
+    };
+
+    // HMMMM
+    // so 43 is jonah
+    // So We need to find the Item Numbers
+    let set_transform = SetTransform {
+        scene: "Primary",
+        // item_id: 5, // BeginCam
+        item_id: 43, // Jonah.gif
+        transform: scene_transform,
+    };
+
+    // Is this working????
+    obs_client
+        .scene_items()
+        .set_transform(set_transform)
+        .await?;
     loop {
         let event = rx.recv().await?;
         let msg = match event {
@@ -308,26 +336,6 @@ async fn handle_obs_stuff(
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-
-        let scene_transform = SceneItemTransform {
-            rotation: Some(90.0),
-            alignment: None,
-            bounds: None,
-            crop: None,
-            scale: None,
-            position: None,
-        };
-
-        let set_transform = SetTransform {
-            scene: "Primary",
-            item_id: 5,
-            transform: scene_transform,
-        };
-
-        obs_client
-            .scene_items()
-            .set_transform(set_transform)
-            .await?;
 
         // Print all HotKeys
         // let result = obs_client.hotkeys().list().await?;
@@ -431,8 +439,8 @@ fn list_host_devices() {
     let devices = host.output_devices().unwrap();
     for device in devices {
         let dev: rodio::Device = device.into();
-        let devName: String = dev.name().unwrap();
-        println!(" # Device : {}", devName);
+        let dev_name: String = dev.name().unwrap();
+        println!(" # Device : {}", dev_name);
     }
 }
 
@@ -483,18 +491,18 @@ async fn main() -> Result<()> {
     // # Device : iec958:CARD=Generic,DEV=0
 
     // Look if a file matched in a directory
-    let (_stream, stream_handle) = get_output_stream("pulse");
+    // let (_stream, stream_handle) = get_output_stream("pulse");
     // let (_stream, stream_handle) = get_output_stream("hdmi:CARD=HDMI,DEV=0");
     // let (_stream, stream_handle) = get_output_stream("sysdefault:CARD=Generic");
     // let sink = Sink::try_new(&stream_handle).unwrap();
 
-    let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    // let (_stream, stream_handle) = OutputStream::try_default().unwrap();
     // Load a sound from a file, using a path relative to Cargo.toml
-    let file = BufReader::new(File::open("./MP3s/dontmakefun.mp3").unwrap());
+    // let file = BufReader::new(File::open("./MP3s/dontmakefun.mp3").unwrap());
 
-    let source = Decoder::new(file).unwrap();
-    stream_handle.play_raw(source.convert_samples());
-    std::thread::sleep(std::time::Duration::from_secs(5));
+    // let source = Decoder::new(file).unwrap();
+    // stream_handle.play_raw(source.convert_samples());
+    // std::thread::sleep(std::time::Duration::from_secs(5));
 
     // let file = BufReader::new(File::open("./MP3s/abc.mp3").unwrap());
     // let source = Decoder::new(file).unwrap();
@@ -502,15 +510,15 @@ async fn main() -> Result<()> {
     // std::thread::sleep(std::time::Duration::from_secs(5));
 
     // We need to strip off the beginning
-    let paths = fs::read_dir("./MP3s").unwrap();
-    let example = "abc";
-    let full_name = format!("./MP3s/{}.mp3", example);
-    println!("{}", full_name);
-    for path in paths {
-        if path.unwrap().path().display().to_string() == full_name {
-            println!("BIUG WIN")
-        }
-    }
+    // let paths = fs::read_dir("./MP3s").unwrap();
+    // let example = "abc";
+    // let full_name = format!("./MP3s/{}.mp3", example);
+    // println!("{}", full_name);
+    // for path in paths {
+    //     if path.unwrap().path().display().to_string() == full_name {
+    //         println!("BIUG WIN")
+    //     }
+    // }
 
     tracing_subscriber::fmt()
         // .with_max_level(Level::TRACE)
