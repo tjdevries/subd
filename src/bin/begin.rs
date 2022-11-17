@@ -322,6 +322,27 @@ async fn handle_obs_stuff(
 
         // can we get the info???
         // So we we hitting the right Set Transform??
+        // obws::client::Filters.set_enabled()
+        // pub async fn set_enabled(&self, enabled: SetEnabled<'_>)
+        // Details SourceFilter { enabled: true, index: 19, kind: "color_filter_v2", name: "", settings: Object {"color_multiply": Number(4278190335)} }
+
+        let filter_details =
+            obs_client.filters().get("BeginCam", "Hot").await?;
+        println!("Details {:?}", filter_details);
+        // filter_details.
+
+        // So How do I read filter
+        let filter_enabled = obws::requests::filters::SetEnabled {
+            source: "BeginCam",
+            filter: "Hot",
+            // enabled: true,
+            enabled: !filter_details.enabled,
+        };
+        // obws::client::Filters::set_enabled(filter_enabled);
+        // obws::client::Filters::set_enabled(filter_enabled);
+        obs_client.filters().set_enabled(filter_enabled).await?;
+
+        //
         let scene_transform = SceneItemTransform {
             rotation: Some(new_rot),
             alignment: None,
@@ -389,37 +410,6 @@ async fn handle_obs_stuff(
         let hotkey = splitmsg[0].as_str();
         println!("HotKey: {hotkey}");
 
-        // let themesong = sqlx::query!(
-        //     "SELECT song FROM user_theme_songs WHERE user_id = ?1",
-        //     user_id
-        // )
-        // .fetch_optional(&mut *conn)
-        // .await?;
-
-        // What is song???
-
-        // let themesong = match themesong {
-        //     Some(themesong) => themesong,
-        //     None => {
-        //         println!("theme_song: No themesong available for: {:?}", user_id);
-        //         return Ok(false);
-        //     }
-        // };
-
-        // let rodioer =
-        //     rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
-        //         .unwrap();
-        // // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
-        // // do that yet, this probably wouldn't work with queued themesongs (for example)
-        // // rodioer.total_duration();
-
-        // sink.append(rodioer);
-
-        // thread 'tokio-runtime-worker' panicked at 'this should work: API error: CannotAct', src/bin/begin.rs:369:5
-
-        // we need conn, user_id and sink
-        // themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
-        // "key": "OBS_KEY_H",
         match splitmsg[0].as_str() {
             "!chat" => {
                 obs_client
