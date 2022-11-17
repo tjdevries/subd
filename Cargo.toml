@@ -19,7 +19,7 @@ twitch_api2.workspace = true
 anyhow.workspace = true
 once_cell.workspace = true
 reqwest.workspace = true
-serde.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true

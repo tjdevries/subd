@@ -27,3 +27,24 @@ Not much to see our try out here at this time.
 ## Development / Running
 
 There are several steps requied to set up `subd`. See [Developers](./DEVELOPERS.md) for more information.
+
+## OBS Setup
+
+### Creating a new Scene
+
+- Create the Scene is Manually
+- create filters
+
+```
+!create_filters_for_source INSERT_SOURCE_NAME
+!create_filters_for_source kidalex
+```
+
+This will create X Number of Filters:
+    - Blur
+    - Scroll
+    - 3D Transform
+    - SDF Effects
+    - Move-Value Filters for each of those move
+    - Move-Value to Defaults filters
+    - Move Source on "Primary" scene

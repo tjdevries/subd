@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use anyhow::Result;
 use sqlx::SqliteConnection;
 use subd_types::{Role, TwitchSubLevel, UserID, UserRoles};
-use tracing::info;
+
 use twitch_irc::message::PrivmsgMessage;
 
 // Query for finding if anyone with this tag has messaged today
