@@ -155,7 +155,7 @@ async fn handle_twitch_msg(
                             .expect("ok");
 
                         // There's a better a way of doing this
-                        std::thread::sleep(std::time::Duration::from_secs(5));
+                        std::thread::sleep(std::time::Duration::from_secs(10));
                     }
                 }
             }
@@ -178,6 +178,25 @@ async fn change_scene(
 pub struct Scene {
     id: i64,
     name: String,
+}
+
+#[derive(Serialize, Debug)]
+
+pub struct MoveOpacitySettings {
+    #[serde(rename = "duration")]
+    duration: i32,
+    #[serde(rename = "filter")]
+    filter: String,
+    #[serde(rename = "setting_float")]
+    setting_float: f32,
+    #[serde(rename = "setting_float_max")]
+    setting_float_max: f32,
+    #[serde(rename = "setting_float_min")]
+    setting_float_min: f32,
+    #[serde(rename = "setting_name")]
+    setting_name: String,
+    #[serde(rename = "value_type")]
+    value_type: i32,
 }
 
 #[derive(Serialize, Debug)]
@@ -253,6 +272,14 @@ async fn handle_obs_stuff(
             _ => continue,
         };
 
+        // Enable Filter
+        let filter_enabled = obws::requests::filters::SetEnabled {
+            source: "BeginCam",
+            filter: "Hot",
+            enabled: true,
+        };
+        obs_client.filters().set_enabled(filter_enabled).await?;
+
         // Flip filters
         // Switch to Scenes
         // TODO: Update Filters
@@ -260,7 +287,8 @@ async fn handle_obs_stuff(
         // let filter_name = "WHA";
 
         // cafce25: if you use rand::seq::SliceRandom; you can options.choose(rng()) to choose one of a slice
-        let filter_options = ["Cool"];
+        // let filter_options: [&str] = [];
+        // let filter_options = ["Cool"];
         // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
 
         let scene_options2 = [
@@ -283,25 +311,24 @@ async fn handle_obs_stuff(
 
         println!("CHOOSEN SCENE: {:?}", choosen_scene);
 
-        let option = filter_options[rng().gen_range(0..filter_options.len())];
-        let filter_name = option;
+        // let option = filter_options[rng().gen_range(0..filter_options.len())];
+        // let filter_name = option;
 
-        let filter_details = obs_client
-            .filters()
-            .get(&choosen_scene.name.clone(), filter_name)
-            .await?;
-        println!("Details {:?}", filter_details);
-        if DEBUG {
-            println!("Details {:?}", filter_details);
-        }
-
-        // Enable Filter
-        let filter_enabled = obws::requests::filters::SetEnabled {
-            source: &choosen_scene.name.clone(),
-            filter: filter_name,
-            enabled: !filter_details.enabled,
-        };
-        obs_client.filters().set_enabled(filter_enabled).await?;
+        // let filter_details = obs_client
+        //     .filters()
+        //     .get(&choosen_scene.name.clone(), filter_name)
+        //     .await?;
+        // println!("Details {:?}", filter_details);
+        // if DEBUG {
+        //     println!("Details {:?}", filter_details);
+        // }
+        // // Enable Filter
+        // let filter_enabled = obws::requests::filters::SetEnabled {
+        //     source: &choosen_scene.name.clone(),
+        //     filter: filter_name,
+        //     enabled: !filter_details.enabled,
+        // };
+        // obs_client.filters().set_enabled(filter_enabled).await?;
 
         let details = obs_client
             .scene_items()
@@ -381,30 +408,17 @@ async fn handle_obs_stuff(
         // let filters = obs_client.filters().list("BeginCam").await?;
         // println!("Filters: {:?}", filters);
 
-        let settings = StreamFXSettings {
-            camera_mode: 1,
-            commit: "g0f114f56".to_string(),
-            position_x: -0.01,
-            position_y: -30.0,
-            position_z: 0.02,
-            rotation_x: 243.93,
-            rotation_y: -4.29,
-            rotation_z: -2.14,
-            version: 51539607703,
-        };
-        let new_settings = obws::requests::filters::SetSettings {
-            source: "BeginCam",
-            filter: "YaBoi",
-            settings,
-            overlay: None,
-        };
+        // Enable Hot Filter
+        // Enable blue Filter
+        //
 
-        obs_client
-            .filters()
-            .set_settings(new_settings)
-            .await
-            .unwrap();
+        // Then it's update MoveOpacity filter
+        // Enable Filter
 
+        // I just added a move-value filter on BeginCam called "MoveOpacity"
+        // it moves the value of Opacity over 3 Seconds, when you trigger it
+        //
+        // if the Filter Hot is On
         // pub struct SetSettings<'a, T> {
         //     pub source: &'a str,
         //     pub filter: &'a str,
@@ -433,6 +447,60 @@ async fn handle_obs_stuff(
         };
 
         match splitmsg[0].as_str() {
+            "!fade" => {
+                let opacity_settings = MoveOpacitySettings {
+                    duration: 3000,
+                    filter: "Hot".to_string(),
+                    setting_float: 0.0,
+                    setting_float_max: 1.0,
+                    setting_float_min: 1.0,
+                    setting_name: "opacity".to_string(),
+                    value_type: 2,
+                };
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "MoveOpacity",
+                    settings: opacity_settings,
+                    overlay: None,
+                };
+                obs_client
+                    .filters()
+                    .set_settings(new_settings)
+                    .await
+                    .unwrap();
+            }
+
+            "!trigger" => {
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: "BeginCam",
+                    filter: "MoveOpacity",
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+
+            "!show" => {
+                let opacity_settings = MoveOpacitySettings {
+                    duration: 3000,
+                    filter: "Hot".to_string(),
+                    setting_float: 1.0,
+                    setting_float_max: 1.0,
+                    setting_float_min: 1.0,
+                    setting_name: "opacity".to_string(),
+                    value_type: 2,
+                };
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "MoveOpacity",
+                    settings: opacity_settings,
+                    overlay: None,
+                };
+                obs_client
+                    .filters()
+                    .set_settings(new_settings)
+                    .await
+                    .unwrap();
+            }
             "!ya" => {
                 let yaboi_details =
                     obs_client.filters().get("BeginCam", "YaBoi").await?;
