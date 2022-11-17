@@ -308,7 +308,9 @@ async fn handle_obs_stuff(
         //   crop_top: 0,
         //   crop_bottom: 0
         // }
-        let new_rot = details.rotation + 10.0;
+        // let new_rot = 1.0;
+        let new_rot = details.rotation + 2.0;
+        // let new_rot = details.rotation + 90.0;
 
         // can we get the info???
         // So we we hitting the right Set Transform??
