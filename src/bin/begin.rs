@@ -278,56 +278,6 @@ async fn handle_obs_stuff(
     let items = obs_client.scene_items().list("Primary").await?;
     println!("Items: {:?}", items);
 
-    let details = obs_client.scene_items().transform("Primary", 43).await?;
-    println!("Details {:?}", details);
-
-    // Details SceneItemTransform {
-    //   source_width: 500.0,
-    //   source_height: 500.0,
-    //   position_x: 492.0,
-    //   position_y: 332.0,
-    //   rotation: 33.0,
-    //   scale_x: 1.0,
-    //   scale_y: 1.0,
-    //   width: 500.0,
-    //   height: 500.0,
-    //   alignment: LEFT | TOP,
-    //   bounds_type: None,
-    //   bounds_alignment: CENTER,
-    //   bounds_width: 0.0,
-    //   bounds_height: 0.0,
-    //   crop_left: 0,
-    //   crop_right: 0,
-    //   crop_top: 0,
-    //   crop_bottom: 0
-    // }
-    let new_rot = details.rotation + 10.0;
-
-    // can we get the info???
-    // So we we hitting the right Set Transform??
-    let scene_transform = SceneItemTransform {
-        rotation: Some(new_rot),
-        alignment: None,
-        bounds: None,
-        crop: None,
-        scale: None,
-        position: None,
-    };
-    // HMMMM
-    // so 43 is jonah
-    // So We need to find the Item Numbers
-    let set_transform = SetTransform {
-        scene: "Primary",
-        // item_id: 5, // BeginCam
-        item_id: 43, // Jonah.gif
-        transform: scene_transform,
-    };
-
-    // Is this working????
-    obs_client
-        .scene_items()
-        .set_transform(set_transform)
-        .await?;
     loop {
         let event = rx.recv().await?;
         let msg = match event {
@@ -335,6 +285,56 @@ async fn handle_obs_stuff(
             _ => continue,
         };
 
+        let details = obs_client.scene_items().transform("Primary", 43).await?;
+        println!("Details {:?}", details);
+
+        // Details SceneItemTransform {
+        //   source_width: 500.0,
+        //   source_height: 500.0,
+        //   position_x: 492.0,
+        //   position_y: 332.0,
+        //   rotation: 33.0,
+        //   scale_x: 1.0,
+        //   scale_y: 1.0,
+        //   width: 500.0,
+        //   height: 500.0,
+        //   alignment: LEFT | TOP,
+        //   bounds_type: None,
+        //   bounds_alignment: CENTER,
+        //   bounds_width: 0.0,
+        //   bounds_height: 0.0,
+        //   crop_left: 0,
+        //   crop_right: 0,
+        //   crop_top: 0,
+        //   crop_bottom: 0
+        // }
+        let new_rot = details.rotation + 10.0;
+
+        // can we get the info???
+        // So we we hitting the right Set Transform??
+        let scene_transform = SceneItemTransform {
+            rotation: Some(new_rot),
+            alignment: None,
+            bounds: None,
+            crop: None,
+            scale: None,
+            position: None,
+        };
+        // HMMMM
+        // so 43 is jonah
+        // So We need to find the Item Numbers
+        let set_transform = SetTransform {
+            scene: "Primary",
+            // item_id: 5, // BeginCam
+            item_id: 43, // Jonah.gif
+            transform: scene_transform,
+        };
+
+        // Is this working????
+        obs_client
+            .scene_items()
+            .set_transform(set_transform)
+            .await?;
         let _badges = msg
             .badges
             .iter()
