@@ -8,7 +8,7 @@ use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
 use std::io::BufReader;
 
-use anyhow::anyhow;
+// use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
 
@@ -186,11 +186,9 @@ async fn handle_obs_stuff(
         .scene_items()
         .transform(obs_test_scene, 5) // BeginCam???
         .await?;
-    let filter_details = obs_client.filters().get("BeginCam", "Hot").await?;
     if DEBUG {
         println!("Items: {:?}", items);
         println!("Details {:?}", details);
-        println!("Details {:?}", filter_details);
     }
 
     loop {
@@ -200,6 +198,13 @@ async fn handle_obs_stuff(
             _ => continue,
         };
 
+        let filter_details =
+            obs_client.filters().get("BeginCam", "Hot").await?;
+        if DEBUG {
+            println!("Details {:?}", filter_details);
+        }
+        // On Every Message!!!
+        //
         // Enable Filter
         let filter_enabled = obws::requests::filters::SetEnabled {
             source: "BeginCam",
@@ -208,34 +213,37 @@ async fn handle_obs_stuff(
         };
         obs_client.filters().set_enabled(filter_enabled).await?;
 
+        // This was Failing
+        // TODO: Move this out!!!
         // Update a Scene's Settings
-        let new_rot = details.rotation + 2.0;
+        // let new_rot = details.rotation + 2.0;
         // let new_scale_x = details.scale_x + 5.2;
         // let new_scale_y = details.scale_y + 5.2;
         // let new_scale = obws::requests::scene_items::Scale {
         //     x: Some(new_scale_x),
         //     y: Some(new_scale_y),
         // };
-        let scene_transform = SceneItemTransform {
-            rotation: Some(new_rot),
-            alignment: None,
-            bounds: None,
-            crop: None,
-            scale: None,
-            // scale: Some(new_scale),
-            position: None,
-        };
-        let set_transform = SetTransform {
-            scene: "Primary",
-            item_id: 1, // BeginCam
-            // item_id: 4, // Screen
-            // item_id: 43, // jonah
-            transform: scene_transform,
-        };
-        obs_client
-            .scene_items()
-            .set_transform(set_transform)
-            .await?;
+        // let scene_transform = SceneItemTransform {
+        //     rotation: None,
+        //     // rotation: Some(new_rot),
+        //     alignment: None,
+        //     bounds: None,
+        //     crop: None,
+        //     scale: None,
+        //     // scale: Some(new_scale),
+        //     position: None,
+        // };
+        // let set_transform = SetTransform {
+        //     scene: "Primary",
+        //     item_id: 1, // BeginCam
+        //     // item_id: 4, // Screen
+        //     // item_id: 43, // jonah
+        //     transform: scene_transform,
+        // };
+        // obs_client
+        //     .scene_items()
+        //     .set_transform(set_transform)
+        //     .await?;
 
         // ===================================================
 
