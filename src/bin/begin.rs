@@ -205,7 +205,7 @@ async fn handle_set_command<
             };
         themesong::mark_themesong_unplayed(conn, &user_id).await?;
         println!(
-            "  Successfully marked themseong unplayed for: {:?}",
+            "  Successfully marked themesong unplayed for: {:?}",
             twitch_user
         );
     }
@@ -278,16 +278,41 @@ async fn handle_obs_stuff(
     let items = obs_client.scene_items().list("Primary").await?;
     println!("Items: {:?}", items);
 
+    let details = obs_client.scene_items().transform("Primary", 43).await?;
+    println!("Details {:?}", details);
+
+    // Details SceneItemTransform {
+    //   source_width: 500.0,
+    //   source_height: 500.0,
+    //   position_x: 492.0,
+    //   position_y: 332.0,
+    //   rotation: 33.0,
+    //   scale_x: 1.0,
+    //   scale_y: 1.0,
+    //   width: 500.0,
+    //   height: 500.0,
+    //   alignment: LEFT | TOP,
+    //   bounds_type: None,
+    //   bounds_alignment: CENTER,
+    //   bounds_width: 0.0,
+    //   bounds_height: 0.0,
+    //   crop_left: 0,
+    //   crop_right: 0,
+    //   crop_top: 0,
+    //   crop_bottom: 0
+    // }
+    let new_rot = details.rotation + 10.0;
+
+    // can we get the info???
     // So we we hitting the right Set Transform??
     let scene_transform = SceneItemTransform {
-        rotation: Some(33.0),
+        rotation: Some(new_rot),
         alignment: None,
         bounds: None,
         crop: None,
         scale: None,
         position: None,
     };
-
     // HMMMM
     // so 43 is jonah
     // So We need to find the Item Numbers
