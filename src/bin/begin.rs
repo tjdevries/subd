@@ -309,7 +309,15 @@ async fn handle_obs_stuff(
         //   crop_bottom: 0
         // }
         // let new_rot = 1.0;
+        //
         let new_rot = details.rotation + 2.0;
+        // let new_rot = details.rotation;
+        // let new_scale_x = details.scale_x + 5.2;
+        // let new_scale_y = details.scale_y + 5.2;
+        // let new_scale = obws::requests::scene_items::Scale {
+        //     x: Some(new_scale_x),
+        //     y: Some(new_scale_y),
+        // };
         // let new_rot = details.rotation + 90.0;
 
         // can we get the info???
@@ -320,6 +328,7 @@ async fn handle_obs_stuff(
             bounds: None,
             crop: None,
             scale: None,
+            // scale: Some(new_scale),
             position: None,
         };
         // HMMMM
@@ -327,8 +336,11 @@ async fn handle_obs_stuff(
         // So We need to find the Item Numbers
         let set_transform = SetTransform {
             scene: "Primary",
-            // item_id: 5, // BeginCam
-            item_id: 43, // Jonah.gif
+            // so 4 Works!!@!
+            item_id: 1, // BeginCam
+            // item_id: 4, // Screen
+            // item_id: 43, // jonah
+            // item_id: 43, // jonah
             transform: scene_transform,
         };
 
