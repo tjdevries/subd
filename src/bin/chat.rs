@@ -45,7 +45,6 @@ use twitch_api2::pubsub;
 use twitch_api2::pubsub::Topic;
 use twitch_api2::twitch_oauth2::UserToken;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
@@ -359,35 +358,6 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
         twitch_username,
         Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
-}
-
-#[tracing::instrument(skip(tx))]
-async fn handle_twitch_chat(
-    tx: broadcast::Sender<Event>,
-    _: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Technically, this one just needs to be able to read chat
-    // this client won't send anything to chat.
-    let config = get_chat_config();
-    let (mut incoming_messages, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-
-    client.join(twitch_username.to_owned()).unwrap();
-
-    info!("waiting for messages");
-    while let Some(message) = incoming_messages.recv().await {
-        match message {
-            ServerMessage::Privmsg(private) => {
-                tx.send(Event::TwitchChatMessage(private))?;
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
 }
 
 async fn yew_inner_loop(
@@ -985,7 +955,12 @@ async fn main() -> Result<()> {
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
-    makechan!(handle_twitch_chat);
+    let mut chat = twitch_chat::TwitchChat::new("teej_dv".to_string())
+        .expect("can make chat");
+    makechan!(|tx, rx| {
+        chat.handle(tx, rx).await.expect("twitch chat");
+    });
+
     makechan!(handle_twitch_msg);
     makechan!(handle_yew);
     makechan!(handle_twitch_sub_count);

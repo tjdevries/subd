@@ -11,6 +11,7 @@ subd-gh = { path = "crates/subd-gh" }
 subd-twitch = { path = "crates/subd-twitch" }
 subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
+twitch_chat = { path = "crates/twitch_chat" }
 
 # Twitch Deps
 twitch-irc.workspace = true

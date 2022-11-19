@@ -1,26 +1,23 @@
 -- Table for maintaining a singular user.
-CREATE TABLE users (
+CREATE TABLE USERS (
     -- TODO: This should probably be something like a UUID
     id integer PRIMARY KEY UNIQUE NOT NULL,
-
-    twitch_id TEXT UNIQUE,
-    github_id TEXT UNIQUE,
-
-    -- TODO: Add this back in for metadata things
-    -- last_updated DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
-
-    FOREIGN KEY(twitch_id) REFERENCES twitch_users(id),
-    FOREIGN KEY(github_id) REFERENCES github_users(id)
 );
 
-CREATE TABLE github_users (
-  id    TEXT PRIMARY KEY NOT NULL,
-  name  TEXT NOT NULL,
-  login TEXT NOT NULL
+CREATE TABLE GITHUB_USERS (
+  id      TEXT PRIMARY KEY NOT NULL,
+  user_id TEXT UNIQUE NOT NULL,
+  name    TEXT NOT NULL,
+  login   TEXT NOT NULL,
+
+  FOREIGN KEY(user_id) REFERENCES USERS(id)
+
+  -- TODO: Add indexes, but wait til we have postgres to do it.
 );
 
-CREATE TABLE twitch_users (
+CREATE TABLE TWITCH_USERS (
   id                INTEGER PRIMARY KEY NOT NULL,
+  user_id           TEXT UNIQUE NOT NULL,
   login             TEXT UNIQUE NOT NULL,
   display_name      TEXT NOT NULL,
   offline_image_url TEXT,
@@ -32,12 +29,13 @@ CREATE TABLE twitch_users (
   broadcaster_type TEXT NOT NULL,
 
   -- User’s account type: "staff", "admin", "global_mod", or "".
-  account_type TEXT NOT NULL
+  account_type TEXT NOT NULL,
 
   -- UNUSED:
   -- description	string	User’s channel description.
   -- email	string	User’s verified email address. Returned if the request includes the user:read:email scope.
   -- view_count	integer	Total number of views of the user’s channel.
+  FOREIGN KEY(user_id) REFERENCES USERS(id)
 );
 
 
