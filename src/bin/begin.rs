@@ -11,7 +11,7 @@ use rand::thread_rng as rng;
 
 use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Cursor};
 
 // use anyhow::anyhow;
 use anyhow::Result;
@@ -130,13 +130,23 @@ async fn handle_twitch_msg(
                 // This handles all the Sound playing so Far
                 // Maybe we could abstract this to another function
                 let paths = fs::read_dir("./MP3s").unwrap();
-                let example = splitmsg[0].as_str();
+
+                let example = splitmsg[0].as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", example);
                 for path in paths {
                     if path.unwrap().path().display().to_string() == full_name {
                         // This works for Begin's Arch computer
                         let (_stream, stream_handle) =
                             get_output_stream("pulse");
+
+                        // let sink =
+                        //     rodio::Sink::try_new(&stream_handle).unwrap();
+                        // This is incorrect
+                        // let song_title = format!("./MP3s/{}.mp3", example);
+                        // let rodioer = rodio::Decoder::new(BufReader::new(
+                        //     Cursor::new(song_title),
+                        // ))
+                        // .unwrap();
 
                         // This works for Mac
                         // let (_stream, stream_handle) =
@@ -149,6 +159,7 @@ async fn handle_twitch_msg(
 
                         let source = Decoder::new(file).unwrap();
 
+                        // We want to lower the volume
                         // Is this outputing the ALSA message????
                         stream_handle
                             .play_raw(source.convert_samples())
