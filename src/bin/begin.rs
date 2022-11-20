@@ -3,13 +3,13 @@
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs;
-use std::path::Path;
+// use std::path::Path;
 
-use rand::Rng;
+// use rand::Rng;
 use serde::Serialize;
 use std::collections::HashSet;
 
-use rand::thread_rng as rng;
+// use rand::thread_rng as rng;
 
 use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
@@ -37,6 +37,7 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
 const DEBUG: bool = false;
+const STREAM_FX_FILTER: &str = "3D Transform";
 
 async fn handle_twitch_chat(
     tx: broadcast::Sender<Event>,
@@ -235,6 +236,7 @@ pub struct MoveOpacitySettings {
     value_type: i32,
 }
 
+// I think these might be different sometimes
 #[derive(Serialize, Debug, Default)]
 pub struct StreamFXSettings {
     #[serde(rename = "Camera.Mode")]
@@ -301,8 +303,7 @@ async fn handle_obs_stuff(
         println!("Items: {:?}", items);
     }
     let choosen_scene = Scene {
-        id: 1,
-        // id: 5,
+        id: 5,
         name: "BeginCam".to_string(),
     };
 
@@ -353,7 +354,7 @@ async fn handle_obs_stuff(
         }
 
         // Every single Word
-        for word in splitmsg2 {
+        for _word in splitmsg2 {
             let details = obs_client
                 .scene_items()
                 .transform(obs_test_scene, choosen_scene.id)
@@ -378,7 +379,7 @@ async fn handle_obs_stuff(
                 .await
             {
                 Ok(_) => {
-                    println!("I AM DUMB");
+                    println!("Successful Transform of Scene!");
                 }
                 Err(_) => {}
             };
@@ -388,7 +389,7 @@ async fn handle_obs_stuff(
             .scene_items()
             .transform(obs_test_scene, choosen_scene.id)
             .await?;
-        let new_rot = details.rotation + 2.0;
+        let _new_rot = details.rotation + 2.0;
         if DEBUG {
             println!("Details {:?}", details);
         }
@@ -445,11 +446,17 @@ async fn handle_obs_stuff(
                 }
                 Err(_) => {}
             };
+
+        let filter_details =
+            obs_client.filters().get("BeginCam", "Hot").await?;
+
+        println!("Hot Filter: {:?}\n\n", filter_details);
         // Enable Filter
+        // This makes Begin Red
         let filter_enabled = obws::requests::filters::SetEnabled {
             source: "BeginCam",
             filter: "Hot",
-            enabled: true,
+            enabled: !filter_details.enabled,
         };
         obs_client.filters().set_enabled(filter_enabled).await?;
 
@@ -464,7 +471,7 @@ async fn handle_obs_stuff(
         // let filter_options = ["Cool"];
         // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
 
-        let scene_options2 = [
+        let _scene_options2 = [
             Scene {
                 id: 5,
                 name: "BeginCam".to_string(),
@@ -553,12 +560,16 @@ async fn handle_obs_stuff(
 
         match splitmsg[0].as_str() {
             "!rand" => {
+                // Oh it fails here!!!
                 let amount = splitmsg[1].as_str();
+
+                println!("Attempting!!!!");
 
                 // how do I handle that
                 let float_amount = match amount.parse::<f32>() {
                     Ok(val) => val,
                     Err(_) => {
+                        println!("Error Parsing User Rand val");
                         continue;
                     }
                 };
@@ -579,15 +590,16 @@ async fn handle_obs_stuff(
                 };
                 let new_settings = obws::requests::filters::SetSettings {
                     source: "BeginCam",
-                    filter: "YaBoi",
+                    filter: STREAM_FX_FILTER,
+                    // filter: "3D Transform",
                     settings,
                     overlay: None,
                 };
-                obs_client
-                    .filters()
-                    .set_settings(new_settings)
-                    .await
-                    .unwrap();
+
+                // This doesn't do anything????
+                // So this is the call of it ???
+                obs_client.filters().set_settings(new_settings).await?;
+                // .unwrap();
             }
             "!return" => {
                 let settings: StreamFXSettings = StreamFXSettings {
