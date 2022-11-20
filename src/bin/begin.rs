@@ -3,15 +3,17 @@
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs;
+use std::path::Path;
 
 use rand::Rng;
 use serde::Serialize;
+use std::collections::HashSet;
 
 use rand::thread_rng as rng;
 
 use rodio::{source::Source, Decoder, OutputStream};
 use std::fs::File;
-use std::io::{BufReader, Cursor};
+use std::io::BufReader;
 
 // use anyhow::anyhow;
 use anyhow::Result;
@@ -117,6 +119,19 @@ async fn handle_twitch_msg(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
+        let paths = fs::read_dir("./MP3s").unwrap();
+
+        let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+        // let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+
+        for path in paths {
+            mp3s.insert(path.unwrap().path().display().to_string());
+        }
+
+        // println!("Hello: {:?}", mp3s);
+
+        // let mut sounds = HashSet::new();
+
         let twitch_username =
             subd_types::consts::get_twitch_broadcaster_username();
         match splitmsg[0].as_str() {
@@ -127,45 +142,55 @@ async fn handle_twitch_msg(
                 }
             }
             _ => {
-                // This handles all the Sound playing so Far
-                // Maybe we could abstract this to another function
-                let paths = fs::read_dir("./MP3s").unwrap();
+                // let messsages = HashSet::from(splitmsg);
+                // HashSet::from() maybe
+                // So Split this into a HashSet
+                //
+                // Can I convert a Vec<String> to Splitmsg
+                for word in splitmsg {
+                    // let word = splitmsg[0].as_str().to_lowercase();
+                    // let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+                    let sanitized_word = word.as_str().to_lowercase();
+                    let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
-                let example = splitmsg[0].as_str().to_lowercase();
-                let full_name = format!("./MP3s/{}.mp3", example);
-                for path in paths {
-                    if path.unwrap().path().display().to_string() == full_name {
-                        // This works for Begin's Arch computer
+                    if mp3s.contains(&full_name) {
                         let (_stream, stream_handle) =
                             get_output_stream("pulse");
 
                         // let sink =
                         //     rodio::Sink::try_new(&stream_handle).unwrap();
-                        // This is incorrect
-                        // let song_title = format!("./MP3s/{}.mp3", example);
-                        // let rodioer = rodio::Decoder::new(BufReader::new(
-                        //     Cursor::new(song_title),
-                        // ))
-                        // .unwrap();
 
-                        // This works for Mac
-                        // let (_stream, stream_handle) =
-                        //     OutputStream::try_default().unwrap();
+                        // let file = std::fs::File::open("assets/music.mp3").unwrap();
+                        // sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
+
+                        // sink.sleep_until_end();
+                        //         // This is incorrect
+                        //         // let song_title = format!("./MP3s/{}.mp3", example);
+                        //         // let rodioer = rodio::Decoder::new(BufReader::new(
+                        //         //     Cursor::new(song_title),
+                        //         // ))
+                        //         // .unwrap();
+
+                        //         // This works for Mac
+                        //         // let (_stream, stream_handle) =
+                        //         //     OutputStream::try_default().unwrap();
 
                         let file = BufReader::new(
-                            File::open(format!("./MP3s/{}.mp3", example))
-                                .unwrap(),
+                            File::open(format!(
+                                "./MP3s/{}.mp3",
+                                sanitized_word
+                            ))
+                            .unwrap(),
                         );
 
                         let source = Decoder::new(file).unwrap();
 
-                        // We want to lower the volume
-                        // Is this outputing the ALSA message????
+                        //         // We want to lower the volume
+                        //         // Is this outputing the ALSA message????
                         stream_handle
                             .play_raw(source.convert_samples())
                             .expect("ok");
 
-                        // There's a better a way of doing this
                         std::thread::sleep(std::time::Duration::from_secs(10));
                     }
                 }
@@ -275,6 +300,11 @@ async fn handle_obs_stuff(
     if DEBUG {
         println!("Items: {:?}", items);
     }
+    let choosen_scene = Scene {
+        id: 1,
+        // id: 5,
+        name: "BeginCam".to_string(),
+    };
 
     loop {
         let event = rx.recv().await?;
@@ -283,68 +313,82 @@ async fn handle_obs_stuff(
             _ => continue,
         };
 
-        // Enable Filter
-        let filter_enabled = obws::requests::filters::SetEnabled {
-            source: "BeginCam",
-            filter: "Hot",
-            enabled: true,
-        };
-        obs_client.filters().set_enabled(filter_enabled).await?;
+        // Split Message
+        let splitmsg = msg
+            .message_text
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
 
-        // Flip filters
-        // Switch to Scenes
-        // TODO: Update Filters
+        let splitmsg2 = msg
+            .message_text
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
 
-        // let filter_name = "WHA";
+        // rockerboo: chars().map(|char| char.to_digit()).collect()
+        //0
+        //thread 'tokio-runtime-worker' panicked at 'called `Option::unwrap()` on a `None` value', src/bin/begin.rs:332:62
+        let first_char = splitmsg[0].chars().next().unwrap();
+        println!("First CHAR: {:?}", first_char);
+        let multiplier = first_char as u32;
+        let mut multiplier = multiplier as f32;
+        // let char_num = first_char as u32;
+        // let maltipler = char_num as f32;
+        // let char_num: f32 = (first_char).cast();
 
-        // cafce25: if you use rand::seq::SliceRandom; you can options.choose(rng()) to choose one of a slice
-        // let filter_options: [&str] = [];
-        // let filter_options = ["Cool"];
-        // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
+        // println!("New CHAR: {:?}", new_char);
+        // let first_num = first_char.parse::<u32>().unwrap();
 
-        let scene_options2 = [
-            Scene {
-                id: 5,
-                name: "BeginCam".to_string(),
-            },
-            // Scene {
-            //     id: 4,
-            //     name: "Screen".to_string(),
-            // },
-            Scene {
-                id: 12,
-                name: "twitchchat".to_string(),
-            },
-        ];
-        // let scene_options = [5, 4, 12];
-        let choosen_scene =
-            &scene_options2[rng().gen_range(0..scene_options2.len())];
+        // let first_char = splitmsg[0].chars().next().to_digit(10).unwrap();
+        // splitmsg[0].chars().next().unwrap().to_digit(10).unwrap();
 
-        println!("CHOOSEN SCENE: {:?}", choosen_scene);
+        // println!("\n\nFirst CHar: {:?}", first_char);
 
-        // let option = filter_options[rng().gen_range(0..filter_options.len())];
-        // let filter_name = option;
+        // let multiplier = 1.0;
+        if (multiplier) < 100.0 {
+            multiplier = 1.0;
+        } else {
+            multiplier = -1.0;
+        }
 
-        // let filter_details = obs_client
-        //     .filters()
-        //     .get(&choosen_scene.name.clone(), filter_name)
-        //     .await?;
-        // println!("Details {:?}", filter_details);
-        // if DEBUG {
-        //     println!("Details {:?}", filter_details);
-        // }
-        // // Enable Filter
-        // let filter_enabled = obws::requests::filters::SetEnabled {
-        //     source: &choosen_scene.name.clone(),
-        //     filter: filter_name,
-        //     enabled: !filter_details.enabled,
-        // };
-        // obs_client.filters().set_enabled(filter_enabled).await?;
+        // Every single Word
+        for word in splitmsg2 {
+            let details = obs_client
+                .scene_items()
+                .transform(obs_test_scene, choosen_scene.id)
+                .await?;
+            let new_rot = details.rotation + (2.0 * multiplier);
+            let scene_transform = SceneItemTransform {
+                rotation: Some(new_rot),
+                alignment: None,
+                bounds: None,
+                crop: None,
+                scale: None,
+                position: None,
+            };
+            let set_transform = SetTransform {
+                scene: "Primary",
+                item_id: choosen_scene.id,
+                transform: scene_transform,
+            };
+            let _res = match obs_client
+                .scene_items()
+                .set_transform(set_transform)
+                .await
+            {
+                Ok(_) => {
+                    println!("I AM DUMB");
+                }
+                Err(_) => {}
+            };
+        }
 
         let details = obs_client
             .scene_items()
             .transform(obs_test_scene, choosen_scene.id)
             .await?;
+        let new_rot = details.rotation + 2.0;
         if DEBUG {
             println!("Details {:?}", details);
         }
@@ -355,9 +399,9 @@ async fn handle_obs_stuff(
         // Update a Scene's Settings
         // let rand_rot = rng.gen_range(0..100) as f32;
         // e.g. `thread_rng().gen::<i32>()`, or cached locally, e.g.
-        let new_rot = details.rotation + (rng().gen_range(0..10) as f32);
+        // let new_rot = details.rotation + (rng().gen_range(0..10) as f32);
         // rng.gen::<f32>();
-        // let new_rot = details.rotation + 2.0;
+        let new_rot = details.rotation + 2.0;
 
         // let rand_scale = rng.gen_range(0..100) as f32;
         let new_scale_x = details.scale_x + (details.scale_x * 0.05);
@@ -401,6 +445,63 @@ async fn handle_obs_stuff(
                 }
                 Err(_) => {}
             };
+        // Enable Filter
+        let filter_enabled = obws::requests::filters::SetEnabled {
+            source: "BeginCam",
+            filter: "Hot",
+            enabled: true,
+        };
+        obs_client.filters().set_enabled(filter_enabled).await?;
+
+        // Flip filters
+        // Switch to Scenes
+        // TODO: Update Filters
+
+        // let filter_name = "WHA";
+
+        // cafce25: if you use rand::seq::SliceRandom; you can options.choose(rng()) to choose one of a slice
+        // let filter_options: [&str] = [];
+        // let filter_options = ["Cool"];
+        // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
+
+        let scene_options2 = [
+            Scene {
+                id: 5,
+                name: "BeginCam".to_string(),
+            },
+            // Scene {
+            //     id: 4,
+            //     name: "Screen".to_string(),
+            // },
+            Scene {
+                id: 12,
+                name: "twitchchat".to_string(),
+            },
+        ];
+        // let scene_options = [5, 4, 12];
+        // let choosen_scene =
+        //     &scene_options2[rng().gen_range(0..scene_options2.len())];
+
+        // println!("CHOOSEN SCENE: {:?}", choosen_scene);
+
+        // let option = filter_options[rng().gen_range(0..filter_options.len())];
+        // let filter_name = option;
+
+        // let filter_details = obs_client
+        //     .filters()
+        //     .get(&choosen_scene.name.clone(), filter_name)
+        //     .await?;
+        // println!("Details {:?}", filter_details);
+        // if DEBUG {
+        //     println!("Details {:?}", filter_details);
+        // }
+        // // Enable Filter
+        // let filter_enabled = obws::requests::filters::SetEnabled {
+        //     source: &choosen_scene.name.clone(),
+        //     filter: filter_name,
+        //     enabled: !filter_details.enabled,
+        // };
+        // obs_client.filters().set_enabled(filter_enabled).await?;
 
         // pub const TEST_BROWSER: &str = "OBWS-TEST-Browser";
         // let settings = client
@@ -441,13 +542,6 @@ async fn handle_obs_stuff(
         // Down Here let's update some Filters
 
         // ===================================================
-
-        // Split Message
-        let splitmsg = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
 
         // This is the same as holding the Super key on an Ergodox
         let super_key = obws::requests::hotkeys::KeyModifiers {
