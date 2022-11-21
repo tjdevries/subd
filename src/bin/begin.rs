@@ -239,11 +239,15 @@ pub struct MoveSingleValueSetting {
     value_type: u32,
 }
 
-// Filter Details: SourceFilter { enabled: true, index: 10, kind: "streamfx-filter-sdf-effects", name: "", settings: Object {"Commit": String("g0f114f56"), "Filter.SDFEffects.Glow.Inner": Bool(false), "Filter.SDFEffects.Glow.Inner.Color": Number(4286513322), "Filter.SDFEffects.Glow.Inner.Width": Number(9.14), "Filter.SDFEffects.Glow.Outer": Bool(false), "Filter.SDFEffects.Glow.Outer.Alpha": Number(0.0), "Filter.SDFEffects.Glow.Outer.Color": Number(4278255360), "Filter.SDFEffects.Glow.Outer.Sharpness": Number(67.73), "Filter.SDFEffects.Glow.Outer.Width": Number(16.0), "Filter.SDFEffects.Outline": Bool(true), "Filter.SDFEffects.Outline.Color": Number(4278255615), "Filter.SDFEffects.Outline.Sharpness": Number(55.48), "Filter.SDFEffects.Outline.Width": Number(0.0), "Filter.SDFEffects.SDF.Scale": Number(72.7), "Filter.SDFEffects.SDF.Threshold": Number(59.12), "Filter.SDFEffects.Shadow.Inner": Bool(false), "Filter.SDFEffects.Shadow.Inner.Color": Number(4286578432), "Filter.SDFEffects.Shadow.Inner.Offset.Y": Number(67.18), "Filter.SDFEffects.Shadow.Inner.Range.Minimum": Number(-1.95), "Filter.SDFEffects.Shadow.Outer": Bool(false), "Filter.SDFEffects.Shadow.Outer.Color": Number(4294923775), "Filter.SDFEffects.Shadow.Outer.Offset.X": Number(87.63), "Filter.SDFEffects.Shadow.Outer.Range.Maximum": Number(4.99), "Filter.SDFEffects.Shadow.Outer.Range.Minimum": Number(0.44), "Version": Number(51539607703), "glow_outer_width": Number(0.0)} }
-//
 // TODO: consider serde defaults???
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct SDFEffectsSettings {
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Alpha")]
+    shadow_inner_alpha: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Alpha")]
+    shadow_outer_alpha: Option<f32>,
+
     #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
     glow_outer: Option<bool>,
 
@@ -709,7 +713,6 @@ async fn handle_obs_stuff(
 
         match splitmsg[0].as_str() {
             "!outline" => {
-                // move_sdf_effects
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: "BeginCam",
                     filter: "Move_SDF_Effects",
@@ -842,10 +845,18 @@ async fn handle_obs_stuff(
             }
             "!do" => {
                 let filter_setting_name = splitmsg[1].as_str();
+
+                let filter_value: f32 = if splitmsg.len() < 3 {
+                    0.0
+                } else {
+                    splitmsg[2].trim().parse().unwrap_or(0.0)
+                };
+
                 let filter_details =
                     obs_client.filters().get(&source, &filter_name).await?;
 
-                println!("{:?}", filter_details);
+                println!("\n!do Filter Details: {:?}", filter_details);
+
                 let mut new_settings =
                     serde_json::from_value::<MoveSingleValueSetting>(
                         filter_details.settings,
@@ -853,8 +864,11 @@ async fn handle_obs_stuff(
                     .unwrap();
 
                 new_settings.setting_name = String::from(filter_setting_name);
-                new_settings.setting_float = float_max;
+                new_settings.setting_float = filter_value;
 
+                // new_settings.setting_float = float_max;
+                println!("\n!do New Settings: {:?}", new_settings);
+                // Update the Filter
                 let new_settings = obws::requests::filters::SetSettings {
                     source: &source,
                     filter: &filter_name,
@@ -862,6 +876,15 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
+
+                // TODO: We need to wait for the function above
+                // Trigger the updated Filter
+                // let filter_enabled = obws::requests::filters::SetEnabled {
+                //     source: "BeginCam",
+                //     filter: "Move_SDF_Effects",
+                //     enabled: true,
+                // };
+                // obs_client.filters().set_enabled(filter_enabled).await?;
             }
             "!update_outline" => {
                 let filter_details =
