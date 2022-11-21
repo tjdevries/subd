@@ -80,6 +80,8 @@ async fn handle_twitch_msg(
         StaticLoginCredentials,
     >::new(config);
 
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
+
     loop {
         let event = rx.recv().await?;
         let msg = match event {
@@ -129,17 +131,13 @@ async fn handle_twitch_msg(
             mp3s.insert(path.unwrap().path().display().to_string());
         }
 
-        // println!("Hello: {:?}", mp3s);
-
-        // let mut sounds = HashSet::new();
-
-        let twitch_username =
-            subd_types::consts::get_twitch_broadcaster_username();
         match splitmsg[0].as_str() {
             "!echo" => {
                 let echo = commands::Echo::try_parse_from(&splitmsg);
                 if let Ok(echo) = echo {
-                    let _ = client.say(twitch_username, echo.contents).await;
+                    let _ = client
+                        .say(twitch_username.clone(), echo.contents)
+                        .await;
                 }
             }
             _ => {
@@ -295,6 +293,13 @@ async fn handle_obs_stuff(
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
 
+    let config = get_chat_config();
+    let (_, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(config);
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
+
     let obs_test_scene = "Primary";
     change_scene(&obs_client, &obs_test_scene).await?;
 
@@ -447,18 +452,17 @@ async fn handle_obs_stuff(
                 Err(_) => {}
             };
 
-        let filter_details =
-            obs_client.filters().get("BeginCam", "Hot").await?;
-
-        println!("Hot Filter: {:?}\n\n", filter_details);
-        // Enable Filter
-        // This makes Begin Red
-        let filter_enabled = obws::requests::filters::SetEnabled {
-            source: "BeginCam",
-            filter: "Hot",
-            enabled: !filter_details.enabled,
-        };
-        obs_client.filters().set_enabled(filter_enabled).await?;
+        // let filter_details =
+        //     obs_client.filters().get("BeginCam", "Hot").await?;
+        // println!("Hot Filter: {:?}\n\n", filter_details);
+        // // Enable Filter
+        // // This makes Begin Red
+        // let filter_enabled = obws::requests::filters::SetEnabled {
+        //     source: "BeginCam",
+        //     filter: "Hot",
+        //     enabled: !filter_details.enabled,
+        // };
+        // obs_client.filters().set_enabled(filter_enabled).await?;
 
         // Flip filters
         // Switch to Scenes
@@ -559,6 +563,41 @@ async fn handle_obs_stuff(
         };
 
         match splitmsg[0].as_str() {
+            "!fs" => {
+                println!("Trying to Read Filters");
+                let filters = obs_client.filters().list("BeginCam").await?;
+                println!("Filters {:?}", filters);
+                client
+                    .say(twitch_username.clone(), format!("{:?}", filters))
+                    .await?;
+            }
+            "!filter" => {
+                let (_command, words) =
+                    msg.message_text.split_once(" ").unwrap();
+
+                println!("Finding Filter Details {:?}", words);
+
+                let filter_details = match obs_client
+                    .filters()
+                    .get("BeginCam", words)
+                    .await
+                {
+                    Ok(details) => details,
+                    Err(_) => {
+                        println!("Error Fetching Filter Details: {:?}", words);
+                        continue;
+                    }
+                };
+
+                println!("Filter Details {:?}", filter_details);
+
+                client
+                    .say(
+                        twitch_username.clone(),
+                        format!("{:?}", filter_details),
+                    )
+                    .await?;
+            }
             "!rand" => {
                 // Oh it fails here!!!
                 let amount = splitmsg[1].as_str();
