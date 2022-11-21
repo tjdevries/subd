@@ -689,7 +689,9 @@ async fn handle_obs_stuff(
         };
 
         let source = "BeginCam";
-        let filter_name = "Move_SDF_Effects";
+        // TODO: look up by effect setting name
+        // let filter_name = "Move_SDF_Effects";
+        let filter_name = "Move_Stream_FX";
 
         // Outer Shadow Min/Max Distance, -16 -> 16
         //
@@ -715,7 +717,7 @@ async fn handle_obs_stuff(
             "!outline" => {
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: "BeginCam",
-                    filter: "Move_SDF_Effects",
+                    filter: filter_name,
                     enabled: true,
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
@@ -868,6 +870,7 @@ async fn handle_obs_stuff(
 
                 // new_settings.setting_float = float_max;
                 println!("\n!do New Settings: {:?}", new_settings);
+
                 // Update the Filter
                 let new_settings = obws::requests::filters::SetSettings {
                     source: &source,
@@ -876,16 +879,8 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
-
-                // TODO: We need to wait for the function above
-                // Trigger the updated Filter
-                // let filter_enabled = obws::requests::filters::SetEnabled {
-                //     source: "BeginCam",
-                //     filter: "Move_SDF_Effects",
-                //     enabled: true,
-                // };
-                // obs_client.filters().set_enabled(filter_enabled).await?;
             }
+
             "!update_outline" => {
                 let filter_details =
                     obs_client.filters().get("BeginCam", "Outline").await?;
