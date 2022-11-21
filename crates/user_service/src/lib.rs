@@ -6,11 +6,11 @@ pub struct User {
 }
 
 pub struct Service {
-    db: sqlx::SqlitePool,
+    db: sqlx::PgPool,
 }
 
 impl Service {
-    pub async fn new(db: sqlx::SqlitePool) -> Self {
+    pub async fn new(db: sqlx::PgPool) -> Self {
         Self { db }
     }
 

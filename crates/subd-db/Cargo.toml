@@ -14,6 +14,6 @@ chrono.workspace = true
 once_cell.workspace = true
 sqlx.workspace = true
 tokio = { workspace = true, features = [ "macros", "rt" ] }
+uuid.workspace = true
 
-uuid = { version = "1.0.0", features = [ "v4" ] }
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }

@@ -1,4 +1,6 @@
 use anyhow::Result;
+use async_trait::async_trait;
+use events::EventHandler;
 use subd_types::Event;
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
 use twitch_irc::{
@@ -35,9 +37,12 @@ impl TwitchChat {
             client,
         })
     }
+}
 
-    pub async fn handle(
-        &mut self,
+#[async_trait]
+impl EventHandler for TwitchChat {
+    async fn handle(
+        mut self: Box<Self>,
         tx: broadcast::Sender<Event>,
         _: broadcast::Receiver<Event>,
     ) -> Result<()> {

@@ -3,7 +3,7 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
-use sqlx::SqliteConnection;
+use sqlx::PgConnection;
 use subd_types::{Role, TwitchSubLevel, UserID, UserRoles};
 
 use twitch_irc::message::PrivmsgMessage;
@@ -21,7 +21,7 @@ use twitch_irc::message::PrivmsgMessage;
 //   )
 
 pub async fn update_user_roles_once_per_day(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
@@ -93,38 +93,41 @@ fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
 }
 
 async fn get_user_role_from_user_id_and_msg(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    let is_github_sponsor =
-        match subd_db::get_github_info_for_user(&mut *conn, user_id).await? {
-            Some(github_user) => {
-                subd_gh::is_user_sponsoring(&github_user.login).await?
-            }
-            None => false,
-        };
-
-    let mut twitch_roles = get_twitch_roles_from_msg(msg);
-    if is_github_sponsor {
-        twitch_roles.add_role(Role::GithubSponsor {
-            tier: "UNKNOWN".to_string(),
-        });
-    }
-
-    Ok(twitch_roles)
+    todo!("get_user_role_from_user_id_and_msg");
+    // let is_github_sponsor =
+    //     match subd_db::get_github_info_for_user(&mut *conn, user_id).await? {
+    //         Some(github_user) => {
+    //             subd_gh::is_user_sponsoring(&github_user.login).await?
+    //         }
+    //         None => false,
+    //     };
+    //
+    // let mut twitch_roles = get_twitch_roles_from_msg(msg);
+    // if is_github_sponsor {
+    //     twitch_roles.add_role(Role::GithubSponsor {
+    //         tier: "UNKNOWN".to_string(),
+    //     });
+    // }
+    //
+    // Ok(twitch_roles)
 }
 
 async fn update_user_roles(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
+    todo!("update_user_roles");
+
     let user_roles =
         get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
 
     // info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
-    subd_db::set_user_roles(conn, user_id, &user_roles).await?;
+    // subd_db::set_user_roles(conn, user_id, &user_roles).await?;
 
     Ok(user_roles)
 }

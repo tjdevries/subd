@@ -1,9 +1,7 @@
-use std::io::{BufReader, Cursor};
-
 use anyhow::Result;
 use psl::Psl;
 use reqwest::Url;
-use sqlx::SqliteConnection;
+use sqlx::PgConnection;
 use subd_types::{UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt};
 use tracing::info;
@@ -11,7 +9,7 @@ use tracing::info;
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
 pub async fn play_themesong_for_today(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     sink: &rodio::Sink,
 ) -> Result<()> {
@@ -27,15 +25,16 @@ pub async fn play_themesong_for_today(
 }
 
 pub async fn delete_themesong(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     display_name: &str,
 ) -> Result<()> {
     let display_name = display_name.replace("@", "").to_lowercase();
-    let user_id =
-        subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
-            .await?;
+    // let user_id =
+    //     subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
+    //         .await?;
 
-    sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = ?1", user_id)
+    let user_id = uuid::Uuid::new_v4();
+    sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = $1", user_id)
         .execute(&mut *conn)
         .await?;
 
@@ -43,13 +42,13 @@ pub async fn delete_themesong(
 }
 
 async fn mark_themesong_played(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
 ) -> Result<()> {
     // Insert that we've played their theme song
     sqlx::query!(
-        "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES (?1)",
-        user_id
+        "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES ($1)",
+        user_id.0
     )
     .execute(&mut *conn)
     .await?;
@@ -58,13 +57,13 @@ async fn mark_themesong_played(
 }
 
 pub async fn mark_themesong_unplayed(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
 ) -> Result<()> {
     // Insert that we've played their theme song
     sqlx::query!(
-        "DELETE FROM USER_THEME_SONG_HISTORY WHERE user_id = (?1) AND date(played_at) = date(CURRENT_TIMESTAMP)",
-        user_id
+        "DELETE FROM USER_THEME_SONG_HISTORY WHERE user_id = ($1) AND date(played_at) = date(CURRENT_TIMESTAMP)",
+        user_id.0
     )
     .execute(&mut *conn)
     .await?;
@@ -73,7 +72,7 @@ pub async fn mark_themesong_unplayed(
 }
 
 pub async fn has_played_themesong_today(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
 ) -> Result<bool> {
     let played_count = sqlx::query!(
@@ -81,19 +80,19 @@ pub async fn has_played_themesong_today(
         SELECT count(*) AS RESULT
           FROM user_theme_song_history
           WHERE date(played_at) = date('now')
-            AND user_id = ?1;
+            AND user_id = $1;
         "#,
-        user_id
+        user_id.0
     )
     .fetch_one(&mut *conn)
     .await?;
 
-    Ok(played_count.RESULT > 0)
+    Ok(played_count.result.unwrap() > 0)
 }
 
 #[tracing::instrument(skip(conn))]
 pub async fn download_themesong(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     user_name: &str,
     url: &str,
@@ -112,7 +111,7 @@ pub async fn download_themesong(
     validate_duration(start, end, duration)?;
 
     let location =
-        THEMESONG_LOCATION.to_string() + user_id.to_string().as_str();
+        THEMESONG_LOCATION.to_string() + user_id.0.to_string().as_str();
 
     info!("downloading");
 
@@ -143,13 +142,14 @@ pub async fn download_themesong(
     f.read_to_end(&mut contents).await?;
 
     // Delete the previous theme song
-    sqlx::query!("DELETE FROM USER_THEME_SONGS WHERE user_id = ?1", user_id)
+    let user_id = user_id.0;
+    sqlx::query!("DELETE FROM USER_THEME_SONGS WHERE user_id = $1", user_id)
         .execute(&mut *conn)
         .await?;
 
     // Insert the new theme song
     sqlx::query!(
-        "INSERT INTO USER_THEME_SONGS (user_id, song) VALUES (?1, ?2)",
+        "INSERT INTO USER_THEME_SONGS (user_id, song) VALUES ($1, $2)",
         user_id,
         contents
     )
@@ -172,62 +172,64 @@ pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
 
 // TODO: We should probably not copy & paste this like this
 pub async fn should_play_themesong(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
 ) -> Result<bool> {
-    if has_played_themesong_today(conn, user_id).await? {
-        return Ok(false);
-    }
-
-    let user_roles = subd_db::get_user_roles(conn, user_id).await?;
-    if !can_user_access_themesong(&user_roles) {
-        return Ok(false);
-    }
-
-    let themesong = sqlx::query!(
-        "SELECT song FROM user_theme_songs WHERE user_id = ?1",
-        user_id
-    )
-    .fetch_optional(&mut *conn)
-    .await?;
-
-    match themesong {
-        Some(_) => Ok(true),
-        None => Ok(false),
-    }
+    todo!("should_play_themesong");
+    // if has_played_themesong_today(conn, user_id).await? {
+    //     return Ok(false);
+    // }
+    //
+    // let user_roles = subd_db::get_user_roles(conn, user_id).await?;
+    // if !can_user_access_themesong(&user_roles) {
+    //     return Ok(false);
+    // }
+    //
+    // let themesong = sqlx::query!(
+    //     "SELECT song FROM user_theme_songs WHERE user_id = $1",
+    //     user_id.0
+    // )
+    // .fetch_optional(&mut *conn)
+    // .await?;
+    //
+    // match themesong {
+    //     Some(_) => Ok(true),
+    //     None => Ok(false),
+    // }
 }
 
 // Play a themesong. Does not wait for sink to complete playing
 pub async fn play_themesong(
-    conn: &mut SqliteConnection,
+    conn: &mut PgConnection,
     user_id: &UserID,
     sink: &rodio::Sink,
 ) -> Result<bool> {
-    let themesong = sqlx::query!(
-        "SELECT song FROM user_theme_songs WHERE user_id = ?1",
-        user_id
-    )
-    .fetch_optional(&mut *conn)
-    .await?;
-
-    let themesong = match themesong {
-        Some(themesong) => themesong,
-        None => {
-            println!("theme_song: No themesong available for: {:?}", user_id);
-            return Ok(false);
-        }
-    };
-
-    let rodioer =
-        rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
-            .unwrap();
-    // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
-    // do that yet, this probably wouldn't work with queued themesongs (for example)
-    // rodioer.total_duration();
-
-    sink.append(rodioer);
-
-    Ok(true)
+    todo!("play_themesong");
+    // let themesong = sqlx::query!(
+    //     "SELECT song FROM user_theme_songs WHERE user_id = $1",
+    //     user_id
+    // )
+    // .fetch_optional(&mut *conn)
+    // .await?;
+    //
+    // let themesong = match themesong {
+    //     Some(themesong) => themesong,
+    //     None => {
+    //         println!("theme_song: No themesong available for: {:?}", user_id);
+    //         return Ok(false);
+    //     }
+    // };
+    //
+    // let rodioer =
+    //     rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
+    //         .unwrap();
+    // // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
+    // // do that yet, this probably wouldn't work with queued themesongs (for example)
+    // // rodioer.total_duration();
+    //
+    // sink.append(rodioer);
+    //
+    // Ok(true)
 }
 
 pub fn validate_themesong(themesong_url: &str) -> Result<String> {

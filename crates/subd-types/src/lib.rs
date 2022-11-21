@@ -11,8 +11,21 @@ use twitch_irc::message::PrivmsgMessage;
 pub mod consts;
 pub mod twitch;
 
-pub type UserID = i64;
-pub type TwitchUserID = String;
+// TODO: How do we derive this better?
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct UserID(pub uuid::Uuid);
+
+// impl sqlx::Encode<'_, sqlx::Postgres> for UserID {
+//     fn encode_by_ref(
+//         &self,
+//         buf: &mut <sqlx::Postgres as sqlx::database::HasArguments<'_>>::ArgumentBuffer,
+//     ) -> sqlx::encode::IsNull {
+//         <&i64 as sqlx::Encode<sqlx::Postgres>>::encode(&self.0, buf)
+//     }
+// }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct TwitchUserID(String);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {

@@ -148,7 +148,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                     Self { #self_body }
                 }
 
-                pub async fn update(mut self, conn: &mut SqliteConnection, updates: ModelUpdate) -> Result<Self> {
+                pub async fn update(mut self, conn: &mut sqlx::PgPool, updates: ModelUpdate) -> Result<Self> {
                     #(#model_update_identifiers)*
                     self.save(conn).await?;
                     Ok(self)

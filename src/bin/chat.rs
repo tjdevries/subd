@@ -15,6 +15,7 @@ use std::sync::Mutex;
 use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
+use events::EventHandler;
 use futures::SinkExt;
 use futures::StreamExt;
 // use obws::requests::SceneItemProperties;
@@ -65,9 +66,9 @@ fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
 #[tracing::instrument(skip(tx, rx))]
 async fn handle_twitch_msg(
     tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
+    rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
+    let conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
     let (_, client) = TwitchIRCClient::<
@@ -75,197 +76,199 @@ async fn handle_twitch_msg(
         StaticLoginCredentials,
     >::new(config);
 
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
-            _ => continue,
-        };
+    Ok(())
 
-        let badges = msg
-            .badges
-            .iter()
-            .map(|b| b.name.as_str())
-            .collect::<Vec<&str>>()
-            .join(",");
-        info!(sender = %msg.sender.name, badges = %badges, "{}", msg.message_text);
-
-        subd_db::create_twitch_user_chat(
-            &mut conn,
-            &msg.sender.id,
-            &msg.sender.login,
-        )
-        .await?;
-        subd_db::save_twitch_message(
-            &mut conn,
-            &msg.sender.id,
-            &msg.message_text,
-        )
-        .await?;
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-                .await?;
-        let user_roles =
-            users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
-                .await?;
-
-        if themesong::should_play_themesong(&mut conn, &user_id).await? {
-            println!("  Sending themesong play event...");
-            tx.send(Event::ThemesongPlay(ThemesongPlay::Start {
-                user_id,
-                display_name: msg.sender.name.clone(),
-            }))?;
-        }
-
-        let splitmsg = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        let twitch_username =
-            subd_types::consts::get_twitch_broadcaster_username();
-
-        match splitmsg[0].as_str() {
-            "!echo" => {
-                let echo = commands::Echo::try_parse_from(&splitmsg);
-                if let Ok(echo) = echo {
-                    let _ = client.say(twitch_username, echo.contents).await;
-                }
-            }
-            "!lb" => {
-                if splitmsg.len() == 1 {
-                    continue;
-                }
-
-                let status = get_lb_status();
-                let mut status = status.lock().unwrap();
-                let len = status.topics.len() as u32;
-                let is_moderator = user_roles.is_moderator();
-                match splitmsg[1].as_str() {
-                    "reset" if is_moderator => {
-                        status.enabled = true;
-                        status.topics = vec![];
-                    }
-                    "show" if is_moderator => {
-                        status.enabled = true;
-                    }
-                    "hide" if is_moderator => {
-                        status.enabled = false;
-                    }
-                    "suggest" => {
-                        let text = splitmsg[2..].join(" ");
-                        if text.is_inappropriate() {
-                            let analysis =
-                                Censor::from_str(text.as_str()).analyze();
-                            println!("Text Is: {:?} -> {:?}", text, analysis);
-                            continue;
-                        }
-
-                        status.topics.push(LunchBytesTopic {
-                            id: len + 1,
-                            text: splitmsg[2..].join(" "),
-                            votes: 1,
-                        })
-                    }
-                    "+" | "^" => {
-                        if splitmsg.len() < 3 {
-                            continue;
-                        }
-
-                        let id = match splitmsg[2].as_str().parse::<usize>() {
-                            Ok(id) => id,
-                            Err(_) => continue,
-                        };
-
-                        if id == 0 {
-                            continue;
-                        }
-
-                        match status.topics.get_mut(id - 1) {
-                            Some(topic) => topic.votes += 1,
-                            None => continue,
-                        }
-                    }
-
-                    "-" | "v" => {
-                        if splitmsg.len() < 3 {
-                            continue;
-                        }
-
-                        let id = match splitmsg[2].as_str().parse::<usize>() {
-                            Ok(id) => id,
-                            Err(_) => continue,
-                        };
-
-                        if id == 0 {
-                            continue;
-                        }
-
-                        match status.topics.get_mut(id - 1) {
-                            Some(topic) => {
-                                topic.votes = max(0, topic.votes - 1)
-                            }
-                            None => continue,
-                        }
-                    }
-                    _ => {}
-                };
-
-                tx.send(Event::LunchBytesStatus(status.clone()))?;
-            }
-            "!raffle" => {
-                let result = server::raffle::handle(
-                    &tx,
-                    &user_id,
-                    &msg.sender.name,
-                    &msg.message_text,
-                )
-                .await;
-                if let Err(err) = result {
-                    say(
-                        &client,
-                        format!("Error while doing raffle: {:?}", err),
-                    )
-                    .await?;
-                }
-            }
-            _ => {}
-        };
-
-        // TODO(user_roles)
-        if msg.message_text.starts_with("!reset themesong")
-            && msg.badges.iter().any(|badge| badge.name == "moderator")
-        {
-            if splitmsg.len() != 3 {
-                say(
-                    &client,
-                    "Invalid reset themesong message format. Try: !reset themesong @name",
-                )
-                .await?;
-                continue;
-            }
-
-            themesong::delete_themesong(&mut conn, splitmsg[2].as_str()).await?
-        }
-
-        // TODO: Add !themesong delete so users can just delete their themesong
-        if msg.message_text.starts_with("!themesong") {
-            tx.send(Event::ThemesongDownload(ThemesongDownload::Request {
-                msg: msg.clone(),
-            }))?;
-        }
-
-        if msg.message_text.starts_with("!set ") {
-            println!("  ... doing set command: {:?}", msg.message_text);
-            let set_result = handle_set_command(&mut conn, &client, msg).await;
-            if let Err(err) = set_result {
-                println!("Error while setting: {:?}", err);
-                say(&client, format!("Error while setting: {:?}", err)).await?;
-            }
-        }
-    }
+    // loop {
+    //     let event = rx.recv().await?;
+    //     let msg = match event {
+    //         Event::TwitchChatMessage(msg) => msg,
+    //         _ => continue,
+    //     };
+    //
+    //     let badges = msg
+    //         .badges
+    //         .iter()
+    //         .map(|b| b.name.as_str())
+    //         .collect::<Vec<&str>>()
+    //         .join(",");
+    //     info!(sender = %msg.sender.name, badges = %badges, "{}", msg.message_text);
+    //
+    //     subd_db::create_twitch_user_chat(
+    //         &mut conn,
+    //         &msg.sender.id,
+    //         &msg.sender.login,
+    //     )
+    //     .await?;
+    //     subd_db::save_twitch_message(
+    //         &mut conn,
+    //         &msg.sender.id,
+    //         &msg.message_text,
+    //     )
+    //     .await?;
+    //
+    //     let user_id =
+    //         subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
+    //             .await?;
+    //     let user_roles =
+    //         users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
+    //             .await?;
+    //
+    //     if themesong::should_play_themesong(&mut conn, &user_id).await? {
+    //         println!("  Sending themesong play event...");
+    //         tx.send(Event::ThemesongPlay(ThemesongPlay::Start {
+    //             user_id,
+    //             display_name: msg.sender.name.clone(),
+    //         }))?;
+    //     }
+    //
+    //     let splitmsg = msg
+    //         .message_text
+    //         .split(" ")
+    //         .map(|s| s.to_string())
+    //         .collect::<Vec<String>>();
+    //
+    //     let twitch_username =
+    //         subd_types::consts::get_twitch_broadcaster_username();
+    //
+    //     match splitmsg[0].as_str() {
+    //         "!echo" => {
+    //             let echo = commands::Echo::try_parse_from(&splitmsg);
+    //             if let Ok(echo) = echo {
+    //                 let _ = client.say(twitch_username, echo.contents).await;
+    //             }
+    //         }
+    //         "!lb" => {
+    //             if splitmsg.len() == 1 {
+    //                 continue;
+    //             }
+    //
+    //             let status = get_lb_status();
+    //             let mut status = status.lock().unwrap();
+    //             let len = status.topics.len() as u32;
+    //             let is_moderator = user_roles.is_moderator();
+    //             match splitmsg[1].as_str() {
+    //                 "reset" if is_moderator => {
+    //                     status.enabled = true;
+    //                     status.topics = vec![];
+    //                 }
+    //                 "show" if is_moderator => {
+    //                     status.enabled = true;
+    //                 }
+    //                 "hide" if is_moderator => {
+    //                     status.enabled = false;
+    //                 }
+    //                 "suggest" => {
+    //                     let text = splitmsg[2..].join(" ");
+    //                     if text.is_inappropriate() {
+    //                         let analysis =
+    //                             Censor::from_str(text.as_str()).analyze();
+    //                         println!("Text Is: {:?} -> {:?}", text, analysis);
+    //                         continue;
+    //                     }
+    //
+    //                     status.topics.push(LunchBytesTopic {
+    //                         id: len + 1,
+    //                         text: splitmsg[2..].join(" "),
+    //                         votes: 1,
+    //                     })
+    //                 }
+    //                 "+" | "^" => {
+    //                     if splitmsg.len() < 3 {
+    //                         continue;
+    //                     }
+    //
+    //                     let id = match splitmsg[2].as_str().parse::<usize>() {
+    //                         Ok(id) => id,
+    //                         Err(_) => continue,
+    //                     };
+    //
+    //                     if id == 0 {
+    //                         continue;
+    //                     }
+    //
+    //                     match status.topics.get_mut(id - 1) {
+    //                         Some(topic) => topic.votes += 1,
+    //                         None => continue,
+    //                     }
+    //                 }
+    //
+    //                 "-" | "v" => {
+    //                     if splitmsg.len() < 3 {
+    //                         continue;
+    //                     }
+    //
+    //                     let id = match splitmsg[2].as_str().parse::<usize>() {
+    //                         Ok(id) => id,
+    //                         Err(_) => continue,
+    //                     };
+    //
+    //                     if id == 0 {
+    //                         continue;
+    //                     }
+    //
+    //                     match status.topics.get_mut(id - 1) {
+    //                         Some(topic) => {
+    //                             topic.votes = max(0, topic.votes - 1)
+    //                         }
+    //                         None => continue,
+    //                     }
+    //                 }
+    //                 _ => {}
+    //             };
+    //
+    //             tx.send(Event::LunchBytesStatus(status.clone()))?;
+    //         }
+    //         "!raffle" => {
+    //             let result = server::raffle::handle(
+    //                 &tx,
+    //                 &user_id,
+    //                 &msg.sender.name,
+    //                 &msg.message_text,
+    //             )
+    //             .await;
+    //             if let Err(err) = result {
+    //                 say(
+    //                     &client,
+    //                     format!("Error while doing raffle: {:?}", err),
+    //                 )
+    //                 .await?;
+    //             }
+    //         }
+    //         _ => {}
+    //     };
+    //
+    //     // TODO(user_roles)
+    //     if msg.message_text.starts_with("!reset themesong")
+    //         && msg.badges.iter().any(|badge| badge.name == "moderator")
+    //     {
+    //         if splitmsg.len() != 3 {
+    //             say(
+    //                 &client,
+    //                 "Invalid reset themesong message format. Try: !reset themesong @name",
+    //             )
+    //             .await?;
+    //             continue;
+    //         }
+    //
+    //         themesong::delete_themesong(&mut conn, splitmsg[2].as_str()).await?
+    //     }
+    //
+    //     // TODO: Add !themesong delete so users can just delete their themesong
+    //     if msg.message_text.starts_with("!themesong") {
+    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Request {
+    //             msg: msg.clone(),
+    //         }))?;
+    //     }
+    //
+    //     if msg.message_text.starts_with("!set ") {
+    //         println!("  ... doing set command: {:?}", msg.message_text);
+    //         let set_result = handle_set_command(&mut conn, &client, msg).await;
+    //         if let Err(err) = set_result {
+    //             println!("Error while setting: {:?}", err);
+    //             say(&client, format!("Error while setting: {:?}", err)).await?;
+    //         }
+    //     }
+    // }
 
     // if msg.contents.starts_with("!set_github") {
     //     subd_db::set_github_user_for_user(
@@ -282,7 +285,7 @@ async fn handle_set_command<
     T: twitch_irc::transport::Transport,
     L: twitch_irc::login::LoginCredentials,
 >(
-    conn: &mut sqlx::SqliteConnection,
+    conn: &mut sqlx::PgConnection,
     client: &TwitchIRCClient<T, L>,
     msg: twitch_irc::message::PrivmsgMessage,
 ) -> Result<()> {
@@ -955,11 +958,10 @@ async fn main() -> Result<()> {
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
-    let mut chat = twitch_chat::TwitchChat::new("teej_dv".to_string())
-        .expect("can make chat");
-    makechan!(|tx, rx| {
-        chat.handle(tx, rx).await.expect("twitch chat");
-    });
+    let mut event_loop = events::EventLoop::new();
+    event_loop.push(twitch_chat::TwitchChat::new("teej_dv".to_string())?);
+
+    event_loop.run().await?;
 
     makechan!(handle_twitch_msg);
     makechan!(handle_yew);
@@ -974,24 +976,6 @@ async fn main() -> Result<()> {
             .await
             .expect("Handles playing themesongs")
     });
-
-    // TOOD: Can add this back when we're testing twitch subs again.
-    // {
-    //     let x = base_tx.clone();
-    //     tokio::spawn(async move {
-    //         println!("==> Sleeping...");
-    //         tokio::time::sleep(Duration::from_millis(3000)).await;
-    //         println!("... SENDING NYX SUB NOTI");
-    //         x.send(Event::TwitchSubscription(get_nyx_sub()))
-    //             .expect("to send message x 1");
-    //
-    //         println!("==> Sleeping x 2...");
-    //         tokio::time::sleep(Duration::from_millis(3000)).await;
-    //         println!("... x 2 SENDING NYX SUB NOTI");
-    //         x.send(Event::TwitchSubscription(get_prime_sub()))
-    //             .expect("to send message x 2");
-    //     });
-    // }
 
     for c in channels {
         // Wait for all the channels to be done

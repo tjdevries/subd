@@ -1,4 +1,4 @@
-use server::themesong::{play_themesong};
+use server::themesong::play_themesong;
 use subd_db::get_handle;
 
 #[tokio::main]
@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
-    play_themesong(&mut db, &user_id, &sink).await?;
+    // play_themesong(&mut db, &user_id, &sink).await?;
     sink.sleep_until_end();
 
     Ok(())
