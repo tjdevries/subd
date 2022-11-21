@@ -23,7 +23,9 @@ use std::io::BufReader;
 use anyhow::Result;
 use clap::Parser;
 
-// use obws::requests::scene_items::SceneItemTransform;
+use obws::requests::scene_items::{
+    Position, Scale, SceneItemTransform, SetTransform,
+};
 // use obws::requests::scene_items::SetTransform;
 use obws::{client, Client as OBSClient};
 
@@ -920,6 +922,7 @@ async fn handle_obs_stuff(
                     .expect("Error Deleting Stream FX Default Filter");
             }
             "!norm" => {
+                let source = splitmsg[1].as_str();
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_stream_fx_filter_name,
@@ -1003,6 +1006,8 @@ async fn handle_obs_stuff(
                 obs_client.filters().create(new_filter).await?;
             }
             "!create_defaults" => {
+                let source = splitmsg[1].as_str();
+
                 let new_settings = MoveSingleValueSetting {
                     move_value_type: Some(1),
                     filter: String::from("3D Transform"),
@@ -1136,6 +1141,84 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+            }
+
+            "!move" => {
+                let source = splitmsg[1].as_str();
+
+                let id_search = obws::requests::scene_items::Id {
+                    scene: "Primary",
+                    source,
+                    ..Default::default()
+                };
+                let id = obs_client.scene_items().id(id_search).await?;
+
+                let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
+                let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
+                let new_position = Position {
+                    x: Some(x),
+                    y: Some(y),
+                };
+                let scene_transform = SceneItemTransform {
+                    position: Some(new_position),
+                    ..Default::default()
+                };
+
+                let set_transform = SetTransform {
+                    scene: "Primary",
+                    item_id: id,
+                    transform: scene_transform,
+                };
+                match obs_client
+                    .scene_items()
+                    .set_transform(set_transform)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(_) => {}
+                }
+
+                // .expect("Failed to Transform Scene Position")
+            }
+
+            "!grow" => {
+                let source = splitmsg[1].as_str();
+                let id_search = obws::requests::scene_items::Id {
+                    scene: "Primary",
+                    source,
+                    ..Default::default()
+                };
+                let id = obs_client.scene_items().id(id_search).await?;
+                let new_scale = Scale {
+                    x: Some(2.0),
+                    y: Some(2.0),
+                };
+
+                let new_position = Position {
+                    x: Some(2.0),
+                    y: Some(2.0),
+                };
+                let scene_transform = SceneItemTransform {
+                    scale: Some(new_scale),
+                    position: Some(new_position),
+                    // rotation: Some(None),
+                    // alignment: None,
+                    // bounds: None,
+                    // crop: None,
+                    // scale: None,
+                    ..Default::default()
+                };
+
+                // I don't know the ID!!!!!!!
+                let set_transform = SetTransform {
+                    scene: "Primary",
+                    item_id: id,
+                    transform: scene_transform,
+                };
+                obs_client
+                    .scene_items()
+                    .set_transform(set_transform)
+                    .await?
             }
 
             // !blur filter_name value duration
