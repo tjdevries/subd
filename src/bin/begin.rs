@@ -4,7 +4,8 @@ use obws::client::Filters;
 use obws::requests::filters;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
-use std::fs;
+use std::time::Duration;
+use std::{fs, thread};
 // use std::path::Path;
 
 // use rand::Rng;
@@ -689,34 +690,18 @@ async fn handle_obs_stuff(
         };
 
         let source = "BeginCam";
+
         // TODO: look up by effect setting name
         // let filter_name = "Move_SDF_Effects";
         let filter_name = "Move_Stream_FX";
 
-        // Outer Shadow Min/Max Distance, -16 -> 16
-        //
-        // Offset: 0 - 100
-        //
-        // Scale: 499
-        // Threshold 100
-        //
-        // What is Color???????
-
-        // Sharpness Range
-        // let float_max = 100.0;
-
-        // Alpha Range
         let float_min = 0.0;
         let float_max = 100.0;
-
-        // Width Range
-        // let float_min = 0.0;
-        // let float_max = 16.0;
 
         match splitmsg[0].as_str() {
             "!outline" => {
                 let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: "BeginCam",
+                    source: &source,
                     filter: filter_name,
                     enabled: true,
                 };
@@ -879,6 +864,16 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
+                thread::sleep(Duration::from_millis(100));
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &source,
+                    filter: filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+
+                // How do I wait I wait on this await
+                // When I was calling the filter here, it was too fast
             }
 
             "!update_outline" => {
