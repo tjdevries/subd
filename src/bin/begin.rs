@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use obws::client::Filters;
-use obws::requests::filters;
+// use obws::client::Filters;
+// use obws::requests::filters;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::time::Duration;
@@ -11,7 +11,7 @@ use std::{fs, thread};
 // use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 // use rand::thread_rng as rng;
 
@@ -217,9 +217,36 @@ pub struct Scene {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ScrollSettings {
+    #[serde(rename = "speed_x")]
+    speed_x: Option<f32>,
+
+    #[serde(rename = "speed_y")]
+    speed_y: Option<f32>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlurSetting {
+    #[serde(rename = "Commit")]
+    commit: Option<String>,
+
+    #[serde(rename = "Filter.Blur.Size")]
+    size: Option<f32>,
+
+    #[serde(rename = "Filter.Blur.StepScale")]
+    step_scale: Option<bool>,
+
+    #[serde(rename = "Filter.Blur.StepType")]
+    step_type: Option<String>,
+
+    #[serde(rename = "Filter.Blur.Version")]
+    version: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSingleValueSetting {
     #[serde(rename = "duration")]
-    duration: u32,
+    duration: Option<u32>,
 
     #[serde(rename = "filter")]
     filter: String,
@@ -238,6 +265,27 @@ pub struct MoveSingleValueSetting {
 
     #[serde(rename = "value_type")]
     value_type: u32,
+
+    #[serde(rename = "Filter.Blur.Size")]
+    filter_blur_size: Option<f32>,
+
+    #[serde(rename = "move_value_type")]
+    move_value_type: Option<u32>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner")]
+    glow_inner: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
+    glow_outer: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
+    shadow_outer: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
+    shadow_inner: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Outline")]
+    outline: Option<bool>,
 }
 
 // TODO: consider serde defaults???
@@ -362,24 +410,32 @@ pub struct MoveOpacitySettings {
 }
 
 // I think these might be different sometimes
-#[derive(Serialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct StreamFXSettings {
     #[serde(rename = "Camera.Mode")]
-    camera_mode: i32,
+    camera_mode: Option<i32>,
+
     #[serde(rename = "Commit")]
     commit: String,
+
     #[serde(rename = "Position.X")]
-    position_x: f32,
+    position_x: Option<f32>,
+
     #[serde(rename = "Position.Y")]
-    position_y: f32,
+    position_y: Option<f32>,
+
     #[serde(rename = "Position.Z")]
-    position_z: f32,
+    position_z: Option<f32>,
+
     #[serde(rename = "Rotation.X")]
-    rotation_x: f32,
+    rotation_x: Option<f32>,
+
     #[serde(rename = "Rotation.Y")]
-    rotation_y: f32,
+    rotation_y: Option<f32>,
+
     #[serde(rename = "Rotation.Z")]
-    rotation_z: f32,
+    rotation_z: Option<f32>,
+
     #[serde(rename = "Version")]
     version: i64,
 }
@@ -406,6 +462,68 @@ pub struct StreamFXSettings {
 //     "Rotation.Z": -2.14,
 //     "Version": 51539607703
 // },
+
+// TODO: Update this function name to better
+async fn handle_user_input(
+    source: &str,
+    filter_name: &str,
+    splitmsg: &Vec<String>,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_setting_name = splitmsg[1].as_str();
+
+    let filter_value: f32 = if splitmsg.len() < 3 {
+        0.0
+    } else {
+        splitmsg[2].trim().parse().unwrap_or(0.0)
+    };
+
+    let duration: u32 = if splitmsg.len() < 4 {
+        3000
+    } else {
+        splitmsg[3].trim().parse().unwrap_or(3000)
+    };
+
+    // Should we pss in obs_client
+    let filter_details = obs_client
+        .filters()
+        .get(&source, &filter_name)
+        .await
+        .expect("Error Getting Source Name");
+
+    // println!("\n!do Filter Details: {:?}", filter_details);
+
+    // Here is missing duration
+    let mut new_settings = serde_json::from_value::<MoveSingleValueSetting>(
+        filter_details.settings,
+    )
+    .unwrap();
+
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+
+    println!("\n!do New Settings: {:?}", new_settings);
+
+    // Update the Filter
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+    thread::sleep(Duration::from_millis(100));
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    // That returns
+    Ok(())
+}
 
 // Here you wait for OBS Events, that are commands to trigger OBS
 async fn handle_obs_stuff(
@@ -459,26 +577,11 @@ async fn handle_obs_stuff(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        // rockerboo: chars().map(|char| char.to_digit()).collect()
-        //0
-        //thread 'tokio-runtime-worker' panicked at 'called `Option::unwrap()` on a `None` value', src/bin/begin.rs:332:62
         let first_char = splitmsg[0].chars().next().unwrap();
         println!("First CHAR: {:?}", first_char);
         let multiplier = first_char as u32;
         let mut multiplier = multiplier as f32;
-        // let char_num = first_char as u32;
-        // let maltipler = char_num as f32;
-        // let char_num: f32 = (first_char).cast();
 
-        // println!("New CHAR: {:?}", new_char);
-        // let first_num = first_char.parse::<u32>().unwrap();
-
-        // let first_char = splitmsg[0].chars().next().to_digit(10).unwrap();
-        // splitmsg[0].chars().next().unwrap().to_digit(10).unwrap();
-
-        // println!("\n\nFirst CHar: {:?}", first_char);
-
-        // let multiplier = 1.0;
         if (multiplier) < 100.0 {
             multiplier = 1.0;
         } else {
@@ -526,14 +629,6 @@ async fn handle_obs_stuff(
             println!("Details {:?}", details);
         }
 
-        // cafce25: no gen_range will return a value of the range
-        //
-        // TODO: Move this out!!!
-        // Update a Scene's Settings
-        // let rand_rot = rng.gen_range(0..100) as f32;
-        // e.g. `thread_rng().gen::<i32>()`, or cached locally, e.g.
-        // let new_rot = details.rotation + (rng().gen_range(0..10) as f32);
-        // rng.gen::<f32>();
         let new_rot = details.rotation + 2.0;
 
         // let rand_scale = rng.gen_range(0..100) as f32;
@@ -579,106 +674,6 @@ async fn handle_obs_stuff(
                 Err(_) => {}
             };
 
-        // let filter_details =
-        //     obs_client.filters().get("BeginCam", "Hot").await?;
-        // println!("Hot Filter: {:?}\n\n", filter_details);
-        // // Enable Filter
-        // // This makes Begin Red
-        // let filter_enabled = obws::requests::filters::SetEnabled {
-        //     source: "BeginCam",
-        //     filter: "Hot",
-        //     enabled: !filter_details.enabled,
-        // };
-        // obs_client.filters().set_enabled(filter_enabled).await?;
-
-        // Flip filters
-        // Switch to Scenes
-        // TODO: Update Filters
-
-        // let filter_name = "WHA";
-
-        // cafce25: if you use rand::seq::SliceRandom; you can options.choose(rng()) to choose one of a slice
-        // let filter_options: [&str] = [];
-        // let filter_options = ["Cool"];
-        // let filter_options = ["Cool", "Hot", "Nice", "Close", "YaBoi"];
-
-        let _scene_options2 = [
-            Scene {
-                id: 5,
-                name: "BeginCam".to_string(),
-            },
-            // Scene {
-            //     id: 4,
-            //     name: "Screen".to_string(),
-            // },
-            Scene {
-                id: 12,
-                name: "twitchchat".to_string(),
-            },
-        ];
-        // let scene_options = [5, 4, 12];
-        // let choosen_scene =
-        //     &scene_options2[rng().gen_range(0..scene_options2.len())];
-
-        // println!("CHOOSEN SCENE: {:?}", choosen_scene);
-
-        // let option = filter_options[rng().gen_range(0..filter_options.len())];
-        // let filter_name = option;
-
-        // let filter_details = obs_client
-        //     .filters()
-        //     .get(&choosen_scene.name.clone(), filter_name)
-        //     .await?;
-        // println!("Details {:?}", filter_details);
-        // if DEBUG {
-        //     println!("Details {:?}", filter_details);
-        // }
-        // // Enable Filter
-        // let filter_enabled = obws::requests::filters::SetEnabled {
-        //     source: &choosen_scene.name.clone(),
-        //     filter: filter_name,
-        //     enabled: !filter_details.enabled,
-        // };
-        // obs_client.filters().set_enabled(filter_enabled).await?;
-
-        // pub const TEST_BROWSER: &str = "OBWS-TEST-Browser";
-        // let settings = client
-        //     .settings::<serde_json::Value>(TEST_BROWSER)
-        //     .await?
-        //     .settings;
-        // client
-        //     .set_settings(SetSettings {
-        //         input: TEST_BROWSER,
-        //         settings: &settings,
-        //         overlay: Some(false),
-        //     })
-        //     .await?;
-
-        // [SourceFilter { enabled: true, index: 0, kind: "chroma_key_filter_v2", name: "Chroma Key", settings: Object {"similarity": Number(431)} },
-        // let filters = obs_client.filters().list("BeginCam").await?;
-        // println!("Filters: {:?}", filters);
-
-        // Enable Hot Filter
-        // Enable blue Filter
-        //
-
-        // Then it's update MoveOpacity filter
-        // Enable Filter
-
-        // I just added a move-value filter on BeginCam called "MoveOpacity"
-        // it moves the value of Opacity over 3 Seconds, when you trigger it
-        //
-        // if the Filter Hot is On
-        // pub struct SetSettings<'a, T> {
-        //     pub source: &'a str,
-        //     pub filter: &'a str,
-        //     pub settings: T,
-        //     pub overlay: Option<bool>,
-        // }
-
-        //
-        // Down Here let's update some Filters
-
         // ===================================================
 
         // This is the same as holding the Super key on an Ergodox
@@ -690,57 +685,284 @@ async fn handle_obs_stuff(
         };
 
         let source = "BeginCam";
+        // let source = "Screen";
 
         // TODO: look up by effect setting name
         // let filter_name = "Move_SDF_Effects";
-        let filter_name = "Move_Stream_FX";
+        // let filter_name = "Move_Stream_FX";
 
-        let float_min = 0.0;
-        let float_max = 100.0;
+        // TODO: Implement these commands
+        //   !3d
+        //   !outline
+        //   !scroll
+        //   !blur
+        //   !color
+
+        let mut camera_types_per_filter = HashMap::new();
+        camera_types_per_filter.insert("Corners.TopLeft.X", 2);
+
+        camera_types_per_filter.insert("Corners.BottomLeft.Y", 0);
+        camera_types_per_filter.insert("Corners.TopLeft.X", 0);
+        camera_types_per_filter.insert("Corners.TopLeft.Y", 0);
+        camera_types_per_filter.insert("Filter.Rotation.Z", 0);
+        camera_types_per_filter.insert("Filter.Shear.X", 0);
+        camera_types_per_filter.insert("Filter.Transform.Rotation.Z", 0);
+        camera_types_per_filter.insert("Rotation.X", 0);
+        camera_types_per_filter.insert("Rotation.Y", 0);
+        camera_types_per_filter.insert("Rotation.Z", 0);
+
+        // Come Back to Skew
+        // camera_types_per_filter.insert("Shear.X", 0);
+        // camera_types_per_filter.insert("Skew.X", 0);
+
+        // This is 1
+        camera_types_per_filter.insert("Position.X", 1);
+        camera_types_per_filter.insert("Position.Y", 1);
+        // camera_types_per_filter.insert("Rotation.X", 1);
+        // camera_types_per_filter.insert("Rotation.Y", 1);
+        // camera_types_per_filter.insert("Rotation.Z", 1);
+        camera_types_per_filter.insert("Scale.X", 1);
+        camera_types_per_filter.insert("Scale.Y", 1);
+        camera_types_per_filter.insert("Shear.X", 1);
+        camera_types_per_filter.insert("Shear.Y", 1);
+
+        let default_stream_fx_filter_name = "Default_Stream_FX";
+        let default_scroll_filter_name = "Default_Scroll";
+        let default_blur_filter_name = "Default_Blur";
+        let default_sdf_effects_filter_name = "Default_SDF_Effects";
 
         match splitmsg[0].as_str() {
-            "!outline" => {
+            "!staff" => {
+                let fake_input: Vec<String> = vec![
+                    "!blur".to_string(),
+                    "Filter.Blur.Size".to_string(),
+                    "100".to_string(),
+                ];
+
+                handle_user_input(
+                    source,
+                    "Move_Blur",
+                    &fake_input,
+                    &obs_client,
+                )
+                .await?;
+
+                // "duration": 3000,
+                // "filter": "Scroll",
+                // "move_value_type": 0,
+                // "setting_float": 100.0,
+                // "setting_float_max": 488.0,
+                // "setting_float_min": 488.0,
+                // "setting_name": "speed_x",
+                // "value_type": 2
+
+                // !scroll speed_x -115200
+                let fake_input: Vec<String> = vec![
+                    "!scroll".to_string(),
+                    "speed_x".to_string(),
+                    "-115200".to_string(),
+                ];
+
+                handle_user_input(
+                    source,
+                    "Move_Scroll",
+                    &fake_input,
+                    &obs_client,
+                )
+                .await?;
+
+                obs_client
+                    .hotkeys()
+                    .trigger_by_sequence("OBS_KEY_U", super_key)
+                    .await?
+            }
+            "!reset" => {
+                obs_client
+                    .filters()
+                    .remove(&source, &default_stream_fx_filter_name)
+                    .await
+                    .expect("Error Deleting Stream FX Default Filter");
+                obs_client
+                    .filters()
+                    .remove(&source, &default_scroll_filter_name)
+                    .await
+                    .expect("Error Deleting Stream FX Default Filter");
+                obs_client
+                    .filters()
+                    .remove(&source, &default_blur_filter_name)
+                    .await
+                    .expect("Error Deleting Stream FX Default Filter");
+                obs_client
+                    .filters()
+                    .remove(&source, &default_sdf_effects_filter_name)
+                    .await
+                    .expect("Error Deleting Stream FX Default Filter");
+            }
+            "!norm" => {
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
-                    filter: filter_name,
+                    filter: &default_stream_fx_filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &source,
+                    filter: &default_scroll_filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &source,
+                    filter: &default_blur_filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &source,
+                    filter: &default_sdf_effects_filter_name,
                     enabled: true,
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
             }
+            "!create_defaults" => {
+                let new_settings = MoveSingleValueSetting {
+                    move_value_type: Some(1),
+                    filter: String::from("3D Transform"),
+                    duration: Some(7000),
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: default_stream_fx_filter_name,
+                    kind: "move_value_filter",
+                    settings: Some(new_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
 
-            // All The Alphas
-            // !outline Filter.SDFEffects.Glow.Outer.Alpha
-            "!sdf" => {
+                // This is For Scroll
+                let new_settings = MoveSingleValueSetting {
+                    move_value_type: Some(1),
+                    filter: String::from("Scroll"),
+                    duration: Some(7000),
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: default_scroll_filter_name,
+                    kind: "move_value_filter",
+                    settings: Some(new_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
+
+                // This is For Blur
+                let new_settings = MoveSingleValueSetting {
+                    move_value_type: Some(1),
+                    filter: String::from("Blur"),
+                    filter_blur_size: Some(1.0),
+                    setting_float: 0.0,
+                    duration: Some(7000),
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: default_blur_filter_name,
+                    kind: "move_value_filter",
+
+                    settings: Some(new_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
+
+                // This is for SDF Effects
+                let new_settings = MoveSingleValueSetting {
+                    move_value_type: Some(1),
+                    filter: String::from("Outline"),
+                    duration: Some(7000),
+                    glow_inner: Some(false),
+                    glow_outer: Some(false),
+                    shadow_outer: Some(false),
+                    shadow_inner: Some(false),
+                    outline: Some(false),
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: default_sdf_effects_filter_name,
+                    kind: "move_value_filter",
+                    settings: Some(new_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
+            }
+            "!3d" => {
                 let filter_setting_name = splitmsg[1].as_str();
-                let filter_details =
-                    obs_client.filters().get(&source, &filter_name).await?;
+
+                if !camera_types_per_filter.contains_key(&filter_setting_name) {
+                    continue;
+                }
+
+                let camera_number =
+                    camera_types_per_filter[&filter_setting_name];
+
+                let filter_details = obs_client
+                    .filters()
+                    .get(&source, &"3D Transform")
+                    .await
+                    .expect("Error Getting Filter Details");
 
                 let mut new_settings =
-                    serde_json::from_value::<MoveSingleValueSetting>(
+                    serde_json::from_value::<StreamFXSettings>(
                         filter_details.settings,
                     )
                     .unwrap();
 
-                new_settings.setting_name = String::from(filter_setting_name);
-
-                // We need a float max lookup
-                new_settings.setting_float = float_max;
+                // resetting this Camera Mode
+                new_settings.camera_mode = Some(camera_number);
 
                 let new_settings = obws::requests::filters::SetSettings {
                     source: &source,
-                    filter: &filter_name,
+                    filter: &"3D Transform",
                     settings: new_settings,
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: &source,
-                    filter: &filter_name,
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
+
+                handle_user_input(
+                    source,
+                    "Move_Stream_FX",
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?;
             }
 
+            "!outline" => {
+                handle_user_input(
+                    source,
+                    "Move_SDF_Effects",
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?;
+            }
+
+            "!scroll" => {
+                handle_user_input(
+                    source,
+                    "Move_Scroll",
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?;
+            }
+
+            // !blur filter_name value duration
+            "!blur" => {
+                println!("splitmsg: {:?}", splitmsg);
+                handle_user_input(source, "Move_Blur", &splitmsg, &obs_client)
+                    .await?;
+            }
+
+            // ==========================================================================
+            //
             "!yes_sdf" => {
                 let settings_off = SDFEffectsSettings {
                     glow_outer: Some(true),
@@ -760,33 +982,6 @@ async fn handle_obs_stuff(
                 obs_client.filters().set_settings(new_settings).await?;
             }
 
-            "!sub_outline_on" => {
-                let filter_details =
-                    obs_client.filters().get("BeginCam", "Outline").await?;
-
-                println!("Filter Details: {:?}\n\n", filter_details);
-
-                // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err`
-                // value: Error("invalid type: floating point `0`, expected u32", line: 0, column:
-                // 0)', src/bin/begin.rs:776:22
-
-                let mut new_settings =
-                    serde_json::from_value::<SDFEffectsSettings>(
-                        filter_details.settings,
-                    )
-                    .unwrap();
-                println!("\n\nOutline {:?}", new_settings);
-
-                new_settings.glow_outer = Some(true);
-
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "Outline",
-                    settings: new_settings,
-                    overlay: None,
-                };
-                obs_client.filters().set_settings(new_settings).await?;
-            }
             "!no_sdf" => {
                 let settings_off = SDFEffectsSettings {
                     glow_outer: Some(false),
@@ -806,114 +1001,6 @@ async fn handle_obs_stuff(
                 obs_client.filters().set_settings(new_settings).await?;
             }
 
-            "!uno" => {
-                let filter_setting_name = splitmsg[1].as_str();
-                let filter_details =
-                    obs_client.filters().get(&source, &filter_name).await?;
-
-                println!("{:?}", filter_details);
-                let mut new_settings =
-                    serde_json::from_value::<MoveSingleValueSetting>(
-                        filter_details.settings,
-                    )
-                    .unwrap();
-
-                new_settings.setting_name = String::from(filter_setting_name);
-
-                new_settings.setting_float = float_min;
-
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: &source,
-                    filter: &filter_name,
-                    settings: new_settings,
-                    overlay: None,
-                };
-                obs_client.filters().set_settings(new_settings).await?;
-            }
-            "!do" => {
-                let filter_setting_name = splitmsg[1].as_str();
-
-                let filter_value: f32 = if splitmsg.len() < 3 {
-                    0.0
-                } else {
-                    splitmsg[2].trim().parse().unwrap_or(0.0)
-                };
-
-                let filter_details =
-                    obs_client.filters().get(&source, &filter_name).await?;
-
-                println!("\n!do Filter Details: {:?}", filter_details);
-
-                let mut new_settings =
-                    serde_json::from_value::<MoveSingleValueSetting>(
-                        filter_details.settings,
-                    )
-                    .unwrap();
-
-                new_settings.setting_name = String::from(filter_setting_name);
-                new_settings.setting_float = filter_value;
-
-                // new_settings.setting_float = float_max;
-                println!("\n!do New Settings: {:?}", new_settings);
-
-                // Update the Filter
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: &source,
-                    filter: &filter_name,
-                    settings: new_settings,
-                    overlay: None,
-                };
-                obs_client.filters().set_settings(new_settings).await?;
-                thread::sleep(Duration::from_millis(100));
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: &source,
-                    filter: filter_name,
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
-
-                // How do I wait I wait on this await
-                // When I was calling the filter here, it was too fast
-            }
-
-            "!update_outline" => {
-                let filter_details =
-                    obs_client.filters().get("BeginCam", "Outline").await?;
-                let mut new_settings =
-                    serde_json::from_value::<SDFEffectsSettings>(
-                        filter_details.settings,
-                    )
-                    .unwrap();
-                println!("\n\nOutline {:?}", new_settings);
-
-                new_settings.glow_outer_width = Some(16.0);
-
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "Outline",
-                    settings: new_settings,
-                    overlay: None,
-                };
-                obs_client.filters().set_settings(new_settings).await?;
-
-                // This doesn't do anything????
-                // So this is the call of it ???
-                // .unwrap();
-                // let new_settings: SDFEffectsSettings =
-                //     serde_json::from_value(filter_details.settings).unwrap();
-
-                // I can parse this into a Settings Object???
-                // filter_details.settings.value;
-                // let filter_details.settings.glow_outer_width = 0.0;
-
-                // let new_filter = filters::Create {
-                //     source: "BeginCam",
-                //     filter: "TempFilter",
-                //     kind: "streamfx-filter-sdf-effects",
-                //     settings: Some(new_settings),
-                // };
-                // obs_client.filters().create(new_filter).await?;
-            }
             "!fs" => {
                 println!("Trying to Read Filters");
                 let filters = obs_client.filters().list("BeginCam").await?;
@@ -967,15 +1054,14 @@ async fn handle_obs_stuff(
                 // How do I convert this amount to float
                 // Now I need to use this
                 let settings: StreamFXSettings = StreamFXSettings {
-                    camera_mode: 1,
+                    camera_mode: Some(1),
                     commit: "g0f114f56".to_string(),
-                    position_x: -0.009999999776482582,
-                    position_y: float_amount,
-                    // position_y: -30.0,
-                    position_z: 0.019999999552965164,
-                    rotation_x: 243.92999267578125,
-                    rotation_y: -4.289999961853027,
-                    rotation_z: -2.140000104904175,
+                    position_x: Some(-0.009999999776482582),
+                    position_y: Some(float_amount),
+                    position_z: Some(0.019999999552965164),
+                    rotation_x: Some(243.92999267578125),
+                    rotation_y: Some(-4.289999961853027),
+                    rotation_z: Some(-2.140000104904175),
                     version: 51539607703,
                 };
                 let new_settings = obws::requests::filters::SetSettings {
@@ -991,111 +1077,22 @@ async fn handle_obs_stuff(
                 obs_client.filters().set_settings(new_settings).await?;
                 // .unwrap();
             }
-            "!return" => {
-                let settings: StreamFXSettings = StreamFXSettings {
-                    camera_mode: 1,
-                    commit: "g0f114f56".to_string(),
-                    position_x: 0.0,
-                    position_y: 0.0,
-                    position_z: 0.0,
-                    rotation_x: 0.0,
-                    rotation_y: 0.0,
-                    rotation_z: 0.0,
-                    version: 51539607703,
-                };
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "YaBoi",
-                    settings,
-                    overlay: None,
-                };
-                obs_client
-                    .filters()
-                    .set_settings(new_settings)
-                    .await
-                    .unwrap();
-            }
-            "!fade" => {
-                let opacity_settings = MoveOpacitySettings {
-                    duration: 3000,
-                    filter: "Hot".to_string(),
-                    setting_float: 0.0,
-                    setting_float_max: 1.0,
-                    setting_float_min: 1.0,
-                    setting_name: "opacity".to_string(),
-                    value_type: 2,
-                };
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "MoveOpacity",
-                    settings: opacity_settings,
-                    overlay: None,
-                };
-                obs_client
-                    .filters()
-                    .set_settings(new_settings)
-                    .await
-                    .unwrap();
-            }
 
-            "!trigger" => {
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: "BeginCam",
-                    filter: "MoveOpacity",
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
-            }
-
-            "!show" => {
-                let opacity_settings = MoveOpacitySettings {
-                    duration: 3000,
-                    filter: "Hot".to_string(),
-                    setting_float: 1.0,
-                    setting_float_max: 1.0,
-                    setting_float_min: 1.0,
-                    setting_name: "opacity".to_string(),
-                    value_type: 2,
-                };
-                let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "MoveOpacity",
-                    settings: opacity_settings,
-                    overlay: None,
-                };
-                obs_client
-                    .filters()
-                    .set_settings(new_settings)
-                    .await
-                    .unwrap();
-            }
-            "!ya" => {
-                let yaboi_details =
-                    obs_client.filters().get("BeginCam", "YaBoi").await?;
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: "BeginCam",
-                    filter: "YaBoi",
-                    enabled: !yaboi_details.enabled,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
-            }
+            // Rename These Commands
             "!chat" => {
                 obs_client
                     .hotkeys()
                     .trigger_by_sequence("OBS_KEY_L", super_key)
                     .await?
             }
-
             "!code" => {
                 obs_client
                     .hotkeys()
                     .trigger_by_sequence("OBS_KEY_H", super_key)
                     .await?
             }
-            "!sbf" => {
-                obs_client.scenes().set_current_program_scene("SBF").await?;
-            }
-            "!one" => {
+
+            "!Primary" => {
                 let obs_test_scene = "Primary";
                 obs_client
                     .scenes()
