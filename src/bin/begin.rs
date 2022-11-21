@@ -1,11 +1,14 @@
 #![allow(dead_code)]
 
+use obws::client::Filters;
+use obws::requests::filters;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs;
 // use std::path::Path;
 
 // use rand::Rng;
+use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
 
@@ -21,7 +24,7 @@ use clap::Parser;
 
 use obws::requests::scene_items::SceneItemTransform;
 use obws::requests::scene_items::SetTransform;
-use obws::Client as OBSClient;
+use obws::{client, Client as OBSClient};
 
 use server::commands;
 use server::users;
@@ -199,10 +202,7 @@ async fn handle_twitch_msg(
 }
 
 // TODO: probably handle errors here
-async fn change_scene(
-    obs_client: &obws::client::Client,
-    name: &str,
-) -> Result<()> {
+async fn change_scene(obs_client: &client::Client, name: &str) -> Result<()> {
     obs_client.scenes().set_current_program_scene(&name).await?;
     Ok(())
 }
@@ -215,8 +215,71 @@ pub struct Scene {
     name: String,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MoveValueSettings {
+    #[serde(rename = "duration")]
+    duration: u32,
 
+    #[serde(rename = "filter")]
+    filter: String,
+
+    #[serde(rename = "setting_float")]
+    setting_float: f32,
+
+    #[serde(rename = "setting_float_max")]
+    setting_float_max: f32,
+
+    #[serde(rename = "setting_float_min")]
+    setting_float_min: f32,
+
+    #[serde(rename = "setting_name")]
+    setting_name: String,
+
+    #[serde(rename = "value_type")]
+    value_type: u32,
+}
+
+// TODO: consider serde defaults???
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SDFEffectsSettings {
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
+    glow_outer: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer.Alpha")]
+    glow_alpha: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer.Color")]
+    outer_color: Option<u64>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer.Sharpness")]
+    glow_outer_sharpness: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer.Width")]
+    glow_outer_width: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.SDF.Scale")]
+    scale: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.SDF.Threshold")]
+    threshold: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
+    shadow_inner: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Color")]
+    shadow_inner_color: Option<u64>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
+    shadow_outer: Option<bool>,
+
+    #[serde(rename = "Commit")]
+    commit: Option<String>,
+
+    #[serde(rename = "Version")]
+    version: Option<u64>,
+}
+
+#[derive(Serialize, Debug)]
 pub struct MoveOpacitySettings {
     #[serde(rename = "duration")]
     duration: i32,
@@ -563,6 +626,99 @@ async fn handle_obs_stuff(
         };
 
         match splitmsg[0].as_str() {
+            "!outline" => {
+                // Move_SDF_Effects
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: "BeginCam",
+                    filter: "Move_SDF_Effects",
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+            "!uno" => {
+                let filter_details = obs_client
+                    .filters()
+                    .get("BeginCam", "Move_SDF_Effects")
+                    .await?;
+
+                println!("{:?}", filter_details);
+                let mut new_settings =
+                    serde_json::from_value::<MoveValueSettings>(
+                        filter_details.settings,
+                    )
+                    .unwrap();
+
+                new_settings.setting_float = 0.0;
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "Move_SDF_Effects",
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
+            "!do" => {
+                let filter_details = obs_client
+                    .filters()
+                    .get("BeginCam", "Move_SDF_Effects")
+                    .await?;
+
+                println!("{:?}", filter_details);
+                let mut new_settings =
+                    serde_json::from_value::<MoveValueSettings>(
+                        filter_details.settings,
+                    )
+                    .unwrap();
+
+                new_settings.setting_float = 16.0;
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "Move_SDF_Effects",
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
+            "!update_outline" => {
+                let filter_details =
+                    obs_client.filters().get("BeginCam", "Outline").await?;
+                let mut new_settings =
+                    serde_json::from_value::<SDFEffectsSettings>(
+                        filter_details.settings,
+                    )
+                    .unwrap();
+                println!("\n\nOutline {:?}", new_settings);
+
+                new_settings.glow_outer_width = Some(16.0);
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "Outline",
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+
+                // This doesn't do anything????
+                // So this is the call of it ???
+                // .unwrap();
+                // let new_settings: SDFEffectsSettings =
+                //     serde_json::from_value(filter_details.settings).unwrap();
+
+                // I can parse this into a Settings Object???
+                // filter_details.settings.value;
+                // let filter_details.settings.glow_outer_width = 0.0;
+
+                // let new_filter = filters::Create {
+                //     source: "BeginCam",
+                //     filter: "TempFilter",
+                //     kind: "streamfx-filter-sdf-effects",
+                //     settings: Some(new_settings),
+                // };
+                // obs_client.filters().create(new_filter).await?;
+            }
             "!fs" => {
                 println!("Trying to Read Filters");
                 let filters = obs_client.filters().list("BeginCam").await?;
