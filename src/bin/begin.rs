@@ -23,8 +23,8 @@ use std::io::BufReader;
 use anyhow::Result;
 use clap::Parser;
 
-use obws::requests::scene_items::SceneItemTransform;
-use obws::requests::scene_items::SetTransform;
+// use obws::requests::scene_items::SceneItemTransform;
+// use obws::requests::scene_items::SetTransform;
 use obws::{client, Client as OBSClient};
 
 use server::commands;
@@ -42,6 +42,9 @@ use twitch_irc::TwitchIRCClient;
 
 const DEBUG: bool = false;
 const STREAM_FX_FILTER: &str = "3D Transform";
+
+const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
+const MULTI_SETTING_VALUE_TYPE: u32 = 1;
 
 async fn handle_twitch_chat(
     tx: broadcast::Sender<Event>,
@@ -463,26 +466,137 @@ pub struct StreamFXSettings {
 //     "Version": 51539607703
 // },
 
+async fn create_blur_filters(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Blur";
+
+    let stream_fx_settings = StreamFXSettings {
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: "Blur",
+        kind: "streamfx-filter-blur",
+        settings: Some(stream_fx_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    // Create Move-Value for 3D Transform Filter
+    let new_settings = MoveSingleValueSetting {
+        move_value_type: Some(0),
+        filter: String::from("Blur"),
+        duration: Some(7000),
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: stream_fx_filter_name,
+        kind: "move_value_filter",
+        settings: Some(new_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    Ok(())
+}
+
+async fn create_scroll_filters(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Scroll";
+
+    let stream_fx_settings = StreamFXSettings {
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: "Scroll",
+        kind: "scroll_filter",
+        settings: Some(stream_fx_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    // Create Move-Value for 3D Transform Filter
+    let new_settings = MoveSingleValueSetting {
+        move_value_type: Some(0),
+        filter: String::from("Scroll"),
+        duration: Some(7000),
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: stream_fx_filter_name,
+        kind: "move_value_filter",
+        settings: Some(new_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    Ok(())
+}
+async fn create_3d_transform_filters(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Stream_FX";
+
+    let stream_fx_settings = StreamFXSettings {
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: "3D Transform",
+        kind: "streamfx-filter-transform",
+        settings: Some(stream_fx_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    // Create Move-Value for 3D Transform Filter
+    let new_settings = MoveSingleValueSetting {
+        move_value_type: Some(0),
+        filter: String::from("3D Transform"),
+        duration: Some(7000),
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: stream_fx_filter_name,
+        kind: "move_value_filter",
+        settings: Some(new_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    Ok(())
+}
 // TODO: Update this function name to better
 async fn handle_user_input(
     source: &str,
     filter_name: &str,
     splitmsg: &Vec<String>,
+    value_type: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let filter_setting_name = splitmsg[1].as_str();
+    let filter_setting_name = splitmsg[2].as_str();
 
-    let filter_value: f32 = if splitmsg.len() < 3 {
+    let filter_value: f32 = if splitmsg.len() < 4 {
         0.0
     } else {
-        splitmsg[2].trim().parse().unwrap_or(0.0)
+        splitmsg[3].trim().parse().unwrap_or(0.0)
     };
 
-    let duration: u32 = if splitmsg.len() < 4 {
+    let duration: u32 = if splitmsg.len() < 5 {
         3000
     } else {
-        splitmsg[3].trim().parse().unwrap_or(3000)
+        splitmsg[4].trim().parse().unwrap_or(3000)
     };
+
+    println!(
+        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
+        source, filter_name, filter_setting_name, duration, filter_value,
+    );
+
+    // Handle User Input: Source "shark" | Filter Name: "Move_Stream_FX" | Duration: 10000 | Value: 3600.0
 
     // Should we pss in obs_client
     let filter_details = obs_client
@@ -502,6 +616,8 @@ async fn handle_user_input(
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
     new_settings.duration = Some(duration);
+
+    new_settings.value_type = value_type;
 
     println!("\n!do New Settings: {:?}", new_settings);
 
@@ -552,10 +668,10 @@ async fn handle_obs_stuff(
     if DEBUG {
         println!("Items: {:?}", items);
     }
-    let choosen_scene = Scene {
-        id: 5,
-        name: "BeginCam".to_string(),
-    };
+    // let choosen_scene = Scene {
+    //     id: 5,
+    //     name: "BeginCam".to_string(),
+    // };
 
     loop {
         let event = rx.recv().await?;
@@ -571,108 +687,108 @@ async fn handle_obs_stuff(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        let splitmsg2 = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+        // let = msg
+        //     .message_text
+        //     .split(" ")
+        //     .map(|s| s.to_string())
+        //     .collect::<Vec<String>>();
 
-        let first_char = splitmsg[0].chars().next().unwrap();
-        println!("First CHAR: {:?}", first_char);
-        let multiplier = first_char as u32;
-        let mut multiplier = multiplier as f32;
+        // let first_char = splitmsg[0].chars().next().unwrap();
+        // println!("First CHAR: {:?}", first_char);
+        // let multiplier = first_char as u32;
+        // let mut multiplier = multiplier as f32;
 
-        if (multiplier) < 100.0 {
-            multiplier = 1.0;
-        } else {
-            multiplier = -1.0;
-        }
+        // if (multiplier) < 100.0 {
+        //     multiplier = 1.0;
+        // } else {
+        //     multiplier = -1.0;
+        // }
 
         // Every single Word
-        for _word in splitmsg2 {
-            let details = obs_client
-                .scene_items()
-                .transform(obs_test_scene, choosen_scene.id)
-                .await?;
-            let new_rot = details.rotation + (2.0 * multiplier);
-            let scene_transform = SceneItemTransform {
-                rotation: Some(new_rot),
-                alignment: None,
-                bounds: None,
-                crop: None,
-                scale: None,
-                position: None,
-            };
-            let set_transform = SetTransform {
-                scene: "Primary",
-                item_id: choosen_scene.id,
-                transform: scene_transform,
-            };
-            let _res = match obs_client
-                .scene_items()
-                .set_transform(set_transform)
-                .await
-            {
-                Ok(_) => {
-                    println!("Successful Transform of Scene!");
-                }
-                Err(_) => {}
-            };
-        }
+        // for _word in splitmsg2 {
+        //     let details = obs_client
+        //         .scene_items()
+        //         .transform(obs_test_scene, choosen_scene.id)
+        //         .await?;
+        //     let new_rot = details.rotation + (2.0 * multiplier);
+        //     let scene_transform = SceneItemTransform {
+        //         rotation: Some(new_rot),
+        //         alignment: None,
+        //         bounds: None,
+        //         crop: None,
+        //         scale: None,
+        //         position: None,
+        //     };
+        //     let set_transform = SetTransform {
+        //         scene: "Primary",
+        //         item_id: choosen_scene.id,
+        //         transform: scene_transform,
+        //     };
+        //     let _res = match obs_client
+        //         .scene_items()
+        //         .set_transform(set_transform)
+        //         .await
+        //     {
+        //         Ok(_) => {
+        //             println!("Successful Transform of Scene!");
+        //         }
+        //         Err(_) => {}
+        //     };
+        // }
 
-        let details = obs_client
-            .scene_items()
-            .transform(obs_test_scene, choosen_scene.id)
-            .await?;
-        let _new_rot = details.rotation + 2.0;
-        if DEBUG {
-            println!("Details {:?}", details);
-        }
+        // let details = obs_client
+        //     .scene_items()
+        //     .transform(obs_test_scene, choosen_scene.id)
+        //     .await?;
+        // let _new_rot = details.rotation + 2.0;
+        // if DEBUG {
+        //     println!("Details {:?}", details);
+        // }
 
-        let new_rot = details.rotation + 2.0;
+        // let new_rot = details.rotation + 2.0;
 
-        // let rand_scale = rng.gen_range(0..100) as f32;
-        let new_scale_x = details.scale_x + (details.scale_x * 0.05);
-        let new_scale_y = details.scale_y + (details.scale_y * 0.05);
-        // let new_scale_x =
-        //     details.scale_x + (details.scale_x * (rand_scale / 100.0));
-        // let new_scale_y =
-        //     details.scale_y + (details.scale_y * (rand_scale / 100.0));
-        let new_scale = obws::requests::scene_items::Scale {
-            x: Some(new_scale_x),
-            y: Some(new_scale_y),
-        };
+        // // let rand_scale = rng.gen_range(0..100) as f32;
+        // let new_scale_x = details.scale_x + (details.scale_x * 0.05);
+        // let new_scale_y = details.scale_y + (details.scale_y * 0.05);
+        // // let new_scale_x =
+        // //     details.scale_x + (details.scale_x * (rand_scale / 100.0));
+        // // let new_scale_y =
+        // //     details.scale_y + (details.scale_y * (rand_scale / 100.0));
+        // let new_scale = obws::requests::scene_items::Scale {
+        //     x: Some(new_scale_x),
+        //     y: Some(new_scale_y),
+        // };
 
-        let new_x = details.position_x - (details.position_x * 0.005);
-        let new_y = details.position_y - (details.position_y * 0.02);
-        // let new_x =
-        //     details.position_x - (details.position_x * (rand_scale * 0.005));
-        // let new_y =
-        //     details.position_y - (details.position_y * (rand_scale * 0.02));
-        let new_position = obws::requests::scene_items::Position {
-            x: Some(new_x),
-            y: Some(new_y),
-        };
-        let scene_transform = SceneItemTransform {
-            rotation: Some(new_rot),
-            alignment: None,
-            bounds: None,
-            crop: None,
-            scale: Some(new_scale),
-            position: Some(new_position),
-        };
-        let set_transform = SetTransform {
-            scene: "Primary",
-            item_id: choosen_scene.id,
-            transform: scene_transform,
-        };
-        let _res =
-            match obs_client.scene_items().set_transform(set_transform).await {
-                Ok(_) => {
-                    println!("I AM DUMB");
-                }
-                Err(_) => {}
-            };
+        // let new_x = details.position_x - (details.position_x * 0.005);
+        // let new_y = details.position_y - (details.position_y * 0.02);
+        // // let new_x =
+        // //     details.position_x - (details.position_x * (rand_scale * 0.005));
+        // // let new_y =
+        // //     details.position_y - (details.position_y * (rand_scale * 0.02));
+        // let new_position = obws::requests::scene_items::Position {
+        //     x: Some(new_x),
+        //     y: Some(new_y),
+        // };
+        // let scene_transform = SceneItemTransform {
+        //     rotation: Some(new_rot),
+        //     alignment: None,
+        //     bounds: None,
+        //     crop: None,
+        //     scale: Some(new_scale),
+        //     position: Some(new_position),
+        // };
+        // let set_transform = SetTransform {
+        //     scene: "Primary",
+        //     item_id: choosen_scene.id,
+        //     transform: scene_transform,
+        // };
+        // let _res =
+        //     match obs_client.scene_items().set_transform(set_transform).await {
+        //         Ok(_) => {
+        //             println!("I AM DUMB");
+        //         }
+        //         Err(_) => {}
+        //     };
 
         // ===================================================
 
@@ -684,6 +800,7 @@ async fn handle_obs_stuff(
             command: true,
         };
 
+        // let source = "shark";
         let source = "BeginCam";
         // let source = "Screen";
 
@@ -739,10 +856,13 @@ async fn handle_obs_stuff(
                     "100".to_string(),
                 ];
 
+                // SINGLE_SETTING_VALUE_TYPE
+                // MULTI_SETTING_VALUE_TYPE
                 handle_user_input(
                     source,
                     "Move_Blur",
                     &fake_input,
+                    2,
                     &obs_client,
                 )
                 .await?;
@@ -767,6 +887,7 @@ async fn handle_obs_stuff(
                     source,
                     "Move_Scroll",
                     &fake_input,
+                    2,
                     &obs_client,
                 )
                 .await?;
@@ -823,6 +944,63 @@ async fn handle_obs_stuff(
                     enabled: true,
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+            "!new_filters" => {
+                let source = splitmsg[1].as_str();
+                if source == "BeginCam" {
+                    continue;
+                }
+
+                // let scroll_filter_name = "Move_Scroll";
+                // let blur_filter_name = "Move_Blur";
+                // let sdf_effects_filter_name = "Move_SDF_Effects";
+
+                // Delete all the Filters For a Fresh Start
+                let filters = obs_client.filters().list(source).await?;
+                for filter in filters {
+                    obs_client
+                        .filters()
+                        .remove(&source, &filter.name)
+                        .await
+                        .expect("Error Deleting Filter");
+                }
+
+                create_3d_transform_filters(source, &obs_client).await?;
+                create_scroll_filters(source, &obs_client).await?;
+                create_blur_filters(source, &obs_client).await?;
+            }
+
+            "!shark" => {
+                let source = "shark";
+                let stream_fx_filter_name = "Move_Stream_FX";
+                // let scroll_filter_name = "Move_Scroll";
+                // let blur_filter_name = "Move_Blur";
+                // let sdf_effects_filter_name = "Move_SDF_Effects";
+
+                let stream_fx_settings = StreamFXSettings {
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: "3D Transform",
+                    kind: "streamfx-filter-transform",
+                    settings: Some(stream_fx_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
+
+                let new_settings = MoveSingleValueSetting {
+                    move_value_type: Some(0),
+                    filter: String::from("3D Transform"),
+                    duration: Some(7000),
+                    ..Default::default()
+                };
+                let new_filter = obws::requests::filters::Create {
+                    source,
+                    filter: stream_fx_filter_name,
+                    kind: "move_value_filter",
+                    settings: Some(new_settings),
+                };
+                obs_client.filters().create(new_filter).await?;
             }
             "!create_defaults" => {
                 let new_settings = MoveSingleValueSetting {
@@ -893,7 +1071,8 @@ async fn handle_obs_stuff(
                 obs_client.filters().create(new_filter).await?;
             }
             "!3d" => {
-                let filter_setting_name = splitmsg[1].as_str();
+                let source = splitmsg[1].as_str();
+                let filter_setting_name = splitmsg[2].as_str();
 
                 if !camera_types_per_filter.contains_key(&filter_setting_name) {
                     continue;
@@ -929,6 +1108,7 @@ async fn handle_obs_stuff(
                     source,
                     "Move_Stream_FX",
                     &splitmsg,
+                    SINGLE_SETTING_VALUE_TYPE,
                     &obs_client,
                 )
                 .await?;
@@ -939,16 +1119,20 @@ async fn handle_obs_stuff(
                     source,
                     "Move_SDF_Effects",
                     &splitmsg,
+                    SINGLE_SETTING_VALUE_TYPE,
                     &obs_client,
                 )
                 .await?;
             }
 
             "!scroll" => {
+                let source = splitmsg[1].as_str();
+
                 handle_user_input(
                     source,
                     "Move_Scroll",
                     &splitmsg,
+                    2,
                     &obs_client,
                 )
                 .await?;
@@ -956,9 +1140,16 @@ async fn handle_obs_stuff(
 
             // !blur filter_name value duration
             "!blur" => {
-                println!("splitmsg: {:?}", splitmsg);
-                handle_user_input(source, "Move_Blur", &splitmsg, &obs_client)
-                    .await?;
+                let source = splitmsg[1].as_str();
+
+                handle_user_input(
+                    source,
+                    "Move_Blur",
+                    &splitmsg,
+                    2,
+                    &obs_client,
+                )
+                .await?;
             }
 
             // ==========================================================================
