@@ -216,7 +216,7 @@ pub struct Scene {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct MoveValueSettings {
+pub struct MoveSingleValueSetting {
     #[serde(rename = "duration")]
     duration: u32,
 
@@ -239,14 +239,16 @@ pub struct MoveValueSettings {
     value_type: u32,
 }
 
+// Filter Details: SourceFilter { enabled: true, index: 10, kind: "streamfx-filter-sdf-effects", name: "", settings: Object {"Commit": String("g0f114f56"), "Filter.SDFEffects.Glow.Inner": Bool(false), "Filter.SDFEffects.Glow.Inner.Color": Number(4286513322), "Filter.SDFEffects.Glow.Inner.Width": Number(9.14), "Filter.SDFEffects.Glow.Outer": Bool(false), "Filter.SDFEffects.Glow.Outer.Alpha": Number(0.0), "Filter.SDFEffects.Glow.Outer.Color": Number(4278255360), "Filter.SDFEffects.Glow.Outer.Sharpness": Number(67.73), "Filter.SDFEffects.Glow.Outer.Width": Number(16.0), "Filter.SDFEffects.Outline": Bool(true), "Filter.SDFEffects.Outline.Color": Number(4278255615), "Filter.SDFEffects.Outline.Sharpness": Number(55.48), "Filter.SDFEffects.Outline.Width": Number(0.0), "Filter.SDFEffects.SDF.Scale": Number(72.7), "Filter.SDFEffects.SDF.Threshold": Number(59.12), "Filter.SDFEffects.Shadow.Inner": Bool(false), "Filter.SDFEffects.Shadow.Inner.Color": Number(4286578432), "Filter.SDFEffects.Shadow.Inner.Offset.Y": Number(67.18), "Filter.SDFEffects.Shadow.Inner.Range.Minimum": Number(-1.95), "Filter.SDFEffects.Shadow.Outer": Bool(false), "Filter.SDFEffects.Shadow.Outer.Color": Number(4294923775), "Filter.SDFEffects.Shadow.Outer.Offset.X": Number(87.63), "Filter.SDFEffects.Shadow.Outer.Range.Maximum": Number(4.99), "Filter.SDFEffects.Shadow.Outer.Range.Minimum": Number(0.44), "Version": Number(51539607703), "glow_outer_width": Number(0.0)} }
+//
 // TODO: consider serde defaults???
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct SDFEffectsSettings {
     #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
     glow_outer: Option<bool>,
 
     #[serde(rename = "Filter.SDFEffects.Glow.Outer.Alpha")]
-    glow_alpha: Option<f32>,
+    glow_outer_alpha: Option<f32>,
 
     #[serde(rename = "Filter.SDFEffects.Glow.Outer.Color")]
     outer_color: Option<u64>,
@@ -257,6 +259,15 @@ pub struct SDFEffectsSettings {
     #[serde(rename = "Filter.SDFEffects.Glow.Outer.Width")]
     glow_outer_width: Option<f32>,
 
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
+    shadow_outer: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Color")]
+    shadow_outer_color: Option<u64>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Color")]
+    shadow_inner_color: Option<u64>,
+
     #[serde(rename = "Filter.SDFEffects.SDF.Scale")]
     scale: Option<f32>,
 
@@ -266,11 +277,53 @@ pub struct SDFEffectsSettings {
     #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
     shadow_inner: Option<bool>,
 
-    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Color")]
-    shadow_inner_color: Option<u64>,
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner.Alpha")]
+    glow_inner_alpha: Option<f32>,
 
-    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
-    shadow_outer: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner")]
+    glow_inner: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner.Color")]
+    inner_color: Option<u64>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner.Sharpness")]
+    glow_inner_sharpness: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner.Width")]
+    glow_inner_width: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Outline")]
+    outline: Option<bool>,
+
+    #[serde(rename = "Filter.SDFEffects.Outline.Color")]
+    outline_color: Option<u64>,
+
+    #[serde(rename = "Filter.SDFEffects.Outline.Width")]
+    outline_width: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Range.Maximum")]
+    shadow_outer_range_max: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Range.Maximum")]
+    shadow_inner_range_max: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Range.Minimum")]
+    shadow_inner_range_min: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Range.Minimum")]
+    shadow_outer_range_min: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Offset.Y")]
+    shadow_inner_offset_y: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Offset.Y")]
+    shadow_outer_offset_y: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.SDF.Scale")]
+    sdf_scale: Option<f32>,
+
+    #[serde(rename = "Filter.SDFEffects.SDF.Threshold")]
+    sdf_threshold: Option<f32>,
 
     #[serde(rename = "Commit")]
     commit: Option<String>,
@@ -283,16 +336,22 @@ pub struct SDFEffectsSettings {
 pub struct MoveOpacitySettings {
     #[serde(rename = "duration")]
     duration: i32,
+
     #[serde(rename = "filter")]
     filter: String,
+
     #[serde(rename = "setting_float")]
     setting_float: f32,
+
     #[serde(rename = "setting_float_max")]
     setting_float_max: f32,
+
     #[serde(rename = "setting_float_min")]
     setting_float_min: f32,
+
     #[serde(rename = "setting_name")]
     setting_name: String,
+
     #[serde(rename = "value_type")]
     value_type: i32,
 }
@@ -625,9 +684,32 @@ async fn handle_obs_stuff(
             command: true,
         };
 
+        let source = "BeginCam";
+        let filter_name = "Move_SDF_Effects";
+
+        // Outer Shadow Min/Max Distance, -16 -> 16
+        //
+        // Offset: 0 - 100
+        //
+        // Scale: 499
+        // Threshold 100
+        //
+        // What is Color???????
+
+        // Sharpness Range
+        // let float_max = 100.0;
+
+        // Alpha Range
+        let float_min = 0.0;
+        let float_max = 100.0;
+
+        // Width Range
+        // let float_min = 0.0;
+        // let float_max = 16.0;
+
         match splitmsg[0].as_str() {
             "!outline" => {
-                // Move_SDF_Effects
+                // move_sdf_effects
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: "BeginCam",
                     filter: "Move_SDF_Effects",
@@ -635,47 +717,147 @@ async fn handle_obs_stuff(
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
             }
-            "!uno" => {
-                let filter_details = obs_client
-                    .filters()
-                    .get("BeginCam", "Move_SDF_Effects")
-                    .await?;
 
-                println!("{:?}", filter_details);
+            // All The Alphas
+            // !outline Filter.SDFEffects.Glow.Outer.Alpha
+            "!sdf" => {
+                let filter_setting_name = splitmsg[1].as_str();
+                let filter_details =
+                    obs_client.filters().get(&source, &filter_name).await?;
+
                 let mut new_settings =
-                    serde_json::from_value::<MoveValueSettings>(
+                    serde_json::from_value::<MoveSingleValueSetting>(
                         filter_details.settings,
                     )
                     .unwrap();
 
-                new_settings.setting_float = 0.0;
+                new_settings.setting_name = String::from(filter_setting_name);
+
+                // We need a float max lookup
+                new_settings.setting_float = float_max;
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: &source,
+                    filter: &filter_name,
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &source,
+                    filter: &filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+
+            "!yes_sdf" => {
+                let settings_off = SDFEffectsSettings {
+                    glow_outer: Some(true),
+                    shadow_outer: Some(true),
+                    shadow_inner: Some(true),
+                    glow_inner: Some(true),
+                    outline: Some(true),
+                    ..Default::default()
+                };
 
                 let new_settings = obws::requests::filters::SetSettings {
                     source: "BeginCam",
-                    filter: "Move_SDF_Effects",
+                    filter: "Outline",
+                    settings: settings_off,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
+
+            "!sub_outline_on" => {
+                let filter_details =
+                    obs_client.filters().get("BeginCam", "Outline").await?;
+
+                println!("Filter Details: {:?}\n\n", filter_details);
+
+                // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err`
+                // value: Error("invalid type: floating point `0`, expected u32", line: 0, column:
+                // 0)', src/bin/begin.rs:776:22
+
+                let mut new_settings =
+                    serde_json::from_value::<SDFEffectsSettings>(
+                        filter_details.settings,
+                    )
+                    .unwrap();
+                println!("\n\nOutline {:?}", new_settings);
+
+                new_settings.glow_outer = Some(true);
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "Outline",
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
+            "!no_sdf" => {
+                let settings_off = SDFEffectsSettings {
+                    glow_outer: Some(false),
+                    shadow_outer: Some(false),
+                    shadow_inner: Some(false),
+                    glow_inner: Some(false),
+                    outline: Some(false),
+                    ..Default::default()
+                };
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: "BeginCam",
+                    filter: "Outline",
+                    settings: settings_off,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
+
+            "!uno" => {
+                let filter_setting_name = splitmsg[1].as_str();
+                let filter_details =
+                    obs_client.filters().get(&source, &filter_name).await?;
+
+                println!("{:?}", filter_details);
+                let mut new_settings =
+                    serde_json::from_value::<MoveSingleValueSetting>(
+                        filter_details.settings,
+                    )
+                    .unwrap();
+
+                new_settings.setting_name = String::from(filter_setting_name);
+
+                new_settings.setting_float = float_min;
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source: &source,
+                    filter: &filter_name,
                     settings: new_settings,
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
             }
             "!do" => {
-                let filter_details = obs_client
-                    .filters()
-                    .get("BeginCam", "Move_SDF_Effects")
-                    .await?;
+                let filter_setting_name = splitmsg[1].as_str();
+                let filter_details =
+                    obs_client.filters().get(&source, &filter_name).await?;
 
                 println!("{:?}", filter_details);
                 let mut new_settings =
-                    serde_json::from_value::<MoveValueSettings>(
+                    serde_json::from_value::<MoveSingleValueSetting>(
                         filter_details.settings,
                     )
                     .unwrap();
 
-                new_settings.setting_float = 16.0;
+                new_settings.setting_name = String::from(filter_setting_name);
+                new_settings.setting_float = float_max;
 
                 let new_settings = obws::requests::filters::SetSettings {
-                    source: "BeginCam",
-                    filter: "Move_SDF_Effects",
+                    source: &source,
+                    filter: &filter_name,
                     settings: new_settings,
                     overlay: None,
                 };
