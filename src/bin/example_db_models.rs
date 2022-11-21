@@ -96,26 +96,26 @@
 // //
 // //  UpdateModel { twitch_id: Some(new_id), ..None }
 //
-// #[tokio::main]
-// async fn main() -> anyhow::Result<()> {
-//     let mut conn = subd_db::get_handle().await;
-//
-//     // Create or retreivew a user
-//     // let user = user_model::Model::new(1, Some("twitch-1234".to_string()), None);
-//     // todo!("user");
-//
-//     // Update user
-//     // let new_user_result = user
-//     //     .update(
-//     //         &mut conn,
-//     //         user_model::ModelUpdate {
-//     //             github_id: Some(Some("github-foo".to_string())),
-//     //             ..Default::default()
-//     //         },
-//     //     )
-//     //     .await;
-//     //
-//     // let new_user = new_user_result.unwrap();
-//     // println!("updated_user: {:#?}", new_user);
-//     Ok(())
-// }
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    //     let mut conn = subd_db::get_handle().await;
+    //
+    //     // Create or retreivew a user
+    //     // let user = user_model::Model::new(1, Some("twitch-1234".to_string()), None);
+    //     // todo!("user");
+    //
+    //     // Update user
+    //     // let new_user_result = user
+    //     //     .update(
+    //     //         &mut conn,
+    //     //         user_model::ModelUpdate {
+    //     //             github_id: Some(Some("github-foo".to_string())),
+    //     //             ..Default::default()
+    //     //         },
+    //     //     )
+    //     //     .await;
+    //     //
+    //     // let new_user = new_user_result.unwrap();
+    //     // println!("updated_user: {:#?}", new_user);
+    Ok(())
+}

@@ -15,22 +15,21 @@ pub mod twitch;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct UserID(pub uuid::Uuid);
 
-// impl sqlx::Encode<'_, sqlx::Postgres> for UserID {
-//     fn encode_by_ref(
-//         &self,
-//         buf: &mut <sqlx::Postgres as sqlx::database::HasArguments<'_>>::ArgumentBuffer,
-//     ) -> sqlx::encode::IsNull {
-//         <&i64 as sqlx::Encode<sqlx::Postgres>>::encode(&self.0, buf)
-//     }
-// }
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
-pub struct TwitchUserID(String);
+pub struct TwitchUserID(pub String);
+
+#[derive(sqlx::Type, Debug)]
+#[sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum UserPlatform {
+    Twitch,
+    Youtube,
+    Github,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     // Info
-    TwitchChatMessage(PrivmsgMessage),
+    TwitchChatMessage(twitch::TwitchMessage),
     TwitchSubscriptionCount(usize),
     TwitchSubscription(TwitchSubscriptionEvent),
     GithubSponsorshipEvent,

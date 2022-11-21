@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use subd_types::Event;
+use subd_types::{Event, UserID, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
 use twitch_irc::{
     login::StaticLoginCredentials, message::ServerMessage, ClientConfig,
@@ -50,7 +50,9 @@ impl EventHandler for TwitchChat {
             match message {
                 ServerMessage::Privmsg(private) => {
                     // TODO: Turn to internal type
-                    tx.send(Event::TwitchChatMessage(private))?;
+                    tx.send(Event::TwitchChatMessage(
+                        subd_types::twitch::TwitchMessage::from_msg(private),
+                    ))?;
                 }
                 _ => {}
             }
@@ -59,5 +61,115 @@ impl EventHandler for TwitchChat {
     }
 }
 
-#[cfg(test)]
-mod tests {}
+// TwitchDatabaseConn
+//  .create_user(...)
+//  .save_message(...)
+
+// First message of the day from trash makes our bot send:
+//  You have a wife? Honestly thought this account was ran by a high schooler... Freshman in college at best.
+
+pub struct TwitchMessageHandler {
+    conn: sqlx::PgConnection,
+}
+
+impl TwitchMessageHandler {
+    pub fn new(conn: sqlx::PgConnection) -> Self {
+        Self { conn }
+    }
+}
+
+async fn create_new_user(conn: &mut sqlx::PgConnection) -> Result<UserID> {
+    let x = sqlx::query!("INSERT INTO users DEFAULT VALUES RETURNING user_id")
+        .fetch_one(conn)
+        .await?;
+
+    Ok(UserID(x.user_id))
+}
+
+async fn upsert_twitch_user(
+    conn: &mut sqlx::PgConnection,
+    twitch_user_id: &subd_types::TwitchUserID,
+    twitch_user_login: &str,
+) -> Result<UserID> {
+    // TODO: We should create one transaction for this...
+
+    match sqlx::query!(
+        "SELECT user_id FROM twitch_users WHERE twitch_user_id = $1",
+        twitch_user_id.0
+    )
+    .fetch_optional(&mut *conn)
+    .await?
+    {
+        Some(twitch_user) => Ok(UserID(twitch_user.user_id)),
+        None => {
+            let user_id = create_new_user(&mut *conn).await?;
+
+            sqlx::query!(
+             "INSERT INTO twitch_users (user_id, twitch_user_id, login, display_name)
+                VALUES($1, $2, $3, $4)",
+                user_id.0,
+                twitch_user_id.0,
+                twitch_user_login,
+                twitch_user_login
+            )
+            .execute(&mut *conn)
+            .await
+            .unwrap();
+
+            Ok(user_id)
+        }
+    }
+}
+
+pub async fn save_twitch_message(
+    conn: &mut sqlx::PgConnection,
+    user_id: &UserID,
+    platform: UserPlatform,
+    message: &str,
+) -> Result<()> {
+    sqlx::query!(
+        r#"INSERT INTO user_chat_history (user_id, platform, msg)
+           VALUES ( $1, $2, $3 )"#,
+        user_id.0,
+        platform as _,
+        message
+    )
+    .execute(&mut *conn)
+    .await?;
+
+    Ok(())
+}
+
+#[async_trait]
+impl EventHandler for TwitchMessageHandler {
+    async fn handle(
+        mut self: Box<Self>,
+        _: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::TwitchChatMessage(msg) => msg,
+                _ => continue,
+            };
+
+            let user_id = upsert_twitch_user(
+                &mut self.conn,
+                &msg.sender.id,
+                &msg.sender.login,
+            )
+            .await?;
+
+            save_twitch_message(
+                &mut self.conn,
+                &user_id,
+                UserPlatform::Twitch,
+                &msg.text,
+            )
+            .await?;
+        }
+
+        // Ok(())
+    }
+}

@@ -237,18 +237,6 @@ pub async fn get_handle() -> sqlx::PgConnection {
 //     .c)
 // }
 //
-// pub async fn create_twitch_user_chat(
-//     conn: &mut PgConnection,
-//     twitch_user_id: &str,
-//     twitch_user_login: &str,
-// ) -> Result<()> {
-//     sqlx::query!("INSERT OR IGNORE INTO twitch_users (id, login, display_name, broadcaster_type, account_type )
-//                  VALUES                              (?1, ?2,    ?3,           ?4              , ?5 )",
-//                  twitch_user_id, twitch_user_login, twitch_user_login, "", "")
-//         .execute(&mut *conn)
-//         .await.unwrap();
-//     Ok(())
-// }
 //
 // pub async fn save_twitch_message(
 //     conn: &mut PgConnection,

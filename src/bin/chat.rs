@@ -297,34 +297,35 @@ async fn handle_set_command<
 
     // !set github <login>
     if splitmsg[1] == "github" {
-        println!("  ... split msg: {:?}", splitmsg);
-
-        if splitmsg.len() != 3 {
-            say(client, format!("@{}: !set github <login>", msg.sender.name))
-                .await?;
-            return Ok(());
-        }
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
-
-        let github_login = splitmsg[2].clone();
-        subd_db::set_github_info_for_user(
-            conn,
-            &user_id,
-            github_login.as_str(),
-        )
-        .await?;
-        say(
-            client,
-            format!(
-                "Succesfully set: twitch {} -> github {}",
-                msg.sender.name, github_login
-            ),
-        )
-        .await?;
-
-        return Ok(());
+        todo!("Github");
+        //     println!("  ... split msg: {:?}", splitmsg);
+        //
+        //     if splitmsg.len() != 3 {
+        //         say(client, format!("@{}: !set github <login>", msg.sender.name))
+        //             .await?;
+        //         return Ok(());
+        //     }
+        //
+        //     let user_id =
+        //         subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
+        //
+        //     let github_login = splitmsg[2].clone();
+        //     subd_db::set_github_info_for_user(
+        //         conn,
+        //         &user_id,
+        //         github_login.as_str(),
+        //     )
+        //     .await?;
+        //     say(
+        //         client,
+        //         format!(
+        //             "Succesfully set: twitch {} -> github {}",
+        //             msg.sender.name, github_login
+        //         ),
+        //     )
+        //     .await?;
+        //
+        //     return Ok(());
     }
 
     // TODO(user_roles)
@@ -336,21 +337,21 @@ async fn handle_set_command<
         return Err(anyhow!("Not authorized User"));
     }
 
-    if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
-        let twitch_user = splitmsg[3].replace("@", "");
-        let user_id =
-            match subd_db::get_user_from_twitch_user_name(conn, &twitch_user)
-                .await?
-            {
-                Some(user_id) => user_id,
-                None => return Ok(()),
-            };
-        themesong::mark_themesong_unplayed(conn, &user_id).await?;
-        println!(
-            "  Successfully marked themseong unplayed for: {:?}",
-            twitch_user
-        );
-    }
+    // if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
+    //     let twitch_user = splitmsg[3].replace("@", "");
+    //     let user_id =
+    //         match subd_db::get_user_from_twitch_user_name(conn, &twitch_user)
+    //             .await?
+    //         {
+    //             Some(user_id) => user_id,
+    //             None => return Ok(()),
+    //         };
+    //     themesong::mark_themesong_unplayed(conn, &user_id).await?;
+    //     println!(
+    //         "  Successfully marked themseong unplayed for: {:?}",
+    //         twitch_user
+    //     );
+    // }
 
     Ok(())
 }
@@ -774,91 +775,92 @@ async fn handle_themesong_download(
         StaticLoginCredentials,
     >::new(config);
 
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::ThemesongDownload(ThemesongDownload::Request { msg }) => msg,
-            _ => continue,
-        };
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-                .await?;
-        let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
-
-        let splitmsg = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        if splitmsg.len() == 1 {
-            say(&client, "format: !themesong <url> 00:00.00 00:00.00").await?;
-            tx.send(Event::ThemesongDownload(ThemesongDownload::Format {
-                sender: msg.sender.name.clone(),
-            }))?;
-            continue;
-        } else if splitmsg.len() != 4 {
-            say(
-                &client,
-                "Incorrect themesong format. Required: !themesong <url> 00:00 00:00",
-            )
-            .await?;
-            tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
-                display_name: msg.sender.name.clone(),
-                success: false,
-            }))?;
-            continue;
-        }
-
-        if themesong::can_user_access_themesong(&user_roles) {
-            // Notify that we are starting a download
-            tx.send(Event::ThemesongDownload(ThemesongDownload::Start {
-                display_name: msg.sender.name.clone(),
-            }))?;
-
-            match themesong::download_themesong(
-                &mut conn,
-                &user_id,
-                &msg.sender.name,
-                splitmsg[1].as_str(),
-                splitmsg[2].as_str(),
-                splitmsg[3].as_str(),
-            )
-            .await
-            {
-                Ok(_) => {
-                    println!("Successfully downloaded themesong");
-                    tx.send(Event::ThemesongDownload(
-                        ThemesongDownload::Finish {
-                            display_name: msg.sender.name.clone(),
-                            success: true,
-                        },
-                    ))?;
-
-                    continue;
-                }
-                Err(err) => {
-                    say(&client, format!("Failed to download: {:?}", err))
-                        .await?;
-                    tx.send(Event::ThemesongDownload(
-                        ThemesongDownload::Finish {
-                            display_name: msg.sender.name.clone(),
-                            success: false,
-                        },
-                    ))?;
-
-                    continue;
-                }
-            };
-        } else {
-            say(
-                &client,
-                "You must be a GH Sponsor or sub/mod/VIP to do this",
-            )
-            .await?;
-        }
-    }
+    // loop {
+    //     let event = rx.recv().await?;
+    //     let msg = match event {
+    //         Event::ThemesongDownload(ThemesongDownload::Request { msg }) => msg,
+    //         _ => continue,
+    //     };
+    //
+    //     let user_id =
+    //         subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
+    //             .await?;
+    //     let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
+    //
+    //     let splitmsg = msg
+    //         .message_text
+    //         .split(" ")
+    //         .map(|s| s.to_string())
+    //         .collect::<Vec<String>>();
+    //
+    //     if splitmsg.len() == 1 {
+    //         say(&client, "format: !themesong <url> 00:00.00 00:00.00").await?;
+    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Format {
+    //             sender: msg.sender.name.clone(),
+    //         }))?;
+    //         continue;
+    //     } else if splitmsg.len() != 4 {
+    //         say(
+    //             &client,
+    //             "Incorrect themesong format. Required: !themesong <url> 00:00 00:00",
+    //         )
+    //         .await?;
+    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
+    //             display_name: msg.sender.name.clone(),
+    //             success: false,
+    //         }))?;
+    //         continue;
+    //     }
+    //
+    //     if themesong::can_user_access_themesong(&user_roles) {
+    //         // Notify that we are starting a download
+    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Start {
+    //             display_name: msg.sender.name.clone(),
+    //         }))?;
+    //
+    //         match themesong::download_themesong(
+    //             &mut conn,
+    //             &user_id,
+    //             &msg.sender.name,
+    //             splitmsg[1].as_str(),
+    //             splitmsg[2].as_str(),
+    //             splitmsg[3].as_str(),
+    //         )
+    //         .await
+    //         {
+    //             Ok(_) => {
+    //                 println!("Successfully downloaded themesong");
+    //                 tx.send(Event::ThemesongDownload(
+    //                     ThemesongDownload::Finish {
+    //                         display_name: msg.sender.name.clone(),
+    //                         success: true,
+    //                     },
+    //                 ))?;
+    //
+    //                 continue;
+    //             }
+    //             Err(err) => {
+    //                 say(&client, format!("Failed to download: {:?}", err))
+    //                     .await?;
+    //                 tx.send(Event::ThemesongDownload(
+    //                     ThemesongDownload::Finish {
+    //                         display_name: msg.sender.name.clone(),
+    //                         success: false,
+    //                     },
+    //                 ))?;
+    //
+    //                 continue;
+    //             }
+    //         };
+    //     } else {
+    //         say(
+    //             &client,
+    //             "You must be a GH Sponsor or sub/mod/VIP to do this",
+    //         )
+    //         .await?;
+    //     }
+    // }
+    Ok(())
 }
 
 async fn handle_themesong_play(
@@ -868,26 +870,27 @@ async fn handle_themesong_play(
 ) -> Result<()> {
     let mut conn = subd_db::get_handle().await;
 
-    loop {
-        let event = rx.recv().await?;
-        let user_id = match event {
-            Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
-                user_id
-            }
-            _ => continue,
-        };
-
-        println!("=> Playing themesong");
-        themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
-        let twitch_user =
-            subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
-        match twitch_user.display_name.as_ref() {
-            "theprimeagen" => {
-                println!("Wow, theprimeagen is here")
-            }
-            _ => {}
-        }
-    }
+    // loop {
+    //     let event = rx.recv().await?;
+    //     let user_id = match event {
+    //         Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
+    //             user_id
+    //         }
+    //         _ => continue,
+    //     };
+    //
+    //     println!("=> Playing themesong");
+    //     themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
+    //     let twitch_user =
+    //         subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
+    //     match twitch_user.display_name.as_ref() {
+    //         "theprimeagen" => {
+    //             println!("Wow, theprimeagen is here")
+    //         }
+    //         _ => {}
+    //     }
+    // }
+    Ok(())
 }
 
 async fn say<
@@ -934,53 +937,58 @@ async fn main() -> Result<()> {
         }
     }
 
-    let mut channels = vec![];
-    let (base_tx, _) = broadcast::channel::<Event>(256);
-
-    macro_rules! makechan {
-        // If it has (tx, rx) as signature, we can just do this
-        ($handle_func:ident) => {{
-            let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move {
-                $handle_func(new_tx, new_rx)
-                    .await
-                    .expect("this should work")
-            }));
-        }};
-
-        // Otherwise, run it like this
-        (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
-            let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move { $impl }));
-        }};
-    }
-
-    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-    let sink = rodio::Sink::try_new(&handle).unwrap();
-
     let mut event_loop = events::EventLoop::new();
+    // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new("teej_dv".to_string())?);
+
+    // Does stuff with twitch messages
+    event_loop.push(twitch_chat::TwitchMessageHandler::new(
+        subd_db::get_handle().await,
+    ));
 
     event_loop.run().await?;
 
-    makechan!(handle_twitch_msg);
-    makechan!(handle_yew);
-    makechan!(handle_twitch_sub_count);
-    makechan!(handle_twitch_notifications);
-    makechan!(handle_obs_stuff);
+    // let mut channels = vec![];
+    // let (base_tx, _) = broadcast::channel::<Event>(256);
+    // macro_rules! makechan {
+    //     // If it has (tx, rx) as signature, we can just do this
+    //     ($handle_func:ident) => {{
+    //         let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
+    //         channels.push(tokio::spawn(async move {
+    //             $handle_func(new_tx, new_rx)
+    //                 .await
+    //                 .expect("this should work")
+    //         }));
+    //     }};
+    //
+    //     // Otherwise, run it like this
+    //     (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
+    //         let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
+    //         channels.push(tokio::spawn(async move { $impl }));
+    //     }};
+    // }
+
+    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+    // let sink = rodio::Sink::try_new(&handle).unwrap();
+
+    // makechan!(handle_twitch_msg);
+    // makechan!(handle_yew);
+    // makechan!(handle_twitch_sub_count);
+    // makechan!(handle_twitch_notifications);
+    // makechan!(handle_obs_stuff);
 
     // Themesong functions
-    makechan!(handle_themesong_download);
-    makechan!(|tx, rx| {
-        handle_themesong_play(tx, rx, &sink)
-            .await
-            .expect("Handles playing themesongs")
-    });
-
-    for c in channels {
-        // Wait for all the channels to be done
-        c.await?;
-    }
+    // makechan!(handle_themesong_download);
+    // makechan!(|tx, rx| {
+    //     handle_themesong_play(tx, rx, &sink)
+    //         .await
+    //         .expect("Handles playing themesongs")
+    // });
+    //
+    // for c in channels {
+    //     // Wait for all the channels to be done
+    //     c.await?;
+    // }
 
     Ok(())
 }

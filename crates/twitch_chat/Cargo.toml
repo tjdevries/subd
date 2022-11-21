@@ -13,3 +13,4 @@ anyhow.workspace = true
 async-trait.workspace = true
 tokio.workspace = true
 twitch-irc.workspace = true
+sqlx.workspace = true

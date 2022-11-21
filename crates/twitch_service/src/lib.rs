@@ -1,6 +1,5 @@
 use anyhow::Result;
 use subd_types::{TwitchUserID, UserID};
-use user_service::User;
 
 #[allow(dead_code)]
 pub struct TwitchUser {

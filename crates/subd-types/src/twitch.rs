@@ -1,17 +1,14 @@
 use serde::{Deserialize, Serialize};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::{TwitchUserID, UserID, UserRoles};
+use crate::{TwitchUserID, UserRoles};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TwitchUser {
-    // User ID for subd
-    user_id: UserID,
-
     // ID associated on twitch with this user
-    id: TwitchUserID,
-    login: String,
-    name: String,
+    pub id: TwitchUserID,
+    pub login: String,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -96,8 +93,8 @@ pub struct TwitchMessage {
     pub emotes: Vec<Emote>,
 }
 
-impl From<PrivmsgMessage> for TwitchMessage {
-    fn from(msg: PrivmsgMessage) -> Self {
+impl TwitchMessage {
+    pub fn from_msg(msg: PrivmsgMessage) -> Self {
         Self {
             message_id: msg.message_id,
             channel: TwitchChannel {
@@ -106,7 +103,6 @@ impl From<PrivmsgMessage> for TwitchMessage {
             },
             is_action: msg.is_action,
             sender: TwitchUser {
-                user_id: todo!("user_id"),
                 id: TwitchUserID(msg.sender.id),
                 login: msg.sender.login,
                 name: msg.sender.name,

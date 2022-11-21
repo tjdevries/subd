@@ -1,11 +1,11 @@
-use server::themesong::play_themesong;
+
 use subd_db::get_handle;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut db = get_handle().await;
+    let _db = get_handle().await;
 
-    let user_id = 4;
+    let _user_id = 4;
     let _url = "https://www.youtube.com/watch?v=jOpzP33_USs";
 
     if true {
