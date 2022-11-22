@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use obws::responses::filters::SourceFilter;
 // use obws::client::Filters;
 // use obws::requests::filters;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
@@ -291,6 +292,9 @@ pub struct MoveSingleValueSetting {
 
     #[serde(rename = "Filter.SDFEffects.Outline")]
     outline: Option<bool>,
+
+    #[serde(rename = "Source")]
+    source: Option<String>,
 }
 
 // TODO: consider serde defaults???
@@ -468,6 +472,75 @@ pub struct StreamFXSettings {
 //     "Version": 51539607703
 // },
 
+async fn move_source(
+    source: &str,
+    x: f32,
+    y: f32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let id_search = obws::requests::scene_items::Id {
+        scene: "Primary",
+        source,
+        ..Default::default()
+    };
+    let id = obs_client.scene_items().id(id_search).await?;
+
+    // let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
+    // let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
+
+    let new_position = Position {
+        x: Some(x),
+        y: Some(y),
+    };
+    let scene_transform = SceneItemTransform {
+        position: Some(new_position),
+        ..Default::default()
+    };
+
+    let set_transform = SetTransform {
+        scene: "Primary",
+        item_id: id,
+        transform: scene_transform,
+    };
+    match obs_client.scene_items().set_transform(set_transform).await {
+        Ok(_) => {}
+        Err(_) => {}
+    }
+
+    Ok(())
+
+    // .expect("Failed to Transform Scene Position")
+}
+
+async fn create_move_source_filters(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Source";
+
+    // rockerboo: if let Ok(v) = { }
+    // rockerboo: basically its a if statement to see if something is Ok vs error
+    //
+    // Create Move-Value for 3D Transform Filter
+    let new_settings = MoveSingleValueSetting {
+        move_value_type: Some(0),
+        // filter: String::from("Blur"),
+        duration: Some(7000),
+        source: Some("kirbydance".to_string()),
+        ..Default::default()
+    };
+
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: stream_fx_filter_name,
+        kind: "move_source_filter",
+        settings: Some(new_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    Ok(())
+}
+
 async fn create_blur_filters(
     source: &str,
     obs_client: &OBSClient,
@@ -600,13 +673,25 @@ async fn handle_user_input(
 
     // Handle User Input: Source "shark" | Filter Name: "Move_Stream_FX" | Duration: 10000 | Value: 3600.0
 
+    // if let Ok(v) = { }
     // Should we pss in obs_client
-    let filter_details = obs_client
-        .filters()
-        .get(&source, &filter_name)
-        .await
-        .expect("Error Getting Source Name");
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => {
+                Err(err)
+                // continue
+                // println!("Error Finding Filter Details: {:?}", err);
+                // What should I do???
+            }
+        }?;
 
+    // match filter_details {
+    //     Ok(val) => {}
+    //     Err(err) => break,
+    // }
+
+    // If this
     // println!("\n!do Filter Details: {:?}", filter_details);
 
     // Here is missing duration
@@ -1005,6 +1090,9 @@ async fn handle_obs_stuff(
                 };
                 obs_client.filters().create(new_filter).await?;
             }
+            "!create_move" => {
+                create_move_source_filters("Primary", &obs_client).await?;
+            }
             "!create_defaults" => {
                 let source = splitmsg[1].as_str();
 
@@ -1086,17 +1174,21 @@ async fn handle_obs_stuff(
                 let camera_number =
                     camera_types_per_filter[&filter_setting_name];
 
-                let filter_details = obs_client
-                    .filters()
-                    .get(&source, &"3D Transform")
-                    .await
-                    .expect("Error Getting Filter Details");
+                let filter_details =
+                    obs_client.filters().get(&source, &"3D Transform").await;
+
+                let filt: SourceFilter;
+
+                match filter_details {
+                    Ok(val) => {
+                        filt = val;
+                    }
+                    Err(_) => continue,
+                }
 
                 let mut new_settings =
-                    serde_json::from_value::<StreamFXSettings>(
-                        filter_details.settings,
-                    )
-                    .unwrap();
+                    serde_json::from_value::<StreamFXSettings>(filt.settings)
+                        .unwrap();
 
                 // resetting this Camera Mode
                 new_settings.camera_mode = Some(camera_number);
@@ -1117,6 +1209,87 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+            }
+
+            // !follow kirbydance
+            //    this would take all the "moveable" sources
+            //    and matches kirbydance's X and Y
+            "!follow" => {
+                let scene = "Primary";
+                let source = splitmsg[1].as_str();
+
+                let id_search = obws::requests::scene_items::Id {
+                    scene,
+                    source,
+                    ..Default::default()
+                };
+                let id = obs_client.scene_items().id(id_search).await?;
+
+                let other_sources: Vec<String> = vec![
+                    "gopher".to_string(),
+                    "vibecat".to_string(),
+                    "shark".to_string(),
+                ];
+
+                // Caused by:
+                // invalid type: map, expected unit', src/bin/begin.rs:1495:5
+                let settings =
+                    match obs_client.scene_items().transform(scene, id).await {
+                        Ok(val) => val,
+                        Err(err) => {
+                            println!(
+                                "Error Fetching Transform Settings: {:?}",
+                                err
+                            );
+                            let blank_transform =
+                            obws::responses::scene_items::SceneItemTransform {
+                                ..Default::default()
+                            };
+                            blank_transform
+                        }
+                    };
+
+                for s in other_sources {
+                    move_source(
+                        &s,
+                        settings.position_x,
+                        settings.position_y,
+                        &obs_client,
+                    )
+                    .await?;
+                }
+            }
+
+            "!source" => {
+                let scene = "Primary";
+                let source = splitmsg[1].as_str();
+
+                let id_search = obws::requests::scene_items::Id {
+                    scene,
+                    source,
+                    ..Default::default()
+                };
+                let id = obs_client.scene_items().id(id_search).await?;
+
+                // Caused by:
+                // invalid type: map, expected unit', src/bin/begin.rs:1495:5
+                let settings =
+                    match obs_client.scene_items().transform(scene, id).await {
+                        Ok(val) => val,
+                        Err(err) => {
+                            println!(
+                                "Error Fetching Transform Settings: {:?}",
+                                err
+                            );
+                            let blank_transform =
+                            obws::responses::scene_items::SceneItemTransform {
+                                ..Default::default()
+                            };
+                            blank_transform
+                        }
+                    };
+
+                println!("Source: {:?}", settings);
             }
 
             "!outline" => {
@@ -1146,39 +1319,9 @@ async fn handle_obs_stuff(
             "!move" => {
                 let source = splitmsg[1].as_str();
 
-                let id_search = obws::requests::scene_items::Id {
-                    scene: "Primary",
-                    source,
-                    ..Default::default()
-                };
-                let id = obs_client.scene_items().id(id_search).await?;
-
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
-                let new_position = Position {
-                    x: Some(x),
-                    y: Some(y),
-                };
-                let scene_transform = SceneItemTransform {
-                    position: Some(new_position),
-                    ..Default::default()
-                };
-
-                let set_transform = SetTransform {
-                    scene: "Primary",
-                    item_id: id,
-                    transform: scene_transform,
-                };
-                match obs_client
-                    .scene_items()
-                    .set_transform(set_transform)
-                    .await
-                {
-                    Ok(_) => {}
-                    Err(_) => {}
-                }
-
-                // .expect("Failed to Transform Scene Position")
+                move_source(source, x, y, &obs_client).await?;
             }
 
             "!grow" => {
