@@ -5,6 +5,24 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
+CREATE TABLE user_roles (
+  user_id UUID UNIQUE NOT NULL references users,
+  last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+  -- Github
+  is_github_sponsor boolean NOT NULL,
+
+  -- Twitch
+  is_twitch_mod     boolean NOT NULL,
+  is_twitch_vip     boolean NOT NULL,
+  is_twitch_founder boolean NOT NULL,
+  is_twitch_staff   boolean NOT NULL,
+  -- TODO: Twitch sub should probably be a number or an enum
+  is_twitch_sub     boolean NOT NULL
+
+  -- ...
+);
+
 CREATE TABLE user_theme_songs (
     user_id UUID UNIQUE NOT NULL references users,
     song BYTEA NOT NULL

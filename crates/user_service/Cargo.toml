@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 subd-types = { path = "../subd-types/" }
+subd-macros = { path = "../subd-macros/" }
+
 anyhow.workspace = true
 sqlx.workspace = true

@@ -10,11 +10,11 @@ pub struct TwitchUser {
 }
 
 pub struct Service {
-    db: sqlx::PgPool,
+    db: sqlx::PgConnection,
 }
 
 impl Service {
-    pub async fn new(db: sqlx::PgPool) -> Self {
+    pub async fn new(db: sqlx::PgConnection) -> Self {
         Self { db }
     }
 
@@ -25,6 +25,19 @@ impl Service {
     pub async fn get(&self, _id: TwitchUserID) -> Result<Option<TwitchUser>> {
         println!("{:?}", self.db);
         todo!()
+    }
+
+    pub async fn get_user_id(
+        &mut self,
+        id: TwitchUserID,
+    ) -> Result<Option<UserID>> {
+        Ok(sqlx::query!(
+            "SELECT user_id FROM twitch_users WHERE twitch_user_id = $1",
+            id.0
+        )
+        .fetch_optional(&mut self.db)
+        .await?
+        .map(|x| UserID(x.user_id)))
     }
 }
 

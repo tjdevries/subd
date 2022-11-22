@@ -1,17 +1,19 @@
 use anyhow::Result;
-use subd_types::UserID;
+use subd_types::{UserID, UserRoles};
+
+mod models;
 
 pub struct User {
     pub id: UserID,
 }
 
 pub struct Service {
-    db: sqlx::PgPool,
+    conn: sqlx::PgConnection,
 }
 
 impl Service {
-    pub async fn new(db: sqlx::PgPool) -> Self {
-        Self { db }
+    pub async fn new(conn: sqlx::PgConnection) -> Self {
+        Self { conn }
     }
 
     pub async fn create(&self) -> Result<User> {
@@ -19,8 +21,17 @@ impl Service {
     }
 
     pub async fn get(&self, _id: UserID) -> Result<Option<User>> {
-        println!("{:?}", self.db);
+        println!("{:?}", self.conn);
         todo!()
+    }
+
+    pub async fn get_roles(
+        &mut self,
+        id: &UserID,
+    ) -> Result<Option<UserRoles>> {
+        Ok(models::user_roles::Model::read(&mut self.conn, id)
+            .await?
+            .map(models::user_roles::to_user_roles))
     }
 }
 

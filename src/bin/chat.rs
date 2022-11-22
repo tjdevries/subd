@@ -7,7 +7,6 @@
 //          - Associated sound w/ user_id
 //      - Approve/Reject a sound
 
-
 use std::sync::Mutex;
 
 use anyhow::anyhow;
@@ -22,14 +21,8 @@ use obws::Client as OBSClient;
 use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 
-
-
-
-
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
-
-
 
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
@@ -934,6 +927,7 @@ async fn main() -> Result<()> {
     }
 
     let mut event_loop = events::EventLoop::new();
+
     // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new("teej_dv".to_string())?);
 
@@ -943,26 +937,6 @@ async fn main() -> Result<()> {
     ));
 
     event_loop.run().await?;
-
-    // let mut channels = vec![];
-    // let (base_tx, _) = broadcast::channel::<Event>(256);
-    // macro_rules! makechan {
-    //     // If it has (tx, rx) as signature, we can just do this
-    //     ($handle_func:ident) => {{
-    //         let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
-    //         channels.push(tokio::spawn(async move {
-    //             $handle_func(new_tx, new_rx)
-    //                 .await
-    //                 .expect("this should work")
-    //         }));
-    //     }};
-    //
-    //     // Otherwise, run it like this
-    //     (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
-    //         let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
-    //         channels.push(tokio::spawn(async move { $impl }));
-    //     }};
-    // }
 
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     // let sink = rodio::Sink::try_new(&handle).unwrap();

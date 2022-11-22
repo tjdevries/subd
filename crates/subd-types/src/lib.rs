@@ -6,7 +6,6 @@ use std::{
 use serde::{Deserialize, Serialize};
 use twitch_api2::pubsub::channel_points::Redemption;
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
-use twitch_irc::message::PrivmsgMessage;
 
 pub mod consts;
 pub mod twitch;
@@ -45,6 +44,7 @@ pub enum Event {
 
     // Requests
     RequestTwitchSubCount,
+    RequestTwitchMessage(String),
     TwitchChannelPointsRedeem(Redemption),
 
     /// Backend Only
@@ -98,10 +98,40 @@ pub struct LunchBytesTopic {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ThemesongDownload {
-    Request { msg: PrivmsgMessage },
+    Request { msg: twitch::TwitchMessage },
     Start { display_name: String },
     Finish { display_name: String, success: bool },
     Format { sender: String },
+}
+
+impl ThemesongDownload {
+    pub fn format<T>(sender: T) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Format {
+            sender: sender.to_string(),
+        })
+    }
+
+    pub fn finish<T>(display_name: T, success: bool) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Finish {
+            display_name: display_name.to_string(),
+            success,
+        })
+    }
+
+    pub fn start<T>(display_name: T) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Start {
+            display_name: display_name.to_string(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

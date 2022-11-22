@@ -1,9 +1,11 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use psl::Psl;
 use reqwest::Url;
 use sqlx::PgConnection;
-use subd_types::{UserID, UserRoles};
-use tokio::{fs::File, io::AsyncReadExt};
+use subd_db::get_handle;
+use subd_types::{Event, ThemesongDownload, UserID, UserRoles};
+use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
@@ -303,6 +305,110 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
         Err(anyhow::anyhow!("Too long. Choose shorter clip"))
     } else {
         Ok(())
+    }
+}
+
+pub struct ThemesongDownloader {
+    // pool: sqlx::PgPool,
+    conn: PgConnection,
+}
+
+#[async_trait]
+impl events::EventHandler for ThemesongDownloader {
+    async fn handle(
+        mut self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        let mut twitch = twitch_service::Service::new(get_handle().await).await;
+        let mut users = user_service::Service::new(get_handle().await).await;
+
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::ThemesongDownload(ThemesongDownload::Request {
+                    msg,
+                }) => msg,
+                _ => continue,
+            };
+
+            let user_id = match twitch.get_user_id(msg.sender.id).await? {
+                Some(user_id) => user_id,
+                None => continue,
+            };
+
+            let user_roles =
+                users.get_roles(&user_id).await?.unwrap_or_default();
+
+            let splitmsg = msg
+                .text
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            if splitmsg.len() == 1 {
+                tx.send(Event::RequestTwitchMessage(
+                    "format: !themesong <url> mm:ss mm:ss".to_string(),
+                ))?;
+
+                tx.send(ThemesongDownload::format(msg.sender.name))?;
+                continue;
+            } else if splitmsg.len() != 4 {
+                tx.send(Event::RequestTwitchMessage(
+                    "Incorrect themesong format. Required: !themesong <url> mm:ss mm:ss".to_string()
+                ))?;
+
+                tx.send(ThemesongDownload::finish(msg.sender.name, false))?;
+                continue;
+            }
+
+            if can_user_access_themesong(&user_roles) {
+                // Notify that we are starting a download
+                tx.send(ThemesongDownload::start(msg.sender.name.clone()))?;
+
+                match download_themesong(
+                    &mut self.conn,
+                    &user_id,
+                    msg.sender.name.as_str(),
+                    splitmsg[1].as_str(),
+                    splitmsg[2].as_str(),
+                    splitmsg[3].as_str(),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        info!("Successfully downloaded themesong");
+
+                        tx.send(ThemesongDownload::finish(
+                            msg.sender.name,
+                            true,
+                        ))?;
+
+                        continue;
+                    }
+                    Err(err) => {
+                        tx.send(Event::RequestTwitchMessage(format!(
+                            "Failed to download: {:?}",
+                            err
+                        )))?;
+
+                        tx.send(Event::ThemesongDownload(
+                            ThemesongDownload::Finish {
+                                display_name: msg.sender.name.clone(),
+                                success: false,
+                            },
+                        ))?;
+
+                        continue;
+                    }
+                };
+            } else {
+                tx.send(Event::RequestTwitchMessage(
+                    "You must be a GH Sponsor or sub/mod/VIP to do this"
+                        .to_string(),
+                ))?;
+            }
+        }
     }
 }
 

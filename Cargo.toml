@@ -12,6 +12,8 @@ subd-twitch = { path = "crates/subd-twitch" }
 subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
 twitch_chat = { path = "crates/twitch_chat" }
+twitch_service = { path = "crates/twitch_service" }
+user_service = { path = "crates/user_service" }
 events = { path = "crates/events" }
 
 # Twitch Deps
