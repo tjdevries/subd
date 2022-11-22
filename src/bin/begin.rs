@@ -5,6 +5,7 @@ use obws::responses::filters::SourceFilter;
 // use obws::requests::filters;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
+use std::fs::File;
 use std::time::Duration;
 use std::{fs, thread};
 // use std::path::Path;
@@ -17,7 +18,6 @@ use std::collections::{HashMap, HashSet};
 // use rand::thread_rng as rng;
 
 use rodio::{source::Source, Decoder, OutputStream};
-use std::fs::File;
 use std::io::BufReader;
 
 // use anyhow::anyhow;
@@ -48,6 +48,7 @@ const STREAM_FX_FILTER: &str = "3D Transform";
 
 const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 const MULTI_SETTING_VALUE_TYPE: u32 = 1;
+// use rodio::source::Source;
 
 fn camera_type_config() -> HashMap<&'static str, i32> {
     let mut camera_types_per_filter = HashMap::new();
@@ -719,6 +720,7 @@ async fn create_blur_filters(
     Ok(())
 }
 
+// we need to take in base settings
 fn top_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
     let position_x = 1662.0;
     let position_y = 13.0;
@@ -739,9 +741,13 @@ fn top_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
             y: Some(bounds_y),
         }),
         scale: Some(Coordinates {
-            x: Some(1.0),
-            y: Some(1.0),
+            x: None,
+            y: None,
         }),
+        // scale: Some(Coordinates {
+        //     x: Some(1.0),
+        //     y: Some(1.0),
+        // }),
         position: Some(Coordinates {
             x: Some(position_x),
             y: Some(position_y),
@@ -1613,6 +1619,7 @@ async fn handle_obs_stuff(
             }
             "!top" => {
                 let scene_item = splitmsg[1].as_str();
+                // we need info about the current source position
                 let new_settings = top_corner_filter_settings(scene_item);
                 let filter_name = format!("Move_Source_{}", scene_item);
                 move_with_move_source(
@@ -1625,6 +1632,8 @@ async fn handle_obs_stuff(
             }
             "!bottom" => {
                 let scene_item = splitmsg[1].as_str();
+
+                // async fn source_details()
                 let new_settings = bottom_corner_filter_settings(scene_item);
                 let filter_name = format!("Move_Source_{}", scene_item);
                 move_with_move_source(
@@ -1671,6 +1680,7 @@ async fn handle_obs_stuff(
 
             "!create_move_filters" => {
                 let other_sources: Vec<String> = vec![
+                    "snoop".to_string(),
                     // "begin".to_string(),
                     // "kirby".to_string(),
                     // "shark".to_string(),
@@ -1907,6 +1917,7 @@ async fn handle_obs_stuff(
                     "shark".to_string(),
                     "gopher".to_string(),
                     "vibecat".to_string(),
+                    "snoop".to_string(),
                 ];
 
                 let settings =
@@ -2019,26 +2030,38 @@ async fn handle_obs_stuff(
                 move_source(source, x, y, &obs_client).await?;
             }
 
-            "!grow" => {
+            "!grow" | "!scale" => {
                 let source = splitmsg[1].as_str();
+
                 let id_search = obws::requests::scene_items::Id {
                     scene: "Primary",
                     source,
                     ..Default::default()
                 };
                 let id = obs_client.scene_items().id(id_search).await?;
-                let new_scale = Scale {
-                    x: Some(2.0),
-                    y: Some(2.0),
+
+                // We should not crash here
+                let source_info =
+                    obs_client.scene_items().transform("Primary", id).await?;
+
+                let x: f32 = if splitmsg.len() < 2 {
+                    source_info.position_x
+                } else {
+                    splitmsg[2].trim().parse().unwrap_or(0.0)
                 };
 
-                let new_position = Position {
-                    x: Some(2.0),
-                    y: Some(2.0),
+                let y: f32 = if splitmsg.len() < 3 {
+                    source_info.position_y
+                } else {
+                    splitmsg[3].trim().parse().unwrap_or(0.0)
+                };
+                let new_scale = Scale {
+                    x: Some(x),
+                    y: Some(y),
                 };
                 let scene_transform = SceneItemTransform {
                     scale: Some(new_scale),
-                    position: Some(new_position),
+                    // position: Some(new_position),
                     // rotation: Some(None),
                     // alignment: None,
                     // bounds: None,
