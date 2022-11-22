@@ -121,7 +121,7 @@ fn raffle_status() -> &'static Mutex<RaffleState> {
 pub async fn handle(
     _tx: &broadcast::Sender<Event>,
     _user_id: &UserID,
-    user_name: &str,
+    _user_name: &str,
     _contents: &str,
 ) -> Result<()> {
     todo!("raffle::handle");

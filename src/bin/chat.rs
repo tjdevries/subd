@@ -7,13 +7,13 @@
 //          - Associated sound w/ user_id
 //      - Approve/Reject a sound
 
-use std::cmp::max;
+
 use std::sync::Mutex;
 
 use anyhow::anyhow;
 use anyhow::Result;
 use clap::Parser;
-use events::EventHandler;
+
 use futures::SinkExt;
 use futures::StreamExt;
 // use obws::requests::SceneItemProperties;
@@ -21,16 +21,16 @@ use futures::StreamExt;
 use obws::Client as OBSClient;
 use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
-use rustrict::Censor;
-use rustrict::CensorStr;
-use server::commands;
-use server::themesong;
-use server::users;
+
+
+
+
+
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
-use subd_types::LunchBytesTopic;
-use subd_types::ThemesongDownload;
-use subd_types::ThemesongPlay;
+
+
+
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
@@ -61,15 +61,14 @@ fn get_lb_status() -> &'static Mutex<LunchBytesStatus> {
     })
 }
 
-#[tracing::instrument(skip(tx, rx))]
 async fn handle_twitch_msg(
-    tx: broadcast::Sender<Event>,
-    rx: broadcast::Receiver<Event>,
+    _tx: broadcast::Sender<Event>,
+    _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let conn = subd_db::get_handle().await;
+    let _conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<
+    let (_, _client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(config);
@@ -477,7 +476,6 @@ async fn handle_twitch_sub_count(
     }
 }
 
-#[tracing::instrument(skip(tx))]
 async fn handle_twitch_notifications(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
@@ -762,13 +760,13 @@ async fn handle_obs_stuff(
 }
 
 async fn handle_themesong_download(
-    tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
+    _tx: broadcast::Sender<Event>,
+    _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
+    let _conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<
+    let (_, _client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(config);
@@ -863,10 +861,10 @@ async fn handle_themesong_download(
 
 async fn handle_themesong_play(
     _: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-    sink: &rodio::Sink,
+    _rx: broadcast::Receiver<Event>,
+    _sink: &rodio::Sink,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
+    let _conn = subd_db::get_handle().await;
 
     // loop {
     //     let event = rx.recv().await?;
