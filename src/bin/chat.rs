@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 // TODO:
 // - Channel points / Channel Redemptions
 
@@ -281,12 +279,12 @@ async fn handle_twitch_msg(
     // }
 }
 
-async fn handle_set_command<
+async fn _handle_set_command<
     T: twitch_irc::transport::Transport,
     L: twitch_irc::login::LoginCredentials,
 >(
-    conn: &mut sqlx::PgConnection,
-    client: &TwitchIRCClient<T, L>,
+    _conn: &mut sqlx::PgConnection,
+    _client: &TwitchIRCClient<T, L>,
     msg: twitch_irc::message::PrivmsgMessage,
 ) -> Result<()> {
     let splitmsg = msg

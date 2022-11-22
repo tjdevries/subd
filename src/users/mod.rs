@@ -93,9 +93,9 @@ fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
 }
 
 async fn get_user_role_from_user_id_and_msg(
-    conn: &mut PgConnection,
-    user_id: &UserID,
-    msg: &PrivmsgMessage,
+    _conn: &mut PgConnection,
+    _user_id: &UserID,
+    _msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
     todo!("get_user_role_from_user_id_and_msg");
     // let is_github_sponsor =
@@ -121,13 +121,13 @@ async fn update_user_roles(
     user_id: &UserID,
     msg: &PrivmsgMessage,
 ) -> Result<UserRoles> {
-    todo!("update_user_roles");
-
     let user_roles =
         get_user_role_from_user_id_and_msg(conn, user_id, msg).await?;
+
+    todo!("update_user_roles {:?}", user_roles);
 
     // info!(user_name = ?msg.sender.name, updated_roles = %user_roles, "updating user roles");
     // subd_db::set_user_roles(conn, user_id, &user_roles).await?;
 
-    Ok(user_roles)
+    // Ok(user_roles)
 }

@@ -8,7 +8,6 @@ use once_cell::sync::OnceCell;
 use rand::Rng;
 use subd_types::{Event, RaffleStatus, UserID, UserRoles};
 use tokio::sync::broadcast;
-use tracing::info;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 enum State {
@@ -119,12 +118,11 @@ fn raffle_status() -> &'static Mutex<RaffleState> {
     })
 }
 
-#[tracing::instrument(skip(tx, user_id, contents))]
 pub async fn handle(
-    tx: &broadcast::Sender<Event>,
-    user_id: &UserID,
+    _tx: &broadcast::Sender<Event>,
+    _user_id: &UserID,
     user_name: &str,
-    contents: &str,
+    _contents: &str,
 ) -> Result<()> {
     todo!("raffle::handle");
 

@@ -28,7 +28,7 @@ pub async fn delete_themesong(
     conn: &mut PgConnection,
     display_name: &str,
 ) -> Result<()> {
-    let display_name = display_name.replace("@", "").to_lowercase();
+    let _display_name = display_name.replace("@", "").to_lowercase();
     // let user_id =
     //     subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
     //         .await?;
@@ -172,8 +172,8 @@ pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
 
 // TODO: We should probably not copy & paste this like this
 pub async fn should_play_themesong(
-    conn: &mut PgConnection,
-    user_id: &UserID,
+    _conn: &mut PgConnection,
+    _user_id: &UserID,
 ) -> Result<bool> {
     todo!("should_play_themesong");
     // if has_played_themesong_today(conn, user_id).await? {
@@ -200,9 +200,9 @@ pub async fn should_play_themesong(
 
 // Play a themesong. Does not wait for sink to complete playing
 pub async fn play_themesong(
-    conn: &mut PgConnection,
-    user_id: &UserID,
-    sink: &rodio::Sink,
+    _conn: &mut PgConnection,
+    _user_id: &UserID,
+    _sink: &rodio::Sink,
 ) -> Result<bool> {
     todo!("play_themesong");
     // let themesong = sqlx::query!(
