@@ -293,9 +293,67 @@ pub struct MoveSingleValueSetting {
     #[serde(rename = "Filter.SDFEffects.Outline")]
     outline: Option<bool>,
 
-    #[serde(rename = "Source")]
+    #[serde(rename = "source")]
     source: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Coordinates {
+    #[serde(rename = "x")]
+    x: Option<f32>,
+
+    #[serde(rename = "y")]
+    y: Option<f32>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveSourceCropSetting {
+    #[serde(rename = "bottom")]
+    bottom: Option<f32>,
+
+    #[serde(rename = "left")]
+    left: Option<f32>,
+
+    #[serde(rename = "top")]
+    top: Option<f32>,
+
+    #[serde(rename = "right")]
+    right: Option<f32>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveSourceFilterSettings {
+    crop: Option<MoveSourceCropSetting>,
+
+    bounds: Option<Coordinates>,
+
+    #[serde(rename = "pos")]
+    position: Option<Coordinates>,
+
+    scale: Option<Coordinates>,
+
+    duration: Option<u32>,
+
+    source: Option<String>,
+
+    // How do we calculate the settings to this string
+    //     "transform_text": "pos: x 83.0 y 763.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0",
+    transform_text: Option<String>,
+}
+
+//     "duration": 3000,
+//     "source": "kirbydance",
+//
+//     "filter": "",
+//     "rot": 0.0,
+//     "rot_sign": " ",
+//     "setting_float": 0.0,
+//     "setting_float_max": 0.0,
+//     "setting_float_min": 0.0,
+//     "setting_name": "",
+//     "transform_text": "pos: x 83.0 y 763.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0",
+//     "value_type": 0
+//
 
 // TODO: consider serde defaults???
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -512,23 +570,35 @@ async fn move_source(
     // .expect("Failed to Transform Scene Position")
 }
 
-async fn create_move_source_filters(
+async fn update_move_source_filters(
     source: &str,
+    scene_item: &str,
+    new_settings: MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let stream_fx_filter_name = "Move_Source";
 
-    // rockerboo: if let Ok(v) = { }
-    // rockerboo: basically its a if statement to see if something is Ok vs error
-    //
-    // Create Move-Value for 3D Transform Filter
-    let new_settings = MoveSingleValueSetting {
-        move_value_type: Some(0),
-        // filter: String::from("Blur"),
-        duration: Some(7000),
-        source: Some("kirbydance".to_string()),
-        ..Default::default()
+    // let new_settings = bottom_corner_filter_settings(scene_item);
+
+    let new_filter = obws::requests::filters::SetSettings {
+        source,
+        filter: stream_fx_filter_name,
+        settings: Some(new_settings),
+        overlay: Some(false),
     };
+    obs_client.filters().set_settings(new_filter).await?;
+
+    Ok(())
+}
+
+async fn create_move_source_filters(
+    source: &str,
+    scene_item: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Source";
+
+    let new_settings = top_corner_filter_settings(scene_item);
 
     let new_filter = obws::requests::filters::Create {
         source,
@@ -574,6 +644,111 @@ async fn create_blur_filters(
     obs_client.filters().create(new_filter).await?;
 
     Ok(())
+}
+
+fn top_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
+    let position_x = 1662.0;
+    let position_y = 13.0;
+
+    let bounds_x = 251.0;
+    let bounds_y = 243.0;
+
+    let left = 0.0;
+    let top = 0.0;
+    let bottom = 0.0;
+    let right = 0.0;
+
+    let settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(Coordinates {
+            x: Some(bounds_x),
+            y: Some(bounds_y),
+        }),
+        scale: Some(Coordinates {
+            x: Some(1.0),
+            y: Some(1.0),
+        }),
+        position: Some(Coordinates {
+            x: Some(position_x),
+            y: Some(position_y),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            left: Some(0.0),
+            top: Some(0.0),
+            right: Some(0.0),
+            bottom: Some(0.0),
+        }),
+        transform_text: Some(format!("pos: x {position_x} y {position_y} rot: 0.0 bounds: x {bounds_x} y {bounds_y} crop: l {left} t {top} r {right} b {bottom}").to_string())
+    };
+    settings
+}
+
+fn bottom_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
+    let position_x = 12.0;
+    let position_y = 878.0;
+
+    let bounds_x = 251.0;
+    let bounds_y = 243.0;
+
+    let left = 0.0;
+    let top = 0.0;
+    let bottom = 0.0;
+    let right = 0.0;
+
+    let settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(Coordinates {
+            x: Some(bounds_x),
+            y: Some(bounds_y),
+        }),
+        scale: Some(Coordinates {
+            x: Some(1.0),
+            y: Some(1.0),
+        }),
+        position: Some(Coordinates {
+            x: Some(position_x),
+            y: Some(position_y),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            left: Some(0.0),
+            top: Some(0.0),
+            right: Some(0.0),
+            bottom: Some(0.0),
+        }),
+        transform_text: Some(format!("pos: x {position_x} y {position_y} rot: 0.0 bounds: x {bounds_x} y {bounds_y} crop: l {left} t {top} r {right} b {bottom}").to_string())
+    };
+    settings
+}
+
+fn create_move_source_filter_settings(
+    source: &str,
+) -> MoveSourceFilterSettings {
+    let settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(Coordinates {
+            x: Some(251.0),
+            y: Some(234.0),
+        }),
+        scale: Some(Coordinates {
+            x: Some(1.0),
+            y: Some(1.0),
+        }),
+        position: Some(Coordinates {
+            x: Some(1662.0),
+            y: Some(13.0),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            bottom: Some(0.0),
+            left: Some(0.0),
+            right: Some(0.0),
+            top: Some(0.0),
+        }),
+        transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
+    };
+    settings
 }
 
 async fn create_scroll_filters(
@@ -1090,8 +1265,69 @@ async fn handle_obs_stuff(
                 };
                 obs_client.filters().create(new_filter).await?;
             }
+            "!top" => {
+                let scene_item = splitmsg[1].as_str();
+
+                let new_settings = top_corner_filter_settings(scene_item);
+                update_move_source_filters(
+                    "Primary",
+                    scene_item,
+                    new_settings,
+                    &obs_client,
+                )
+                .await?;
+
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &"Primary",
+                    filter: "Move_Source",
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+            "!bottom" => {
+                let scene_item = splitmsg[1].as_str();
+
+                let new_settings = bottom_corner_filter_settings(scene_item);
+                update_move_source_filters(
+                    "Primary",
+                    scene_item,
+                    new_settings,
+                    &obs_client,
+                )
+                .await?;
+
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &"Primary",
+                    filter: "Move_Source",
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
+            "!update_move" => {
+                let scene_item = splitmsg[1].as_str();
+
+                let new_settings = bottom_corner_filter_settings(scene_item);
+                update_move_source_filters(
+                    "Primary",
+                    scene_item,
+                    new_settings,
+                    &obs_client,
+                )
+                .await?;
+
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source: &"Primary",
+                    filter: "Move_Source",
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+            }
             "!create_move" => {
-                create_move_source_filters("Primary", &obs_client).await?;
+                // Should this create or should it modify a filter?
+                // Should the name be more dynamic???
+                let scene_item = splitmsg[1].as_str();
+                create_move_source_filters("Primary", scene_item, &obs_client)
+                    .await?;
             }
             "!create_defaults" => {
                 let source = splitmsg[1].as_str();
