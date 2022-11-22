@@ -17,7 +17,7 @@ pub struct UserID(pub uuid::Uuid);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
-#[derive(sqlx::Type, Debug)]
+#[derive(sqlx::Type, Debug, Serialize, Deserialize, Clone)]
 #[sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum UserPlatform {
     Twitch,
@@ -26,8 +26,21 @@ pub enum UserPlatform {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserMessage {
+    pub user_id: UserID,
+    pub roles: UserRoles,
+    pub platform: UserPlatform,
+    pub contents: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
+    UserMessage(UserMessage),
+
     // Info
+
+    // TODO: Maybe we don't want to have this...
+    //  We just have user messages?
     TwitchChatMessage(twitch::TwitchMessage),
     TwitchSubscriptionCount(usize),
     TwitchSubscription(TwitchSubscriptionEvent),

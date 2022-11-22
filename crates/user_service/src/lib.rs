@@ -29,7 +29,7 @@ impl Service {
         &mut self,
         id: &UserID,
     ) -> Result<Option<UserRoles>> {
-        Ok(models::user_roles::Model::read(&mut self.conn, id)
+        Ok(models::user_roles::Model::read(&mut self.conn, id.0)
             .await?
             .map(models::user_roles::to_user_roles))
     }

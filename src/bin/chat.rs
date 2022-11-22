@@ -852,47 +852,17 @@ async fn handle_themesong_download(
     Ok(())
 }
 
-async fn handle_themesong_play(
-    _: broadcast::Sender<Event>,
-    _rx: broadcast::Receiver<Event>,
-    _sink: &rodio::Sink,
-) -> Result<()> {
-    let _conn = subd_db::get_handle().await;
-
-    // loop {
-    //     let event = rx.recv().await?;
-    //     let user_id = match event {
-    //         Event::ThemesongPlay(ThemesongPlay::Start { user_id, .. }) => {
-    //             user_id
-    //         }
-    //         _ => continue,
-    //     };
-    //
-    //     println!("=> Playing themesong");
-    //     themesong::play_themesong_for_today(&mut conn, &user_id, &sink).await?;
-    //     let twitch_user =
-    //         subd_db::get_twitch_user_from_user_id(&mut conn, user_id).await?;
-    //     match twitch_user.display_name.as_ref() {
-    //         "theprimeagen" => {
-    //             println!("Wow, theprimeagen is here")
-    //         }
-    //         _ => {}
-    //     }
-    // }
-    Ok(())
-}
-
-async fn say<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    client: &TwitchIRCClient<T, L>,
-    msg: impl Into<String>,
-) -> Result<()> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    client.say(twitch_username.to_string(), msg.into()).await?;
-    Ok(())
-}
+// async fn say<
+//     T: twitch_irc::transport::Transport,
+//     L: twitch_irc::login::LoginCredentials,
+// >(
+//     client: &TwitchIRCClient<T, L>,
+//     msg: impl Into<String>,
+// ) -> Result<()> {
+//     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+//     client.say(twitch_username.to_string(), msg.into()).await?;
+//     Ok(())
+// }
 
 #[tokio::main]
 async fn main() -> Result<()> {

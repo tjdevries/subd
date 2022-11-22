@@ -4,7 +4,7 @@ use psl::Psl;
 use reqwest::Url;
 use sqlx::PgConnection;
 use subd_db::get_handle;
-use subd_types::{Event, ThemesongDownload, UserID, UserRoles};
+use subd_types::{Event, ThemesongDownload, ThemesongPlay, UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
 
@@ -174,30 +174,29 @@ pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
 
 // TODO: We should probably not copy & paste this like this
 pub async fn should_play_themesong(
-    _conn: &mut PgConnection,
-    _user_id: &UserID,
+    conn: &mut PgConnection,
+    user_id: &UserID,
+    user_roles: &UserRoles,
 ) -> Result<bool> {
-    todo!("should_play_themesong");
-    // if has_played_themesong_today(conn, user_id).await? {
-    //     return Ok(false);
-    // }
-    //
-    // let user_roles = subd_db::get_user_roles(conn, user_id).await?;
-    // if !can_user_access_themesong(&user_roles) {
-    //     return Ok(false);
-    // }
-    //
-    // let themesong = sqlx::query!(
-    //     "SELECT song FROM user_theme_songs WHERE user_id = $1",
-    //     user_id.0
-    // )
-    // .fetch_optional(&mut *conn)
-    // .await?;
-    //
-    // match themesong {
-    //     Some(_) => Ok(true),
-    //     None => Ok(false),
-    // }
+    if has_played_themesong_today(conn, user_id).await? {
+        return Ok(false);
+    }
+
+    if !can_user_access_themesong(&user_roles) {
+        return Ok(false);
+    }
+
+    let themesong = sqlx::query!(
+        "SELECT user_id FROM user_theme_songs WHERE user_id = $1",
+        user_id.0
+    )
+    .fetch_optional(&mut *conn)
+    .await?;
+
+    match themesong {
+        Some(_) => Ok(true),
+        None => Ok(false),
+    }
 }
 
 // Play a themesong. Does not wait for sink to complete playing
@@ -305,6 +304,62 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
         Err(anyhow::anyhow!("Too long. Choose shorter clip"))
     } else {
         Ok(())
+    }
+}
+
+pub struct ThemesongPlayer {
+    conn: PgConnection,
+    sink: rodio::Sink,
+}
+
+impl ThemesongPlayer {
+    pub fn new(conn: PgConnection) -> Self {
+        let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+        let sink = rodio::Sink::try_new(&handle).unwrap();
+        ThemesongPlayer { conn, sink }
+    }
+}
+
+#[async_trait]
+impl events::EventHandler for ThemesongPlayer {
+    async fn handle(
+        mut self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            match event {
+                Event::ThemesongPlay(ThemesongPlay::Start {
+                    user_id, ..
+                }) => {
+                    println!("=> Playing themesong");
+                    play_themesong_for_today(
+                        &mut self.conn,
+                        &user_id,
+                        &self.sink,
+                    )
+                    .await?;
+                }
+                Event::UserMessage(msg) => {
+                    if should_play_themesong(
+                        &mut self.conn,
+                        &msg.user_id,
+                        &msg.roles,
+                    )
+                    .await?
+                    {
+                        println!("  Sending themesong play event...");
+                        tx.send(Event::ThemesongPlay(ThemesongPlay::Start {
+                            user_id: msg.user_id,
+                            display_name: "TODO: find a real name".to_string(),
+                        }))?;
+                    }
+                }
+
+                _ => continue,
+            };
+        }
     }
 }
 

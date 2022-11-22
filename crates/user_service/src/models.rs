@@ -3,8 +3,37 @@ use anyhow::Result;
 
 use sqlx::PgConnection;
 use subd_macros::database_model;
-use subd_types::UserID;
+use subd_types::UserPlatform;
 use subd_types::UserRoles;
+
+#[database_model]
+pub mod user_messages {
+    use super::*;
+
+    pub struct Model {
+        pub user_id: sqlx::types::Uuid,
+        pub platform: subd_types::UserPlatform,
+        pub contents: String,
+    }
+}
+
+impl user_messages::Model {
+    pub async fn save(self, conn: &mut PgConnection) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            INSERT INTO user_messages (user_id, platform, contents)
+            VALUES ($1, $2, $3)
+            RETURNING user_id, platform as "platform: UserPlatform", contents
+            "#,
+            self.user_id,
+            self.platform as _,
+            self.contents
+        )
+        .fetch_one(conn)
+        .await?)
+    }
+}
 
 #[database_model]
 pub mod user_roles {
@@ -50,6 +79,7 @@ pub mod user_roles {
 
     pub struct Model {
         #[immutable]
+        #[primary_key]
         pub user_id: sqlx::types::Uuid,
 
         // Github
@@ -65,49 +95,32 @@ pub mod user_roles {
 }
 
 impl user_roles::Model {
-    // TODO: Would be awesome to just generate this... :)
-    //       ITS NOT AN ORM CHAT I SWEAR
-    pub async fn read(
-        conn: &mut PgConnection,
-        id: &UserID,
-    ) -> Result<Option<Self>> {
-        let x = sqlx::query_as!(
-            user_roles::Model,
-            r#"
-            SELECT 
-                user_id,
-                is_github_sponsor,
-                is_twitch_mod,
-                is_twitch_vip,
-                is_twitch_founder,
-                is_twitch_sub,
-                is_twitch_staff
-            FROM user_roles where user_id = $1
-            "#,
-            id.0
-        )
-        .fetch_optional(conn)
-        .await?;
-
-        Ok(x)
-    }
-
-    pub async fn save(&self, conn: &mut PgConnection) -> Result<()> {
-        todo!("{:?}", conn)
-        // sqlx::query!(
+    pub async fn save(self, conn: &mut PgConnection) -> Result<Self> {
+        // Ok(sqlx::query_as!(
+        //     Self,
         //     r#"
-        //     INSERT INTO users (id, twitch_id, github_id)
-        //       VALUES (?1, ?2, ?3) ON CONFLICT (id) DO
+        //     INSERT INTO user_roles (id, twitch_id, github_id)
+        //       VALUES ($1, $2, $3) ON CONFLICT (id) DO
         //       UPDATE
-        //       SET twitch_id=?2, github_id=?3
+        //       SET twitch_id=$2, github_id=$3
+        //       RETURNING *
         //     "#,
         //     self.id,
         //     self.twitch_id,
         //     self.github_id
         // )
         // .execute(&mut *conn)
-        // .await?;
-        //
-        // Ok(())
+        // .await?)
+
+        // This is for update
+        // let query = "
+        //     UPDATE user_roles
+        //         SET field1=$2, field2=$3
+        //         WHERE primary_key=$1
+        //         RETURNING *
+        // ";
+        // sqlx::query(query).execute(conn).await?;
+
+        todo!()
     }
 }

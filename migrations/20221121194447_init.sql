@@ -39,15 +39,18 @@ CREATE TYPE user_platform AS ENUM (
   'GITHUB'
 );
 
-CREATE TABLE user_chat_history (
-  user_chat_history_id
-    INT GENERATED ALWAYS AS IDENTITY,
+CREATE TABLE user_messages (
+  user_message_id INT GENERATED ALWAYS AS IDENTITY,
 
   user_id     UUID NOT NULL references users,
   platform    user_platform NOT NULL,
-  msg         TEXT,
+  contents    TEXT NOT NULL,
+  -- TODO: Emotes
   created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+-- TODO: Could also save twitch chat history...?
+--  This could be full of richer data?
 
 CREATE TABLE twitch_users (
   twitch_user_id  TEXT UNIQUE PRIMARY KEY,

@@ -28,7 +28,7 @@ use syn::Visibility;
 // }
 
 #[proc_macro_attribute]
-pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
+pub fn database_model(attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as ItemMod);
     let input_content =
         input.content.expect("Must have content inside of module").1;
@@ -51,6 +51,8 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     );
     let mut model = models.pop().unwrap();
 
+    let mut primary_key = None;
+
     let mut model_update = model.clone();
     model_update.ident = Ident::new("ModelUpdate", Span::call_site().into());
     model_update.fields = match model_update.fields {
@@ -60,9 +62,24 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path.segments.len() == 1
-                            && a.path.segments[0].ident.to_string()
-                                == "immutable"
+                        a.path
+                            .segments
+                            .iter()
+                            .any(|s| s.ident.to_string() == "primary_key")
+                    })
+                    .is_some()
+                {
+                    primary_key = Some(f.clone());
+                    return;
+                }
+
+                if f.attrs
+                    .iter()
+                    .find(|a| {
+                        a.path
+                            .segments
+                            .iter()
+                            .any(|s| s.ident.to_string() == "immutable")
                     })
                     .is_some()
                 {
@@ -133,6 +150,42 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
         })
         .collect::<Vec<_>>();
 
+    let field_list = model
+        .fields
+        .iter()
+        .filter_map(|f| match &f.ident {
+            Some(ident) => Some(ident.to_string()),
+            None => None,
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let read = match primary_key {
+        Some(primary_key) => {
+            let query = format!(
+                "SELECT {} FROM {} WHERE {} = $1",
+                field_list,
+                name,
+                primary_key.ident.unwrap().to_string(),
+            );
+
+            quote! {
+                pub async fn read(
+                    conn: &mut sqlx::PgConnection,
+                    id: sqlx::types::Uuid,
+                ) -> Result<Option<Self>> {
+                    Ok(sqlx::query_as!(
+                        Self, #query, id
+                    )
+                    .fetch_optional(conn)
+                    .await?)
+                }
+            }
+        }
+        None => quote!(),
+    };
+    // let primary_key = primary_key.expect("Model must have primary key");
+
     let vis = input.vis;
     TokenStream::from(quote! {
          #vis mod #name {
@@ -149,10 +202,11 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                     Self { #self_body }
                 }
 
+                #read
+
                 pub async fn update(mut self, conn: &mut sqlx::PgConnection, updates: ModelUpdate) -> Result<Self> {
                     #(#model_update_identifiers)*
-                    self.save(conn).await?;
-                    Ok(self)
+                    Ok(self.save(conn).await?)
                 }
             }
         }

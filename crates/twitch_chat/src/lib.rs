@@ -128,7 +128,7 @@ pub async fn save_twitch_message(
     message: &str,
 ) -> Result<()> {
     sqlx::query!(
-        r#"INSERT INTO user_chat_history (user_id, platform, msg)
+        r#"INSERT INTO user_messages (user_id, platform, contents)
            VALUES ( $1, $2, $3 )"#,
         user_id.0,
         platform as _,
