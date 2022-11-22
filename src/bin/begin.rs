@@ -49,6 +49,65 @@ const STREAM_FX_FILTER: &str = "3D Transform";
 const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 const MULTI_SETTING_VALUE_TYPE: u32 = 1;
 
+fn camera_type_config() -> HashMap<&'static str, i32> {
+    let mut camera_types_per_filter = HashMap::new();
+    camera_types_per_filter.insert("Corners.TopLeft.X", 2);
+
+    camera_types_per_filter.insert("Corners.BottomLeft.Y", 0);
+    camera_types_per_filter.insert("Corners.TopLeft.X", 0);
+    camera_types_per_filter.insert("Corners.TopLeft.Y", 0);
+    camera_types_per_filter.insert("Filter.Rotation.Z", 0);
+    camera_types_per_filter.insert("Filter.Shear.X", 0);
+    camera_types_per_filter.insert("Filter.Transform.Rotation.Z", 0);
+    camera_types_per_filter.insert("Rotation.X", 0);
+    camera_types_per_filter.insert("Rotation.Y", 0);
+    camera_types_per_filter.insert("Rotation.Z", 0);
+
+    // Come Back to Skew
+    // camera_types_per_filter.insert("Shear.X", 0);
+    // camera_types_per_filter.insert("Skew.X", 0);
+
+    // This is 1
+    camera_types_per_filter.insert("Position.X", 1);
+    camera_types_per_filter.insert("Position.Y", 1);
+    // camera_types_per_filter.insert("Rotation.X", 1);
+    // camera_types_per_filter.insert("Rotation.Y", 1);
+    // camera_types_per_filter.insert("Rotation.Z", 1);
+    camera_types_per_filter.insert("Scale.X", 1);
+    camera_types_per_filter.insert("Scale.Y", 1);
+    camera_types_per_filter.insert("Shear.X", 1);
+    camera_types_per_filter.insert("Shear.Y", 1);
+
+    return camera_types_per_filter;
+}
+
+async fn move_with_move_source(
+    scene_item: &str,
+    filter_name: &str,
+    new_settings: MoveSourceFilterSettings,
+    obs_client: &client::Client,
+) -> Result<()> {
+    // let new_settings = top_corner_filter_settings(scene_item);
+    update_move_source_filters(
+        "Primary",
+        scene_item,
+        filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &"Primary",
+        filter: &filter_name,
+        // filter: "Move_Source",
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+// let mut camera_types_per_filter = HashMap::new();
 async fn handle_twitch_chat(
     tx: broadcast::Sender<Event>,
     _: broadcast::Receiver<Event>,
@@ -173,6 +232,7 @@ async fn handle_twitch_msg(
                             .unwrap(),
                         );
 
+                        // TODO: Is there someway to suppress output here
                         sink.append(
                             rodio::Decoder::new(BufReader::new(file)).unwrap(),
                         );
@@ -309,7 +369,7 @@ pub struct MoveSourceFilterSettings {
 
     scale: Option<Coordinates>,
 
-    duration: Option<u32>,
+    duration: Option<u64>,
 
     source: Option<String>,
 
@@ -553,16 +613,15 @@ async fn move_source(
 async fn update_move_source_filters(
     source: &str,
     scene_item: &str,
+    filter_name: &str,
     new_settings: MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Source";
-
     // let new_settings = bottom_corner_filter_settings(scene_item);
 
     let new_filter = obws::requests::filters::SetSettings {
         source,
-        filter: stream_fx_filter_name,
+        filter: filter_name,
         settings: Some(new_settings),
         overlay: Some(false),
     };
@@ -574,15 +633,14 @@ async fn update_move_source_filters(
 async fn create_move_source_filters(
     source: &str,
     scene_item: &str,
+    filter_name: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Source";
-
     let new_settings = top_corner_filter_settings(scene_item);
 
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: stream_fx_filter_name,
+        filter: filter_name,
         kind: "move_source_filter",
         settings: Some(new_settings),
     };
@@ -683,6 +741,49 @@ fn top_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
         scale: Some(Coordinates {
             x: Some(1.0),
             y: Some(1.0),
+        }),
+        position: Some(Coordinates {
+            x: Some(position_x),
+            y: Some(position_y),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            left: Some(0.0),
+            top: Some(0.0),
+            right: Some(0.0),
+            bottom: Some(0.0),
+        }),
+        transform_text: Some(format!("pos: x {position_x} y {position_y} rot: 0.0 bounds: x {bounds_x} y {bounds_y} crop: l {left} t {top} r {right} b {bottom}").to_string())
+    };
+    settings
+}
+
+fn custom_filter_settings(
+    source: &str,
+    duration: u64,
+    x: f32,
+    y: f32,
+) -> MoveSourceFilterSettings {
+    let position_x = x;
+    let position_y = y;
+
+    let bounds_x = 251.0;
+    let bounds_y = 243.0;
+
+    let left = 0.0;
+    let top = 0.0;
+    let bottom = 0.0;
+    let right = 0.0;
+
+    let settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(duration),
+        bounds: Some(Coordinates {
+            x: Some(bounds_x),
+            y: Some(bounds_y),
+        }),
+        scale: Some(Coordinates {
+            x: Some(2.0),
+            y: Some(2.0),
         }),
         position: Some(Coordinates {
             x: Some(position_x),
@@ -834,6 +935,120 @@ async fn create_3d_transform_filters(
 
     Ok(())
 }
+
+async fn trigger_move_value_filter(
+    source: &str,
+    filter_setting_name: &str,
+    splitmsg: &Vec<String>,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    // This is all to change the Camera Mode of 3D Transform
+    // ===================================================================
+
+    let camera_types_per_filter = camera_type_config();
+    // I could hardcode this, but don't want to right now
+    if !camera_types_per_filter.contains_key(&filter_setting_name) {
+        return Ok(());
+    }
+    let camera_number = camera_types_per_filter[&filter_setting_name];
+    // If it just unwraps
+    // we fail on errors
+    let filter_details =
+        match obs_client.filters().get(&source, &"3D Transform").await {
+            Ok(val) => val,
+            Err(_err) => {
+                return Ok(());
+            }
+        };
+    // CRASHED!!!
+    let mut new_settings =
+        serde_json::from_value::<StreamFXSettings>(filter_details.settings)
+            .unwrap();
+    // Set Camera Mode on "3D Transform" Filter
+    // so it matches the filter_setting_name
+    new_settings.camera_mode = Some(camera_number);
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &"3D Transform",
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // ===================================================================
+
+    let filter_value: f32 = if splitmsg.len() < 3 {
+        0.0
+    } else {
+        splitmsg[2].trim().parse().unwrap_or(0.0)
+    };
+
+    let duration: u32 = if splitmsg.len() < 4 {
+        3000
+    } else {
+        splitmsg[3].trim().parse().unwrap_or(3000)
+    };
+
+    update_and_trigger_move_value_filter(
+        source,
+        "Move_Stream_FX",
+        filter_setting_name,
+        filter_value,
+        duration,
+        SINGLE_SETTING_VALUE_TYPE,
+        &obs_client,
+    )
+    .await?;
+    Ok(())
+}
+
+async fn update_and_trigger_move_value_filter(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    let mut new_settings = serde_json::from_value::<MoveSingleValueSetting>(
+        filter_details.settings,
+    )
+    .unwrap();
+
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+
+    new_settings.value_type = value_type;
+
+    println!("\n!do New Settings: {:?}", new_settings);
+
+    // Update the Filter
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+    thread::sleep(Duration::from_millis(100));
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
 // TODO: Update this function name to better
 async fn handle_user_input(
     source: &str,
@@ -1288,31 +1503,55 @@ async fn handle_obs_stuff(
                     .expect("Error Deleting Stream FX Default Filter");
             }
             "!norm" => {
-                let source = splitmsg[1].as_str();
+                let source = if splitmsg.len() < 2 {
+                    "begin"
+                } else {
+                    splitmsg[1].as_str()
+                };
+
+                println!("Attempting to Make: {source} normal!");
+
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_stream_fx_filter_name,
                     enabled: true,
                 };
-                obs_client.filters().set_enabled(filter_enabled).await?;
+                match obs_client.filters().set_enabled(filter_enabled).await {
+                    Ok(_) => {}
+                    Err(_) => continue,
+                }
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_scroll_filter_name,
                     enabled: true,
                 };
-                obs_client.filters().set_enabled(filter_enabled).await?;
+                match obs_client.filters().set_enabled(filter_enabled).await {
+                    Ok(_) => {}
+                    Err(_) => continue,
+                }
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_blur_filter_name,
                     enabled: true,
                 };
-                obs_client.filters().set_enabled(filter_enabled).await?;
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: &source,
-                    filter: &default_sdf_effects_filter_name,
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
+                match obs_client.filters().set_enabled(filter_enabled).await {
+                    Ok(_) => {}
+                    Err(_) => continue,
+                }
+
+                // This is ruining out life
+                // we need a better set of defaults for the SDF
+                // only should turn off filters
+                //
+                // let filter_enabled = obws::requests::filters::SetEnabled {
+                //     source: &source,
+                //     filter: &default_sdf_effects_filter_name,
+                //     enabled: true,
+                // };
+                // match obs_client.filters().set_enabled(filter_enabled).await {
+                //     Ok(_) => {}
+                //     Err(_) => continue,
+                // }
             }
             "!new_filters" => {
                 let source = splitmsg[1].as_str();
@@ -1374,49 +1613,37 @@ async fn handle_obs_stuff(
             }
             "!top" => {
                 let scene_item = splitmsg[1].as_str();
-
                 let new_settings = top_corner_filter_settings(scene_item);
-                update_move_source_filters(
-                    "Primary",
-                    scene_item,
+                let filter_name = format!("Move_Source_{}", scene_item);
+                move_with_move_source(
+                    &scene_item,
+                    &filter_name,
                     new_settings,
                     &obs_client,
                 )
                 .await?;
-
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: &"Primary",
-                    filter: "Move_Source",
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
             }
             "!bottom" => {
                 let scene_item = splitmsg[1].as_str();
-
                 let new_settings = bottom_corner_filter_settings(scene_item);
-                update_move_source_filters(
-                    "Primary",
-                    scene_item,
+                let filter_name = format!("Move_Source_{}", scene_item);
+                move_with_move_source(
+                    &scene_item,
+                    &filter_name,
                     new_settings,
                     &obs_client,
                 )
                 .await?;
-
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    source: &"Primary",
-                    filter: "Move_Source",
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
             }
             "!update_move" => {
                 let scene_item = splitmsg[1].as_str();
+                let filter_name = format!("Move_Source_{}", scene_item);
 
                 let new_settings = bottom_corner_filter_settings(scene_item);
                 update_move_source_filters(
                     "Primary",
                     scene_item,
+                    &filter_name,
                     new_settings,
                     &obs_client,
                 )
@@ -1433,8 +1660,34 @@ async fn handle_obs_stuff(
                 // Should this create or should it modify a filter?
                 // Should the name be more dynamic???
                 let scene_item = splitmsg[1].as_str();
-                create_move_source_filters("Primary", scene_item, &obs_client)
+                create_move_source_filters(
+                    "Primary",
+                    scene_item,
+                    "Move_Source",
+                    &obs_client,
+                )
+                .await?;
+            }
+
+            "!create_move_filters" => {
+                let other_sources: Vec<String> = vec![
+                    // "begin".to_string(),
+                    // "kirby".to_string(),
+                    // "shark".to_string(),
+                    // "gopher".to_string(),
+                    // "vibecat".to_string(),
+                ];
+                for source in other_sources {
+                    let filter_name = format!("Move_Source_{}", source);
+
+                    create_move_source_filters(
+                        "Primary",
+                        &source,
+                        &filter_name,
+                        &obs_client,
+                    )
                     .await?;
+                }
             }
             "!create_defaults" => {
                 let source = splitmsg[1].as_str();
@@ -1554,12 +1807,92 @@ async fn handle_obs_stuff(
                 .await?;
             }
 
+            // =========== //
+            // DSL Section //
+            // =========== //
+            "!spin" => {
+                let source = splitmsg[1].as_str();
+                let filter_setting_name = "Rotation.Z";
+                trigger_move_value_filter(
+                    &source,
+                    &filter_setting_name,
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?
+            }
+
+            "!spinx" => {
+                let source = splitmsg[1].as_str();
+                let filter_setting_name = "Rotation.X";
+                trigger_move_value_filter(
+                    &source,
+                    &filter_setting_name,
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?
+            }
+
+            "!spiny" => {
+                let source = splitmsg[1].as_str();
+                let filter_setting_name = "Rotation.Y";
+                trigger_move_value_filter(
+                    &source,
+                    &filter_setting_name,
+                    &splitmsg,
+                    &obs_client,
+                )
+                .await?
+            }
+
+            "!noblur" => {
+                let source = splitmsg[1].as_str();
+
+                update_and_trigger_move_value_filter(
+                    source,
+                    "Move_Blur",
+                    "Filter.Blur.Size",
+                    0.0,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+
+            // !blur filter_name value duration
+            "!blur" => {
+                let source = splitmsg[1].as_str();
+
+                update_and_trigger_move_value_filter(
+                    source,
+                    "Move_Blur",
+                    "Filter.Blur.Size",
+                    100.0,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+
+            // !scrollx kirby 100
+            // !scrolly kirby 100
+            // !noscroll
+
             // !follow kirbydance
             //    this would take all the "moveable" sources
             //    and matches kirbydance's X and Y
             "!follow" => {
                 let scene = "Primary";
-                let source = splitmsg[1].as_str();
+
+                let leader = if splitmsg.len() < 2 {
+                    "kirby"
+                } else {
+                    splitmsg[1].as_str()
+                };
+                let source = leader;
 
                 let id_search = obws::requests::scene_items::Id {
                     scene,
@@ -1569,13 +1902,13 @@ async fn handle_obs_stuff(
                 let id = obs_client.scene_items().id(id_search).await?;
 
                 let other_sources: Vec<String> = vec![
+                    "begin".to_string(),
+                    "kirby".to_string(),
+                    "shark".to_string(),
                     "gopher".to_string(),
                     "vibecat".to_string(),
-                    "shark".to_string(),
                 ];
 
-                // Caused by:
-                // invalid type: map, expected unit', src/bin/begin.rs:1495:5
                 let settings =
                     match obs_client.scene_items().transform(scene, id).await {
                         Ok(val) => val,
@@ -1592,14 +1925,33 @@ async fn handle_obs_stuff(
                         }
                     };
 
+                let default_duration = 4444;
+                let duration: u64 = if splitmsg.len() < 3 {
+                    default_duration
+                } else {
+                    splitmsg[1].trim().parse().unwrap_or(default_duration)
+                };
+
                 for s in other_sources {
-                    move_source(
-                        &s,
-                        settings.position_x,
-                        settings.position_y,
-                        &obs_client,
-                    )
-                    .await?;
+                    // Only if the source is not the leader!
+                    if s != leader {
+                        let new_settings = custom_filter_settings(
+                            &s,
+                            duration,
+                            settings.position_x,
+                            settings.position_y,
+                        );
+                        let filter_name = format!("Move_Source_{}", s);
+                        move_with_move_source(
+                            &s,
+                            &filter_name,
+                            new_settings,
+                            &obs_client,
+                        )
+                        .await?;
+                    }
+
+                    // thread::sleep(Duration::from_millis(duration));
                 }
             }
 
@@ -1705,20 +2057,6 @@ async fn handle_obs_stuff(
                     .scene_items()
                     .set_transform(set_transform)
                     .await?
-            }
-
-            // !blur filter_name value duration
-            "!blur" => {
-                let source = splitmsg[1].as_str();
-
-                handle_user_input(
-                    source,
-                    "Move_Blur",
-                    &splitmsg,
-                    2,
-                    &obs_client,
-                )
-                .await?;
             }
 
             // ==========================================================================
