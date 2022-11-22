@@ -135,7 +135,6 @@ async fn handle_twitch_msg(
         let paths = fs::read_dir("./MP3s").unwrap();
 
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-        // let mut mp3s: HashSet<String> = vec![].into_iter().collect();
 
         for path in paths {
             mp3s.insert(path.unwrap().path().display().to_string());
@@ -151,38 +150,20 @@ async fn handle_twitch_msg(
                 }
             }
             _ => {
-                // let messsages = HashSet::from(splitmsg);
-                // HashSet::from() maybe
-                // So Split this into a HashSet
-                //
-                // Can I convert a Vec<String> to Splitmsg
                 for word in splitmsg {
-                    // let word = splitmsg[0].as_str().to_lowercase();
-                    // let full_name = format!("./MP3s/{}.mp3", sanitized_word);
                     let sanitized_word = word.as_str().to_lowercase();
                     let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
                     if mp3s.contains(&full_name) {
+                        // Works for Arch Linux
                         let (_stream, stream_handle) =
                             get_output_stream("pulse");
 
-                        // let sink =
-                        //     rodio::Sink::try_new(&stream_handle).unwrap();
+                        // Works for Mac
+                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
 
-                        // let file = std::fs::File::open("assets/music.mp3").unwrap();
-                        // sink.append(rodio::Decoder::new(BufReader::new(file)).unwrap());
-
-                        // sink.sleep_until_end();
-                        //         // This is incorrect
-                        //         // let song_title = format!("./MP3s/{}.mp3", example);
-                        //         // let rodioer = rodio::Decoder::new(BufReader::new(
-                        //         //     Cursor::new(song_title),
-                        //         // ))
-                        //         // .unwrap();
-
-                        //         // This works for Mac
-                        //         // let (_stream, stream_handle) =
-                        //         //     OutputStream::try_default().unwrap();
+                        let sink =
+                            rodio::Sink::try_new(&stream_handle).unwrap();
 
                         let file = BufReader::new(
                             File::open(format!(
@@ -192,15 +173,11 @@ async fn handle_twitch_msg(
                             .unwrap(),
                         );
 
-                        let source = Decoder::new(file).unwrap();
+                        sink.append(
+                            rodio::Decoder::new(BufReader::new(file)).unwrap(),
+                        );
 
-                        //         // We want to lower the volume
-                        //         // Is this outputing the ALSA message????
-                        stream_handle
-                            .play_raw(source.convert_samples())
-                            .expect("ok");
-
-                        std::thread::sleep(std::time::Duration::from_secs(10));
+                        sink.sleep_until_end();
                     }
                 }
             }
@@ -436,6 +413,9 @@ pub struct SDFEffectsSettings {
     #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Offset.Y")]
     shadow_inner_offset_y: Option<f32>,
 
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner.Offset.X")]
+    shadow_inner_offset_x: Option<f32>,
+
     #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Offset.Y")]
     shadow_outer_offset_y: Option<f32>,
 
@@ -604,6 +584,41 @@ async fn create_move_source_filters(
         source,
         filter: stream_fx_filter_name,
         kind: "move_source_filter",
+        settings: Some(new_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    Ok(())
+}
+
+async fn create_outline_filter(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let stream_fx_filter_name = "Move_Outline";
+
+    let stream_fx_settings = StreamFXSettings {
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: "Outline",
+        kind: "streamfx-filter-sdf-effects",
+        settings: Some(stream_fx_settings),
+    };
+    obs_client.filters().create(new_filter).await?;
+
+    // Create Move-Value for 3D Transform Filter
+    let new_settings = MoveSingleValueSetting {
+        move_value_type: Some(0),
+        filter: String::from("Outline"),
+        duration: Some(7000),
+        ..Default::default()
+    };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: stream_fx_filter_name,
+        kind: "move_value_filter",
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -846,30 +861,12 @@ async fn handle_user_input(
         source, filter_name, filter_setting_name, duration, filter_value,
     );
 
-    // Handle User Input: Source "shark" | Filter Name: "Move_Stream_FX" | Duration: 10000 | Value: 3600.0
-
-    // if let Ok(v) = { }
-    // Should we pss in obs_client
     let filter_details =
         match obs_client.filters().get(&source, &filter_name).await {
             Ok(val) => Ok(val),
-            Err(err) => {
-                Err(err)
-                // continue
-                // println!("Error Finding Filter Details: {:?}", err);
-                // What should I do???
-            }
+            Err(err) => Err(err),
         }?;
 
-    // match filter_details {
-    //     Ok(val) => {}
-    //     Err(err) => break,
-    // }
-
-    // If this
-    // println!("\n!do Filter Details: {:?}", filter_details);
-
-    // Here is missing duration
     let mut new_settings = serde_json::from_value::<MoveSingleValueSetting>(
         filter_details.settings,
     )
@@ -899,7 +896,6 @@ async fn handle_user_input(
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
 
-    // That returns
     Ok(())
 }
 
@@ -1159,6 +1155,116 @@ async fn handle_obs_stuff(
                     .trigger_by_sequence("OBS_KEY_U", super_key)
                     .await?
             }
+            "!all" => {
+                // match splitmsg[1].as_str() {}
+                // !all rot
+                // How do we call something for all sources I wanna???
+                let other_sources: Vec<String> = vec![
+                    "gopher".to_string(),
+                    "vibecat".to_string(),
+                    "shark".to_string(),
+                    "kirby".to_string(),
+                ];
+
+                let fake_split_msg = vec![
+                    "!all".to_string(),
+                    "fake_shit".to_string(),
+                    "Rotation.Z".to_string(),
+                    "3600".to_string(),
+                ];
+
+                for sub_scene in other_sources {
+                    println!("sub_scene: {:?}", sub_scene);
+
+                    handle_user_input(
+                        source,
+                        "Move_Stream_FX",
+                        &fake_split_msg,
+                        SINGLE_SETTING_VALUE_TYPE,
+                        &obs_client,
+                    )
+                    .await?
+                }
+
+                // iterate through all and call
+                // X Funtion
+            }
+            "!oo" => {
+                let new_settings = SDFEffectsSettings {
+                    glow_outer: Some(true),
+                    shadow_outer: Some(true),
+                    shadow_inner: Some(true),
+                    glow_inner: Some(true),
+                    outline: Some(true),
+
+                    glow_inner_alpha: Some(100.0),
+                    glow_inner_sharpness: Some(50.0),
+                    glow_inner_width: Some(10.0),
+
+                    glow_outer_alpha: Some(100.0),
+                    glow_outer_sharpness: Some(50.0),
+                    glow_outer_width: Some(10.0),
+
+                    // outline_alpha: Some(100.0),
+                    // outline_sharpness: Some(50.0),
+                    outline_width: Some(10.0),
+                    outline_color: Some(4294923775),
+
+                    // outline_offset: Some(10.0),
+                    //
+                    shadow_inner_alpha: Some(100.0),
+                    shadow_inner_offset_x: Some(0.0),
+                    shadow_inner_offset_y: Some(0.0),
+                    shadow_inner_range_max: Some(4.0),
+                    shadow_inner_range_min: Some(0.0),
+                    shadow_inner_color: Some(4278190335),
+
+                    inner_color: Some(4278190335),
+                    outer_color: Some(4294945280),
+
+                    shadow_outer_alpha: Some(100.0),
+                    shadow_outer_color: Some(4294945280),
+                    shadow_outer_range_max: Some(4.0),
+                    shadow_outer_range_min: Some(1.61),
+                    shadow_outer_offset_y: Some(0.0),
+
+                    scale: Some(1.0),
+                    threshold: Some(50.0),
+
+                    sdf_scale: Some(100.0),
+                    sdf_threshold: Some(50.0),
+
+                    commit: Some("g0f114f56".to_string()),
+                    version: Some(51539607703),
+                    ..Default::default()
+                };
+
+                let source = splitmsg[1].as_str();
+
+                // rockerboo: inside the shaders for color its a float4 of R G B A
+                // We need some color settings
+                //
+                // THIS IS THE COLOR
+                // "Filter.SDFEffects.Glow.Outer.Color": 4294967295,
+                // let settings_on = SDFEffectsSettings {
+                //     glow_outer: Some(true),
+                //     shadow_outer: Some(true),
+                //     shadow_inner: Some(true),
+                //     glow_inner: Some(true),
+                //     outline: Some(true),
+                //     // outer_color: Some(4294967295),
+                //     outer_color: Some(4294902015),
+                //     ..Default::default()
+                // };
+
+                let new_settings = obws::requests::filters::SetSettings {
+                    source,
+                    filter: "Outline",
+                    settings: new_settings,
+                    overlay: None,
+                };
+                obs_client.filters().set_settings(new_settings).await?;
+            }
             "!reset" => {
                 obs_client
                     .filters()
@@ -1231,6 +1337,7 @@ async fn handle_obs_stuff(
                 create_3d_transform_filters(source, &obs_client).await?;
                 create_scroll_filters(source, &obs_client).await?;
                 create_blur_filters(source, &obs_client).await?;
+                create_outline_filter(source, &obs_client).await?;
             }
 
             "!shark" => {
