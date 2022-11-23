@@ -7,7 +7,7 @@ use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use std::fs::File;
 use std::time::Duration;
-use std::{fs, thread};
+use std::{fs, thread, fmt};
 // use std::path::Path;
 
 // use rand::Rng;
@@ -21,7 +21,7 @@ use rodio::{source::Source, Decoder, OutputStream};
 use std::io::BufReader;
 
 // use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use clap::Parser;
 
 use obws::requests::scene_items::{
@@ -1238,6 +1238,23 @@ async fn handle_obs_stuff(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
+        match x(&obs_client, &splitmsg).await {
+            Ok(_) => continue,
+            Err(err) => {
+                eprintln!("{err}");
+                continue
+            }
+        };
+    }
+}
+
+// async fn x(obs_client: OBSClient, splitmsg: Vec<String>) -> Result<()> {
+
+
+async fn x(
+    obs_client: &OBSClient, 
+    splitmsg: &Vec<String>,
+) -> Result<()> {
         // let = msg
         //     .message_text
         //     .split(" ")
@@ -1400,7 +1417,9 @@ async fn handle_obs_stuff(
                 obs_client
                     .hotkeys()
                     .trigger_by_sequence("OBS_KEY_U", super_key)
-                    .await?
+                    .await?;
+
+                Ok(())
             }
             "!all" => {
                 // match splitmsg[1].as_str() {}
@@ -1430,8 +1449,10 @@ async fn handle_obs_stuff(
                         SINGLE_SETTING_VALUE_TYPE,
                         &obs_client,
                     )
-                    .await?
+                    .await?;
                 }
+            
+                Ok(())
 
                 // iterate through all and call
                 // X Funtion
@@ -1511,6 +1532,8 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
+
+                Ok(())
             }
             "!reset" => {
                 obs_client
@@ -1533,6 +1556,8 @@ async fn handle_obs_stuff(
                     .remove(&source, &default_sdf_effects_filter_name)
                     .await
                     .expect("Error Deleting Stream FX Default Filter");
+
+                Ok(())
             }
             "!norm" => {
                 let source = if splitmsg.len() < 2 {
@@ -1548,28 +1573,23 @@ async fn handle_obs_stuff(
                     filter: &default_stream_fx_filter_name,
                     enabled: true,
                 };
-                match obs_client.filters().set_enabled(filter_enabled).await {
-                    Ok(_) => {}
-                    Err(_) => continue,
-                }
+                obs_client.filters().set_enabled(filter_enabled).await?;
+
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_scroll_filter_name,
                     enabled: true,
                 };
-                match obs_client.filters().set_enabled(filter_enabled).await {
-                    Ok(_) => {}
-                    Err(_) => continue,
-                }
+                obs_client.filters().set_enabled(filter_enabled).await?;
+
                 let filter_enabled = obws::requests::filters::SetEnabled {
                     source: &source,
                     filter: &default_blur_filter_name,
                     enabled: true,
                 };
-                match obs_client.filters().set_enabled(filter_enabled).await {
-                    Ok(_) => {}
-                    Err(_) => continue,
-                }
+                obs_client.filters().set_enabled(filter_enabled).await?;
+
+                Ok(())
 
                 // This is ruining out life
                 // we need a better set of defaults for the SDF
@@ -1588,7 +1608,7 @@ async fn handle_obs_stuff(
             "!new_filters" => {
                 let source = splitmsg[1].as_str();
                 if source == "BeginCam" {
-                    continue;
+                    return Err(anyhow!("Say no to BeginCam source filters"));
                 }
 
                 // let scroll_filter_name = "Move_Scroll";
@@ -1609,6 +1629,8 @@ async fn handle_obs_stuff(
                 create_scroll_filters(source, &obs_client).await?;
                 create_blur_filters(source, &obs_client).await?;
                 create_outline_filter(source, &obs_client).await?;
+
+                Ok(())
             }
 
             "!shark" => {
@@ -1642,6 +1664,8 @@ async fn handle_obs_stuff(
                     settings: Some(new_settings),
                 };
                 obs_client.filters().create(new_filter).await?;
+
+                Ok(())
             }
             "!top" => {
                 let scene_item = splitmsg[1].as_str();
@@ -1655,6 +1679,7 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+                Ok(())
             }
             "!bottom" => {
                 let scene_item = splitmsg[1].as_str();
@@ -1675,6 +1700,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
             "!update_move" => {
                 let scene_item = splitmsg[1].as_str();
@@ -1700,6 +1727,8 @@ async fn handle_obs_stuff(
                     enabled: true,
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
+
+                Ok(())
             }
             "!create_move" => {
                 // Should this create or should it modify a filter?
@@ -1712,6 +1741,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
 
             // This should read in sources,
@@ -1739,6 +1770,8 @@ async fn handle_obs_stuff(
                     )
                     .await?;
                 }
+
+                Ok(())
             }
 
             // We need to check if the user is begin
@@ -1746,7 +1779,7 @@ async fn handle_obs_stuff(
             "!create_filters_for_source" => {
                 let source = splitmsg[1].as_str();
                 if source != "kidalex" {
-                    continue;
+                   return Err(anyhow!("No create filters for kidalex"));
                 }
 
                 let filters = obs_client.filters().list(source).await?;
@@ -1838,32 +1871,26 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
             "!3d" => {
                 let source = splitmsg[1].as_str();
                 let filter_setting_name = splitmsg[2].as_str();
 
                 if !camera_types_per_filter.contains_key(&filter_setting_name) {
-                    continue;
+                    return Err(anyhow!("not a valid camera type"));
                 }
 
                 let camera_number =
                     camera_types_per_filter[&filter_setting_name];
 
                 let filter_details =
-                    obs_client.filters().get(&source, &"3D Transform").await;
+                    obs_client.filters().get(&source, &"3D Transform").await?;
 
-                let filt: SourceFilter;
-
-                match filter_details {
-                    Ok(val) => {
-                        filt = val;
-                    }
-                    Err(_) => continue,
-                }
 
                 let mut new_settings =
-                    serde_json::from_value::<StreamFXSettings>(filt.settings)
+                    serde_json::from_value::<StreamFXSettings>(filter_details.settings)
                         .unwrap();
 
                 // resetting this Camera Mode
@@ -1885,6 +1912,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
 
             // =========== //
@@ -1899,7 +1928,9 @@ async fn handle_obs_stuff(
                     &splitmsg,
                     &obs_client,
                 )
-                .await?
+                .await?;
+
+                Ok(())
             }
 
             "!spinx" => {
@@ -1911,7 +1942,9 @@ async fn handle_obs_stuff(
                     &splitmsg,
                     &obs_client,
                 )
-                .await?
+                .await?;
+
+                Ok(())
             }
 
             "!spiny" => {
@@ -1923,7 +1956,9 @@ async fn handle_obs_stuff(
                     &splitmsg,
                     &obs_client,
                 )
-                .await?
+                .await?;
+
+                Ok(())
             }
 
             "!noblur" | "!unblur" => {
@@ -1939,6 +1974,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
 
             // !blur filter_name value duration
@@ -1960,6 +1997,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await;
+
+                Ok(())
             }
 
             // !scrollx kirby 100
@@ -2039,6 +2078,8 @@ async fn handle_obs_stuff(
 
                     // thread::sleep(Duration::from_millis(duration));
                 }
+
+                Ok(())
             }
 
             "!source" => {
@@ -2071,6 +2112,8 @@ async fn handle_obs_stuff(
                     };
 
                 println!("Source: {:?}", settings);
+
+                Ok(())
             }
 
             "!outline" => {
@@ -2082,6 +2125,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
 
             "!scroll" => {
@@ -2095,6 +2140,8 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
+
+                Ok(())
             }
 
             "!move" => {
@@ -2107,6 +2154,8 @@ async fn handle_obs_stuff(
                     let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
                     move_source(source, x, y, &obs_client).await?;
                 }
+
+                Ok(())
             }
 
             "!grow" | "!scale" => {
@@ -2158,7 +2207,9 @@ async fn handle_obs_stuff(
                 obs_client
                     .scene_items()
                     .set_transform(set_transform)
-                    .await?
+                    .await?;
+
+                Ok(())
             }
 
             // ==========================================================================
@@ -2180,6 +2231,8 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
+
+                Ok(())
             }
 
             "!no_sdf" => {
@@ -2199,43 +2252,43 @@ async fn handle_obs_stuff(
                     overlay: None,
                 };
                 obs_client.filters().set_settings(new_settings).await?;
+                
+                Ok(())
             }
 
-            "!fs" => {
-                println!("Trying to Read Filters");
-                let filters = obs_client.filters().list("BeginCam").await?;
-                println!("Filters {:?}", filters);
-                client
-                    .say(twitch_username.clone(), format!("{:?}", filters))
-                    .await?;
-            }
-            "!filter" => {
-                let (_command, words) =
-                    msg.message_text.split_once(" ").unwrap();
-
-                println!("Finding Filter Details {:?}", words);
-
-                let filter_details = match obs_client
-                    .filters()
-                    .get("BeginCam", words)
-                    .await
-                {
-                    Ok(details) => details,
-                    Err(_) => {
-                        println!("Error Fetching Filter Details: {:?}", words);
-                        continue;
-                    }
-                };
-
-                println!("Filter Details {:?}", filter_details);
-
-                client
-                    .say(
-                        twitch_username.clone(),
-                        format!("{:?}", filter_details),
-                    )
-                    .await?;
-            }
+            // needs client/twitch_username for returning these values
+            // "!fs" => {
+            //     println!("Trying to Read Filters");
+            //     let filters = obs_client.filters().list("BeginCam").await?;
+            //     println!("Filters {:?}", filters);
+            //     client
+            //         .say(twitch_username.clone(), format!("{:?}", filters))
+            //         .await?;
+            //
+            //     Ok(())
+            // }
+            // "!filter" => {
+            //     let (_command, words) =
+            //         msg.message_text.split_once(" ").unwrap();
+            //
+            //     println!("Finding Filter Details {:?}", words);
+            //
+            //     let filter_details = obs_client
+            //         .filters()
+            //         .get("BeginCam", words)
+            //         .await?;
+            //
+            //     println!("Filter Details {:?}", filter_details);
+            //
+            //     client
+            //         .say(
+            //             twitch_username.clone(),
+            //             format!("{:?}", filter_details),
+            //         )
+            //         .await?;
+            //
+            //     Ok(())
+            // }
             "!rand" => {
                 // Oh it fails here!!!
                 let amount = splitmsg[1].as_str();
@@ -2243,13 +2296,7 @@ async fn handle_obs_stuff(
                 println!("Attempting!!!!");
 
                 // how do I handle that
-                let float_amount = match amount.parse::<f32>() {
-                    Ok(val) => val,
-                    Err(_) => {
-                        println!("Error Parsing User Rand val");
-                        continue;
-                    }
-                };
+                let float_amount = amount.parse::<f32>()?;
 
                 // How do I convert this amount to float
                 // Now I need to use this
@@ -2276,6 +2323,7 @@ async fn handle_obs_stuff(
                 // So this is the call of it ???
                 obs_client.filters().set_settings(new_settings).await?;
                 // .unwrap();
+                Ok(())
             }
 
             // Rename These Commands
@@ -2283,13 +2331,17 @@ async fn handle_obs_stuff(
                 obs_client
                     .hotkeys()
                     .trigger_by_sequence("OBS_KEY_L", super_key)
-                    .await?
+                    .await?;
+
+                Ok(())
             }
             "!code" => {
                 obs_client
                     .hotkeys()
                     .trigger_by_sequence("OBS_KEY_H", super_key)
-                    .await?
+                    .await?;
+
+                Ok(())
             }
 
             "!Primary" => {
@@ -2298,10 +2350,13 @@ async fn handle_obs_stuff(
                     .scenes()
                     .set_current_program_scene(&obs_test_scene)
                     .await?;
+
+                Ok(())
             }
-            _ => {}
+            _ => {
+            Ok(())
         }
-    }
+}
 }
 
 // ==============================================================================
