@@ -582,10 +582,11 @@ async fn move_source(
         source,
         ..Default::default()
     };
-    let id = obs_client.scene_items().id(id_search).await?;
 
-    // let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
-    // let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
+    let id = match obs_client.scene_items().id(id_search).await {
+        Ok(val) => val,
+        Err(_) => return Ok(()),
+    };
 
     let new_position = Position {
         x: Some(x),
@@ -1350,48 +1351,11 @@ async fn handle_obs_stuff(
             command: true,
         };
 
-        // let source = "shark";
         let source = "BeginCam";
+        // let source = "shark";
         // let source = "Screen";
 
-        // TODO: look up by effect setting name
-        // let filter_name = "Move_SDF_Effects";
-        // let filter_name = "Move_Stream_FX";
-
-        // TODO: Implement these commands
-        //   !3d
-        //   !outline
-        //   !scroll
-        //   !blur
-        //   !color
-
-        let mut camera_types_per_filter = HashMap::new();
-        camera_types_per_filter.insert("Corners.TopLeft.X", 2);
-
-        camera_types_per_filter.insert("Corners.BottomLeft.Y", 0);
-        camera_types_per_filter.insert("Corners.TopLeft.X", 0);
-        camera_types_per_filter.insert("Corners.TopLeft.Y", 0);
-        camera_types_per_filter.insert("Filter.Rotation.Z", 0);
-        camera_types_per_filter.insert("Filter.Shear.X", 0);
-        camera_types_per_filter.insert("Filter.Transform.Rotation.Z", 0);
-        camera_types_per_filter.insert("Rotation.X", 0);
-        camera_types_per_filter.insert("Rotation.Y", 0);
-        camera_types_per_filter.insert("Rotation.Z", 0);
-
-        // Come Back to Skew
-        // camera_types_per_filter.insert("Shear.X", 0);
-        // camera_types_per_filter.insert("Skew.X", 0);
-
-        // This is 1
-        camera_types_per_filter.insert("Position.X", 1);
-        camera_types_per_filter.insert("Position.Y", 1);
-        // camera_types_per_filter.insert("Rotation.X", 1);
-        // camera_types_per_filter.insert("Rotation.Y", 1);
-        // camera_types_per_filter.insert("Rotation.Z", 1);
-        camera_types_per_filter.insert("Scale.X", 1);
-        camera_types_per_filter.insert("Scale.Y", 1);
-        camera_types_per_filter.insert("Shear.X", 1);
-        camera_types_per_filter.insert("Shear.Y", 1);
+        let camera_types_per_filter = camera_type_config();
 
         let default_stream_fx_filter_name = "Default_Stream_FX";
         let default_scroll_filter_name = "Default_Scroll";
@@ -1416,15 +1380,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await?;
-
-                // "duration": 3000,
-                // "filter": "Scroll",
-                // "move_value_type": 0,
-                // "setting_float": 100.0,
-                // "setting_float_max": 488.0,
-                // "setting_float_min": 488.0,
-                // "setting_name": "speed_x",
-                // "value_type": 2
 
                 // !scroll speed_x -115200
                 let fake_input: Vec<String> = vec![
@@ -1759,14 +1714,19 @@ async fn handle_obs_stuff(
                 .await?;
             }
 
-            "!create_move_filters" => {
+            // This should read in sources,
+            // based on some naming-convention
+            // that want filters
+            // or
+            // read some config in
+            "!bootstrap" => {
                 let other_sources: Vec<String> = vec![
                     "snoop".to_string(),
-                    // "begin".to_string(),
-                    // "kirby".to_string(),
-                    // "shark".to_string(),
-                    // "gopher".to_string(),
-                    // "vibecat".to_string(),
+                    "begin".to_string(),
+                    "kirby".to_string(),
+                    "shark".to_string(),
+                    "gopher".to_string(),
+                    "vibecat".to_string(),
                 ];
                 for source in other_sources {
                     let filter_name = format!("Move_Source_{}", source);
@@ -1780,8 +1740,27 @@ async fn handle_obs_stuff(
                     .await?;
                 }
             }
-            "!create_defaults" => {
+
+            // We need to check if the user is begin
+            // or some quick way of locking down certain commands
+            "!create_filters_for_source" => {
                 let source = splitmsg[1].as_str();
+                if source != "kidalex" {
+                    continue;
+                }
+
+                let filters = obs_client.filters().list(source).await?;
+                for filter in filters {
+                    obs_client
+                        .filters()
+                        .remove(&source, &filter.name)
+                        .await
+                        .expect("Error Deleting Filter");
+                }
+                create_3d_transform_filters(source, &obs_client).await?;
+                create_scroll_filters(source, &obs_client).await?;
+                create_blur_filters(source, &obs_client).await?;
+                create_outline_filter(source, &obs_client).await?;
 
                 let new_settings = MoveSingleValueSetting {
                     move_value_type: Some(1),
@@ -1849,6 +1828,16 @@ async fn handle_obs_stuff(
                     settings: Some(new_settings),
                 };
                 obs_client.filters().create(new_filter).await?;
+
+                let filter_name = format!("Move_Source_{}", source);
+
+                create_move_source_filters(
+                    "Primary",
+                    &source,
+                    &filter_name,
+                    &obs_client,
+                )
+                .await?;
             }
             "!3d" => {
                 let source = splitmsg[1].as_str();
@@ -1937,7 +1926,7 @@ async fn handle_obs_stuff(
                 .await?
             }
 
-            "!noblur" => {
+            "!noblur" | "!unblur" => {
                 let source = splitmsg[1].as_str();
 
                 update_and_trigger_move_value_filter(
@@ -1956,16 +1945,21 @@ async fn handle_obs_stuff(
             "!blur" => {
                 let source = splitmsg[1].as_str();
 
-                update_and_trigger_move_value_filter(
+                let blur_size: f32 = splitmsg
+                    .get(2)
+                    .and_then(|x| x.trim().parse().ok())
+                    .unwrap_or(100.0);
+
+                _ = update_and_trigger_move_value_filter(
                     source,
                     "Move_Blur",
                     "Filter.Blur.Size",
-                    100.0,
+                    blur_size,
                     5000,
                     2,
                     &obs_client,
                 )
-                .await?;
+                .await;
             }
 
             // !scrollx kirby 100
@@ -2104,11 +2098,15 @@ async fn handle_obs_stuff(
             }
 
             "!move" => {
-                let source = splitmsg[1].as_str();
-
-                let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
-                let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
-                move_source(source, x, y, &obs_client).await?;
+                // TODO: should we add an error message here????
+                // TODO: Look at this fanciness
+                //       cafce25: if let [source, x, y, ..] = splitmsg {...}
+                if splitmsg.len() < 3 {
+                    let source = splitmsg[1].as_str();
+                    let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
+                    let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
+                    move_source(source, x, y, &obs_client).await?;
+                }
             }
 
             "!grow" | "!scale" => {
