@@ -1238,7 +1238,7 @@ async fn handle_obs_stuff(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        match x(&obs_client, &splitmsg).await {
+        match handle_obs_commands(&obs_client, &splitmsg).await {
             Ok(_) => continue,
             Err(err) => {
                 eprintln!("{err}");
@@ -1248,10 +1248,7 @@ async fn handle_obs_stuff(
     }
 }
 
-// async fn x(obs_client: OBSClient, splitmsg: Vec<String>) -> Result<()> {
-
-
-async fn x(
+async fn handle_obs_commands(
     obs_client: &OBSClient, 
     splitmsg: &Vec<String>,
 ) -> Result<()> {
