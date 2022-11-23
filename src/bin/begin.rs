@@ -720,6 +720,69 @@ async fn create_blur_filters(
     Ok(())
 }
 
+async fn fetch_source_settings(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<MoveSourceFilterSettings> {
+    let id_search = obws::requests::scene_items::Id {
+        scene,
+        source,
+        ..Default::default()
+    };
+    let id = obs_client.scene_items().id(id_search).await?;
+
+    let settings = match obs_client.scene_items().transform(scene, id).await {
+        Ok(val) => val,
+        Err(err) => {
+            println!("Error Fetching Transform Settings: {:?}", err);
+            let blank_transform =
+                obws::responses::scene_items::SceneItemTransform {
+                    ..Default::default()
+                };
+            blank_transform
+        }
+    };
+
+    let transform_text = format!(
+        "pos: x {} y {} rot: 0.0 bounds: x {} y {} crop: l {} t {} r {} b {}",
+        settings.position_x,
+        settings.position_y,
+        settings.bounds_width,
+        settings.bounds_height,
+        settings.crop_left,
+        settings.crop_top,
+        settings.crop_right,
+        settings.crop_bottom
+    );
+
+    let new_settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(Coordinates {
+            x: Some(settings.bounds_width),
+            y: Some(settings.bounds_height),
+        }),
+        scale: Some(Coordinates {
+            x: Some(settings.scale_x),
+            y: Some(settings.scale_y),
+        }),
+        position: Some(Coordinates {
+            x: Some(settings.position_x),
+            y: Some(settings.position_y),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            left: Some(settings.crop_left as f32),
+            right: Some(settings.crop_right as f32),
+            bottom: Some(settings.crop_bottom as f32),
+            top: Some(settings.crop_top as f32),
+        }),
+        transform_text: Some(transform_text.to_string()),
+    };
+
+    Ok(new_settings)
+}
+
 // we need to take in base settings
 fn top_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
     let position_x = 1662.0;
@@ -806,42 +869,50 @@ fn custom_filter_settings(
     settings
 }
 
-fn bottom_corner_filter_settings(source: &str) -> MoveSourceFilterSettings {
-    let position_x = 12.0;
-    let position_y = 878.0;
-
-    let bounds_x = 251.0;
-    let bounds_y = 243.0;
-
-    let left = 0.0;
-    let top = 0.0;
-    let bottom = 0.0;
-    let right = 0.0;
-
-    let settings = MoveSourceFilterSettings {
-        source: Some(source.to_string()),
-        duration: Some(4444),
-        bounds: Some(Coordinates {
-            x: Some(bounds_x),
-            y: Some(bounds_y),
-        }),
-        scale: Some(Coordinates {
-            x: Some(1.0),
-            y: Some(1.0),
-        }),
-        position: Some(Coordinates {
-            x: Some(position_x),
-            y: Some(position_y),
-        }),
-        crop: Some(MoveSourceCropSetting {
-            left: Some(0.0),
-            top: Some(0.0),
-            right: Some(0.0),
-            bottom: Some(0.0),
-        }),
-        transform_text: Some(format!("pos: x {position_x} y {position_y} rot: 0.0 bounds: x {bounds_x} y {bounds_y} crop: l {left} t {top} r {right} b {bottom}").to_string())
+fn bottom_corner_filter_settings(
+    source: &str,
+    mut base_settings: MoveSourceFilterSettings,
+) -> MoveSourceFilterSettings {
+    let new_coords = Coordinates {
+        x: Some(12.0),
+        y: Some(878.0),
     };
-    settings
+    base_settings.position = Some(new_coords);
+    // base_settings.position.x = Some(12.0);
+    // base_settings.position.y = Some(878.0);
+    base_settings
+    // let position_x = 12.0;
+    // let position_y = 878.0;
+
+    //     let left = 0.0;
+    //     let top = 0.0;
+    //     let bottom = 0.0;
+    //     let right = 0.0;
+
+    //     let settings = MoveSourceFilterSettings {
+    //         source: Some(source.to_string()),
+    //         duration: Some(4444),
+    //         bounds: Some(Coordinates {
+    //             x: Some(bounds_x),
+    //             y: Some(bounds_y),
+    //         }),
+    //         scale: Some(Coordinates {
+    //             x: Some(1.0),
+    //             y: Some(1.0),
+    //         }),
+    //         position: Some(Coordinates {
+    //             x: Some(position_x),
+    //             y: Some(position_y),
+    //         }),
+    //         crop: Some(MoveSourceCropSetting {
+    //             left: Some(0.0),
+    //             top: Some(0.0),
+    //             right: Some(0.0),
+    //             bottom: Some(0.0),
+    //         }),
+    //         transform_text: Some(format!("pos: x {position_x} y {position_y} rot: 0.0 bounds: x {bounds_x} y {bounds_y} crop: l {left} t {top} r {right} b {bottom}").to_string())
+    //     };
+    //     settings
 }
 
 fn create_move_source_filter_settings(
@@ -1633,8 +1704,14 @@ async fn handle_obs_stuff(
             "!bottom" => {
                 let scene_item = splitmsg[1].as_str();
 
+                let settings =
+                    fetch_source_settings("Primary", &scene_item, &obs_client)
+                        .await?;
+
+                //
                 // async fn source_details()
-                let new_settings = bottom_corner_filter_settings(scene_item);
+                let new_settings =
+                    bottom_corner_filter_settings(scene_item, settings);
                 let filter_name = format!("Move_Source_{}", scene_item);
                 move_with_move_source(
                     &scene_item,
@@ -1647,8 +1724,12 @@ async fn handle_obs_stuff(
             "!update_move" => {
                 let scene_item = splitmsg[1].as_str();
                 let filter_name = format!("Move_Source_{}", scene_item);
+                let settings =
+                    fetch_source_settings("Primary", &scene_item, &obs_client)
+                        .await?;
 
-                let new_settings = bottom_corner_filter_settings(scene_item);
+                let new_settings =
+                    bottom_corner_filter_settings(scene_item, settings);
                 update_move_source_filters(
                     "Primary",
                     scene_item,
