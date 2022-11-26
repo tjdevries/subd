@@ -1,4 +1,4 @@
-use crate::move_transistion;
+use crate::move_transition;
 use crate::sdf_effects;
 use crate::stream_fx;
 use anyhow::Result;
@@ -164,7 +164,7 @@ pub async fn update_and_trigger_move_value_filter(
         }?;
 
     let mut new_settings = serde_json::from_value::<
-        move_transistion::MoveSingleValueSetting,
+        move_transition::MoveSingleValueSetting,
     >(filter_details.settings)
     .unwrap();
 
@@ -541,7 +541,7 @@ pub async fn create_outline_filter(
 
     // I think this is fucking shit up
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
         filter: String::from("Outline"),
         duration: Some(7000),
@@ -576,7 +576,7 @@ pub async fn create_blur_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
         filter: String::from("Blur"),
         duration: Some(7000),
@@ -611,7 +611,7 @@ pub async fn create_scroll_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
         filter: String::from("Scroll"),
         duration: Some(7000),
@@ -646,7 +646,7 @@ pub async fn create_3d_transform_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
         filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
@@ -701,7 +701,7 @@ pub async fn create_filters_for_source(
     create_blur_filters(source, &obs_client).await?;
     create_outline_filter(source, &obs_client).await?;
 
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
         filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
@@ -716,7 +716,7 @@ pub async fn create_filters_for_source(
     obs_client.filters().create(new_filter).await?;
 
     // This is For Scroll
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
         filter: String::from("Scroll"),
         duration: Some(7000),
@@ -731,7 +731,7 @@ pub async fn create_filters_for_source(
     obs_client.filters().create(new_filter).await?;
 
     // This is For Blur
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
         filter: String::from("Blur"),
         filter_blur_size: Some(1.0),
@@ -749,7 +749,7 @@ pub async fn create_filters_for_source(
     obs_client.filters().create(new_filter).await?;
 
     // This is for SDF Effects
-    let new_settings = move_transistion::MoveSingleValueSetting {
+    let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
         filter: String::from("Outline"),
         duration: Some(7000),
@@ -910,7 +910,7 @@ pub async fn handle_user_input(
         }?;
 
     let mut new_settings = serde_json::from_value::<
-        move_transistion::MoveSingleValueSetting,
+        move_transition::MoveSingleValueSetting,
     >(filter_details.settings)
     .unwrap();
 
@@ -1005,7 +1005,7 @@ pub fn camera_type_config() -> HashMap<&'static str, i32> {
 async fn update_move_source_filters(
     source: &str,
     filter_name: &str,
-    new_settings: move_transistion::MoveSourceFilterSettings,
+    new_settings: move_transition::MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let new_filter = obws::requests::filters::SetSettings {
@@ -1021,23 +1021,23 @@ async fn update_move_source_filters(
 
 fn create_move_source_filter_settings(
     source: &str,
-) -> move_transistion::MoveSourceFilterSettings {
-    let settings = move_transistion::MoveSourceFilterSettings {
+) -> move_transition::MoveSourceFilterSettings {
+    let settings = move_transition::MoveSourceFilterSettings {
         source: Some(source.to_string()),
         duration: Some(4444),
-        bounds: Some(move_transistion::Coordinates {
+        bounds: Some(move_transition::Coordinates {
             x: Some(251.0),
             y: Some(234.0),
         }),
-        scale: Some(move_transistion::Coordinates {
+        scale: Some(move_transition::Coordinates {
             x: Some(1.0),
             y: Some(1.0),
         }),
-        position: Some(move_transistion::Coordinates {
+        position: Some(move_transition::Coordinates {
             x: Some(1662.0),
             y: Some(13.0),
         }),
-        crop: Some(move_transistion::MoveSourceCropSetting {
+        crop: Some(move_transition::MoveSourceCropSetting {
             bottom: Some(0.0),
             left: Some(0.0),
             right: Some(0.0),
@@ -1050,11 +1050,11 @@ fn create_move_source_filter_settings(
 
 // This needs to take in Custom Filters
 pub fn custom_filter_settings(
-    mut base_settings: move_transistion::MoveSourceFilterSettings,
+    mut base_settings: move_transition::MoveSourceFilterSettings,
     x: f32,
     y: f32,
-) -> move_transistion::MoveSourceFilterSettings {
-    base_settings.position = Some(move_transistion::Coordinates {
+) -> move_transition::MoveSourceFilterSettings {
+    base_settings.position = Some(move_transition::Coordinates {
         x: Some(x),
         y: Some(y),
     });
@@ -1065,11 +1065,11 @@ async fn fetch_source_settings(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<move_transistion::MoveSourceFilterSettings> {
+) -> Result<move_transition::MoveSourceFilterSettings> {
     let id = match find_id(source, &obs_client).await {
         Ok(val) => val,
         Err(_) => {
-            return Ok(move_transistion::MoveSourceFilterSettings {
+            return Ok(move_transition::MoveSourceFilterSettings {
                 ..Default::default()
             })
         }
@@ -1099,22 +1099,22 @@ async fn fetch_source_settings(
         settings.crop_bottom
     );
 
-    let new_settings = move_transistion::MoveSourceFilterSettings {
+    let new_settings = move_transition::MoveSourceFilterSettings {
         source: Some(source.to_string()),
         duration: Some(4444),
-        bounds: Some(move_transistion::Coordinates {
+        bounds: Some(move_transition::Coordinates {
             x: Some(settings.bounds_width),
             y: Some(settings.bounds_height),
         }),
-        scale: Some(move_transistion::Coordinates {
+        scale: Some(move_transition::Coordinates {
             x: Some(settings.scale_x),
             y: Some(settings.scale_y),
         }),
-        position: Some(move_transistion::Coordinates {
+        position: Some(move_transition::Coordinates {
             x: Some(settings.position_x),
             y: Some(settings.position_y),
         }),
-        crop: Some(move_transistion::MoveSourceCropSetting {
+        crop: Some(move_transition::MoveSourceCropSetting {
             left: Some(settings.crop_left as f32),
             right: Some(settings.crop_right as f32),
             bottom: Some(settings.crop_bottom as f32),
@@ -1143,7 +1143,7 @@ async fn find_id(
 // Then calls the filter
 async fn move_with_move_source(
     filter_name: &str,
-    new_settings: move_transistion::MoveSourceFilterSettings,
+    new_settings: move_transition::MoveSourceFilterSettings,
     obs_client: &obws::Client,
 ) -> Result<()> {
     update_move_source_filters(
