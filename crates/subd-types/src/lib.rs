@@ -119,6 +119,8 @@ pub enum TwitchSubLevel {
     Tier3,
 }
 
+// cafce25: put PartialOrd into the list in derive
+// cafce25: Ord is ordering
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Role {
     GithubSponsor { tier: String },

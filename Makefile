@@ -1,5 +1,5 @@
 default:
-	cargo build --bin begin
+	RUST_BACKTRACE=1 cargo build --bin begin
 	# cargo build
 	# cargo check
 
