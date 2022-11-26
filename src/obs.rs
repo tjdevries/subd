@@ -33,12 +33,6 @@ const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
         command: true,
     };
 
-#[derive(Debug)]
-pub struct Scene {
-    pub id: i64,
-    pub name: String,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ScrollSettings {
     #[serde(rename = "speed_x")]
@@ -65,8 +59,6 @@ pub struct BlurSetting {
     #[serde(rename = "Filter.Blur.Version")]
     pub version: Option<u64>,
 }
-
-// ===========================================================================================================
 
 // =========================== //
 // 3D Transform Based Filters  //
@@ -126,6 +118,32 @@ pub async fn trigger_3d(
     .await
 }
 
+pub async fn spin(
+    source: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_setting_name = match filter_setting_name {
+        "spin" | "z" => "Rotation.Z",
+        "spinx" | "x" => "Rotation.X",
+        "spiny" | "y" => "Rotation.Y",
+        _ => "Rotation.Z",
+    };
+    update_and_trigger_move_value_filter(
+        source,
+        DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        filter_setting_name,
+        filter_value,
+        duration,
+        2, // not sure if this is the right value
+        &obs_client,
+    )
+    .await?;
+    Ok(())
+}
+
 // =============================== //
 // Updating and Triggering Filters //
 // =============================== //
@@ -156,8 +174,6 @@ pub async fn update_and_trigger_move_value_filter(
 
     new_settings.value_type = value_type;
 
-    println!("\n!do New Settings: {:?}", new_settings);
-
     // Update the Filter
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
@@ -178,9 +194,9 @@ pub async fn update_and_trigger_move_value_filter(
 
     Ok(())
 }
-// =================== //
-// More Specific Moves //
-// =================== //
+// =============== //
+// Scaling Sources //
+// =============== //
 
 pub async fn scale_source(
     source: &str,
@@ -237,32 +253,6 @@ pub async fn scale(
     Ok(())
 }
 
-pub async fn spin(
-    source: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let filter_setting_name = match filter_setting_name {
-        "spin" | "z" => "Rotation.Z",
-        "spinx" | "x" => "Rotation.X",
-        "spiny" | "y" => "Rotation.Y",
-        _ => "Rotation.Z",
-    };
-    update_and_trigger_move_value_filter(
-        source,
-        DEFAULT_3D_TRANSFORM_FILTER_NAME,
-        filter_setting_name,
-        filter_value,
-        duration,
-        2, // not sure if this is the right value
-        &obs_client,
-    )
-    .await?;
-    Ok(())
-}
-
 // ================ //
 // Just Move Things //
 // ================ //
@@ -279,8 +269,6 @@ pub async fn move_source(
         Err(_) => return Ok(()),
     };
 
-    // This Could be one thing
-    //  just needs x, and y
     let new_position = Position {
         x: Some(x),
         y: Some(y),
@@ -375,9 +363,8 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
 
     Ok(())
 
-    // This is ruining out life
-    // we need a better set of defaults for the SDF
-    // only should turn off filters
+    // This is ruining our life
+    // we need a better set of defaults for the SDF only should turn off filters
 
     // let filter_enabled = obws::requests::filters::SetEnabled {
     //     source: &source,
@@ -391,8 +378,8 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
 }
 
 pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
-    // TODO: Move this somewhere else
-    // Make a constant or something
+    // This should be something more abstract
+    // // Like Blur Begin
     _ = update_and_trigger_move_value_filter(
         source,
         "Move_Blur",
@@ -404,6 +391,7 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     )
     .await;
 
+    // What are these doing here like this?
     let filter_name = "Move_Source";
     let filter_setting_name = "speed_x";
     let filter_value = -115200.0;
