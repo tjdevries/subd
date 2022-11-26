@@ -1,12 +1,25 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
+use reqwest::Client as ReqwestClient;
 use subd_types::{Event, UserID, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
+use twitch_api2::{
+    helix::subscriptions::GetBroadcasterSubscriptionsRequest,
+    twitch_oauth2::UserToken, HelixClient,
+};
 use twitch_irc::{
     login::StaticLoginCredentials, message::ServerMessage, ClientConfig,
     SecureTCPTransport, TwitchIRCClient,
 };
+
+// fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
+//     let twitch_username = subd_types::consts::get_twitch_bot_username();
+//     ClientConfig::new_simple(StaticLoginCredentials::new(
+//         twitch_username,
+//         Some(subd_types::consts::get_twitch_bot_oauth()),
+//     ))
+// }
 
 #[allow(dead_code)]
 pub struct TwitchChat {
@@ -172,4 +185,21 @@ impl EventHandler for TwitchMessageHandler {
 
         // Ok(())
     }
+}
+
+pub async fn get_twitch_sub_count<'a>(
+    client: &HelixClient<'a, ReqwestClient>,
+    token: UserToken,
+) -> usize {
+    let req = GetBroadcasterSubscriptionsRequest::builder()
+        .broadcaster_id(token.user_id.clone())
+        .first("1".to_string())
+        .build();
+
+    let response = client
+        .req_get(req, &token)
+        .await
+        .expect("Error Fetching Twitch Subs");
+
+    response.total.unwrap() as usize
 }

@@ -18,6 +18,7 @@ pub mod user_messages {
 }
 
 impl user_messages::Model {
+    #[allow(dead_code)]
     pub async fn save(self, conn: &mut PgConnection) -> Result<Self> {
         Ok(sqlx::query_as!(
             Self,
@@ -94,8 +95,9 @@ pub mod user_roles {
     }
 }
 
+#[allow(dead_code)]
 impl user_roles::Model {
-    pub async fn save(self, conn: &mut PgConnection) -> Result<Self> {
+    pub async fn save(self, _conn: &mut PgConnection) -> Result<Self> {
         // Ok(sqlx::query_as!(
         //     Self,
         //     r#"

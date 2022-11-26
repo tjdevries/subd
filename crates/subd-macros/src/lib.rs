@@ -28,7 +28,7 @@ use syn::Visibility;
 // }
 
 #[proc_macro_attribute]
-pub fn database_model(attr: TokenStream, tokens: TokenStream) -> TokenStream {
+pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let input = parse_macro_input!(tokens as ItemMod);
     let input_content =
         input.content.expect("Must have content inside of module").1;

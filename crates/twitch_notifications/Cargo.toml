@@ -1,5 +1,5 @@
 [package]
-name = "twitch_chat"
+name = "twitch_notifications"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,13 +7,11 @@ edition = "2021"
 
 [dependencies]
 subd-types = { path = "../subd-types" }
-events = { path = "../events" }
 
 anyhow.workspace = true
-async-trait.workspace = true
-reqwest.workspace = true
-sqlx.workspace = true
+futures.workspace = true
+tokio-tungstenite.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-twitch-irc.workspace = true
-twitch_api2 = { workspace = true, features = [ "pubsub", "twitch_oauth2" ]}
+tungstenite.workspace = true
+twitch_api2.workspace = true
