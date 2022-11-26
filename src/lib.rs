@@ -1,5 +1,5 @@
 pub mod commands;
-pub mod move_transistion;
+pub mod move_transition;
 pub mod obs;
 pub mod raffle;
 pub mod sdf_effects;
