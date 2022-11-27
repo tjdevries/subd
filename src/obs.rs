@@ -22,8 +22,12 @@ const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
 const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
+
 const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
-const DEFAULT_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+
+// This ain't the name
+const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
@@ -73,34 +77,53 @@ pub async fn trigger_3d(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    // Look up the camera type
-    // Not sure if this is working
     let camera_types_per_filter = camera_type_config();
     // if !camera_types_per_filter.contains_key(&filter_setting_name) {
     //     continue;
     // }
+
+    // THIS CRASHESSSSSSS
+    // WE NEED TO LOOK UP
     let camera_number = camera_types_per_filter[&filter_setting_name];
 
     // Look up information about the current "3D Transform" filter
+    // IS THIS FUCKED????
     let filter_details = obs_client
         .filters()
-        .get(&source, DEFAULT_3D_TRANSFORM_FILTER_NAME)
+        .get(&source, THE_3D_TRANSFORM_FILTER_NAME)
         .await;
 
+    // Does this leave early??????
     let filt: SourceFilter = match filter_details {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
-    let mut new_settings =
-        serde_json::from_value::<stream_fx::StreamFXSettings>(filt.settings)
-            .unwrap();
+
+    // TODO: Explore we are seeing this:
+    // Error With New Settings: Error("missing field `Commit`", line: 0, column: 0)
+    // // IS THIS STILL HAPPENING???
+    let mut new_settings = match serde_json::from_value::<
+        stream_fx::StreamFXSettings,
+    >(filt.settings)
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error With New Settings: {:?}", e);
+            stream_fx::StreamFXSettings {
+                ..Default::default()
+            }
+        }
+    };
+
+    // I think we also want to return though!!!!
+    // and not continue on here
 
     // resetting this Camera Mode
     new_settings.camera_mode = Some(camera_number);
 
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
-        filter: DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        filter: THE_3D_TRANSFORM_FILTER_NAME,
         settings: new_settings,
         overlay: None,
     };
@@ -125,22 +148,33 @@ pub async fn spin(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let filter_setting_name = match filter_setting_name {
+    let setting_name = match filter_setting_name {
         "spin" | "z" => "Rotation.Z",
         "spinx" | "x" => "Rotation.X",
         "spiny" | "y" => "Rotation.Y",
         _ => "Rotation.Z",
     };
-    update_and_trigger_move_value_filter(
+
+    // hmmmmm
+    // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err` value: Error("missing field `filter`", line: 0, column: 0)',
+    // Shoudl we not crash???
+    match update_and_trigger_move_value_filter(
         source,
-        DEFAULT_3D_TRANSFORM_FILTER_NAME,
-        filter_setting_name,
+        THE_3D_TRANSFORM_FILTER_NAME,
+        setting_name,
         filter_value,
         duration,
         2, // not sure if this is the right value
         &obs_client,
     )
-    .await?;
+    .await
+    {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error Updating and Triggering Value in !spin {:?}", e);
+        }
+    }
+
     Ok(())
 }
 
@@ -163,10 +197,18 @@ pub async fn update_and_trigger_move_value_filter(
             Err(err) => Err(err),
         }?;
 
-    let mut new_settings = serde_json::from_value::<
+    let mut new_settings = match serde_json::from_value::<
         move_transition::MoveSingleValueSetting,
     >(filter_details.settings)
-    .unwrap();
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error: {:?}", e);
+            move_transition::MoveSingleValueSetting {
+                ..Default::default()
+            }
+        }
+    };
 
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
@@ -639,7 +681,7 @@ pub async fn create_3d_transform_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        filter: THE_3D_TRANSFORM_FILTER_NAME,
         kind: "streamfx-filter-transform",
         settings: Some(stream_fx_settings),
     };
@@ -648,7 +690,7 @@ pub async fn create_3d_transform_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
-        filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
+        filter: String::from(THE_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -703,7 +745,7 @@ pub async fn create_filters_for_source(
 
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
+        filter: String::from(THE_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -830,21 +872,29 @@ pub async fn print_filter_info(
     Ok(String::from(format!("{:?}", filter_details)))
 }
 
-pub async fn outline(obs_client: &OBSClient) -> Result<()> {
-    let filter_details =
-        match obs_client.filters().get(&"begin", &"Outline").await {
-            Ok(val) => val,
-            Err(_err) => {
-                return Ok(());
-            }
-        };
+// This just fetches settings around SDF Effects
+// AND NOTHING ELSE!!!
+pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
+    let filter_details = match obs_client
+        .filters()
+        .get(source, SDF_EFFECTS_FILTER_NAME)
+        .await
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error Getting Filter Details: {:?}", e);
+            return Ok(());
+        }
+    };
 
+    // TODO: This could through an Error Here
     let new_settings =
         serde_json::from_value::<sdf_effects::SDFEffectsSettings>(
             filter_details.settings,
         )
         .unwrap();
-    println!("\n\n\t~~~ Filters: {:?}\n\n", new_settings);
+
+    println!("\nFetched Settings: {:?}\n", new_settings);
 
     Ok(())
 }
@@ -920,6 +970,7 @@ pub async fn handle_user_input(
 
     new_settings.value_type = value_type;
 
+    // HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
     println!("\n!do New Settings: {:?}", new_settings);
 
     // Update the Filter

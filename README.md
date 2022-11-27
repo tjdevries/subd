@@ -4,29 +4,30 @@
 and to support your supporters regardless of where they support you.
 
 My goal is to have support for:
-- Twitch subs
+- Twitch viewers, subs, donators, memers,
 - Github Sponsors
+- Twitter supporters/shit-posters
+- Youtube comment Warriors/Tik-Tok Comment Therapists
 - `<more>`
 
 And then to have integrations with:
 - OBS
 - Browser Source
-- Twitch Chat
-- Twitch Moderation
-- (don't see any reason why it shouldn't be possible to do for YT)
+- Twitch Chat+Moderation
+- Discord
+- Twitter
 - Neovim
-- who knows :)
+- Whatever we want!!!!
 
 ## Status
 
-We are developing this on my twitch stream: [teej_dv](https://twitch.tv/teej_dv)
-
-Currently, we are building the different building blocks we need to start creating interesting information.
-Not much to see our try out here at this time.
+We are developing this on my twitch stream: [teej_dv](https://twitch.tv/teej_dv) and [beginbot](https://www.twitch.tv/beginbot)
 
 ## Development / Running
 
-There are several steps requied to set up `subd`. See [Developers](./DEVELOPERS.md) for more information.
+There are several steps required to set up `subd`. See [Developers](./DEVELOPERS.md) for more information.
+
+// -------------------------------------------------------------
 
 ## OBS Setup
 
