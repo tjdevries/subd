@@ -22,8 +22,12 @@ const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
 const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
+
 const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
-const DEFAULT_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+
+// This ain't the name
+const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
@@ -84,7 +88,7 @@ pub async fn trigger_3d(
     // Look up information about the current "3D Transform" filter
     let filter_details = obs_client
         .filters()
-        .get(&source, DEFAULT_3D_TRANSFORM_FILTER_NAME)
+        .get(&source, THE_3D_TRANSFORM_FILTER_NAME)
         .await;
 
     let filt: SourceFilter = match filter_details {
@@ -100,7 +104,7 @@ pub async fn trigger_3d(
 
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
-        filter: DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        filter: THE_3D_TRANSFORM_FILTER_NAME,
         settings: new_settings,
         overlay: None,
     };
@@ -133,7 +137,7 @@ pub async fn spin(
     };
     update_and_trigger_move_value_filter(
         source,
-        DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        THE_3D_TRANSFORM_FILTER_NAME,
         filter_setting_name,
         filter_value,
         duration,
@@ -639,7 +643,7 @@ pub async fn create_3d_transform_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: DEFAULT_3D_TRANSFORM_FILTER_NAME,
+        filter: THE_3D_TRANSFORM_FILTER_NAME,
         kind: "streamfx-filter-transform",
         settings: Some(stream_fx_settings),
     };
@@ -648,7 +652,7 @@ pub async fn create_3d_transform_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
-        filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
+        filter: String::from(THE_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -703,7 +707,7 @@ pub async fn create_filters_for_source(
 
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from(DEFAULT_3D_TRANSFORM_FILTER_NAME),
+        filter: String::from(THE_3D_TRANSFORM_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -830,21 +834,29 @@ pub async fn print_filter_info(
     Ok(String::from(format!("{:?}", filter_details)))
 }
 
-pub async fn outline(obs_client: &OBSClient) -> Result<()> {
-    let filter_details =
-        match obs_client.filters().get(&"begin", &"Outline").await {
-            Ok(val) => val,
-            Err(_err) => {
-                return Ok(());
-            }
-        };
+// This just fetches settings around SDF Effects
+// AND NOTHING ELSE!!!
+pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
+    let filter_details = match obs_client
+        .filters()
+        .get(source, SDF_EFFECTS_FILTER_NAME)
+        .await
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error Getting Filter Details: {:?}", e);
+            return Ok(());
+        }
+    };
 
+    // TODO: This could through an Error Here
     let new_settings =
         serde_json::from_value::<sdf_effects::SDFEffectsSettings>(
             filter_details.settings,
         )
         .unwrap();
-    println!("\n\n\t~~~ Filters: {:?}\n\n", new_settings);
+
+    println!("\nFetched Settings: {:?}\n", new_settings);
 
     Ok(())
 }

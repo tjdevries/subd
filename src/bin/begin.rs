@@ -6,13 +6,13 @@ use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
-use rodio::{Decoder, OutputStream};
+// use rodio::{Decoder, OutputStream};
 use server::commands;
 use server::users;
 use std::collections::HashSet;
 use std::fs;
-use std::fs::File;
-use std::io::BufReader;
+// use std::fs::File;
+// use std::io::BufReader;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use tracing_subscriber;
@@ -28,10 +28,13 @@ const DEFAULT_SCENE: &str = "Primary";
 
 // We need a secondary scene, where we put all the jokes
 const MEME_SCENE: &str = "memes";
+
+// THE WORD DEFAULT IS DANGEROUS
 const DEFAULT_SOURCE: &str = "begin";
+
+// THESE NAMES AIN'T RIGHT!!!!
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
-const DEFAULT_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 
 // Here you wait for OBS Events that are commands to trigger OBS
 async fn handle_obs_stuff(
@@ -80,22 +83,23 @@ async fn handle_obs_stuff(
             .get(4)
             .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
-        let filter_value =
-            splitmsg.get(3).map_or(0.0, |x| x.trim().parse().unwrap());
+        let filter_value = splitmsg
+            .get(3)
+            .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
 
-        // NOTE: If we want to extract other values like filter_setting_name and filter_value
+        // NOTE: If we want to extract values like filter_setting_name and filter_value
         // we need to figure a way to look up the defaults per command
+        // because they could be different types
+        // for now we are going to try and have them be the same
 
         match splitmsg[0].as_str() {
             // ================== //
             // Scrolling Sources //
             // ================== //
 
-            // !scroll SOURCE SCROLL_SETTING SPEED DURATION
-            // !scroll begin scroll_x 500 10000
-            // !scroll begin scroll_y 100 1000
+            // !scroll SOURCE SCROLL_SETTING SPEED DURATION (in milliseconds)
             // !scroll begin x 5 300
-            // !scroll begin y 50 3000
+            //
             // TODO: Stop using server::obs::handle_user_input
             "!scroll" => {
                 let default_filter_setting_name = String::from("speed_x");
@@ -110,7 +114,9 @@ async fn handle_obs_stuff(
                         _ => default_filter_setting_name,
                     };
 
-                server::obs::handle_user_input(
+                // TODO: THIS 2 is SUPERFLUOUS!!!
+                // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
+                match server::obs::handle_user_input(
                     source,
                     DEFAULT_MOVE_SCROLL_FILTER_NAME,
                     &filter_setting_name,
@@ -119,7 +125,16 @@ async fn handle_obs_stuff(
                     2,
                     &obs_client,
                 )
-                .await?;
+                .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "Error Triggering !scroll source: {:?} | {:?}",
+                            source, e
+                        )
+                    }
+                }
             }
 
             // ================= //
@@ -127,11 +142,14 @@ async fn handle_obs_stuff(
             // ================= //
             // TODO: Update outline to take a source
             "!outline" => {
-                let _source = splitmsg[1].as_str();
-                match server::obs::outline(&obs_client).await {
+                let source = splitmsg[1].as_str();
+                match server::obs::outline(source, &obs_client).await {
                     Ok(_) => {}
                     Err(e) => {
-                        println!("{:?}", e)
+                        println!(
+                            "Error Triggering !outline source: {:?} | {:?}",
+                            source, e
+                        )
                     }
                 }
             }
@@ -141,29 +159,15 @@ async fn handle_obs_stuff(
             // =============== //
             // Bluring Sources //
             // =============== //
-            // Update to take in 2 as a const
-            // TODO: we should print off error here
-            "!noblur" | "!unblur" => {
-                server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    0.0,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await?;
-            }
-
             "!blur" => {
                 let blur_size: f32 = splitmsg
                     .get(2)
                     .and_then(|x| x.trim().parse().ok())
                     .unwrap_or(100.0);
 
+                // THESE DON'T NEED THE GODDAMN 2!!!
                 // TODO: we should print off error here
-                _ = server::obs::update_and_trigger_move_value_filter(
+                match server::obs::update_and_trigger_move_value_filter(
                     source,
                     DEFAULT_MOVE_BLUR_FILTER_NAME,
                     "Filter.Blur.Size",
@@ -172,7 +176,39 @@ async fn handle_obs_stuff(
                     2,
                     &obs_client,
                 )
-                .await;
+                .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "Error Triggering !blur source: {:?} {:?}",
+                            source, e
+                        )
+                    }
+                }
+            }
+
+            // Update to take in 2 as a const
+            "!noblur" | "!unblur" => {
+                match server::obs::update_and_trigger_move_value_filter(
+                    source,
+                    DEFAULT_MOVE_BLUR_FILTER_NAME,
+                    "Filter.Blur.Size",
+                    0.0,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "Error Triggering !unblur/!noblur source: {:?} {:?}",
+                            source, e
+                        )
+                    }
+                }
             }
 
             // ====================== //
@@ -608,37 +644,38 @@ async fn handle_twitch_msg(
                 }
             }
             _ => {
-                for word in splitmsg {
-                    let sanitized_word = word.as_str().to_lowercase();
-                    let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+                // TODO: find an easy way to not start this code with a flag
+                // for word in splitmsg {
+                //     let sanitized_word = word.as_str().to_lowercase();
+                //     let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
-                    if mp3s.contains(&full_name) {
-                        // Works for Arch Linux
-                        let (_stream, stream_handle) =
-                            get_output_stream("pulse");
+                //     if mp3s.contains(&full_name) {
+                //         // Works for Arch Linux
+                //         let (_stream, stream_handle) =
+                //             get_output_stream("pulse");
 
-                        // Works for Mac
-                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+                //         // Works for Mac
+                //         // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
 
-                        let sink =
-                            rodio::Sink::try_new(&stream_handle).unwrap();
+                //         let sink =
+                //             rodio::Sink::try_new(&stream_handle).unwrap();
 
-                        let file = BufReader::new(
-                            File::open(format!(
-                                "./MP3s/{}.mp3",
-                                sanitized_word
-                            ))
-                            .unwrap(),
-                        );
+                //         let file = BufReader::new(
+                //             File::open(format!(
+                //                 "./MP3s/{}.mp3",
+                //                 sanitized_word
+                //             ))
+                //             .unwrap(),
+                //         );
 
-                        // TODO: Is there someway to suppress output here
-                        sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
+                //         // TODO: Is there someway to suppress output here
+                //         sink.append(
+                //             Decoder::new(BufReader::new(file)).unwrap(),
+                //         );
 
-                        sink.sleep_until_end();
-                    }
-                }
+                //         sink.sleep_until_end();
+                //     }
+                // }
             }
         };
     }

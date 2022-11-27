@@ -26,3 +26,22 @@ Real Examples:
 !scroll begin x 0
 !scroll begin y 0
 ```
+
+## !blur & !unblur
+
+Blur or Unblur the source passed in.
+
+```
+!blur SOURCE AMOUNT DURATION_TO_REACH_BLUR_AMOUNT
+```
+
+If you send in the Blur amount to 0,  it's unbluring.
+`!unblur SOURCE` and `!noblur SOURCE` do the same.
+
+```
+!blur begin 50
+!blur begin
+!blur begin 100 // This is the same as no value passed in
+!unblur begin
+!noblur begin
+```
