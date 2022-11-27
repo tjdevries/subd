@@ -83,6 +83,7 @@ async fn handle_obs_stuff(
             .get(4)
             .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
+        // WE PAINCIEDDD!!!!!!!
         let filter_value = splitmsg
             .get(3)
             .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
@@ -91,6 +92,7 @@ async fn handle_obs_stuff(
         // we need to figure a way to look up the defaults per command
         // because they could be different types
         // for now we are going to try and have them be the same
+        // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
 
         match splitmsg[0].as_str() {
             // ================== //
@@ -104,6 +106,7 @@ async fn handle_obs_stuff(
             "!scroll" => {
                 let default_filter_setting_name = String::from("speed_x");
 
+                // This is ok, because we have a different default
                 let filter_setting_name =
                     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
@@ -211,9 +214,9 @@ async fn handle_obs_stuff(
                 }
             }
 
-            // ====================== //
-            // 3D Transforming Sources//
-            // ====================== //
+            // =============== //
+            // Scaling Sources //
+            // =============== //
             "!grow" | "!scale" => {
                 let x: f32 = splitmsg
                     .get(2)
@@ -248,27 +251,60 @@ async fn handle_obs_stuff(
                 }
             }
 
-            // only spin is wonky
-            "!spin" | "!spinx" | "spiny" => {
-                // let command = &splitmsg[0];
-                let default_filter_setting_name = String::from("z");
+            // ====================== //
+            // 3D Transforming Sources//
+            // ====================== //
 
+            // This shit is annoying
+            // I almost want to divide it into 3 commands
+            // based on Camera Type
+            // and we have all 3
+            // that might be too much
+            // but i also might be exactly what we want
+            // only spin is wonky
+            // Should also add !spinz
+            "!spin" | "!spinx" | "spiny" => {
+                // HMMMMM
+                let default_filter_setting_name = String::from("z");
                 let filter_setting_name =
                     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
-                server::obs::spin(
+                match server::obs::spin(
                     source,
                     filter_setting_name,
                     filter_value,
                     duration,
                     &obs_client,
                 )
-                .await?
+                .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "Error triggering !spin/!spinx/!spiny {:?}",
+                            e
+                        );
+                    }
+                }
             }
 
+            // TODO: This should be 3 filters
+            // Perspective
+            // Corner Pin
+            // Orthographic
+
+            // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
+            // !3d begin Rotation.Z 3600 5000
+            //
+            // TODO: This is NOT Working!
             "!3d" => {
-                // TODO: This will error!!!
-                let filter_setting_name = splitmsg[2].as_str();
+                // If we don't at least have a filter_name, we can't proceed
+                if splitmsg.len() < 3 {
+                    continue;
+                }
+
+                let filter_setting_name = &splitmsg[2];
+
                 match server::obs::trigger_3d(
                     source,
                     filter_setting_name,
@@ -280,7 +316,10 @@ async fn handle_obs_stuff(
                 {
                     Ok(_) => {}
                     Err(e) => {
-                        println!("{:?}", e)
+                        println!(
+                            "Error Triggering !3d source: {:?} | {:?}",
+                            source, e
+                        )
                     }
                 }
             }

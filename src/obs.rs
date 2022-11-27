@@ -77,27 +77,46 @@ pub async fn trigger_3d(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    // Look up the camera type
-    // Not sure if this is working
     let camera_types_per_filter = camera_type_config();
     // if !camera_types_per_filter.contains_key(&filter_setting_name) {
     //     continue;
     // }
+
+    // THIS CRASHESSSSSSS
+    // WE NEED TO LOOK UP
     let camera_number = camera_types_per_filter[&filter_setting_name];
 
     // Look up information about the current "3D Transform" filter
+    // IS THIS FUCKED????
     let filter_details = obs_client
         .filters()
         .get(&source, THE_3D_TRANSFORM_FILTER_NAME)
         .await;
 
+    // Does this leave early??????
     let filt: SourceFilter = match filter_details {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
-    let mut new_settings =
-        serde_json::from_value::<stream_fx::StreamFXSettings>(filt.settings)
-            .unwrap();
+
+    // TODO: Explore we are seeing this:
+    // Error With New Settings: Error("missing field `Commit`", line: 0, column: 0)
+    // // IS THIS STILL HAPPENING???
+    let mut new_settings = match serde_json::from_value::<
+        stream_fx::StreamFXSettings,
+    >(filt.settings)
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error With New Settings: {:?}", e);
+            stream_fx::StreamFXSettings {
+                ..Default::default()
+            }
+        }
+    };
+
+    // I think we also want to return though!!!!
+    // and not continue on here
 
     // resetting this Camera Mode
     new_settings.camera_mode = Some(camera_number);
@@ -129,22 +148,33 @@ pub async fn spin(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let filter_setting_name = match filter_setting_name {
+    let setting_name = match filter_setting_name {
         "spin" | "z" => "Rotation.Z",
         "spinx" | "x" => "Rotation.X",
         "spiny" | "y" => "Rotation.Y",
         _ => "Rotation.Z",
     };
-    update_and_trigger_move_value_filter(
+
+    // hmmmmm
+    // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err` value: Error("missing field `filter`", line: 0, column: 0)',
+    // Shoudl we not crash???
+    match update_and_trigger_move_value_filter(
         source,
         THE_3D_TRANSFORM_FILTER_NAME,
-        filter_setting_name,
+        setting_name,
         filter_value,
         duration,
         2, // not sure if this is the right value
         &obs_client,
     )
-    .await?;
+    .await
+    {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error Updating and Triggering Value in !spin {:?}", e);
+        }
+    }
+
     Ok(())
 }
 
@@ -167,10 +197,18 @@ pub async fn update_and_trigger_move_value_filter(
             Err(err) => Err(err),
         }?;
 
-    let mut new_settings = serde_json::from_value::<
+    let mut new_settings = match serde_json::from_value::<
         move_transition::MoveSingleValueSetting,
     >(filter_details.settings)
-    .unwrap();
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error: {:?}", e);
+            move_transition::MoveSingleValueSetting {
+                ..Default::default()
+            }
+        }
+    };
 
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
@@ -932,6 +970,7 @@ pub async fn handle_user_input(
 
     new_settings.value_type = value_type;
 
+    // HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
     println!("\n!do New Settings: {:?}", new_settings);
 
     // Update the Filter
