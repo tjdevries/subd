@@ -25,6 +25,9 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 
 const DEFAULT_SCENE: &str = "Primary";
+
+// We need a secondary scene, where we put all the jokes
+const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
@@ -88,18 +91,29 @@ async fn handle_obs_stuff(
             // Scrolling Sources //
             // ================== //
 
+            // !scroll SOURCE SCROLL_SETTING SPEED DURATION
             // !scroll begin scroll_x 500 10000
+            // !scroll begin scroll_y 100 1000
+            // !scroll begin x 5 300
+            // !scroll begin y 50 3000
             // TODO: Stop using server::obs::handle_user_input
             "!scroll" => {
-                let default_filter_setting_name = String::from("scroll_x");
+                let default_filter_setting_name = String::from("speed_x");
 
                 let filter_setting_name =
                     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
+                let filter_setting_name: String =
+                    match filter_setting_name.as_str() {
+                        "x" => String::from("speed_x"),
+                        "y" => String::from("speed_y"),
+                        _ => default_filter_setting_name,
+                    };
+
                 server::obs::handle_user_input(
                     source,
                     DEFAULT_MOVE_SCROLL_FILTER_NAME,
-                    filter_setting_name,
+                    &filter_setting_name,
                     filter_value,
                     duration,
                     2,
