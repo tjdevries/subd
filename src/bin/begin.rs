@@ -239,7 +239,10 @@ async fn handle_obs_stuff(
                 {
                     Ok(_) => {}
                     Err(err) => {
-                        println!("Error creating Scene {:?}", err);
+                        println!(
+                            "Error Calling !grow/!scale x:{:?} y:{:?} {:?}",
+                            x, y, err
+                        );
                         continue;
                     }
                 }

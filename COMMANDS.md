@@ -45,3 +45,23 @@ If you send in the Blur amount to 0,  it's unbluring.
 !unblur begin
 !noblur begin
 ```
+
+## !grow & !scale
+
+Scale a Source using the actual OBS source settings, and no other filters
+
+```
+!scale SOURCE X Y
+```
+
+Scales the source's X and Y dimensions as a percentage of the total size. So 1.0
+is the original size of the Object. `!scale SOURCE 0.5 0.5` is shrinking the
+objects size by half for both the X & Y dimension.
+
+```
+!scale begin 0.5 0.5
+
+!scale begin 1 1
+
+!scale begin 1.1 0.2
+```
