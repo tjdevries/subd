@@ -140,23 +140,6 @@ async fn handle_obs_stuff(
                 }
             }
 
-            // ================= //
-            // Outlining Sources //
-            // ================= //
-            // TODO: Update outline to take a source
-            "!outline" => {
-                let source = splitmsg[1].as_str();
-                match server::obs::outline(source, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !outline source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
-            }
-
             // We could maybe get this into one function
             // and have the word blur actually there
             // =============== //
@@ -451,6 +434,19 @@ async fn handle_obs_stuff(
                     Ok(_) => {}
                     Err(e) => {
                         println!("{:?}", e)
+                    }
+                }
+            }
+
+            "!outline" => {
+                let source = splitmsg[1].as_str();
+                match server::obs::outline(source, &obs_client).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!(
+                            "Error Triggering !outline source: {:?} | {:?}",
+                            source, e
+                        )
                     }
                 }
             }
