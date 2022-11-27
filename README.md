@@ -23,7 +23,7 @@ Integrations You Can Trigger:
 
 ## Status
 
-We are developing this on my twitch stream: [teej_dv](https://twitch.tv/teej_dv) and [beginbot](https://www.twitch.tv/beginbot)
+We are developing this on the Twitch streams: [teej_dv](https://twitch.tv/teej_dv) and [beginbot](https://www.twitch.tv/beginbot)
 
 ## Development / Running
 
@@ -144,6 +144,9 @@ Affect the 3D Transform Filter Settings.
 
 ### !norm
 
+Return the source specified to normal. This is returning filters to normal, and
+updating the size and position to more "normal" positions.
+
 ```
 !norm begin
 ```
@@ -152,39 +155,88 @@ Affect the 3D Transform Filter Settings.
 
 Move a source to a specific X & Y location.
 
+```
+!move SOURCE X Y
+```
+
+```
+!move begin 500 500
+```
+
 ### !tr / !tl / !br / !bl
 
 Top-Right, Top-Left, Bottom-Right, Bottom-Left
+
+```
+!tr
+!tl
+!br
+!bl
+```
 
 ### !follow
 
 Follow the source specified, by all sources added by viewers.
 
+```
+!follow garfield
+```
+
 ### !staff
 
 Figure the necessary filter and source move changes to not get banned by Staff in the chat.
 
+There are no arguments to the `!staff` function.
+
+```
+!staff
+```
+
 ### !create_source
 
 Create a source in the Primary scene THAT ALREADY EXISTS
+
+```
+!create_source garfield
+```
 
 ### !create_source_for_filters
 
 Create the filters to manipulate a source, using StreamFX, SDF Effects and
 others.
 
+```
+!create_source_for_filters garfield
+```
+
 ### !filter
 
 Print off information about a Filter.
+
+```
+!source FILTER_NAME
+```
 
 ### !source
 
 Print off information about a Source.
 
+```
+!source SOURCE
+```
+
 ### !chat
 
 Change to the Scene where you can read chat.
 
+```
+!chat
+```
+
 ### !code
 
 Change to the Scene where you can read code.
+
+```
+!code
+```
