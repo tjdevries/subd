@@ -1,4 +1,4 @@
-# `subd`
+# subd
 
 `subd`'s goal is to create an interactive experience for viewers on any platform
 and to support your supporters regardless of where they support you.
@@ -27,25 +27,30 @@ We are developing this on my twitch stream: [teej_dv](https://twitch.tv/teej_dv)
 
 There are several steps required to set up `subd`. See [Developers](./DEVELOPERS.md) for more information.
 
-// -------------------------------------------------------------
-
 ## OBS Setup
 
-### Creating a new Scene
+If you want to take full advantage of all OBS features, you need to have a
+couple Plugins installed.
 
-- Create the Scene is Manually
-- create filters
+- [https://github.com/Xaymar/obs-StreamFX](StreamFX)
+- [https://github.com/exeldro/obs-move-transition](Move-Transition)
+
+Once you have these installed, you need to make sure your sources have the
+proper filters created.
 
 ```
 !create_filters_for_source INSERT_SOURCE_NAME
-!create_filters_for_source kidalex
 ```
 
-This will create X Number of Filters:
-    - Blur
-    - Scroll
-    - 3D Transform
-    - SDF Effects
-    - Move-Value Filters for each of those move
-    - Move-Value to Defaults filters
-    - Move Source on "Primary" scene
+This will create a Number of Filters:
+
+- Blur
+- Scroll
+- 3D Transform
+- SDF Effects
+- Move-Value Filters for each of those move
+- Move-Value to Defaults filters
+- Move Source on "Primary" scene
+
+These filters will allow your chat to control your scroll, blur, and total 3D
+transformation of all you sources!
