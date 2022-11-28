@@ -14,6 +14,7 @@ use std::thread;
 use std::time::Duration;
 
 const DEFAULT_SCENE: &str = "Primary";
+const DEFAULT_SOURCE: &str = "begin";
 
 // Figure out what the name of this should really be
 // const MULTI_SETTING_VALUE_TYPE: u32 = 1;
@@ -28,6 +29,15 @@ const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 // This ain't the name
 const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+const BLUR_FILTER_NAME: &str = "Blur";
+
+// Constants to Extract:
+// kind: "move_value_filter",
+// kind: "streamfx-filter-blur",
+// let stream_fx_filter_name = "Move_Blur";
+// let stream_fx_filter_name = "Move_Scroll";
+// filter: "Scroll",
+// kind: "scroll_filter",
 
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
@@ -155,9 +165,8 @@ pub async fn spin(
         _ => "Rotation.Z",
     };
 
-    // hmmmmm
-    // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err` value: Error("missing field `filter`", line: 0, column: 0)',
-    // Shoudl we not crash???
+    // So if we ?
+    // we fuck up???
     match update_and_trigger_move_value_filter(
         source,
         THE_3D_TRANSFORM_FILTER_NAME,
@@ -246,6 +255,12 @@ pub async fn scale_source(
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // If we can't find the id for the passed in source
+    // we just return Ok
+    //
+    // Should we log an error here?
+    //
+    // is there a more Idiomatic pattern?
     let id = match find_id(source, &obs_client).await {
         Ok(val) => val,
         Err(_) => return Ok(()),
@@ -375,6 +390,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
         filter: &DEFAULT_SCROLL_FILTER_NAME,
         enabled: true,
     };
+    // This is not the way
     match obs_client.filters().set_enabled(filter_enabled).await {
         Ok(_) => {}
         Err(_) => return Ok(()),
@@ -559,13 +575,16 @@ pub async fn create_outline_filter(
     let stream_fx_filter_name = "Move_Outline";
 
     // We look up Begin's Outline Settings
-    let filter_details =
-        match obs_client.filters().get(&"begin", &"Outline").await {
-            Ok(val) => val,
-            Err(_err) => {
-                return Ok(());
-            }
-        };
+    let filter_details = match obs_client
+        .filters()
+        .get(DEFAULT_SOURCE, SDF_EFFECTS_FILTER_NAME)
+        .await
+    {
+        Ok(val) => val,
+        Err(_err) => {
+            return Ok(());
+        }
+    };
 
     let new_settings =
         serde_json::from_value::<sdf_effects::SDFEffectsSettings>(
@@ -575,7 +594,7 @@ pub async fn create_outline_filter(
 
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: "Outline",
+        filter: SDF_EFFECTS_FILTER_NAME,
         kind: "streamfx-filter-sdf-effects",
         settings: Some(new_settings),
     };
@@ -585,7 +604,7 @@ pub async fn create_outline_filter(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Outline"),
+        filter: String::from(SDF_EFFECTS_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -611,7 +630,7 @@ pub async fn create_blur_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: "Blur",
+        filter: BLUR_FILTER_NAME,
         kind: "streamfx-filter-blur",
         settings: Some(stream_fx_settings),
     };
@@ -620,7 +639,7 @@ pub async fn create_blur_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
-        filter: String::from("Blur"),
+        filter: String::from(BLUR_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -716,7 +735,7 @@ pub async fn create_filters_for_source(
         Err(_) => return Ok(()),
     };
 
-    if source == "begin" {
+    if source == DEFAULT_SOURCE {
         return Ok(());
         // continue;
     }
@@ -775,7 +794,7 @@ pub async fn create_filters_for_source(
     // This is For Blur
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Blur"),
+        filter: String::from(BLUR_FILTER_NAME),
         filter_blur_size: Some(1.0),
         setting_float: 0.0,
         duration: Some(7000),
@@ -793,7 +812,7 @@ pub async fn create_filters_for_source(
     // This is for SDF Effects
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Outline"),
+        filter: String::from(SDF_EFFECTS_FILTER_NAME),
         duration: Some(7000),
         glow_inner: Some(false),
         glow_outer: Some(false),
@@ -970,8 +989,7 @@ pub async fn handle_user_input(
 
     new_settings.value_type = value_type;
 
-    // HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-    println!("\n!do New Settings: {:?}", new_settings);
+    println!("\nNew Settings: {:?}", new_settings);
 
     // Update the Filter
     let new_settings = obws::requests::filters::SetSettings {
@@ -1010,6 +1028,39 @@ pub async fn trigger_hotkey(key: &str, obs_client: &OBSClient) -> Result<()> {
 
 pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
     obs_client.scenes().set_current_program_scene(&name).await?;
+    Ok(())
+}
+
+// =================== //
+// Hide / Show Sources //
+// =================== //
+
+pub async fn set_enabled(
+    scene: &str,
+    source: &str,
+    enabled: bool,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    match find_id(source, &obs_client).await {
+        Err(e) => {
+            println!("Error finding ID for source {:?} {:?}", source, e)
+        }
+        Ok(id) => {
+            let set_enabled: obws::requests::scene_items::SetEnabled =
+                obws::requests::scene_items::SetEnabled {
+                    enabled,
+                    item_id: id,
+                    scene,
+                };
+
+            match obs_client.scene_items().set_enabled(set_enabled).await {
+                Err(e) => {
+                    println!("Error Enabling Source: {:?} {:?}", source, e);
+                }
+                _ => (),
+            }
+        }
+    };
     Ok(())
 }
 
@@ -1177,7 +1228,7 @@ async fn fetch_source_settings(
     Ok(new_settings)
 }
 
-async fn find_id(
+pub async fn find_id(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<i64, obws::Error> {
