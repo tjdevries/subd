@@ -14,6 +14,7 @@ use std::thread;
 use std::time::Duration;
 
 const DEFAULT_SCENE: &str = "Primary";
+const DEFAULT_SOURCE: &str = "begin";
 
 // Figure out what the name of this should really be
 // const MULTI_SETTING_VALUE_TYPE: u32 = 1;
@@ -28,6 +29,15 @@ const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 // This ain't the name
 const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+const BLUR_FILTER_NAME: &str = "Blur";
+
+// Constants to Extract:
+// kind: "move_value_filter",
+// kind: "streamfx-filter-blur",
+// let stream_fx_filter_name = "Move_Blur";
+// let stream_fx_filter_name = "Move_Scroll";
+// filter: "Scroll",
+// kind: "scroll_filter",
 
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
@@ -155,9 +165,8 @@ pub async fn spin(
         _ => "Rotation.Z",
     };
 
-    // hmmmmm
-    // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err` value: Error("missing field `filter`", line: 0, column: 0)',
-    // Shoudl we not crash???
+    // So if we ?
+    // we fuck up???
     match update_and_trigger_move_value_filter(
         source,
         THE_3D_TRANSFORM_FILTER_NAME,
@@ -375,6 +384,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
         filter: &DEFAULT_SCROLL_FILTER_NAME,
         enabled: true,
     };
+    // This is not the way
     match obs_client.filters().set_enabled(filter_enabled).await {
         Ok(_) => {}
         Err(_) => return Ok(()),
@@ -559,13 +569,16 @@ pub async fn create_outline_filter(
     let stream_fx_filter_name = "Move_Outline";
 
     // We look up Begin's Outline Settings
-    let filter_details =
-        match obs_client.filters().get(&"begin", &"Outline").await {
-            Ok(val) => val,
-            Err(_err) => {
-                return Ok(());
-            }
-        };
+    let filter_details = match obs_client
+        .filters()
+        .get(DEFAULT_SOURCE, SDF_EFFECTS_FILTER_NAME)
+        .await
+    {
+        Ok(val) => val,
+        Err(_err) => {
+            return Ok(());
+        }
+    };
 
     let new_settings =
         serde_json::from_value::<sdf_effects::SDFEffectsSettings>(
@@ -575,7 +588,7 @@ pub async fn create_outline_filter(
 
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: "Outline",
+        filter: SDF_EFFECTS_FILTER_NAME,
         kind: "streamfx-filter-sdf-effects",
         settings: Some(new_settings),
     };
@@ -585,7 +598,7 @@ pub async fn create_outline_filter(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Outline"),
+        filter: String::from(SDF_EFFECTS_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -611,7 +624,7 @@ pub async fn create_blur_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: "Blur",
+        filter: BLUR_FILTER_NAME,
         kind: "streamfx-filter-blur",
         settings: Some(stream_fx_settings),
     };
@@ -620,7 +633,7 @@ pub async fn create_blur_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
-        filter: String::from("Blur"),
+        filter: String::from(BLUR_FILTER_NAME),
         duration: Some(7000),
         ..Default::default()
     };
@@ -716,7 +729,7 @@ pub async fn create_filters_for_source(
         Err(_) => return Ok(()),
     };
 
-    if source == "begin" {
+    if source == DEFAULT_SOURCE {
         return Ok(());
         // continue;
     }
@@ -775,7 +788,7 @@ pub async fn create_filters_for_source(
     // This is For Blur
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Blur"),
+        filter: String::from(BLUR_FILTER_NAME),
         filter_blur_size: Some(1.0),
         setting_float: 0.0,
         duration: Some(7000),
@@ -793,7 +806,7 @@ pub async fn create_filters_for_source(
     // This is for SDF Effects
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Outline"),
+        filter: String::from(SDF_EFFECTS_FILTER_NAME),
         duration: Some(7000),
         glow_inner: Some(false),
         glow_outer: Some(false),
@@ -970,8 +983,7 @@ pub async fn handle_user_input(
 
     new_settings.value_type = value_type;
 
-    // HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
-    println!("\n!do New Settings: {:?}", new_settings);
+    println!("\nNew Settings: {:?}", new_settings);
 
     // Update the Filter
     let new_settings = obws::requests::filters::SetSettings {
