@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::Parser;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
@@ -41,8 +41,6 @@ async fn handle_obs_stuff(
     _tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    // This is because Begin doesn't understand Rust
-    let default_source = String::from(DEFAULT_SOURCE);
 
     // Connect to OBS
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
@@ -55,10 +53,12 @@ async fn handle_obs_stuff(
 
     // Connect to Twitch
     let config = get_chat_config();
+    // used for !filter
     let (_, client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(config);
+    // used for !filter
     let twitch_username = subd_types::consts::get_twitch_bot_username();
 
     loop {
@@ -73,6 +73,21 @@ async fn handle_obs_stuff(
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
+
+        match handle_obs_commands(&obs_client, splitmsg).await {
+            Ok(_) => {},
+            Err(err) => {
+                eprintln!("Error: {err}");
+                continue;
+            }
+        }
+    }
+}
+
+async fn handle_obs_commands(obs_client: &OBSClient, splitmsg: Vec<String>) -> Result<()> {
+
+    // This is because Begin doesn't understand Rust
+    let default_source = String::from(DEFAULT_SOURCE);
 
         // We try and do some parsing on every command here
         // These may not always be what we want, but they are sensible
@@ -119,7 +134,7 @@ async fn handle_obs_stuff(
 
                 // TODO: THIS 2 is SUPERFLUOUS!!!
                 // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
-                match server::obs::handle_user_input(
+                server::obs::handle_user_input(
                     source,
                     DEFAULT_MOVE_SCROLL_FILTER_NAME,
                     &filter_setting_name,
@@ -129,15 +144,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !scroll source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
             }
 
             // We could maybe get this into one function
@@ -153,7 +159,7 @@ async fn handle_obs_stuff(
 
                 // THESE DON'T NEED THE GODDAMN 2!!!
                 // TODO: we should print off error here
-                match server::obs::update_and_trigger_move_value_filter(
+                server::obs::update_and_trigger_move_value_filter(
                     source,
                     DEFAULT_MOVE_BLUR_FILTER_NAME,
                     "Filter.Blur.Size",
@@ -163,20 +169,11 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !blur source: {:?} {:?}",
-                            source, e
-                        )
-                    }
-                }
             }
 
             // Update to take in 2 as a const
             "!noblur" | "!unblur" => {
-                match server::obs::update_and_trigger_move_value_filter(
+                server::obs::update_and_trigger_move_value_filter(
                     source,
                     DEFAULT_MOVE_BLUR_FILTER_NAME,
                     "Filter.Blur.Size",
@@ -186,15 +183,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !unblur/!noblur source: {:?} {:?}",
-                            source, e
-                        )
-                    }
-                }
             }
 
             // =============== //
@@ -214,7 +202,7 @@ async fn handle_obs_stuff(
                     x: Some(x),
                     y: Some(y),
                 };
-                match server::obs::trigger_grow(
+                server::obs::trigger_grow(
                     source,
                     &base_scale,
                     x,
@@ -222,16 +210,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(err) => {
-                        println!(
-                            "Error Calling !grow/!scale x:{:?} y:{:?} {:?}",
-                            x, y, err
-                        );
-                        continue;
-                    }
-                }
             }
 
             // ====================== //
@@ -252,7 +230,7 @@ async fn handle_obs_stuff(
                 let filter_setting_name =
                     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
-                match server::obs::spin(
+                server::obs::spin(
                     source,
                     filter_setting_name,
                     filter_value,
@@ -260,15 +238,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error triggering !spin/!spinx/!spiny {:?}",
-                            e
-                        );
-                    }
-                }
             }
 
             // TODO: This should be 3 filters
@@ -283,12 +252,12 @@ async fn handle_obs_stuff(
             "!3d" => {
                 // If we don't at least have a filter_name, we can't proceed
                 if splitmsg.len() < 3 {
-                    continue;
+                    bail!("We don't have a filter name, can't proceed");
                 }
 
                 let filter_setting_name = &splitmsg[2];
 
-                match server::obs::trigger_3d(
+                server::obs::trigger_3d(
                     source,
                     filter_setting_name,
                     filter_value,
@@ -296,15 +265,6 @@ async fn handle_obs_stuff(
                     &obs_client,
                 )
                 .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !3d source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
             }
 
             // ============== //
@@ -318,59 +278,31 @@ async fn handle_obs_stuff(
                     let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                     let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
-                    match server::obs::move_source(source, x, y, &obs_client)
-                        .await
-                    {
-                        Ok(_) => {}
-                        Err(err) => {
-                            println!("Error creating Scene {:?}", err);
-                            continue;
-                        }
-                    }
-                }
+                    server::obs::move_source(source, x, y, &obs_client).await
+            } else { 
+                Ok(())
+            }
             }
 
             // TODO: I'd like one-for every corner
-            "!tr" => match server::obs::top_right(source, &obs_client).await {
-                Ok(_) => {}
-                Err(e) => println!("{:?}", e),
-            },
+            "!tr" => server::obs::top_right(source, &obs_client).await,
 
-            "!bl" => {
-                match server::obs::bottom_right(source, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => println!("{:?}", e),
-                }
-            }
+            "!bl" => server::obs::bottom_right(source, &obs_client).await,
 
             // ================ //
             // Compound Effects //
             // ================ //
-            "!norm" => match server::obs::norm(&source, &obs_client).await {
-                Ok(_) => {}
-                Err(e) => println!("{:?}", e),
-            },
+            "!norm" => server::obs::norm(&source, &obs_client).await,
 
             "!follow" => {
                 let scene = DEFAULT_SCENE;
                 let leader = splitmsg.get(1).unwrap_or(&default_source);
                 let source = leader;
 
-                match server::obs::follow(source, scene, leader, &obs_client)
+                server::obs::follow(source, scene, leader, &obs_client)
                     .await
-                {
-                    Err(e) => println!("{:?}", e),
-                    _ => (),
-                }
             }
-            "!staff" => {
-                match server::obs::staff(DEFAULT_SOURCE, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("{:?}", e)
-                    }
-                }
-            }
+            "!staff" => server::obs::staff(DEFAULT_SOURCE, &obs_client).await,
 
             // =============================== //
             // Create Scenes, Sources, Filters //
@@ -384,110 +316,83 @@ async fn handle_obs_stuff(
                     };
 
                 // TODO: Why is this crashing???
-                match obs_client.scene_items().create(new_scene).await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        println!("Error creating Scene {:?}", err);
-                        continue;
-                    }
-                };
+                obs_client.scene_items().create(new_scene).await?;
+
+                Ok(())
             }
 
             // This sets up OBS for Begin's current setup
-            "!create_filters_for_source" => {
-                match server::obs::create_filters_for_source(
+            "!create_filters_for_source" => 
+                server::obs::create_filters_for_source(
                     source,
                     &obs_client,
                 )
-                .await
-                {
-                    Err(e) => println!("{:?}", e),
-                    _ => (),
-                }
-            }
+                .await,
 
             // ========================== //
             // Show Info About OBS Setup  //
             // ========================== //
-            "!filter" => {
-                let (_command, words) =
-                    msg.message_text.split_once(" ").unwrap();
-
-                // TODO: Handle this error
-                let details =
-                    server::obs::print_filter_info(&source, words, &obs_client)
-                        .await?;
-                client
-                    .say(twitch_username.clone(), format!("{:?}", details))
-                    .await?;
-            }
+            // "!filter" => {
+            //     let (_command, words) =
+            //         msg.message_text.split_once(" ").unwrap();
+            //
+            //     // TODO: Handle this error
+            //     let details =
+            //         server::obs::print_filter_info(&source, words, &obs_client)
+            //             .await?;
+            //     client
+            //         .say(twitch_username.clone(), format!("{:?}", details))
+            //         .await
+            // }
 
             // TODO: Take in Scene
-            "!source" => {
-                match server::obs::print_source_info(
+            "!source" => server::obs::print_source_info(
                     source,
                     DEFAULT_SCENE,
                     &obs_client,
                 )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("{:?}", e)
-                    }
-                }
-            }
+                .await,
+            
 
             "!outline" => {
                 let source = splitmsg[1].as_str();
-                match server::obs::outline(source, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !outline source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
+                server::obs::outline(source, &obs_client).await 
             }
 
             // ====================== //
             // Show / Hide Subscenes //
             // ====================== //
             "!memes" => {
-                _ = server::obs::set_enabled(
+                server::obs::set_enabled(
                     DEFAULT_SCENE,
                     MEME_SCENE,
                     true,
                     &obs_client,
                 )
-                .await;
+                .await
             }
 
             "!nomemes" | "!nojokes" | "!work" => {
-                _ = server::obs::set_enabled(
+                server::obs::set_enabled(
                     DEFAULT_SCENE,
                     MEME_SCENE,
                     false,
                     &obs_client,
                 )
-                .await;
+                .await
             }
 
             // ==================== //
             // Change Scenes in OBS //
             // ==================== //
             // Rename These Commands
-            "!chat" => {
-                _ = server::obs::trigger_hotkey("OBS_KEY_L", &obs_client);
-            }
-            "!code" => {
-                _ = server::obs::trigger_hotkey("OBS_KEY_H", &obs_client);
-            }
+            "!chat" => server::obs::trigger_hotkey("OBS_KEY_L", &obs_client).await,
+            
+            "!code" => server::obs::trigger_hotkey("OBS_KEY_H", &obs_client).await,
+            
 
-            _ => {}
+            _ => Ok(())
         }
-    }
 }
 
 // ==============================================================================
