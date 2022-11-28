@@ -6,13 +6,13 @@ use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
-// use rodio::{Decoder, OutputStream};
+use rodio::{Decoder, OutputStream};
 use server::commands;
 use server::users;
 use std::collections::HashSet;
 use std::fs;
-// use std::fs::File;
-// use std::io::BufReader;
+use std::fs::File;
+use std::io::BufReader;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use tracing_subscriber;
@@ -683,37 +683,37 @@ async fn handle_twitch_msg(
             }
             _ => {
                 // TODO: find an easy way to not start this code with a flag
-                // for word in splitmsg {
-                //     let sanitized_word = word.as_str().to_lowercase();
-                //     let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+                for word in splitmsg {
+                    let sanitized_word = word.as_str().to_lowercase();
+                    let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
-                //     if mp3s.contains(&full_name) {
-                //         // Works for Arch Linux
-                //         let (_stream, stream_handle) =
-                //             get_output_stream("pulse");
+                    if mp3s.contains(&full_name) {
+                        // Works for Arch Linux
+                        let (_stream, stream_handle) =
+                            get_output_stream("pulse");
 
-                //         // Works for Mac
-                //         // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+                        // Works for Mac
+                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
 
-                //         let sink =
-                //             rodio::Sink::try_new(&stream_handle).unwrap();
+                        let sink =
+                            rodio::Sink::try_new(&stream_handle).unwrap();
 
-                //         let file = BufReader::new(
-                //             File::open(format!(
-                //                 "./MP3s/{}.mp3",
-                //                 sanitized_word
-                //             ))
-                //             .unwrap(),
-                //         );
+                        let file = BufReader::new(
+                            File::open(format!(
+                                "./MP3s/{}.mp3",
+                                sanitized_word
+                            ))
+                            .unwrap(),
+                        );
 
-                //         // TODO: Is there someway to suppress output here
-                //         sink.append(
-                //             Decoder::new(BufReader::new(file)).unwrap(),
-                //         );
+                        // TODO: Is there someway to suppress output here
+                        sink.append(
+                            Decoder::new(BufReader::new(file)).unwrap(),
+                        );
 
-                //         sink.sleep_until_end();
-                //     }
-                // }
+                        sink.sleep_until_end();
+                    }
+                }
             }
         };
     }
