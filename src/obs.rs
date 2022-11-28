@@ -255,6 +255,12 @@ pub async fn scale_source(
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // If we can't find the id for the passed in source
+    // we just return Ok
+    //
+    // Should we log an error here?
+    //
+    // is there a more Idiomatic pattern?
     let id = match find_id(source, &obs_client).await {
         Ok(val) => val,
         Err(_) => return Ok(()),
@@ -1025,6 +1031,39 @@ pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
     Ok(())
 }
 
+// =================== //
+// Hide / Show Sources //
+// =================== //
+
+pub async fn set_enabled(
+    scene: &str,
+    source: &str,
+    enabled: bool,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    match find_id(source, &obs_client).await {
+        Err(e) => {
+            println!("Error finding ID for source {:?} {:?}", source, e)
+        }
+        Ok(id) => {
+            let set_enabled: obws::requests::scene_items::SetEnabled =
+                obws::requests::scene_items::SetEnabled {
+                    enabled,
+                    item_id: id,
+                    scene,
+                };
+
+            match obs_client.scene_items().set_enabled(set_enabled).await {
+                Err(e) => {
+                    println!("Error Enabling Source: {:?} {:?}", source, e);
+                }
+                _ => (),
+            }
+        }
+    };
+    Ok(())
+}
+
 // ============== //
 // Audio Settings //
 // ============== //
@@ -1189,7 +1228,7 @@ async fn fetch_source_settings(
     Ok(new_settings)
 }
 
-async fn find_id(
+pub async fn find_id(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<i64, obws::Error> {

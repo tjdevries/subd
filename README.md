@@ -240,3 +240,17 @@ Change to the Scene where you can read code.
 ```
 !code
 ```
+
+### !memes !nomemes !nojokes !work
+
+
+```
+# Show the "memes" subscene
+!memes
+
+# Hide the "memes" subscene
+# All aliases of the same thing
+!nomemes
+!nojokes
+!work
+```

@@ -83,7 +83,7 @@ async fn handle_obs_stuff(
             .get(4)
             .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
-        // WE PAINCIEDDD!!!!!!!
+        // WE PANICKED!!!!!!!
         let filter_value = splitmsg
             .get(3)
             .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
@@ -449,6 +449,31 @@ async fn handle_obs_stuff(
                         )
                     }
                 }
+            }
+
+            // ====================== //
+            // Show / Hide Subscenes //
+            // ====================== //
+            "!memes" => {
+                let scene = MEME_SCENE;
+                _ = server::obs::set_enabled(
+                    DEFAULT_SCENE,
+                    scene,
+                    true,
+                    &obs_client,
+                )
+                .await;
+            }
+
+            "!nomemes" | "!nojokes" | "!work" => {
+                let scene = MEME_SCENE;
+                _ = server::obs::set_enabled(
+                    DEFAULT_SCENE,
+                    scene,
+                    false,
+                    &obs_client,
+                )
+                .await;
             }
 
             // ==================== //
