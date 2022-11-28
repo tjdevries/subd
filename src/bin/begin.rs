@@ -455,10 +455,9 @@ async fn handle_obs_stuff(
             // Show / Hide Subscenes //
             // ====================== //
             "!memes" => {
-                let scene = MEME_SCENE;
                 _ = server::obs::set_enabled(
                     DEFAULT_SCENE,
-                    scene,
+                    MEME_SCENE,
                     true,
                     &obs_client,
                 )
@@ -466,10 +465,9 @@ async fn handle_obs_stuff(
             }
 
             "!nomemes" | "!nojokes" | "!work" => {
-                let scene = MEME_SCENE;
                 _ = server::obs::set_enabled(
                     DEFAULT_SCENE,
-                    scene,
+                    MEME_SCENE,
                     false,
                     &obs_client,
                 )
