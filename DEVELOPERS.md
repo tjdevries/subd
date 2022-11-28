@@ -45,8 +45,6 @@ SUDD_TWITCH_BOT_USERNAME=
 SUDD_TWITCH_BOT_CHANNEL_ID=
 ```
 
-```
-
 ## Setting Up Yew and Trunk
 
 https://yew.rs/docs/getting-started/project-setup/using-trunk
@@ -67,15 +65,33 @@ cd crates/subd-yew
 
 ## Setting Up OBS
 
-### Plugins to get full features
+If you want to take full advantage of all OBS features, you need to have a
+couple Plugins installed.
 
-- move-transition
-- Stream-FX
+- [https://github.com/Xaymar/obs-StreamFX](StreamFX)
+- [https://github.com/exeldro/obs-move-transition](Move-Transition)
 
-- https://github.com/exeldro/obs-move-transition
-- https://github.com/Xaymar/obs-StreamFX
+Once you have these installed, you need to make sure your sources have the
+proper filters created.
 
-----
+```
+!create_filters_for_source INSERT_SOURCE_NAME
+```
+
+This will create a Number of Filters:
+
+- Blur
+- Scroll
+- 3D Transform
+- SDF Effects
+- Move-Value Filters for each of those move
+- Move-Value to Defaults filters
+- Move Source on "Primary" scene
+
+These filters will allow your chat to control your scroll, blur, and total 3D
+transformation of all you sources!
+
+---
 
 # SOON TO BE DEPRECATED
 
