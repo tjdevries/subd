@@ -97,7 +97,15 @@ transformation of all you sources!
 
 ## Creating and Connecting to Database
 
-- TODO: Wait til begin complains and then i'll fill this info in :)
+Install Postgresql
+
+```
+createdb subd
+```
+
+```
+sqlx db reset
+```
 
 ## Build/Reset Database
 

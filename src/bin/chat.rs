@@ -639,8 +639,15 @@ async fn main() -> Result<()> {
         }
     }
 
+    // Create 1 Event Loop
+    // Push handles onto the loop
+    // those handlers are things like twitch-chat, twitch-sub, github-sponsor etc.
     let mut event_loop = events::EventLoop::new();
 
+    // You can clone this
+    // because it's just adding one more connection per clone()???
+    //
+    // This is useful because you need no lifetimes
     let pool = subd_db::get_db_pool().await;
 
     // Turns twitch IRC things into our message events

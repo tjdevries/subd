@@ -1,14 +1,15 @@
 #![allow(dead_code)]
 
 use anyhow::{bail, Result};
+use async_trait::async_trait;
 use clap::Parser;
+use events::EventHandler;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
 use server::commands;
-use server::users;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -19,9 +20,9 @@ use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
+
 use twitch_irc::TwitchIRCClient;
 
 const DEFAULT_SCENE: &str = "Primary";
@@ -35,6 +36,40 @@ const DEFAULT_SOURCE: &str = "begin";
 // THESE NAMES AIN'T RIGHT!!!!
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+
+pub struct BeginMessageHandler {
+    obs_client: OBSClient,
+}
+
+#[async_trait]
+impl EventHandler for BeginMessageHandler {
+    async fn handle(
+        self: Box<Self>,
+        _: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            match handle_obs_commands(&self.obs_client, splitmsg).await {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Error: {err}");
+                    continue;
+                }
+            }
+        }
+    }
+}
 
 // Here you wait for OBS Events that are commands to trigger OBS
 async fn handle_obs_stuff(
@@ -65,12 +100,12 @@ async fn handle_obs_stuff(
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
+            Event::UserMessage(msg) => msg,
             _ => continue,
         };
 
         let splitmsg = msg
-            .message_text
+            .contents
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
@@ -504,93 +539,13 @@ async fn say<
 }
 
 // ==========================================================================================
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        // .with_max_level(Level::TRACE)
-        .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
-        .without_time()
-        .with_target(false)
-        .finish()
-        .init();
-
-    {
-        use rustrict::{add_word, Type};
-
-        // You must take care not to call these when the crate is being
-        // used in any other way (to avoid concurrent mutation).
-        unsafe {
-            add_word(format!("vs{}", "code").as_str(), Type::PROFANE);
-            add_word("vsc*de", Type::SAFE);
-        }
-    }
-
-    let mut channels = vec![];
-    let (base_tx, _) = broadcast::channel::<Event>(256);
-
-    macro_rules! makechan {
-        // If it has (tx, rx) as signature, we can just do this
-        ($handle_func:ident) => {{
-            let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move {
-                $handle_func(new_tx, new_rx)
-                    .await
-                    .expect("this should work")
-            }));
-        }};
-
-        (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
-            let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move { $impl }));
-        }};
-    }
-
-    makechan!(handle_twitch_chat);
-    makechan!(handle_twitch_msg);
-    makechan!(handle_obs_stuff);
-
-    for c in channels {
-        c.await?;
-    }
-
-    Ok(())
-}
-
 // ===================================================================================================
-
-async fn handle_twitch_chat(
-    tx: broadcast::Sender<Event>,
-    _: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Technically, this one just needs to be able to read chat
-    // this client won't send anything to chat.
-    let config = get_chat_config();
-    let (mut incoming_messages, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-
-    client.join(twitch_username.to_owned()).unwrap();
-
-    while let Some(message) = incoming_messages.recv().await {
-        match message {
-            ServerMessage::Privmsg(private) => {
-                tx.send(Event::TwitchChatMessage(private))?;
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
 
 async fn handle_twitch_msg(
     _tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
+    // let mut conn = subd_db::get_handle().await;
 
     let config = get_chat_config();
     let (_, client) = TwitchIRCClient::<
@@ -603,45 +558,12 @@ async fn handle_twitch_msg(
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
+            Event::UserMessage(msg) => msg,
             _ => continue,
         };
 
-        let badges = msg
-            .badges
-            .iter()
-            .map(|b| b.name.as_str())
-            .collect::<Vec<&str>>()
-            .join(",");
-
-        subd_db::create_twitch_user_chat(
-            &mut conn,
-            &msg.sender.id,
-            &msg.sender.login,
-        )
-        .await?;
-        subd_db::save_twitch_message(
-            &mut conn,
-            &msg.sender.id,
-            &msg.message_text,
-        )
-        .await?;
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-                .await?;
-        let user_roles =
-            users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
-                .await?;
-
-        println!("User {:?} | {:?} | {:?}", msg.sender, user_roles, badges);
-
-        for role in user_roles.roles {
-            println!("{:?}", role);
-        }
-
         let splitmsg = msg
-            .message_text
+            .contents
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
@@ -701,3 +623,91 @@ async fn handle_twitch_msg(
     }
 }
 
+// ===========================================================================
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        // .with_max_level(Level::TRACE)
+        .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
+        .without_time()
+        .with_target(false)
+        .finish()
+        .init();
+
+    {
+        use rustrict::{add_word, Type};
+
+        // You must take care not to call these when the crate is being
+        // used in any other way (to avoid concurrent mutation).
+        unsafe {
+            add_word(format!("vs{}", "code").as_str(), Type::PROFANE);
+            add_word("vsc*de", Type::SAFE);
+        }
+    }
+
+    // let mut channels = vec![];
+    // let (base_tx, _) = broadcast::channel::<Event>(256);
+    // macro_rules! makechan {
+    //     // If it has (tx, rx) as signature, we can just do this
+    //     ($handle_func:ident) => {{
+    //         let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
+    //         channels.push(tokio::spawn(async move {
+    //             $handle_func(new_tx, new_rx)
+    //                 .await
+    //                 .expect("this should work")
+    //         }));
+    //     }};
+    //     (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
+    //         let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
+    //         channels.push(tokio::spawn(async move { $impl }));
+    //     }};
+    // }
+    // makechan!(handle_twitch_chat);
+    // makechan!(handle_twitch_msg);
+    // makechan!(handle_obs_stuff);
+    // for c in channels {
+    //     c.await?;
+    // }
+
+    // Create 1 Event Loop
+    // Push handles onto the loop
+    // those handlers are things like twitch-chat, twitch-sub, github-sponsor etc.
+    let mut event_loop = events::EventLoop::new();
+
+    // You can clone this
+    // because it's just adding one more connection per clone()???
+    //
+    // This is useful because you need no lifetimes
+    let pool = subd_db::get_db_pool().await;
+
+    // Turns twitch IRC things into our message events
+    event_loop.push(twitch_chat::TwitchChat::new(
+        pool.clone(),
+        "beginbot".to_string(),
+    )?);
+
+    // Does stuff with twitch messages
+    event_loop.push(twitch_chat::TwitchMessageHandler::new(
+        pool.clone(),
+        twitch_service::Service::new(
+            pool.clone(),
+            user_service::Service::new(pool.clone()).await,
+        )
+        .await,
+    ));
+
+    let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
+        .parse::<u16>()
+        .unwrap();
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+
+    event_loop.push(BeginMessageHandler { obs_client });
+
+    event_loop.run().await?;
+
+    Ok(())
+}
