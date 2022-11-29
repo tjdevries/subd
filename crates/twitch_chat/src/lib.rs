@@ -88,12 +88,12 @@ impl EventHandler for TwitchChat {
 
 pub struct TwitchMessageHandler {
     pool: sqlx::PgPool,
-    users: user_service::Service,
+    twitch: twitch_service::Service,
 }
 
 impl TwitchMessageHandler {
-    pub fn new(pool: sqlx::PgPool, users: user_service::Service) -> Self {
-        Self { pool, users }
+    pub fn new(pool: sqlx::PgPool, twitch: twitch_service::Service) -> Self {
+        Self { pool, twitch }
     }
 }
 
@@ -188,11 +188,8 @@ impl EventHandler for TwitchMessageHandler {
             )
             .await?;
 
-            let user_roles = self
-                .users
-                .get_roles(&user_id)
-                .await?
-                .ok_or(anyhow::anyhow!("missing user_roles"))?;
+            let user_roles =
+                self.twitch.update_user_roles(&user_id, &msg.roles).await?;
 
             // After update the state of the database, we can go ahead
             // and send the user message to the rest of the system.

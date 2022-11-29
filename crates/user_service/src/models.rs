@@ -40,6 +40,22 @@ impl user_messages::Model {
 pub mod user_roles {
     use super::*;
 
+    pub struct Model {
+        #[immutable]
+        #[primary_key]
+        pub user_id: sqlx::types::Uuid,
+
+        // Github
+        pub is_github_sponsor: bool,
+
+        // Twitch
+        pub is_twitch_mod: bool,
+        pub is_twitch_vip: bool,
+        pub is_twitch_founder: bool,
+        pub is_twitch_sub: bool,
+        pub is_twitch_staff: bool,
+    }
+
     pub fn to_user_roles(m: Model) -> UserRoles {
         // Map to roles
         let mut roles = UserRoles {
@@ -77,27 +93,23 @@ pub mod user_roles {
 
         roles
     }
-
-    pub struct Model {
-        #[immutable]
-        #[primary_key]
-        pub user_id: sqlx::types::Uuid,
-
-        // Github
-        pub is_github_sponsor: bool,
-
-        // Twitch
-        pub is_twitch_mod: bool,
-        pub is_twitch_vip: bool,
-        pub is_twitch_founder: bool,
-        pub is_twitch_sub: bool,
-        pub is_twitch_staff: bool,
-    }
 }
 
 #[allow(dead_code)]
 impl user_roles::Model {
-    pub async fn save(self, _conn: &PgPool) -> Result<Self> {
+    pub fn empty(user_id: sqlx::types::Uuid) -> Self {
+        Self {
+            user_id,
+            is_github_sponsor: false,
+            is_twitch_mod: false,
+            is_twitch_vip: false,
+            is_twitch_founder: false,
+            is_twitch_sub: false,
+            is_twitch_staff: false,
+        }
+    }
+
+    pub async fn save(self, conn: &PgPool) -> Result<Self> {
         // Ok(sqlx::query_as!(
         //     Self,
         //     r#"
@@ -114,6 +126,53 @@ impl user_roles::Model {
         // .execute(&mut *conn)
         // .await?)
 
+        Ok(sqlx::query_as!(
+            Self,
+            "INSERT INTO user_roles (
+                user_id,
+                is_github_sponsor,
+                is_twitch_mod,
+                is_twitch_vip,
+                is_twitch_founder,
+                is_twitch_sub,
+                is_twitch_staff
+            ) VALUES (
+                $1,
+                $2,
+                $3,
+                $4,
+                $5,
+                $6,
+                $7
+            )  ON CONFLICT (user_id) DO UPDATE
+            SET 
+                is_github_sponsor = EXCLUDED.is_github_sponsor,
+                is_twitch_mod = EXCLUDED.is_twitch_mod,
+                is_twitch_vip = EXCLUDED.is_twitch_vip,
+                is_twitch_founder = EXCLUDED.is_twitch_founder,
+                is_twitch_sub = EXCLUDED.is_twitch_sub,
+                is_twitch_staff = EXCLUDED.is_twitch_staff
+
+             RETURNING 
+                user_id,
+                is_github_sponsor,
+                is_twitch_mod,
+                is_twitch_vip,
+                is_twitch_founder,
+                is_twitch_sub,
+                is_twitch_staff
+            ",
+            self.user_id,
+            self.is_github_sponsor,
+            self.is_twitch_mod,
+            self.is_twitch_vip,
+            self.is_twitch_founder,
+            self.is_twitch_sub,
+            self.is_twitch_staff,
+        )
+        .fetch_one(conn)
+        .await?)
+
         // This is for update
         // let query = "
         //     UPDATE user_roles
@@ -122,7 +181,5 @@ impl user_roles::Model {
         //         RETURNING *
         // ";
         // sqlx::query(query).execute(conn).await?;
-
-        todo!()
     }
 }

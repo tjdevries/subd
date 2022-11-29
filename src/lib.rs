@@ -5,4 +5,5 @@ pub mod raffle;
 pub mod sdf_effects;
 pub mod stream_fx;
 pub mod themesong;
+pub mod user_messages;
 pub mod users;

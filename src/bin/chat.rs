@@ -23,6 +23,7 @@ use obws::Client as OBSClient;
 use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 
+use server::user_messages;
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
 
@@ -651,8 +652,14 @@ async fn main() -> Result<()> {
     // Does stuff with twitch messages
     event_loop.push(twitch_chat::TwitchMessageHandler::new(
         pool.clone(),
-        user_service::Service::new(pool.clone()).await,
+        twitch_service::Service::new(
+            pool.clone(),
+            user_service::Service::new(pool.clone()).await,
+        )
+        .await,
     ));
+
+    event_loop.push(user_messages::UserMessageHandler {});
 
     event_loop.run().await?;
 

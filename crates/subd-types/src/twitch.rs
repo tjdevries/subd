@@ -1,7 +1,9 @@
+use std::collections::HashSet;
+
 use serde::{Deserialize, Serialize};
 use twitch_irc::message::PrivmsgMessage;
 
-use crate::{TwitchUserID, UserRoles};
+use crate::{Role, TwitchSubLevel, TwitchUserID, UserRoles};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TwitchUser {
@@ -70,14 +72,9 @@ pub struct TwitchMessage {
 
     /// Metadata related to the chat badges in the `badges` tag.
     ///
-    /// Currently this is used only for `subscriber`, to indicate the exact number of months
-    /// the user has been a subscriber. This number is finer grained than the version number in
-    /// badges. For example, a user who has been a subscriber for 45 months would have a
-    /// `badge_info` value of 45 but might have a `badges` `version` number for only 3 years.
-    // pub badge_info: Vec<Badge>,
-    /// List of badges that should be displayed alongside the message.
-    // pub badges: Vec<Badge>,
-    roles: UserRoles,
+    /// NOTE: This is ONLY for roles related to twitch... perhaps we should change this
+    /// to TwitchRoles or similar, but I'm not really ready for that yet
+    pub roles: UserRoles,
 
     /// If present, specifies how many bits were cheered with this message.
     pub bits: Option<u64>,
@@ -93,8 +90,39 @@ pub struct TwitchMessage {
     pub emotes: Vec<Emote>,
 }
 
+fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {
+    let mut roles = HashSet::new();
+    if msg
+        .badges
+        .iter()
+        .any(|b| b.name == "moderator" || b.name == "broadcaster")
+    {
+        roles.insert(Role::TwitchMod);
+    }
+
+    if msg.badges.iter().any(|b| b.name == "vip") {
+        roles.insert(Role::TwitchVIP);
+    }
+    if msg.badges.iter().any(|b| b.name == "founder") {
+        roles.insert(Role::TwitchFounder);
+    }
+    if msg.badges.iter().any(|b| b.name == "subscriber") {
+        roles.insert(Role::TwitchSub(TwitchSubLevel::Unknown));
+    }
+    if msg.badges.iter().any(|b| b.name == "staff") {
+        roles.insert(Role::TwitchStaff);
+    }
+
+    UserRoles {
+        roles,
+        ..Default::default()
+    }
+}
+
 impl TwitchMessage {
     pub fn from_msg(msg: PrivmsgMessage) -> Self {
+        let roles = get_twitch_roles_from_msg(&msg);
+
         Self {
             message_id: msg.message_id,
             channel: TwitchChannel {
@@ -108,7 +136,7 @@ impl TwitchMessage {
                 name: msg.sender.name,
             },
             text: msg.message_text,
-            roles: UserRoles::default(),
+            roles,
             bits: msg.bits,
             name_color: msg.name_color.map(|c| Color {
                 r: c.r,

@@ -9,7 +9,7 @@ edition = "2021"
 subd-types = { path = "../subd-types" }
 subd-db = { path = "../subd-db" }
 events = { path = "../events" }
-user_service = { path = "../user_service/" }
+twitch_service = { path = "../twitch_service/" }
 
 anyhow.workspace = true
 async-trait.workspace = true
