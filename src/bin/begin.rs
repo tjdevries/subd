@@ -51,14 +51,16 @@ async fn handle_obs_stuff(
             .await?;
 
     // Connect to Twitch
-    let config = get_chat_config();
-    // used for !filter
-    let (_, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    // used for !filter
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
+    // let config = get_chat_config();
+    //
+    // This is used for !filter
+    // Which we aren't currently using
+    // let (_, client) = TwitchIRCClient::<
+    //     SecureTCPTransport,
+    //     StaticLoginCredentials,
+    // >::new(config);
+    // // used for !filter
+    // let twitch_username = subd_types::consts::get_twitch_bot_username();
 
     loop {
         let event = rx.recv().await?;
@@ -235,6 +237,11 @@ async fn handle_obs_commands(
             .await
         }
 
+        "!hide" => server::obs::hide_sources(MEME_SCENE, &obs_client).await,
+        "!show" => {
+            server::obs::set_enabled(MEME_SCENE, source, true, &obs_client)
+                .await
+        }
         "!def_ortho" => {
             server::obs::default_ortho(source, duration, &obs_client).await
         }
@@ -256,6 +263,41 @@ async fn handle_obs_commands(
             .await
         }
 
+        "!perp" => {
+            if splitmsg.len() < 3 {
+                return Ok(());
+            };
+
+            let filter_setting_name = &splitmsg[2];
+
+            server::obs::trigger_ortho(
+                source,
+                "3D_Perspective",
+                filter_setting_name,
+                filter_value,
+                duration,
+                &obs_client,
+            )
+            .await
+        }
+
+        "!corner" => {
+            if splitmsg.len() < 3 {
+                return Ok(());
+            };
+
+            let filter_setting_name = &splitmsg[2];
+
+            server::obs::trigger_ortho(
+                source,
+                "3D_CornerPin",
+                filter_setting_name,
+                filter_value,
+                duration,
+                &obs_client,
+            )
+            .await
+        }
         // Perspective
         // Corner Pin
         // Orthographic
@@ -350,9 +392,8 @@ async fn handle_obs_commands(
         // Show Info About OBS Setup  //
         // ========================== //
         // "!filter" => {
-        //     let (_command, words) =
-        //         msg.message_text.split_once(" ").unwrap();
-        //
+        //     let (_command, words) = msg.message_text.split_once(" ").unwrap();
+
         //     // TODO: Handle this error
         //     let details =
         //         server::obs::print_filter_info(&source, words, &obs_client)

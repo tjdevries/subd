@@ -84,7 +84,7 @@ pub struct BlurSetting {
 
 pub async fn default_ortho(
     source: &str,
-    duration: u32,
+    _duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
     // Change the underlying 3D Transform Filter
@@ -100,16 +100,6 @@ pub async fn default_ortho(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
-    // _ = handle_user_input(
-    //     source,
-    //     "Move_3D_Orthographic",
-    //     filter_setting_name,
-    //     filter_value,
-    //     duration,
-    //     SINGLE_SETTING_VALUE_TYPE,
-    //     &obs_client,
-    // )
-    // .await;
     Ok(())
 }
 
@@ -458,6 +448,56 @@ pub async fn bottom_right(
     let new_settings = custom_filter_settings(settings, 12.0, 878.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
+}
+
+// ================= //
+// Hide/Show Actions //
+// ================= //
+
+pub async fn show_source(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    set_enabled(scene, source, true, obs_client).await
+}
+
+async fn set_enabled_on_all_sources(
+    scene: &str,
+    enabled: bool,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    match obs_client.scene_items().list(scene).await {
+        Ok(items) => {
+            for item in items {
+                match set_enabled(
+                    scene,
+                    &item.source_name,
+                    enabled,
+                    &obs_client,
+                )
+                .await
+                {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!(
+                            "Error SetEnabled State of source {:?} {:?}",
+                            item.source_name, e
+                        );
+                    }
+                }
+            }
+            return Ok(());
+        }
+        Err(e) => {
+            println!("Error listing Scene Items for {:?} {:?}", scene, e);
+            return Ok(());
+        }
+    }
+}
+
+pub async fn hide_sources(scene: &str, obs_client: &OBSClient) -> Result<()> {
+    set_enabled_on_all_sources(scene, false, &obs_client).await
 }
 
 // ============= //
