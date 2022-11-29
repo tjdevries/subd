@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use anyhow::{bail, Result};
 use async_trait::async_trait;
 use events::EventHandler;
@@ -12,14 +10,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use subd_types::Event;
+use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::ClientConfig;
-use twitch_irc::TwitchIRCClient;
 
 const DEFAULT_SCENE: &str = "Primary";
 
@@ -114,7 +109,7 @@ impl EventHandler for BeginMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            match handle_obs_commands(&self.obs_client, splitmsg).await {
+            match handle_obs_commands(&self.obs_client, splitmsg, msg).await {
                 Ok(_) => {}
                 Err(err) => {
                     eprintln!("Error: {err}");
@@ -125,58 +120,10 @@ impl EventHandler for BeginMessageHandler {
     }
 }
 
-// Here you wait for OBS Events that are commands to trigger OBS
-async fn handle_obs_stuff(
-    _tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Connect to OBS
-    let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
-        .parse::<u16>()
-        .unwrap();
-    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
-    let obs_client =
-        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
-            .await?;
-
-    // Connect to Twitch
-    // let config = get_chat_config();
-    //
-    // This is used for !filter
-    // Which we aren't currently using
-    // let (_, client) = TwitchIRCClient::<
-    //     SecureTCPTransport,
-    //     StaticLoginCredentials,
-    // >::new(config);
-    // // used for !filter
-    // let twitch_username = subd_types::consts::get_twitch_bot_username();
-
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::UserMessage(msg) => msg,
-            _ => continue,
-        };
-
-        let splitmsg = msg
-            .contents
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        match handle_obs_commands(&obs_client, splitmsg).await {
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!("Error: {err}");
-                continue;
-            }
-        }
-    }
-}
-
 async fn handle_obs_commands(
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
+    msg: UserMessage,
 ) -> Result<()> {
     // This is because Begin doesn't understand Rust
     let default_source = String::from(DEFAULT_SOURCE);
@@ -244,37 +191,45 @@ async fn handle_obs_commands(
         // Bluring Sources //
         // =============== //
         "!blur" => {
-            let blur_size: f32 = splitmsg
+            let filter_value = splitmsg
                 .get(2)
-                .and_then(|x| x.trim().parse().ok())
-                .unwrap_or(100.0);
-
-            // THESE DON'T NEED THE GODDAMN 2!!!
-            // TODO: we should print off error here
-            server::obs::update_and_trigger_move_value_filter(
-                source,
-                DEFAULT_MOVE_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                blur_size,
-                5000,
-                2,
-                &obs_client,
-            )
-            .await
+                .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
+            // msg.roles.is_twitch_mod()
+            // msg.roles.is_twitch_founder()
+            // msg.roles.is_twitch_staff()
+            // msg.roles.is_twitch_sub()
+            if msg.roles.is_twitch_vip() {
+                println!("WE GOT A VIP OVER HERE");
+                server::obs::update_and_trigger_move_value_filter(
+                    source,
+                    DEFAULT_MOVE_BLUR_FILTER_NAME,
+                    "Filter.Blur.Size",
+                    filter_value,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+            Ok(())
         }
 
         // Update to take in 2 as a const
         "!noblur" | "!unblur" => {
-            server::obs::update_and_trigger_move_value_filter(
-                source,
-                DEFAULT_MOVE_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                0.0,
-                5000,
-                2,
-                &obs_client,
-            )
-            .await
+            if msg.roles.is_twitch_mod() {
+                println!("WE GOT A MOD OVER HERE");
+                server::obs::update_and_trigger_move_value_filter(
+                    source,
+                    DEFAULT_MOVE_BLUR_FILTER_NAME,
+                    "Filter.Blur.Size",
+                    0.0,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+            Ok(())
         }
 
         // =============== //
@@ -539,19 +494,6 @@ async fn handle_obs_commands(
 }
 
 // ==============================================================================
-// ==============================================================================
-// ==============================================================================
-
-// https://stackoverflow.com/questions/71468954/rust-rodio-get-a-list-of-outputdevices
-fn list_host_devices() {
-    let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
-    for device in devices {
-        let dev: rodio::Device = device.into();
-        let dev_name: String = dev.name().unwrap();
-        println!(" # Device : {}", dev_name);
-    }
-}
 
 fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
     let host = cpal::default_host();
@@ -568,28 +510,6 @@ fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
         }
     }
     return (_stream, stream_handle);
-}
-
-fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
-    ClientConfig::new_simple(StaticLoginCredentials::new(
-        twitch_username,
-        Some(subd_types::consts::get_twitch_bot_oauth()),
-    ))
-}
-
-// ==========================================================================================
-
-async fn say<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    client: &TwitchIRCClient<T, L>,
-    msg: impl Into<String>,
-) -> Result<()> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    client.say(twitch_username.to_string(), msg.into()).await?;
-    Ok(())
 }
 
 // ==========================================================================================
@@ -614,29 +534,6 @@ async fn main() -> Result<()> {
             add_word("vsc*de", Type::SAFE);
         }
     }
-
-    // let mut channels = vec![];
-    // let (base_tx, _) = broadcast::channel::<Event>(256);
-    // macro_rules! makechan {
-    //     // If it has (tx, rx) as signature, we can just do this
-    //     ($handle_func:ident) => {{
-    //         let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
-    //         channels.push(tokio::spawn(async move {
-    //             $handle_func(new_tx, new_rx)
-    //                 .await
-    //                 .expect("this should work")
-    //         }));
-    //     }};
-    //     (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
-    //         let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
-    //         channels.push(tokio::spawn(async move { $impl }));
-    //     }};
-    // }
-    // makechan!(handle_twitch_msg);
-    // makechan!(handle_obs_stuff);
-    // for c in channels {
-    //     c.await?;
-    // }
 
     // Create 1 Event Loop
     // Push handles onto the loop
