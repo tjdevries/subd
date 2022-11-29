@@ -270,8 +270,28 @@ async fn handle_obs_stuff(
                     }
                 }
             }
+            "!def_ortho" => {
+                _ = server::obs::default_ortho(source, duration, &obs_client)
+                    .await
+            }
+            "!ortho" => {
+                if splitmsg.len() < 3 {
+                    continue;
+                }
 
-            // TODO: This should be 3 filters
+                let filter_setting_name = &splitmsg[2];
+
+                _ = server::obs::trigger_ortho(
+                    source,
+                    "3D_Orthographic",
+                    filter_setting_name,
+                    filter_value,
+                    duration,
+                    &obs_client,
+                )
+                .await
+            }
+
             // Perspective
             // Corner Pin
             // Orthographic
@@ -323,7 +343,10 @@ async fn handle_obs_stuff(
                     {
                         Ok(_) => {}
                         Err(err) => {
-                            println!("Error creating Scene {:?}", err);
+                            println!(
+                                "Error Moving Source {:?} | {:?}",
+                                source, err
+                            );
                             continue;
                         }
                     }
@@ -393,6 +416,19 @@ async fn handle_obs_stuff(
                 };
             }
 
+            // TEMP: This is for temporary testing!!!!
+            "!split" => {
+                match server::obs::create_split_3d_transform_filters(
+                    source,
+                    &obs_client,
+                )
+                .await
+                {
+                    Err(e) => println!("{:?}", e),
+                    _ => (),
+                }
+            }
+
             // This sets up OBS for Begin's current setup
             "!create_filters_for_source" => {
                 match server::obs::create_filters_for_source(
@@ -455,23 +491,35 @@ async fn handle_obs_stuff(
             // Show / Hide Subscenes //
             // ====================== //
             "!memes" => {
-                _ = server::obs::set_enabled(
+                match server::obs::set_enabled(
                     DEFAULT_SCENE,
                     MEME_SCENE,
                     true,
                     &obs_client,
                 )
-                .await;
+                .await
+                {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!("Error Enabling Meme Scene: {:?}", e);
+                    }
+                }
             }
 
             "!nomemes" | "!nojokes" | "!work" => {
-                _ = server::obs::set_enabled(
+                match server::obs::set_enabled(
                     DEFAULT_SCENE,
                     MEME_SCENE,
                     false,
                     &obs_client,
                 )
-                .await;
+                .await
+                {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!("Error Disabling Meme Scene: {:?}", e);
+                    }
+                }
             }
 
             // ==================== //
