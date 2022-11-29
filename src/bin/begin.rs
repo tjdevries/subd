@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::Parser;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
@@ -41,9 +41,6 @@ async fn handle_obs_stuff(
     _tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    // This is because Begin doesn't understand Rust
-    let default_source = String::from(DEFAULT_SOURCE);
-
     // Connect to OBS
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
@@ -55,10 +52,12 @@ async fn handle_obs_stuff(
 
     // Connect to Twitch
     let config = get_chat_config();
+    // used for !filter
     let (_, client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(config);
+    // used for !filter
     let twitch_username = subd_types::consts::get_twitch_bot_username();
 
     loop {
@@ -74,467 +73,338 @@ async fn handle_obs_stuff(
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
 
-        // We try and do some parsing on every command here
-        // These may not always be what we want, but they are sensible
-        // defaults used by many commands
-        let source: &str = splitmsg.get(1).unwrap_or(&default_source);
-
-        let duration: u32 = splitmsg
-            .get(4)
-            .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
-
-        // WE PANICKED!!!!!!!
-        let filter_value = splitmsg
-            .get(3)
-            .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
-
-        // NOTE: If we want to extract values like filter_setting_name and filter_value
-        // we need to figure a way to look up the defaults per command
-        // because they could be different types
-        // for now we are going to try and have them be the same
-        // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
-
-        match splitmsg[0].as_str() {
-            // ================== //
-            // Scrolling Sources //
-            // ================== //
-
-            // !scroll SOURCE SCROLL_SETTING SPEED DURATION (in milliseconds)
-            // !scroll begin x 5 300
-            //
-            // TODO: Stop using server::obs::handle_user_input
-            "!scroll" => {
-                let default_filter_setting_name = String::from("speed_x");
-
-                // This is ok, because we have a different default
-                let filter_setting_name =
-                    splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-
-                let filter_setting_name: String =
-                    match filter_setting_name.as_str() {
-                        "x" => String::from("speed_x"),
-                        "y" => String::from("speed_y"),
-                        _ => default_filter_setting_name,
-                    };
-
-                // TODO: THIS 2 is SUPERFLUOUS!!!
-                // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
-                match server::obs::handle_user_input(
-                    source,
-                    DEFAULT_MOVE_SCROLL_FILTER_NAME,
-                    &filter_setting_name,
-                    filter_value,
-                    duration,
-                    2,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !scroll source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
+        match handle_obs_commands(&obs_client, splitmsg).await {
+            Ok(_) => {}
+            Err(err) => {
+                eprintln!("Error: {err}");
+                continue;
             }
-
-            // We could maybe get this into one function
-            // and have the word blur actually there
-            // =============== //
-            // Bluring Sources //
-            // =============== //
-            "!blur" => {
-                let blur_size: f32 = splitmsg
-                    .get(2)
-                    .and_then(|x| x.trim().parse().ok())
-                    .unwrap_or(100.0);
-
-                // THESE DON'T NEED THE GODDAMN 2!!!
-                // TODO: we should print off error here
-                match server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    blur_size,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !blur source: {:?} {:?}",
-                            source, e
-                        )
-                    }
-                }
-            }
-
-            // Update to take in 2 as a const
-            "!noblur" | "!unblur" => {
-                match server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    0.0,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !unblur/!noblur source: {:?} {:?}",
-                            source, e
-                        )
-                    }
-                }
-            }
-
-            // =============== //
-            // Scaling Sources //
-            // =============== //
-            "!grow" | "!scale" => {
-                let x: f32 = splitmsg
-                    .get(2)
-                    .and_then(|temp_x| temp_x.trim().parse().ok())
-                    .unwrap_or(1.0);
-                let y: f32 = splitmsg
-                    .get(3)
-                    .and_then(|temp_y| temp_y.trim().parse().ok())
-                    .unwrap_or(1.0);
-
-                let base_scale = Scale {
-                    x: Some(x),
-                    y: Some(y),
-                };
-                match server::obs::trigger_grow(
-                    source,
-                    &base_scale,
-                    x,
-                    y,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(err) => {
-                        println!(
-                            "Error Calling !grow/!scale x:{:?} y:{:?} {:?}",
-                            x, y, err
-                        );
-                        continue;
-                    }
-                }
-            }
-
-            // ====================== //
-            // 3D Transforming Sources//
-            // ====================== //
-
-            // This shit is annoying
-            // I almost want to divide it into 3 commands
-            // based on Camera Type
-            // and we have all 3
-            // that might be too much
-            // but i also might be exactly what we want
-            // only spin is wonky
-            // Should also add !spinz
-            "!spin" | "!spinx" | "spiny" => {
-                // HMMMMM
-                let default_filter_setting_name = String::from("z");
-                let filter_setting_name =
-                    splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-
-                match server::obs::spin(
-                    source,
-                    filter_setting_name,
-                    filter_value,
-                    duration,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error triggering !spin/!spinx/!spiny {:?}",
-                            e
-                        );
-                    }
-                }
-            }
-            "!def_ortho" => {
-                _ = server::obs::default_ortho(source, duration, &obs_client)
-                    .await
-            }
-            "!ortho" => {
-                if splitmsg.len() < 3 {
-                    continue;
-                }
-
-                let filter_setting_name = &splitmsg[2];
-
-                _ = server::obs::trigger_ortho(
-                    source,
-                    "3D_Orthographic",
-                    filter_setting_name,
-                    filter_value,
-                    duration,
-                    &obs_client,
-                )
-                .await
-            }
-
-            // Perspective
-            // Corner Pin
-            // Orthographic
-
-            // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
-            // !3d begin Rotation.Z 3600 5000
-            //
-            // TODO: This is NOT Working!
-            "!3d" => {
-                // If we don't at least have a filter_name, we can't proceed
-                if splitmsg.len() < 3 {
-                    continue;
-                }
-
-                let filter_setting_name = &splitmsg[2];
-
-                match server::obs::trigger_3d(
-                    source,
-                    filter_setting_name,
-                    filter_value,
-                    duration,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !3d source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
-            }
-
-            // ============== //
-            // Moving Sources //
-            // ============== //
-            "!move" => {
-                // TODO: Look at this fanciness
-                //       cafce25: if let [source, x, y, ..] = splitmsg {...}
-                if splitmsg.len() > 3 {
-                    let source = splitmsg[1].as_str();
-                    let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
-                    let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
-
-                    match server::obs::move_source(source, x, y, &obs_client)
-                        .await
-                    {
-                        Ok(_) => {}
-                        Err(err) => {
-                            println!(
-                                "Error Moving Source {:?} | {:?}",
-                                source, err
-                            );
-                            continue;
-                        }
-                    }
-                }
-            }
-
-            // TODO: I'd like one-for every corner
-            "!tr" => match server::obs::top_right(source, &obs_client).await {
-                Ok(_) => {}
-                Err(e) => println!("{:?}", e),
-            },
-
-            "!bl" => {
-                match server::obs::bottom_right(source, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => println!("{:?}", e),
-                }
-            }
-
-            // ================ //
-            // Compound Effects //
-            // ================ //
-            "!norm" => match server::obs::norm(&source, &obs_client).await {
-                Ok(_) => {}
-                Err(e) => println!("{:?}", e),
-            },
-
-            "!follow" => {
-                let scene = DEFAULT_SCENE;
-                let leader = splitmsg.get(1).unwrap_or(&default_source);
-                let source = leader;
-
-                match server::obs::follow(source, scene, leader, &obs_client)
-                    .await
-                {
-                    Err(e) => println!("{:?}", e),
-                    _ => (),
-                }
-            }
-            "!staff" => {
-                match server::obs::staff(DEFAULT_SOURCE, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("{:?}", e)
-                    }
-                }
-            }
-
-            // =============================== //
-            // Create Scenes, Sources, Filters //
-            // =============================== //
-            "!create_source" => {
-                let new_scene: obws::requests::scene_items::CreateSceneItem =
-                    obws::requests::scene_items::CreateSceneItem {
-                        scene: DEFAULT_SCENE,
-                        source: &source,
-                        enabled: Some(true),
-                    };
-
-                // TODO: Why is this crashing???
-                match obs_client.scene_items().create(new_scene).await {
-                    Ok(_) => {}
-                    Err(err) => {
-                        println!("Error creating Scene {:?}", err);
-                        continue;
-                    }
-                };
-            }
-
-            // TEMP: This is for temporary testing!!!!
-            "!split" => {
-                match server::obs::create_split_3d_transform_filters(
-                    source,
-                    &obs_client,
-                )
-                .await
-                {
-                    Err(e) => println!("{:?}", e),
-                    _ => (),
-                }
-            }
-
-            // This sets up OBS for Begin's current setup
-            "!create_filters_for_source" => {
-                match server::obs::create_filters_for_source(
-                    source,
-                    &obs_client,
-                )
-                .await
-                {
-                    Err(e) => println!("{:?}", e),
-                    _ => (),
-                }
-            }
-
-            // ========================== //
-            // Show Info About OBS Setup  //
-            // ========================== //
-            "!filter" => {
-                let (_command, words) =
-                    msg.message_text.split_once(" ").unwrap();
-
-                // TODO: Handle this error
-                let details =
-                    server::obs::print_filter_info(&source, words, &obs_client)
-                        .await?;
-                client
-                    .say(twitch_username.clone(), format!("{:?}", details))
-                    .await?;
-            }
-
-            // TODO: Take in Scene
-            "!source" => {
-                match server::obs::print_source_info(
-                    source,
-                    DEFAULT_SCENE,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("{:?}", e)
-                    }
-                }
-            }
-
-            "!outline" => {
-                let source = splitmsg[1].as_str();
-                match server::obs::outline(source, &obs_client).await {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!(
-                            "Error Triggering !outline source: {:?} | {:?}",
-                            source, e
-                        )
-                    }
-                }
-            }
-
-            // ====================== //
-            // Show / Hide Subscenes //
-            // ====================== //
-            "!memes" => {
-                match server::obs::set_enabled(
-                    DEFAULT_SCENE,
-                    MEME_SCENE,
-                    true,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => (),
-                    Err(e) => {
-                        println!("Error Enabling Meme Scene: {:?}", e);
-                    }
-                }
-            }
-
-            "!nomemes" | "!nojokes" | "!work" => {
-                match server::obs::set_enabled(
-                    DEFAULT_SCENE,
-                    MEME_SCENE,
-                    false,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => (),
-                    Err(e) => {
-                        println!("Error Disabling Meme Scene: {:?}", e);
-                    }
-                }
-            }
-
-            // ==================== //
-            // Change Scenes in OBS //
-            // ==================== //
-            // Rename These Commands
-            "!chat" => {
-                _ = server::obs::trigger_hotkey("OBS_KEY_L", &obs_client);
-            }
-            "!code" => {
-                _ = server::obs::trigger_hotkey("OBS_KEY_H", &obs_client);
-            }
-
-            _ => {}
         }
+    }
+}
+
+async fn handle_obs_commands(
+    obs_client: &OBSClient,
+    splitmsg: Vec<String>,
+) -> Result<()> {
+    // This is because Begin doesn't understand Rust
+    let default_source = String::from(DEFAULT_SOURCE);
+
+    // We try and do some parsing on every command here
+    // These may not always be what we want, but they are sensible
+    // defaults used by many commands
+    let source: &str = splitmsg.get(1).unwrap_or(&default_source);
+
+    let duration: u32 = splitmsg
+        .get(4)
+        .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
+
+    // WE PANICKED!!!!!!!
+    let filter_value = splitmsg
+        .get(3)
+        .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
+
+    // NOTE: If we want to extract values like filter_setting_name and filter_value
+    // we need to figure a way to look up the defaults per command
+    // because they could be different types
+    // for now we are going to try and have them be the same
+    // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
+
+    match splitmsg[0].as_str() {
+        // ================== //
+        // Scrolling Sources //
+        // ================== //
+
+        // !scroll SOURCE SCROLL_SETTING SPEED DURATION (in milliseconds)
+        // !scroll begin x 5 300
+        //
+        // TODO: Stop using server::obs::handle_user_input
+        "!scroll" => {
+            let default_filter_setting_name = String::from("speed_x");
+
+            // This is ok, because we have a different default
+            let filter_setting_name =
+                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
+
+            let filter_setting_name: String = match filter_setting_name.as_str()
+            {
+                "x" => String::from("speed_x"),
+                "y" => String::from("speed_y"),
+                _ => default_filter_setting_name,
+            };
+
+            // TODO: THIS 2 is SUPERFLUOUS!!!
+            // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
+            server::obs::handle_user_input(
+                source,
+                DEFAULT_MOVE_SCROLL_FILTER_NAME,
+                &filter_setting_name,
+                filter_value,
+                duration,
+                2,
+                &obs_client,
+            )
+            .await
+        }
+
+        // We could maybe get this into one function
+        // and have the word blur actually there
+        // =============== //
+        // Bluring Sources //
+        // =============== //
+        "!blur" => {
+            let blur_size: f32 = splitmsg
+                .get(2)
+                .and_then(|x| x.trim().parse().ok())
+                .unwrap_or(100.0);
+
+            // THESE DON'T NEED THE GODDAMN 2!!!
+            // TODO: we should print off error here
+            server::obs::update_and_trigger_move_value_filter(
+                source,
+                DEFAULT_MOVE_BLUR_FILTER_NAME,
+                "Filter.Blur.Size",
+                blur_size,
+                5000,
+                2,
+                &obs_client,
+            )
+            .await
+        }
+
+        // Update to take in 2 as a const
+        "!noblur" | "!unblur" => {
+            server::obs::update_and_trigger_move_value_filter(
+                source,
+                DEFAULT_MOVE_BLUR_FILTER_NAME,
+                "Filter.Blur.Size",
+                0.0,
+                5000,
+                2,
+                &obs_client,
+            )
+            .await
+        }
+
+        // =============== //
+        // Scaling Sources //
+        // =============== //
+        "!grow" | "!scale" => {
+            let x: f32 = splitmsg
+                .get(2)
+                .and_then(|temp_x| temp_x.trim().parse().ok())
+                .unwrap_or(1.0);
+            let y: f32 = splitmsg
+                .get(3)
+                .and_then(|temp_y| temp_y.trim().parse().ok())
+                .unwrap_or(1.0);
+
+            let base_scale = Scale {
+                x: Some(x),
+                y: Some(y),
+            };
+            server::obs::trigger_grow(source, &base_scale, x, y, &obs_client)
+                .await
+        }
+
+        // ====================== //
+        // 3D Transforming Sources//
+        // ====================== //
+
+        // This shit is annoying
+        // I almost want to divide it into 3 commands
+        // based on Camera Type
+        // and we have all 3
+        // that might be too much
+        // but i also might be exactly what we want
+        // only spin is wonky
+        // Should also add !spinz
+        "!spin" | "!spinx" | "spiny" => {
+            // HMMMMM
+            let default_filter_setting_name = String::from("z");
+            let filter_setting_name =
+                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
+
+            server::obs::spin(
+                source,
+                filter_setting_name,
+                filter_value,
+                duration,
+                &obs_client,
+            )
+            .await
+        }
+
+        "!def_ortho" => {
+            server::obs::default_ortho(source, duration, &obs_client).await
+        }
+        "!ortho" => {
+            if splitmsg.len() < 3 {
+                return Ok(());
+            };
+
+            let filter_setting_name = &splitmsg[2];
+
+            server::obs::trigger_ortho(
+                source,
+                "3D_Orthographic",
+                filter_setting_name,
+                filter_value,
+                duration,
+                &obs_client,
+            )
+            .await
+        }
+
+        // Perspective
+        // Corner Pin
+        // Orthographic
+
+        // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
+        // !3d begin Rotation.Z 3600 5000
+        //
+        // TODO: This is NOT Working!
+        "!3d" => {
+            // If we don't at least have a filter_name, we can't proceed
+            if splitmsg.len() < 3 {
+                bail!("We don't have a filter name, can't proceed");
+            }
+
+            let filter_setting_name = &splitmsg[2];
+
+            server::obs::trigger_3d(
+                source,
+                filter_setting_name,
+                filter_value,
+                duration,
+                &obs_client,
+            )
+            .await
+        }
+
+        // ============== //
+        // Moving Sources //
+        // ============== //
+        "!move" => {
+            // TODO: Look at this fanciness
+            //       cafce25: if let [source, x, y, ..] = splitmsg {...}
+            if splitmsg.len() > 3 {
+                let source = splitmsg[1].as_str();
+                let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
+                let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
+
+                server::obs::move_source(source, x, y, &obs_client).await
+            } else {
+                Ok(())
+            }
+        }
+
+        // TODO: I'd like one-for every corner
+        "!tr" => server::obs::top_right(source, &obs_client).await,
+
+        "!bl" => server::obs::bottom_right(source, &obs_client).await,
+
+        // ================ //
+        // Compound Effects //
+        // ================ //
+        "!norm" => server::obs::norm(&source, &obs_client).await,
+
+        "!follow" => {
+            let scene = DEFAULT_SCENE;
+            let leader = splitmsg.get(1).unwrap_or(&default_source);
+            let source = leader;
+
+            server::obs::follow(source, scene, leader, &obs_client).await
+        }
+        "!staff" => server::obs::staff(DEFAULT_SOURCE, &obs_client).await,
+
+        // =============================== //
+        // Create Scenes, Sources, Filters //
+        // =============================== //
+        "!create_source" => {
+            let new_scene: obws::requests::scene_items::CreateSceneItem =
+                obws::requests::scene_items::CreateSceneItem {
+                    scene: DEFAULT_SCENE,
+                    source: &source,
+                    enabled: Some(true),
+                };
+
+            // TODO: Why is this crashing???
+            obs_client.scene_items().create(new_scene).await?;
+
+            Ok(())
+        }
+
+        // TEMP: This is for temporary testing!!!!
+        "!split" => {
+            server::obs::create_split_3d_transform_filters(source, &obs_client)
+                .await
+        }
+
+        // This sets up OBS for Begin's current setup
+        "!create_filters_for_source" => {
+            server::obs::create_filters_for_source(source, &obs_client).await
+        }
+
+        // ========================== //
+        // Show Info About OBS Setup  //
+        // ========================== //
+        // "!filter" => {
+        //     let (_command, words) =
+        //         msg.message_text.split_once(" ").unwrap();
+        //
+        //     // TODO: Handle this error
+        //     let details =
+        //         server::obs::print_filter_info(&source, words, &obs_client)
+        //             .await?;
+        //     client
+        //         .say(twitch_username.clone(), format!("{:?}", details))
+        //         .await
+        // }
+
+        // TODO: Take in Scene
+        "!source" => {
+            server::obs::print_source_info(source, DEFAULT_SCENE, &obs_client)
+                .await
+        }
+
+        "!outline" => {
+            let source = splitmsg[1].as_str();
+            server::obs::outline(source, &obs_client).await
+        }
+
+        // ====================== //
+        // Show / Hide Subscenes //
+        // ====================== //
+        "!memes" => {
+            server::obs::set_enabled(
+                DEFAULT_SCENE,
+                MEME_SCENE,
+                true,
+                &obs_client,
+            )
+            .await
+        }
+
+        "!nomemes" | "!nojokes" | "!work" => {
+            server::obs::set_enabled(
+                DEFAULT_SCENE,
+                MEME_SCENE,
+                false,
+                &obs_client,
+            )
+            .await
+        }
+
+        // ==================== //
+        // Change Scenes in OBS //
+        // ==================== //
+        // Rename These Commands
+        "!chat" => server::obs::trigger_hotkey("OBS_KEY_L", &obs_client).await,
+
+        "!code" => server::obs::trigger_hotkey("OBS_KEY_H", &obs_client).await,
+
+        _ => Ok(()),
     }
 }
 
