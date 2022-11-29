@@ -2,14 +2,12 @@
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use clap::Parser;
 use events::EventHandler;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
-use server::commands;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -21,8 +19,6 @@ use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
-use twitch_irc::SecureTCPTransport;
-
 use twitch_irc::TwitchIRCClient;
 
 const DEFAULT_SCENE: &str = "Primary";
@@ -36,6 +32,64 @@ const DEFAULT_SOURCE: &str = "begin";
 // THESE NAMES AIN'T RIGHT!!!!
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+
+pub struct SoundHandler {}
+
+#[async_trait]
+impl EventHandler for SoundHandler {
+    async fn handle(
+        self: Box<Self>,
+        _: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            let paths = fs::read_dir("./MP3s").unwrap();
+
+            let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+
+            for path in paths {
+                mp3s.insert(path.unwrap().path().display().to_string());
+            }
+
+            // TODO: find an easy way to not start this code with a flag
+            for word in splitmsg {
+                let sanitized_word = word.as_str().to_lowercase();
+                let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+
+                if mp3s.contains(&full_name) {
+                    // Works for Arch Linux
+                    let (_stream, stream_handle) = get_output_stream("pulse");
+
+                    // Works for Mac
+                    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+
+                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+
+                    let file = BufReader::new(
+                        File::open(format!("./MP3s/{}.mp3", sanitized_word))
+                            .unwrap(),
+                    );
+
+                    // TODO: Is there someway to suppress output here
+                    sink.append(Decoder::new(BufReader::new(file)).unwrap());
+
+                    sink.sleep_until_end();
+                }
+            }
+        }
+    }
+}
 
 pub struct BeginMessageHandler {
     obs_client: OBSClient,
@@ -539,91 +593,6 @@ async fn say<
 }
 
 // ==========================================================================================
-// ===================================================================================================
-
-async fn handle_twitch_msg(
-    _tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // let mut conn = subd_db::get_handle().await;
-
-    let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
-
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::UserMessage(msg) => msg,
-            _ => continue,
-        };
-
-        let splitmsg = msg
-            .contents
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        let paths = fs::read_dir("./MP3s").unwrap();
-
-        let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-
-        for path in paths {
-            mp3s.insert(path.unwrap().path().display().to_string());
-        }
-
-        match splitmsg[0].as_str() {
-            "!echo" => {
-                let echo = commands::Echo::try_parse_from(&splitmsg);
-                if let Ok(echo) = echo {
-                    let _ = client
-                        .say(twitch_username.clone(), echo.contents)
-                        .await;
-                }
-            }
-            _ => {
-                // TODO: find an easy way to not start this code with a flag
-                for word in splitmsg {
-                    let sanitized_word = word.as_str().to_lowercase();
-                    let full_name = format!("./MP3s/{}.mp3", sanitized_word);
-
-                    if mp3s.contains(&full_name) {
-                        // Works for Arch Linux
-                        let (_stream, stream_handle) =
-                            get_output_stream("pulse");
-
-                        // Works for Mac
-                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-
-                        let sink =
-                            rodio::Sink::try_new(&stream_handle).unwrap();
-
-                        let file = BufReader::new(
-                            File::open(format!(
-                                "./MP3s/{}.mp3",
-                                sanitized_word
-                            ))
-                            .unwrap(),
-                        );
-
-                        // TODO: Is there someway to suppress output here
-                        sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
-
-                        sink.sleep_until_end();
-                    }
-                }
-            }
-        };
-    }
-}
-
-// ===========================================================================
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -663,7 +632,6 @@ async fn main() -> Result<()> {
     //         channels.push(tokio::spawn(async move { $impl }));
     //     }};
     // }
-    // makechan!(handle_twitch_chat);
     // makechan!(handle_twitch_msg);
     // makechan!(handle_obs_stuff);
     // for c in channels {
@@ -706,6 +674,7 @@ async fn main() -> Result<()> {
             .await?;
 
     event_loop.push(BeginMessageHandler { obs_client });
+    event_loop.push(SoundHandler {});
 
     event_loop.run().await?;
 
