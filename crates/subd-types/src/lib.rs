@@ -23,6 +23,7 @@ pub enum UserPlatform {
     Twitch,
     Youtube,
     Github,
+    Discord,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,13 +36,15 @@ pub struct UserMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
+    /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
 
-    // Info
-
-    // TODO: Maybe we don't want to have this...
-    //  We just have user messages?
+    /// TwitchChatMessage is only used for messages
+    /// that are explicitly for twitch related items. In general
+    /// you should use UserMessage instead. This will handle messages
+    /// from any service.
     TwitchChatMessage(twitch::TwitchMessage),
+
     TwitchSubscriptionCount(usize),
     TwitchSubscription(TwitchSubscriptionEvent),
     GithubSponsorshipEvent,

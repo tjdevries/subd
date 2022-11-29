@@ -1,7 +1,7 @@
 // models
 use anyhow::Result;
 
-use sqlx::PgConnection;
+use sqlx::PgPool;
 use subd_macros::database_model;
 use subd_types::UserPlatform;
 use subd_types::UserRoles;
@@ -19,7 +19,7 @@ pub mod user_messages {
 
 impl user_messages::Model {
     #[allow(dead_code)]
-    pub async fn save(self, conn: &mut PgConnection) -> Result<Self> {
+    pub async fn save(self, pool: &PgPool) -> Result<Self> {
         Ok(sqlx::query_as!(
             Self,
             r#"
@@ -31,7 +31,7 @@ impl user_messages::Model {
             self.platform as _,
             self.contents
         )
-        .fetch_one(conn)
+        .fetch_one(pool)
         .await?)
     }
 }
@@ -97,7 +97,7 @@ pub mod user_roles {
 
 #[allow(dead_code)]
 impl user_roles::Model {
-    pub async fn save(self, _conn: &mut PgConnection) -> Result<Self> {
+    pub async fn save(self, _conn: &PgPool) -> Result<Self> {
         // Ok(sqlx::query_as!(
         //     Self,
         //     r#"

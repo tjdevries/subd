@@ -63,7 +63,7 @@ async fn handle_twitch_msg(
     _tx: broadcast::Sender<Event>,
     _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let _conn = subd_db::get_handle().await;
+    let _conn = subd_db::get_db_pool().await;
 
     let config = get_chat_config();
     let (_, _client) = TwitchIRCClient::<
@@ -367,7 +367,7 @@ async fn handle_obs_stuff(
     _tx: broadcast::Sender<Event>,
     mut _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut _conn = subd_db::get_handle().await;
+    let mut _conn = subd_db::get_db_pool().await;
 
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
@@ -498,7 +498,7 @@ async fn handle_themesong_download(
     _tx: broadcast::Sender<Event>,
     _rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let _conn = subd_db::get_handle().await;
+    let _conn = subd_db::get_db_pool().await;
 
     let config = get_chat_config();
     let (_, _client) = TwitchIRCClient::<
@@ -640,36 +640,21 @@ async fn main() -> Result<()> {
 
     let mut event_loop = events::EventLoop::new();
 
+    let pool = subd_db::get_db_pool().await;
+
     // Turns twitch IRC things into our message events
-    event_loop.push(twitch_chat::TwitchChat::new("teej_dv".to_string())?);
+    event_loop.push(twitch_chat::TwitchChat::new(
+        pool.clone(),
+        "teej_dv".to_string(),
+    )?);
 
     // Does stuff with twitch messages
     event_loop.push(twitch_chat::TwitchMessageHandler::new(
-        subd_db::get_handle().await,
+        pool.clone(),
+        user_service::Service::new(pool.clone()).await,
     ));
 
     event_loop.run().await?;
-
-    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-    // let sink = rodio::Sink::try_new(&handle).unwrap();
-
-    // makechan!(handle_twitch_msg);
-    // makechan!(handle_yew);
-    // makechan!(handle_twitch_sub_count);
-    // makechan!(handle_obs_stuff);
-
-    // Themesong functions
-    // makechan!(handle_themesong_download);
-    // makechan!(|tx, rx| {
-    //     handle_themesong_play(tx, rx, &sink)
-    //         .await
-    //         .expect("Handles playing themesongs")
-    // });
-    //
-    // for c in channels {
-    //     // Wait for all the channels to be done
-    //     c.await?;
-    // }
 
     Ok(())
 }

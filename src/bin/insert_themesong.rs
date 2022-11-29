@@ -1,13 +1,13 @@
 use std::io::{BufReader, Cursor};
 
-use subd_db::get_handle;
+use subd_db::get_db_pool;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // let songpath = "/home/tjdevries/Downloads/teej_dv..wav";
     // let contents = fs::read(songpath).await?;
 
-    let mut db = get_handle().await;
+    let db = get_db_pool().await;
     // sqlx::query!(
     //     "INSERT INTO user_theme_songs (user_id, song) VALUES (117, ?1)",
     //     contents
@@ -19,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
         "SELECT song FROM user_theme_songs WHERE user_id = $1",
         user_id
     )
-    .fetch_one(&mut db)
+    .fetch_one(&db)
     .await?;
 
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();

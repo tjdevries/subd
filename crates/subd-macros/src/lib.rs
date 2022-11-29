@@ -171,13 +171,13 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
 
             quote! {
                 pub async fn read(
-                    conn: &mut sqlx::PgConnection,
+                    pool: &sqlx::PgPool,
                     id: sqlx::types::Uuid,
                 ) -> Result<Option<Self>> {
                     Ok(sqlx::query_as!(
                         Self, #query, id
                     )
-                    .fetch_optional(conn)
+                    .fetch_optional(pool)
                     .await?)
                 }
             }
@@ -204,9 +204,9 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
 
                 #read
 
-                pub async fn update(mut self, conn: &mut sqlx::PgConnection, updates: ModelUpdate) -> Result<Self> {
+                pub async fn update(mut self, pool: &sqlx::PgPool, updates: ModelUpdate) -> Result<Self> {
                     #(#model_update_identifiers)*
-                    Ok(self.save(conn).await?)
+                    Ok(self.save(pool).await?)
                 }
             }
         }

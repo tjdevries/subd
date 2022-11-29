@@ -319,8 +319,6 @@ pub async fn update_and_trigger_move_value_filter(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
-    // Why is there a wait???
-    thread::sleep(Duration::from_millis(100));
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,

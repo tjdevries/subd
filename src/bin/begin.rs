@@ -672,7 +672,6 @@ use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
 use server::commands;
-use server::users;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -683,7 +682,6 @@ use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
@@ -722,12 +720,12 @@ async fn handle_obs_stuff(
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
+            Event::UserMessage(msg) => msg,
             _ => continue,
         };
 
         let splitmsg = msg
-            .message_text
+            .contents
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
@@ -860,7 +858,7 @@ async fn handle_obs_stuff(
             }
 
             // only spin is wonky
-            "!spin" | "!spinx" | "spiny" => {
+            "!spin" | "!spinx" | "!spiny" => {
                 // let command = &splitmsg[0];
                 let default_filter_setting_name = String::from("z");
 
@@ -999,8 +997,7 @@ async fn handle_obs_stuff(
             // Show Info About OBS Setup  //
             // ========================== //
             "!filter" => {
-                let (_command, words) =
-                    msg.message_text.split_once(" ").unwrap();
+                let (_command, words) = msg.contents.split_once(" ").unwrap();
 
                 // TODO: Handle this error
                 let details =
@@ -1140,7 +1137,6 @@ async fn main() -> Result<()> {
         }};
     }
 
-    makechan!(handle_twitch_chat);
     makechan!(handle_twitch_msg);
     makechan!(handle_obs_stuff);
 
@@ -1153,39 +1149,10 @@ async fn main() -> Result<()> {
 
 // ===================================================================================================
 
-async fn handle_twitch_chat(
-    tx: broadcast::Sender<Event>,
-    _: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Technically, this one just needs to be able to read chat
-    // this client won't send anything to chat.
-    let config = get_chat_config();
-    let (mut incoming_messages, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-
-    client.join(twitch_username.to_owned()).unwrap();
-
-    while let Some(message) = incoming_messages.recv().await {
-        match message {
-            ServerMessage::Privmsg(private) => {
-                tx.send(Event::TwitchChatMessage(private))?;
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
-
 async fn handle_twitch_msg(
     _tx: broadcast::Sender<Event>,
     mut rx: broadcast::Receiver<Event>,
 ) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
-
     let config = get_chat_config();
     let (_, client) = TwitchIRCClient::<
         SecureTCPTransport,
@@ -1197,45 +1164,19 @@ async fn handle_twitch_msg(
     loop {
         let event = rx.recv().await?;
         let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
+            Event::UserMessage(msg) => msg,
             _ => continue,
         };
 
-        let badges = msg
-            .badges
-            .iter()
-            .map(|b| b.name.as_str())
-            .collect::<Vec<&str>>()
-            .join(",");
-
-        subd_db::create_twitch_user_chat(
-            &mut conn,
-            &msg.sender.id,
-            &msg.sender.login,
-        )
-        .await?;
-        subd_db::save_twitch_message(
-            &mut conn,
-            &msg.sender.id,
-            &msg.message_text,
-        )
-        .await?;
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-                .await?;
-        let user_roles =
-            users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
-                .await?;
-
-        println!("User {:?} | {:?} | {:?}", msg.sender, user_roles, badges);
+        let user_roles = msg.roles;
+        println!("User {:?} | {:?}", msg.user_id, user_roles);
 
         for role in user_roles.roles {
             println!("{:?}", role);
         }
 
         let splitmsg = msg
-            .message_text
+            .contents
             .split(" ")
             .map(|s| s.to_string())
             .collect::<Vec<String>>();

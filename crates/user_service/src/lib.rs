@@ -8,12 +8,12 @@ pub struct User {
 }
 
 pub struct Service {
-    conn: sqlx::PgConnection,
+    pool: sqlx::PgPool,
 }
 
 impl Service {
-    pub async fn new(conn: sqlx::PgConnection) -> Self {
-        Self { conn }
+    pub async fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
     }
 
     pub async fn create(&self) -> Result<User> {
@@ -21,7 +21,7 @@ impl Service {
     }
 
     pub async fn get(&self, _id: UserID) -> Result<Option<User>> {
-        println!("{:?}", self.conn);
+        println!("{:?}", self.pool);
         todo!()
     }
 
@@ -29,7 +29,7 @@ impl Service {
         &mut self,
         id: &UserID,
     ) -> Result<Option<UserRoles>> {
-        Ok(models::user_roles::Model::read(&mut self.conn, id.0)
+        Ok(models::user_roles::Model::read(&self.pool, id.0)
             .await?
             .map(models::user_roles::to_user_roles))
     }

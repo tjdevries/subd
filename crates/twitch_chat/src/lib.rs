@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use reqwest::Client as ReqwestClient;
-use subd_types::{Event, UserID, UserPlatform};
+use subd_types::{Event, UserID, UserMessage, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
 use twitch_api2::{
     helix::subscriptions::GetBroadcasterSubscriptionsRequest,
@@ -26,10 +26,14 @@ pub struct TwitchChat {
     broadcaster_username: String,
     incoming: UnboundedReceiver<ServerMessage>,
     client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: sqlx::PgPool,
 }
 
 impl TwitchChat {
-    pub fn new(broadcaster_username: String) -> Result<Self> {
+    pub fn new(
+        pool: sqlx::PgPool,
+        broadcaster_username: String,
+    ) -> Result<Self> {
         // TODO: Should make bot configurable via this too
         let twitch_username = subd_types::consts::get_twitch_bot_username();
         let config = ClientConfig::new_simple(StaticLoginCredentials::new(
@@ -48,6 +52,7 @@ impl TwitchChat {
             broadcaster_username,
             incoming,
             client,
+            pool,
         })
     }
 }
@@ -82,16 +87,17 @@ impl EventHandler for TwitchChat {
 //  You have a wife? Honestly thought this account was ran by a high schooler... Freshman in college at best.
 
 pub struct TwitchMessageHandler {
-    conn: sqlx::PgConnection,
+    pool: sqlx::PgPool,
+    users: user_service::Service,
 }
 
 impl TwitchMessageHandler {
-    pub fn new(conn: sqlx::PgConnection) -> Self {
-        Self { conn }
+    pub fn new(pool: sqlx::PgPool, users: user_service::Service) -> Self {
+        Self { pool, users }
     }
 }
 
-async fn create_new_user(conn: &mut sqlx::PgConnection) -> Result<UserID> {
+async fn create_new_user(conn: &sqlx::PgPool) -> Result<UserID> {
     let x = sqlx::query!("INSERT INTO users DEFAULT VALUES RETURNING user_id")
         .fetch_one(conn)
         .await?;
@@ -100,7 +106,7 @@ async fn create_new_user(conn: &mut sqlx::PgConnection) -> Result<UserID> {
 }
 
 async fn upsert_twitch_user(
-    conn: &mut sqlx::PgConnection,
+    pool: &sqlx::PgPool,
     twitch_user_id: &subd_types::TwitchUserID,
     twitch_user_login: &str,
 ) -> Result<UserID> {
@@ -110,12 +116,12 @@ async fn upsert_twitch_user(
         "SELECT user_id FROM twitch_users WHERE twitch_user_id = $1",
         twitch_user_id.0
     )
-    .fetch_optional(&mut *conn)
+    .fetch_optional(pool)
     .await?
     {
         Some(twitch_user) => Ok(UserID(twitch_user.user_id)),
         None => {
-            let user_id = create_new_user(&mut *conn).await?;
+            let user_id = create_new_user(pool).await?;
 
             sqlx::query!(
              "INSERT INTO twitch_users (user_id, twitch_user_id, login, display_name)
@@ -125,7 +131,7 @@ async fn upsert_twitch_user(
                 twitch_user_login,
                 twitch_user_login
             )
-            .execute(&mut *conn)
+            .execute(pool)
             .await
             .unwrap();
 
@@ -135,7 +141,7 @@ async fn upsert_twitch_user(
 }
 
 pub async fn save_twitch_message(
-    conn: &mut sqlx::PgConnection,
+    pool: &sqlx::PgPool,
     user_id: &UserID,
     platform: UserPlatform,
     message: &str,
@@ -147,7 +153,7 @@ pub async fn save_twitch_message(
         platform as _,
         message
     )
-    .execute(&mut *conn)
+    .execute(pool)
     .await?;
 
     Ok(())
@@ -157,7 +163,7 @@ pub async fn save_twitch_message(
 impl EventHandler for TwitchMessageHandler {
     async fn handle(
         mut self: Box<Self>,
-        _: broadcast::Sender<Event>,
+        tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
@@ -168,22 +174,35 @@ impl EventHandler for TwitchMessageHandler {
             };
 
             let user_id = upsert_twitch_user(
-                &mut self.conn,
+                &self.pool,
                 &msg.sender.id,
                 &msg.sender.login,
             )
             .await?;
 
             save_twitch_message(
-                &mut self.conn,
+                &self.pool,
                 &user_id,
                 UserPlatform::Twitch,
                 &msg.text,
             )
             .await?;
-        }
 
-        // Ok(())
+            let user_roles = self
+                .users
+                .get_roles(&user_id)
+                .await?
+                .ok_or(anyhow::anyhow!("missing user_roles"))?;
+
+            // After update the state of the database, we can go ahead
+            // and send the user message to the rest of the system.
+            tx.send(Event::UserMessage(UserMessage {
+                user_id,
+                roles: user_roles,
+                platform: UserPlatform::Twitch,
+                contents: msg.text,
+            }))?;
+        }
     }
 }
 

@@ -1,9 +1,9 @@
 
-use subd_db::get_handle;
+use subd_db::get_db_pool;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let _db = get_handle().await;
+    let _db = get_db_pool().await;
 
     let _user_id = 4;
     let _url = "https://www.youtube.com/watch?v=jOpzP33_USs";

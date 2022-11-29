@@ -2,8 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use psl::Psl;
 use reqwest::Url;
-use sqlx::PgConnection;
-use subd_db::get_handle;
+use sqlx::{PgConnection, PgPool};
 use subd_types::{Event, ThemesongDownload, ThemesongPlay, UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
@@ -94,7 +93,7 @@ pub async fn has_played_themesong_today(
 
 #[tracing::instrument(skip(conn))]
 pub async fn download_themesong(
-    conn: &mut PgConnection,
+    conn: &PgPool,
     user_id: &UserID,
     user_name: &str,
     url: &str,
@@ -146,7 +145,7 @@ pub async fn download_themesong(
     // Delete the previous theme song
     let user_id = user_id.0;
     sqlx::query!("DELETE FROM USER_THEME_SONGS WHERE user_id = $1", user_id)
-        .execute(&mut *conn)
+        .execute(conn)
         .await?;
 
     // Insert the new theme song
@@ -155,7 +154,7 @@ pub async fn download_themesong(
         user_id,
         contents
     )
-    .execute(&mut *conn)
+    .execute(conn)
     .await?;
 
     // And now delete the file
@@ -365,7 +364,9 @@ impl events::EventHandler for ThemesongPlayer {
 
 pub struct ThemesongDownloader {
     // pool: sqlx::PgPool,
-    conn: PgConnection,
+    pool: sqlx::PgPool,
+    twitch: twitch_service::Service,
+    users: user_service::Service,
 }
 
 #[async_trait]
@@ -375,9 +376,6 @@ impl events::EventHandler for ThemesongDownloader {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        let mut twitch = twitch_service::Service::new(get_handle().await).await;
-        let mut users = user_service::Service::new(get_handle().await).await;
-
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -387,13 +385,16 @@ impl events::EventHandler for ThemesongDownloader {
                 _ => continue,
             };
 
-            let user_id = match twitch.get_user_id(msg.sender.id).await? {
+            let user_id = match self.twitch.get_user_id(msg.sender.id).await? {
                 Some(user_id) => user_id,
                 None => continue,
             };
 
-            let user_roles =
-                users.get_roles(&user_id).await?.unwrap_or_default();
+            let user_roles = self
+                .users
+                .get_roles(&user_id)
+                .await?
+                .ok_or(anyhow::anyhow!("empty user_roles"))?;
 
             let splitmsg = msg
                 .text
@@ -422,7 +423,7 @@ impl events::EventHandler for ThemesongDownloader {
                 tx.send(ThemesongDownload::start(msg.sender.name.clone()))?;
 
                 match download_themesong(
-                    &mut self.conn,
+                    &self.pool,
                     &user_id,
                     msg.sender.name.as_str(),
                     splitmsg[1].as_str(),

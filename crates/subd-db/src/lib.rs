@@ -1,34 +1,12 @@
 #![allow(dead_code)]
 
-// use std::collections::HashSet;
-//
-// use anyhow::Result;
-use sqlx::{Connection, PgConnection};
-// use subd_types::{GithubUser, Role, TwitchSubLevel, UserID, UserRoles};
-
-// pub struct User {
-//     pub id: UserID,
-//     pub twitch_user: Option<String>,
-//     pub github_user: Option<String>,
-//     // last_updated: chrono::Utc,
-// }
-//
-// // static CONNECTIONS: Lazy<Pool<Sqlite>> = Lazy::new(|| {
-// //     let options = SqliteConnectOptions::new()
-// //         .filename(std::env::var("DATABASE_URL").expect("Must have passed filename"));
-// //
-// //     // SqlitePool::connect("sql
-// //     let pool = SqlitePool::connect_lazy_with(options);
-// //
-// //     // TODO: Can I do this synchronously?
-// //     // sqlx::migrate!().run(&pool).await?;
-// //
-// //     pool
-// // });
-pub async fn get_handle() -> sqlx::PgConnection {
-    PgConnection::connect(subd_types::consts::get_database_url().as_str())
+/// Get a connection to the database. Should not be called from a lot of places
+/// (I think it should only be called from basically your "main" area... but we
+/// will have to explore that a bit more).
+pub async fn get_db_pool() -> sqlx::PgPool {
+    sqlx::PgPool::connect(subd_types::consts::get_database_url().as_str())
         .await
-        .expect("To connect to the database")
+        .expect("To get postgres pool connection")
 }
 // pub async fn set_github_info_for_user(
 //     conn: &mut PgConnection,
