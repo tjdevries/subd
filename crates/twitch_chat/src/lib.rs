@@ -64,10 +64,12 @@ impl EventHandler for TwitchChat {
         tx: broadcast::Sender<Event>,
         _: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        // Listen for incoming IRC messages from Twitch
+        // we send an TwitchChatMessage event
+        // which loop handles somewhere
         while let Some(message) = self.incoming.recv().await {
             match message {
                 ServerMessage::Privmsg(private) => {
-                    // TODO: Turn to internal type
                     tx.send(Event::TwitchChatMessage(
                         subd_types::twitch::TwitchMessage::from_msg(private),
                     ))?;

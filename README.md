@@ -269,41 +269,41 @@ Change to the Scene where you can read code.
 ## Corner Pin
 
 ```
-!corner technofroggo Corners.BottomLeft.X 100
-!corner technofroggo Corners.BottomLeft.Y 10
-!corner technofroggo Corners.BottomRight.X 10
-!corner technofroggo Corners.BottomRight.Y 10
-!corner technofroggo Corners.TopLeft.X 10
-!corner technofroggo Corners.TopLeft.Y 10
-!corner technofroggo Corners.TopRight.X 10
-!corner technofroggo Corners.TopRight.Y 10
+!corner frog Corners.BottomLeft.X 100
+!corner frog Corners.BottomLeft.Y 10
+!corner frog Corners.BottomRight.X 10
+!corner frog Corners.BottomRight.Y 10
+!corner frog Corners.TopLeft.X 10
+!corner frog Corners.TopLeft.Y 10
+!corner frog Corners.TopRight.X 10
+!corner frog Corners.TopRight.Y 10
 ```
 
 # Orthographic
 
 ```
-!ortho technofroggo Scale.Y 100
-!ortho technofroggo Shear.X 100
-!ortho technofroggo Shear.Y 100
-!ortho technofroggo Position.X -300
-!ortho technofroggo Position.Y 10
-!ortho technofroggo Rotation.X 360
-!ortho technofroggo Rotation.Y 360
-!ortho technofroggo Rotation.Z 360
+!ortho frog Scale.Y 100
+!ortho frog Shear.X 100
+!ortho frog Shear.Y 100
+!ortho frog Position.X -300
+!ortho frog Position.Y 10
+!ortho frog Rotation.X 360
+!ortho frog Rotation.Y 360
+!ortho frog Rotation.Z 3600
 ```
 
 ## Perspective
 
 ```
-!perp technofroggo Camera.FieldOfView 1000
-!perp technofroggo Scale.X 100
-!perp technofroggo Scale.Y 1000
-!perp technofroggo Shear.X 10
-!perp technofroggo Shear.Y 10
-!perp technofroggo Position.X 220
-!perp technofroggo Position.Y 220
-!perp technofroggo Position.Z 1
-!perp technofroggo Rotation.X 360
-!perp technofroggo Rotation.Y 360
-!perp technofroggo Rotation.Z 360
+!perp frog Camera.FieldOfView 1000
+!perp frog Scale.X 100
+!perp frog Scale.Y 1000
+!perp frog Shear.X 10
+!perp frog Shear.Y 10
+!perp frog Position.X 220
+!perp frog Position.Y 220
+!perp frog Position.Z 1
+!perp frog Rotation.X 360
+!perp frog Rotation.Y 360
+!perp frog Rotation.Z 360
 ```

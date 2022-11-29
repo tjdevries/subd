@@ -1,28 +1,20 @@
-#![allow(dead_code)]
-
 use anyhow::{bail, Result};
-use clap::Parser;
+use async_trait::async_trait;
+use events::EventHandler;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
-use server::commands;
-use server::users;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use subd_types::Event;
+use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::message::ServerMessage;
-use twitch_irc::ClientConfig;
-use twitch_irc::SecureTCPTransport;
-use twitch_irc::TwitchIRCClient;
 
 const DEFAULT_SCENE: &str = "Primary";
 
@@ -36,50 +28,93 @@ const DEFAULT_SOURCE: &str = "begin";
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
-// Here you wait for OBS Events that are commands to trigger OBS
-async fn handle_obs_stuff(
-    _tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Connect to OBS
-    let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
-        .parse::<u16>()
-        .unwrap();
-    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
-    let obs_client =
-        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
-            .await?;
+pub struct SoundHandler {}
 
-    // Connect to Twitch
-    // let config = get_chat_config();
-    //
-    // This is used for !filter
-    // Which we aren't currently using
-    // let (_, client) = TwitchIRCClient::<
-    //     SecureTCPTransport,
-    //     StaticLoginCredentials,
-    // >::new(config);
-    // // used for !filter
-    // let twitch_username = subd_types::consts::get_twitch_bot_username();
+#[async_trait]
+impl EventHandler for SoundHandler {
+    async fn handle(
+        self: Box<Self>,
+        _: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
 
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
-            _ => continue,
-        };
+            let paths = fs::read_dir("./MP3s").unwrap();
 
-        let splitmsg = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
+            let mut mp3s: HashSet<String> = vec![].into_iter().collect();
 
-        match handle_obs_commands(&obs_client, splitmsg).await {
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!("Error: {err}");
-                continue;
+            for path in paths {
+                mp3s.insert(path.unwrap().path().display().to_string());
+            }
+
+            // TODO: find an easy way to not start this code with a flag
+            for word in splitmsg {
+                let sanitized_word = word.as_str().to_lowercase();
+                let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+
+                if mp3s.contains(&full_name) {
+                    // Works for Arch Linux
+                    let (_stream, stream_handle) = get_output_stream("pulse");
+
+                    // Works for Mac
+                    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+
+                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+
+                    let file = BufReader::new(
+                        File::open(format!("./MP3s/{}.mp3", sanitized_word))
+                            .unwrap(),
+                    );
+
+                    // TODO: Is there someway to suppress output here
+                    sink.append(Decoder::new(BufReader::new(file)).unwrap());
+
+                    sink.sleep_until_end();
+                }
+            }
+        }
+    }
+}
+
+pub struct BeginMessageHandler {
+    obs_client: OBSClient,
+}
+
+#[async_trait]
+impl EventHandler for BeginMessageHandler {
+    async fn handle(
+        self: Box<Self>,
+        _: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            match handle_obs_commands(&self.obs_client, splitmsg, msg).await {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Error: {err}");
+                    continue;
+                }
             }
         }
     }
@@ -88,6 +123,7 @@ async fn handle_obs_stuff(
 async fn handle_obs_commands(
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
+    msg: UserMessage,
 ) -> Result<()> {
     // This is because Begin doesn't understand Rust
     let default_source = String::from(DEFAULT_SOURCE);
@@ -155,37 +191,45 @@ async fn handle_obs_commands(
         // Bluring Sources //
         // =============== //
         "!blur" => {
-            let blur_size: f32 = splitmsg
+            let filter_value = splitmsg
                 .get(2)
-                .and_then(|x| x.trim().parse().ok())
-                .unwrap_or(100.0);
-
-            // THESE DON'T NEED THE GODDAMN 2!!!
-            // TODO: we should print off error here
-            server::obs::update_and_trigger_move_value_filter(
-                source,
-                DEFAULT_MOVE_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                blur_size,
-                5000,
-                2,
-                &obs_client,
-            )
-            .await
+                .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
+            // msg.roles.is_twitch_mod()
+            // msg.roles.is_twitch_founder()
+            // msg.roles.is_twitch_staff()
+            // msg.roles.is_twitch_sub()
+            if msg.roles.is_twitch_vip() {
+                println!("WE GOT A VIP OVER HERE");
+                server::obs::update_and_trigger_move_value_filter(
+                    source,
+                    DEFAULT_MOVE_BLUR_FILTER_NAME,
+                    "Filter.Blur.Size",
+                    filter_value,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+            Ok(())
         }
 
         // Update to take in 2 as a const
         "!noblur" | "!unblur" => {
-            server::obs::update_and_trigger_move_value_filter(
-                source,
-                DEFAULT_MOVE_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                0.0,
-                5000,
-                2,
-                &obs_client,
-            )
-            .await
+            if msg.roles.is_twitch_mod() {
+                println!("WE GOT A MOD OVER HERE");
+                server::obs::update_and_trigger_move_value_filter(
+                    source,
+                    DEFAULT_MOVE_BLUR_FILTER_NAME,
+                    "Filter.Blur.Size",
+                    0.0,
+                    5000,
+                    2,
+                    &obs_client,
+                )
+                .await?;
+            }
+            Ok(())
         }
 
         // =============== //
@@ -450,19 +494,6 @@ async fn handle_obs_commands(
 }
 
 // ==============================================================================
-// ==============================================================================
-// ==============================================================================
-
-// https://stackoverflow.com/questions/71468954/rust-rodio-get-a-list-of-outputdevices
-fn list_host_devices() {
-    let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
-    for device in devices {
-        let dev: rodio::Device = device.into();
-        let dev_name: String = dev.name().unwrap();
-        println!(" # Device : {}", dev_name);
-    }
-}
 
 fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
     let host = cpal::default_host();
@@ -479,28 +510,6 @@ fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
         }
     }
     return (_stream, stream_handle);
-}
-
-fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
-    ClientConfig::new_simple(StaticLoginCredentials::new(
-        twitch_username,
-        Some(subd_types::consts::get_twitch_bot_oauth()),
-    ))
-}
-
-// ==========================================================================================
-
-async fn say<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    client: &TwitchIRCClient<T, L>,
-    msg: impl Into<String>,
-) -> Result<()> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    client.say(twitch_username.to_string(), msg.into()).await?;
-    Ok(())
 }
 
 // ==========================================================================================
@@ -526,178 +535,45 @@ async fn main() -> Result<()> {
         }
     }
 
-    let mut channels = vec![];
-    let (base_tx, _) = broadcast::channel::<Event>(256);
+    // Create 1 Event Loop
+    // Push handles onto the loop
+    // those handlers are things like twitch-chat, twitch-sub, github-sponsor etc.
+    let mut event_loop = events::EventLoop::new();
 
-    macro_rules! makechan {
-        // If it has (tx, rx) as signature, we can just do this
-        ($handle_func:ident) => {{
-            let (new_tx, new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move {
-                $handle_func(new_tx, new_rx)
-                    .await
-                    .expect("this should work")
-            }));
-        }};
+    // You can clone this
+    // because it's just adding one more connection per clone()???
+    //
+    // This is useful because you need no lifetimes
+    let pool = subd_db::get_db_pool().await;
 
-        (|$new_tx:ident, $new_rx:ident| $impl:block) => {{
-            let ($new_tx, $new_rx) = (base_tx.clone(), base_tx.subscribe());
-            channels.push(tokio::spawn(async move { $impl }));
-        }};
-    }
+    // Turns twitch IRC things into our message events
+    event_loop.push(twitch_chat::TwitchChat::new(
+        pool.clone(),
+        "beginbot".to_string(),
+    )?);
 
-    makechan!(handle_twitch_chat);
-    makechan!(handle_twitch_msg);
-    makechan!(handle_obs_stuff);
+    // Does stuff with twitch messages
+    event_loop.push(twitch_chat::TwitchMessageHandler::new(
+        pool.clone(),
+        twitch_service::Service::new(
+            pool.clone(),
+            user_service::Service::new(pool.clone()).await,
+        )
+        .await,
+    ));
 
-    for c in channels {
-        c.await?;
-    }
+    let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
+        .parse::<u16>()
+        .unwrap();
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+
+    event_loop.push(BeginMessageHandler { obs_client });
+    event_loop.push(SoundHandler {});
+
+    event_loop.run().await?;
 
     Ok(())
 }
-
-// ===================================================================================================
-
-async fn handle_twitch_chat(
-    tx: broadcast::Sender<Event>,
-    _: broadcast::Receiver<Event>,
-) -> Result<()> {
-    // Technically, this one just needs to be able to read chat
-    // this client won't send anything to chat.
-    let config = get_chat_config();
-    let (mut incoming_messages, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-
-    client.join(twitch_username.to_owned()).unwrap();
-
-    while let Some(message) = incoming_messages.recv().await {
-        match message {
-            ServerMessage::Privmsg(private) => {
-                tx.send(Event::TwitchChatMessage(private))?;
-            }
-            _ => {}
-        }
-    }
-
-    Ok(())
-}
-
-async fn handle_twitch_msg(
-    _tx: broadcast::Sender<Event>,
-    mut rx: broadcast::Receiver<Event>,
-) -> Result<()> {
-    let mut conn = subd_db::get_handle().await;
-
-    let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
-
-    loop {
-        let event = rx.recv().await?;
-        let msg = match event {
-            Event::TwitchChatMessage(msg) => msg,
-            _ => continue,
-        };
-
-        let badges = msg
-            .badges
-            .iter()
-            .map(|b| b.name.as_str())
-            .collect::<Vec<&str>>()
-            .join(",");
-
-        subd_db::create_twitch_user_chat(
-            &mut conn,
-            &msg.sender.id,
-            &msg.sender.login,
-        )
-        .await?;
-        subd_db::save_twitch_message(
-            &mut conn,
-            &msg.sender.id,
-            &msg.message_text,
-        )
-        .await?;
-
-        let user_id =
-            subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-                .await?;
-        let user_roles =
-            users::update_user_roles_once_per_day(&mut conn, &user_id, &msg)
-                .await?;
-
-        println!("User {:?} | {:?} | {:?}", msg.sender, user_roles, badges);
-
-        for role in user_roles.roles {
-            println!("{:?}", role);
-        }
-
-        let splitmsg = msg
-            .message_text
-            .split(" ")
-            .map(|s| s.to_string())
-            .collect::<Vec<String>>();
-
-        let paths = fs::read_dir("./MP3s").unwrap();
-
-        let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-
-        for path in paths {
-            mp3s.insert(path.unwrap().path().display().to_string());
-        }
-
-        match splitmsg[0].as_str() {
-            "!echo" => {
-                let echo = commands::Echo::try_parse_from(&splitmsg);
-                if let Ok(echo) = echo {
-                    let _ = client
-                        .say(twitch_username.clone(), echo.contents)
-                        .await;
-                }
-            }
-            _ => {
-                // TODO: find an easy way to not start this code with a flag
-                for word in splitmsg {
-                    let sanitized_word = word.as_str().to_lowercase();
-                    let full_name = format!("./MP3s/{}.mp3", sanitized_word);
-
-                    if mp3s.contains(&full_name) {
-                        // Works for Arch Linux
-                        let (_stream, stream_handle) =
-                            get_output_stream("pulse");
-
-                        // Works for Mac
-                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-
-                        let sink =
-                            rodio::Sink::try_new(&stream_handle).unwrap();
-
-                        let file = BufReader::new(
-                            File::open(format!(
-                                "./MP3s/{}.mp3",
-                                sanitized_word
-                            ))
-                            .unwrap(),
-                        );
-
-                        // TODO: Is there someway to suppress output here
-                        sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
-
-                        sink.sleep_until_end();
-                    }
-                }
-            }
-        };
-    }
-}
-
