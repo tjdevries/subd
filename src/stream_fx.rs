@@ -52,7 +52,7 @@ impl Default for StreamFXCornerPin {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StreamFXPerspective {
     #[serde(rename = "Camera.Mode")]
     pub camera_mode: Option<i32>,
@@ -110,7 +110,7 @@ impl Default for StreamFXPerspective {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StreamFXOrthographic {
     #[serde(rename = "Camera.Mode")]
     pub camera_mode: Option<i32>,
@@ -162,7 +162,7 @@ impl Default for StreamFXOrthographic {
 }
 
 // This is the old catch all
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StreamFXSettings {
     #[serde(rename = "Camera.Mode")]
     pub camera_mode: Option<i32>,
