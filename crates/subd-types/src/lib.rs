@@ -6,18 +6,45 @@ use std::{
 use serde::{Deserialize, Serialize};
 use twitch_api2::pubsub::channel_points::Redemption;
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
-use twitch_irc::message::PrivmsgMessage;
 
 pub mod consts;
 pub mod twitch;
 
-pub type UserID = i64;
-pub type TwitchUserID = String;
+// TODO: How do we derive this better?
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct UserID(pub uuid::Uuid);
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+pub struct TwitchUserID(pub String);
+
+#[derive(sqlx::Type, Debug, Serialize, Deserialize, Clone)]
+#[sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum UserPlatform {
+    Twitch,
+    Youtube,
+    Github,
+    Discord,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserMessage {
+    pub user_id: UserID,
+    pub roles: UserRoles,
+    pub platform: UserPlatform,
+    pub contents: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
-    // Info
-    TwitchChatMessage(PrivmsgMessage),
+    /// The primary Message event. Should be used wherever possible.
+    UserMessage(UserMessage),
+
+    /// TwitchChatMessage is only used for messages
+    /// that are explicitly for twitch related items. In general
+    /// you should use UserMessage instead. This will handle messages
+    /// from any service.
+    TwitchChatMessage(twitch::TwitchMessage),
+
     TwitchSubscriptionCount(usize),
     TwitchSubscription(TwitchSubscriptionEvent),
     GithubSponsorshipEvent,
@@ -33,6 +60,7 @@ pub enum Event {
 
     // Requests
     RequestTwitchSubCount,
+    RequestTwitchMessage(String),
     TwitchChannelPointsRedeem(Redemption),
 
     /// Backend Only
@@ -86,10 +114,40 @@ pub struct LunchBytesTopic {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ThemesongDownload {
-    Request { msg: PrivmsgMessage },
+    Request { msg: twitch::TwitchMessage },
     Start { display_name: String },
     Finish { display_name: String, success: bool },
     Format { sender: String },
+}
+
+impl ThemesongDownload {
+    pub fn format<T>(sender: T) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Format {
+            sender: sender.to_string(),
+        })
+    }
+
+    pub fn finish<T>(display_name: T, success: bool) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Finish {
+            display_name: display_name.to_string(),
+            success,
+        })
+    }
+
+    pub fn start<T>(display_name: T) -> Event
+    where
+        T: ToString + 'static,
+    {
+        Event::ThemesongDownload(ThemesongDownload::Start {
+            display_name: display_name.to_string(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

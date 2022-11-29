@@ -97,27 +97,7 @@ transformation of all you sources!
 
 ## Creating and Connecting to Database
 
-- Install Sqlite
-- Create Database
-- Set DATABASE_URL
-
-```
-sqlite subd
-```
-
-You need to set the database URL environment variable to connect to the database
-For convenience, you can use a .env file to set DATABASE_URL so that you don't have to pass it every time:
-
-```.env
-DATABASE_URL="sqlite:///home/user/folder/project/subd.db"
-```
-
-You need to install sqlx-cli to build the database
-
-```
-cargo build sqlx-cli
-```
-
+- TODO: Wait til begin complains and then i'll fill this info in :)
 
 ## Build/Reset Database
 

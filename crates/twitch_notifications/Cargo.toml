@@ -1,0 +1,17 @@
+[package]
+name = "twitch_notifications"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+subd-types = { path = "../subd-types" }
+
+anyhow.workspace = true
+futures.workspace = true
+tokio-tungstenite.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tungstenite.workspace = true
+twitch_api2.workspace = true

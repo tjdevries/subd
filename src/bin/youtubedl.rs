@@ -1,11 +1,11 @@
-use server::themesong::{play_themesong};
-use subd_db::get_handle;
+
+use subd_db::get_db_pool;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let mut db = get_handle().await;
+    let _db = get_db_pool().await;
 
-    let user_id = 4;
+    let _user_id = 4;
     let _url = "https://www.youtube.com/watch?v=jOpzP33_USs";
 
     if true {
@@ -15,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
     let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&handle).unwrap();
 
-    play_themesong(&mut db, &user_id, &sink).await?;
+    // play_themesong(&mut db, &user_id, &sink).await?;
     sink.sleep_until_end();
 
     Ok(())

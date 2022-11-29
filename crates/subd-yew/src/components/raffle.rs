@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use gloo_timers::callback::Timeout;
 use subd_types::RaffleStatus;
 use yew::prelude::*;
@@ -26,7 +24,7 @@ pub enum State {
 pub struct RaffleComponent {
     state: State,
     timeout: Option<Timeout>,
-    existing_names: HashSet<String>,
+    // existing_names: HashSet<String>,
 }
 
 impl RaffleComponent {
@@ -49,7 +47,7 @@ impl Component for RaffleComponent {
                 _ => State::Show,
             },
             timeout: None,
-            existing_names: HashSet::default(),
+            // existing_names: HashSet::default(),
         }
     }
 

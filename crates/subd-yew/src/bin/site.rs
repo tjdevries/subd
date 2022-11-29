@@ -1,48 +1,48 @@
 use std::cmp::max;
 use std::collections::VecDeque;
 
-use chrono::{self, Utc};
+use subd_types::twitch::TwitchMessage;
 use subd_types::{Event as SubdEvent, LunchBytesStatus};
 use subd_yew::components::lunchbytes::{self, status};
 use subd_yew::components::raffle::RaffleComponent;
 use subd_yew::components::sub_notification::SubNotification;
 use subd_yew::components::themesong_downloader::ThemesongDownloader;
 use subd_yew::components::themesong_player::ThemesongPlayer;
-use twitch_irc::message::{Badge, Emote, PrivmsgMessage};
+use twitch_irc::message::Emote;
 use yew::prelude::*;
 use yew_hooks::{use_list, use_web_socket};
-
-const SHOULD_DEFAULT_MESSAGES: bool = false;
 
 // use_reducer or use_reducer_eq
 //  Probably what we want to end up using to dispatch over Event
 // Might not need to though
 
 // https://static-cdn.jtvnw.net/emoticons/v2/<id>/<format>/<theme_mode>/<scale>
-fn make_emote_url(emote: &Emote) -> String {
+fn _make_emote_url(emote: &Emote) -> String {
     format!(
         "https://static-cdn.jtvnw.net/emoticons/v2/{}/default/dark/2.0",
         emote.id
     )
 }
 
-fn render_message(message: &PrivmsgMessage) -> Html {
+fn render_message(message: &TwitchMessage) -> Html {
     let color = message
         .name_color
         .clone()
-        .unwrap_or(twitch_irc::message::RGBColor { r: 0, g: 0, b: 0 });
+        .unwrap_or(subd_types::twitch::Color { r: 0, g: 0, b: 0 });
 
-    let is_moderator = message
-        .badges
-        .iter()
-        .find(|badge| badge.name == "moderator")
-        .is_some();
+    // let is_moderator = message
+    //     .badges
+    //     .iter()
+    //     .find(|badge| badge.name == "moderator")
+    //     .is_some();
+    let is_moderator = false;
+
     let mut class_name = "subd-message".to_string();
     if is_moderator {
         class_name = format!("{} {}", class_name, "subd-message-moderator");
     }
 
-    let contents = message.message_text.clone();
+    let contents = message.text.clone();
     let mut pieces: Vec<Html> = vec![];
 
     if message.emotes.is_empty() {
@@ -52,32 +52,33 @@ fn render_message(message: &PrivmsgMessage) -> Html {
             </p>
         });
     } else {
-        let mut contents = contents.chars();
-        let mut last_emote_finish = 0;
+        let contents = contents.chars();
+        let _last_emote_finish = 0;
 
-        let mut emotes = VecDeque::from(message.emotes.clone());
-        while let Some(emote) = emotes.pop_front() {
-            // Get the missing text contents
-            let segment = contents
-                .by_ref()
-                .take(emote.char_range.start - last_emote_finish)
-                .collect::<String>();
-            if !segment.is_empty() {
-                pieces.push(html! { <span> { segment } </span> });
-            }
-
-            pieces.push(
-                html! { <img src={make_emote_url(&emote)} alt={"emote"} /> },
-            );
-
-            last_emote_finish = emote.char_range.end;
-
-            // This is just stupid skip cause i'm stupid and tired today
-            _ = contents
-                .by_ref()
-                .take(emote.char_range.len())
-                .collect::<String>();
-        }
+        let _emotes = VecDeque::from(message.emotes.clone());
+        // while let Some(emote) = emotes.pop_front() {
+        //     // Get the missing text contents
+        //     let segment = contents
+        //         .by_ref()
+        //         .take(emote.char_range.start - last_emote_finish)
+        //         .collect::<String>();
+        //
+        //     if !segment.is_empty() {
+        //         pieces.push(html! { <span> { segment } </span> });
+        //     }
+        //
+        //     pieces.push(
+        //         html! { <img src={make_emote_url(&emote)} alt={"emote"} /> },
+        //     );
+        //
+        //     last_emote_finish = emote.char_range.end;
+        //
+        //     // This is just stupid skip cause i'm stupid and tired today
+        //     _ = contents
+        //         .by_ref()
+        //         .take(emote.char_range.len())
+        //         .collect::<String>();
+        // }
 
         let remaining = contents.collect::<String>();
         if !remaining.is_empty() {
@@ -98,88 +99,86 @@ fn render_message(message: &PrivmsgMessage) -> Html {
     }
 }
 
-fn default_messages() -> Vec<PrivmsgMessage> {
-    if !SHOULD_DEFAULT_MESSAGES {
-        return vec![];
-    }
+fn default_messages() -> Vec<TwitchMessage> {
+    return vec![];
 
     // let channel_username = subd_types::consts::get_twitch_broadcaster_username();
-    let channel_username = "teej_dv".to_string();
-    vec![
-        PrivmsgMessage {
-            channel_login: channel_username.clone().into(),
-            channel_id: "_".into(),
-            message_text: "Wow, Sorry for my bad behavior. I'll shape up now"
-                .into(),
-            is_action: false,
-            sender: twitch_irc::message::TwitchUserBasics {
-                id: "TODO".into(),
-                login: "nyxkrage".into(),
-                name: "NyxKrage".into(),
-            },
-            badge_info: vec![],
-            badges: vec![Badge {
-                name: "moderator".into(),
-                version: "1".into(),
-            }],
-            bits: None,
-            name_color: None,
-            // TODO: HANDLE EMOTES
-            emotes: vec![],
-            message_id: "_".into(),
-            server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple(
-                "this is a lie".into(),
-                vec![],
-            ),
-        },
-        PrivmsgMessage {
-            channel_login: channel_username.clone().into(),
-            channel_id: "_".into(),
-            message_text: "... wish I was a mod Sadge".into(),
-            is_action: false,
-            sender: twitch_irc::message::TwitchUserBasics {
-                id: "TODO".into(),
-                login: "a_daneel".into(),
-                name: "a_daneel".into(),
-            },
-            badge_info: vec![],
-            badges: vec![],
-            bits: None,
-            name_color: None,
-            // TODO: HANDLE EMOTES
-            emotes: vec![],
-            message_id: "_".into(),
-            server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple(
-                "this is a lie".into(),
-                vec![],
-            ),
-        },
-        PrivmsgMessage {
-            channel_login: channel_username.clone().into(),
-            channel_id: "_".into(),
-            message_text: "Oh hey I'm Oetzi and I'm super nice!".into(),
-            is_action: false,
-            sender: twitch_irc::message::TwitchUserBasics {
-                id: "TODO".into(),
-                login: "oetziofficial".into(),
-                name: "OetziOfficial".into(),
-            },
-            badge_info: vec![],
-            badges: vec![],
-            bits: None,
-            name_color: None,
-            // TODO: HANDLE EMOTES
-            emotes: vec![],
-            message_id: "_".into(),
-            server_timestamp: Utc::now(),
-            source: twitch_irc::message::IRCMessage::new_simple(
-                "this is a lie".into(),
-                vec![],
-            ),
-        },
-    ]
+    // let channel_username = "teej_dv".to_string();
+    // vec![
+    //     PrivmsgMessage {
+    //         channel_login: channel_username.clone().into(),
+    //         channel_id: "_".into(),
+    //         message_text: "Wow, Sorry for my bad behavior. I'll shape up now"
+    //             .into(),
+    //         is_action: false,
+    //         sender: twitch_irc::message::TwitchUserBasics {
+    //             id: "TODO".into(),
+    //             login: "nyxkrage".into(),
+    //             name: "NyxKrage".into(),
+    //         },
+    //         badge_info: vec![],
+    //         badges: vec![Badge {
+    //             name: "moderator".into(),
+    //             version: "1".into(),
+    //         }],
+    //         bits: None,
+    //         name_color: None,
+    //         // TODO: HANDLE EMOTES
+    //         emotes: vec![],
+    //         message_id: "_".into(),
+    //         server_timestamp: Utc::now(),
+    //         source: twitch_irc::message::IRCMessage::new_simple(
+    //             "this is a lie".into(),
+    //             vec![],
+    //         ),
+    //     },
+    //     PrivmsgMessage {
+    //         channel_login: channel_username.clone().into(),
+    //         channel_id: "_".into(),
+    //         message_text: "... wish I was a mod Sadge".into(),
+    //         is_action: false,
+    //         sender: twitch_irc::message::TwitchUserBasics {
+    //             id: "TODO".into(),
+    //             login: "a_daneel".into(),
+    //             name: "a_daneel".into(),
+    //         },
+    //         badge_info: vec![],
+    //         badges: vec![],
+    //         bits: None,
+    //         name_color: None,
+    //         // TODO: HANDLE EMOTES
+    //         emotes: vec![],
+    //         message_id: "_".into(),
+    //         server_timestamp: Utc::now(),
+    //         source: twitch_irc::message::IRCMessage::new_simple(
+    //             "this is a lie".into(),
+    //             vec![],
+    //         ),
+    //     },
+    //     PrivmsgMessage {
+    //         channel_login: channel_username.clone().into(),
+    //         channel_id: "_".into(),
+    //         message_text: "Oh hey I'm Oetzi and I'm super nice!".into(),
+    //         is_action: false,
+    //         sender: twitch_irc::message::TwitchUserBasics {
+    //             id: "TODO".into(),
+    //             login: "oetziofficial".into(),
+    //             name: "OetziOfficial".into(),
+    //         },
+    //         badge_info: vec![],
+    //         badges: vec![],
+    //         bits: None,
+    //         name_color: None,
+    //         // TODO: HANDLE EMOTES
+    //         emotes: vec![],
+    //         message_id: "_".into(),
+    //         server_timestamp: Utc::now(),
+    //         source: twitch_irc::message::IRCMessage::new_simple(
+    //             "this is a lie".into(),
+    //             vec![],
+    //         ),
+    //     },
+    // ]
 }
 
 // fn print_type_of<T>(_: &T) -> String {

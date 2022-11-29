@@ -1,0 +1,21 @@
+[package]
+name = "twitch_chat"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+subd-types = { path = "../subd-types" }
+subd-db = { path = "../subd-db" }
+events = { path = "../events" }
+twitch_service = { path = "../twitch_service/" }
+
+anyhow.workspace = true
+async-trait.workspace = true
+reqwest.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+twitch-irc.workspace = true
+twitch_api2 = { workspace = true, features = [ "pubsub", "twitch_oauth2" ]}
