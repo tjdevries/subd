@@ -29,15 +29,63 @@ pub enum UserPlatform {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserMessage {
     pub user_id: UserID,
+    pub user_name: String,
     pub roles: UserRoles,
     pub platform: UserPlatform,
     pub contents: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UberDuckRequest {
+    // Maybe Make this Optional
+    // pub voice: String,
+    pub voice_text: String,
+    pub message: String,
+    pub username: String,
+    pub voice: String,
+
+    pub source: Option<String>,
+    // HERE I CAN CHANGE THINGS!!!!
+    //
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransformOBSTextRequest {
+    // pub voice: String,
+    // pub voice_text: String,
+    pub text_source: String,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TriggerHotkeyRequest {
+    pub hotkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StreamCharacterRequest {
+    pub source: String,
+    pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourceVisibilityRequest {
+    pub scene: String,
+    pub source: String,
+    pub enabled: bool,
+}
+
+// TODO: Make UberDuckEvent
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
+
+    UberDuckRequest(UberDuckRequest),
+    TransformOBSTextRequest(TransformOBSTextRequest),
+    TriggerHotkeyRequest(TriggerHotkeyRequest),
+    StreamCharacterRequest(StreamCharacterRequest),
+    SourceVisibilityRequest(SourceVisibilityRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general

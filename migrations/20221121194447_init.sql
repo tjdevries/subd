@@ -5,6 +5,22 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
+CREATE TABLE twitch_stream_state(
+  sub_only_tts boolean NOT NULL DEFAULT false,
+  explicit_soundeffects boolean NOT NULL DEFAULT false,
+  implicit_soundeffects boolean NOT NULL DEFAULT false
+);
+
+INSERT INTO 
+
+CREATE TABLE user_stream_character_information(
+  /* user_id UUID UNIQUE NOT NULL references users, */
+  username TEXT NOT NULL UNIQUE,
+  obs_character TEXT NOT NULL,
+  voice TEXT NOT NULL,
+  random boolean NOT NULL DEFAULT false
+);
+
 CREATE TABLE user_roles (
   user_id UUID UNIQUE NOT NULL references users,
   last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
