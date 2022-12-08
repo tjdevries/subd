@@ -1,54 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-// TODO: We need to organize this by:
-//       - generic values
-//       - values per filter-type
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct MoveSingleValueSetting {
-    #[serde(rename = "source")]
-    pub source: Option<String>,
-
-    #[serde(rename = "filter")]
-    pub filter: String,
-
-    #[serde(rename = "duration")]
-    pub duration: Option<u32>,
-
-    #[serde(rename = "setting_float")]
-    pub setting_float: f32,
-
-    #[serde(rename = "setting_float_max")]
-    pub setting_float_max: f32,
-
-    #[serde(rename = "setting_float_min")]
-    pub setting_float_min: f32,
-
-    #[serde(rename = "setting_name")]
-    pub setting_name: String,
-
-    #[serde(rename = "value_type")]
-    pub value_type: u32,
-
-    #[serde(rename = "move_value_type")]
-    pub move_value_type: Option<u32>,
-
-    // Just for the Blur Filter
-    #[serde(rename = "Filter.Blur.Size")]
-    pub filter_blur_size: Option<f32>,
-
-    // Just for the SDF Effects Filter
-    #[serde(rename = "Filter.SDFEffects.Glow.Inner")]
-    pub glow_inner: Option<bool>,
-    #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
-    pub glow_outer: Option<bool>,
-    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
-    pub shadow_outer: Option<bool>,
-    #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
-    pub shadow_inner: Option<bool>,
-    #[serde(rename = "Filter.SDFEffects.Outline")]
-    pub outline: Option<bool>,
-}
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
     #[serde(rename = "bottom")]
@@ -94,4 +45,97 @@ pub struct Coordinates {
 
     #[serde(rename = "y")]
     pub y: Option<f32>,
+}
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveMultipleValuesSetting {
+    pub filter: Option<String>,
+    pub move_value_type: Option<u32>,
+    pub value_type: Option<u32>,
+
+    // This is ortho
+    #[serde(rename = "Scale.X")]
+    pub scale_x: Option<f32>,
+    #[serde(rename = "Scale.Y")]
+    pub scale_y: Option<f32>,
+    #[serde(rename = "Shear.X")]
+    pub shear_x: Option<f32>,
+    #[serde(rename = "Shear.Y")]
+    pub shear_y: Option<f32>,
+    #[serde(rename = "Position.X")]
+    pub position_x: Option<f32>,
+    #[serde(rename = "Position.Y")]
+    pub position_y: Option<f32>,
+    #[serde(rename = "Rotation.X")]
+    pub rotation_x: Option<f32>,
+    #[serde(rename = "Rotation.Y")]
+    pub rotation_y: Option<f32>,
+    #[serde(rename = "Rotation.Z")]
+    pub rotation_z: Option<f32>,
+}
+
+pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
+    let filter = String::from("3D_Orthographic");
+    MoveMultipleValuesSetting {
+        filter: Some(filter),
+        move_value_type: Some(1),
+        value_type: Some(0),
+        position_x: Some(0.0),
+        position_y: Some(0.0),
+        rotation_x: Some(0.0),
+        rotation_y: Some(0.0),
+        rotation_z: Some(0.0),
+        scale_x: Some(100.0),
+        scale_y: Some(100.0),
+        shear_x: Some(0.0),
+        shear_y: Some(0.0),
+    }
+}
+
+pub fn default_perspective_settings() {}
+
+pub fn default_corner_pin_settings() {}
+
+// =======================================================================
+// TODO: We need to organize this by:
+//       - generic values
+//       - values per filter-type
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveSingleValueSetting {
+    #[serde(rename = "source")]
+    pub source: Option<String>,
+
+    #[serde(rename = "filter")]
+    pub filter: String,
+    #[serde(rename = "duration")]
+    pub duration: Option<u32>,
+    #[serde(rename = "move_value_type")]
+    pub move_value_type: Option<u32>,
+
+    #[serde(rename = "setting_float")]
+    pub setting_float: f32,
+    #[serde(rename = "setting_float_max")]
+    pub setting_float_max: f32,
+    #[serde(rename = "setting_float_min")]
+    pub setting_float_min: f32,
+    #[serde(rename = "setting_name")]
+    pub setting_name: String,
+    #[serde(rename = "value_type")]
+    pub value_type: u32,
+
+    // Just for the Blur Filter
+    #[serde(rename = "Filter.Blur.Size")]
+    pub filter_blur_size: Option<f32>,
+
+    // Just for the SDF Effects Filter
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner")]
+    pub glow_inner: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
+    pub glow_outer: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
+    pub shadow_outer: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
+    pub shadow_inner: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Outline")]
+    pub outline: Option<bool>,
 }

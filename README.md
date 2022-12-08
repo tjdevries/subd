@@ -63,11 +63,20 @@ Scroll Settings:
 // This is examples of stopping the scroll
 !scroll begin x 0
 !scroll begin y 0
+
+!scroll primetime x 500
 ```
 
 ### !blur & !unblur
 
 Blur or Unblur the source passed in.
+
+!blur primetime 100
+
+!move snoop 500 500
+
+!scale snoop 200 200
+
 
 ```
 !blur SOURCE AMOUNT DURATION_TO_REACH_BLUR_AMOUNT
@@ -277,17 +286,29 @@ Change to the Scene where you can read code.
 !corner frog Corners.TopLeft.Y 10
 !corner frog Corners.TopRight.X 10
 !corner frog Corners.TopRight.Y 10
+
+!corner frog Corners.BottomLeft.X 100
+!corner frog Corners.BottomLeft.Y 10
+!corner frog Corners.BottomRight.X 10
+!corner frog Corners.BottomRight.Y 10
+!corner frog Corners.TopLeft.X 10
+!corner frog Corners.TopLeft.Y 10
+!corner frog Corners.TopRight.X 10
+!corner frog Corners.TopRight.Y 10
 ```
 
 # Orthographic
 
 ```
-!ortho frog Scale.Y 100
-!ortho frog Shear.X 100
-!ortho frog Shear.Y 100
+
+!def_ortho frog
+!ortho frog Scale.Y 1000
+!ortho frog Shear.X 1000
+!ortho frog Shear.Y 1000
 !ortho frog Position.X -300
-!ortho frog Position.Y 10
-!ortho frog Rotation.X 360
+!ortho frog Position.X 0 3000
+!ortho frog Position.Y 0
+!ortho frog Rotation.X 36000
 !ortho frog Rotation.Y 360
 !ortho frog Rotation.Z 3600
 ```
@@ -296,8 +317,8 @@ Change to the Scene where you can read code.
 
 ```
 !perp frog Camera.FieldOfView 1000
-!perp frog Scale.X 100
-!perp frog Scale.Y 1000
+!perp frog Scale.X 200
+!perp frog Scale.Y 200
 !perp frog Shear.X 10
 !perp frog Shear.Y 10
 !perp frog Position.X 220
@@ -306,4 +327,6 @@ Change to the Scene where you can read code.
 !perp frog Rotation.X 360
 !perp frog Rotation.Y 360
 !perp frog Rotation.Z 360
+
+!
 ```

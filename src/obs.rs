@@ -88,9 +88,10 @@ pub async fn default_ortho(
     obs_client: &OBSClient,
 ) -> Result<()> {
     // Change the underlying 3D Transform Filter
-    let new_settings = stream_fx::StreamFXOrthographic {
-        ..Default::default()
-    };
+    // let new_settings = stream_fx::StreamFXOrthographic {
+    //     ..Default::default()
+    // };
+    let new_settings = move_transition::default_orthographic_settings();
 
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
@@ -845,6 +846,24 @@ pub async fn create_split_3d_transform_filters(
             move_value_type: Some(0),
             filter: String::from(filter_name),
             duration: Some(7000),
+            ..Default::default()
+        };
+        let new_filter = obws::requests::filters::Create {
+            source,
+            filter: &stream_fx_filter_name,
+            kind: MOVE_VALUE_INTERNAL_FILTER_NAME,
+            settings: Some(new_settings),
+        };
+        obs_client.filters().create(new_filter).await?;
+
+        // Create Default Move-Value for 3D Transform Filter
+        let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
+
+        let filter_name = format!("3D_{}", camera_type);
+        let new_settings = move_transition::MoveSingleValueSetting {
+            move_value_type: Some(0),
+            filter: String::from(filter_name),
+            duration: Some(3000),
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
