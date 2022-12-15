@@ -32,6 +32,55 @@ const DEFAULT_SOURCE: &str = "begin";
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
+pub struct UberDuckHandler {
+    sink: Sink,
+    obs_client: OBSClient,
+}
+
+#[async_trait]
+impl EventHandler for UberDuckHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            // we could send a tx
+
+            // I could pass in the tx here
+            // what is a beginmessage
+            // why do we do this
+            // we could handle other things here
+            match handle_obs_commands(
+                &tx,
+                &self.obs_client,
+                &self.sink,
+                splitmsg,
+                msg,
+            )
+            .await
+            {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Error: {err}");
+                    continue;
+                }
+            }
+        }
+    }
+}
+
 pub struct SoundHandler {
     sink: Sink,
     obs_client: OBSClient,
@@ -122,11 +171,13 @@ pub struct BeginMessageHandler {
     obs_client: OBSClient,
 }
 
+// I don't know
+
 #[async_trait]
 impl EventHandler for BeginMessageHandler {
     async fn handle(
         self: Box<Self>,
-        _: broadcast::Sender<Event>,
+        tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
@@ -141,7 +192,14 @@ impl EventHandler for BeginMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
+            // we could send a tx
+
+            // I could pass in the tx here
+            // what is a beginmessage
+            // why do we do this
+            // we could handle other things here
             match handle_obs_commands(
+                &tx,
                 &self.obs_client,
                 &self.sink,
                 splitmsg,
@@ -179,11 +237,16 @@ struct UberDuckFileResponse {
 }
 
 async fn handle_obs_commands(
+    tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
+    // We don't have any transaction here
+    //
+    //
+    //
     // This is because Begin doesn't understand Rust
     let default_source = String::from(DEFAULT_SOURCE);
 
@@ -245,6 +308,7 @@ async fn handle_obs_commands(
         }
 
         "!text" => {
+            // This should just create and Event
             let client = reqwest::Client::new();
 
             // so I now need to move these
@@ -253,6 +317,10 @@ async fn handle_obs_commands(
             // let voice = "brock-samson".to_string();
             let voice = "alan-rickman".to_string();
 
+            // tx.send(
+            //     );
+
+            // Create UberDuck Event
             // Or I read from somewhere else
             // or from something else
             let username = env::var("UBER_DUCK_KEY")
@@ -736,6 +804,7 @@ async fn main() -> Result<()> {
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
 
+    // Lifetime or Mutex to share sink
     // We are creating a 2nd sink here
     // Because I am too dumb to share 1
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();

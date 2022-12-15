@@ -35,6 +35,7 @@ pub struct UserMessage {
     pub contents: String,
 }
 
+// TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
