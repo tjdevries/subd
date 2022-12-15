@@ -155,7 +155,7 @@ pub struct SoundHandler {
 impl EventHandler for SoundHandler {
     async fn handle(
         self: Box<Self>,
-        _: broadcast::Sender<Event>,
+        tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         // TODO: Do I need to read there here either???
@@ -179,7 +179,29 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // if msg.user_name == "beginbotbot" {
+            // SO THIS DID WORK
+            // WE ARE CLOSE TO SPLITTING
+            if msg.user_name == "beginbotbot" {
+                let voice_text = msg.contents.to_string();
+                let voice = "Rodney Dangerfield".to_string();
+
+                let voice_text = msg.contents.replace("!text", "");
+
+                let voice = "brock-samson".to_string();
+                // What are voice and voice_text
+                tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    voice,
+                    voice_text,
+                }));
+
+                // So we need to figure out a sending of UberDuckEVent
+                // IF WE WANNA SEND SOME EVENTR HERE
+                // WE FUCKED
+                // tx.send(Event::UberDuckRequest(UberDuckRequest {
+                //     voice,
+                //     voice_text,
+                // }));
+            }
             server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
 
             let mut seal_text = msg.contents.clone();
