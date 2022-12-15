@@ -38,6 +38,16 @@ pub struct UberDuckHandler {
     obs_client: OBSClient,
 }
 
+pub struct SoundHandler {
+    sink: Sink,
+    obs_client: OBSClient,
+}
+
+pub struct BeginMessageHandler {
+    sink: Sink,
+    obs_client: OBSClient,
+}
+
 #[async_trait]
 impl EventHandler for UberDuckHandler {
     async fn handle(
@@ -53,14 +63,6 @@ impl EventHandler for UberDuckHandler {
                 Event::UberDuckRequest(msg) => msg,
                 _ => continue,
             };
-
-            // We could have it be the thing we need
-            // do we have this?
-            // let splitmsg = msg
-            //     .contents
-            //     .split(" ")
-            //     .map(|s| s.to_string())
-            //     .collect::<Vec<String>>();
 
             let username = env::var("UBER_DUCK_KEY")
                 .expect("Failed to read UBER_DUCK_KEY environment variable");
@@ -145,12 +147,6 @@ impl EventHandler for UberDuckHandler {
         }
     }
 }
-
-pub struct SoundHandler {
-    sink: Sink,
-    obs_client: OBSClient,
-}
-
 #[async_trait]
 impl EventHandler for SoundHandler {
     async fn handle(
@@ -179,8 +175,6 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // SO THIS DID WORK
-            // WE ARE CLOSE TO SPLITTING
             if msg.user_name == "beginbotbot" {
                 let voice_text = msg.contents.to_string();
                 let voice = "Rodney Dangerfield".to_string();
@@ -193,14 +187,6 @@ impl EventHandler for SoundHandler {
                     voice,
                     voice_text,
                 }));
-
-                // So we need to figure out a sending of UberDuckEVent
-                // IF WE WANNA SEND SOME EVENTR HERE
-                // WE FUCKED
-                // tx.send(Event::UberDuckRequest(UberDuckRequest {
-                //     voice,
-                //     voice_text,
-                // }));
             }
             server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
 
@@ -245,13 +231,6 @@ impl EventHandler for SoundHandler {
         }
     }
 }
-
-pub struct BeginMessageHandler {
-    sink: Sink,
-    obs_client: OBSClient,
-}
-
-// I don't know
 
 #[async_trait]
 impl EventHandler for BeginMessageHandler {
