@@ -1,4 +1,8 @@
 use anyhow::{bail, Result};
+use std::io::{BufWriter, Write};
+
+use std::{thread, time};
+
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::requests::scene_items::Scale;
@@ -30,6 +34,7 @@ const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
 pub struct SoundHandler {
     sink: Sink,
+    obs_client: OBSClient,
 }
 
 #[async_trait]
@@ -39,7 +44,7 @@ impl EventHandler for SoundHandler {
         _: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        // Read in all the MP3s once at the top of the loop
+        // TODO: Do I need to read there here either???
         let paths = fs::read_dir("./MP3s").unwrap();
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for path in paths {
@@ -59,6 +64,35 @@ impl EventHandler for SoundHandler {
                 .split(" ")
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
+
+            // if msg.user_name == "beginbotbot" {
+            server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
+
+            let mut seal_text = msg.contents.clone();
+            let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
+
+            let line_length_modifier = 20;
+            let mut line_length_limit = 20;
+
+            for val in spaces.iter() {
+                if val.0 > line_length_limit {
+                    seal_text.replace_range(val.0..=val.0, "\n");
+                    line_length_limit =
+                        line_length_limit + line_length_modifier;
+                }
+            }
+
+            server::obs::update_and_trigger_text_move_filter(
+                "Text",
+                "OBS_Text",
+                &seal_text,
+                &self.obs_client,
+            )
+            .await?;
+            // } else {
+            //     server::obs::trigger_hotkey("OBS_KEY_7", &self.obs_client)
+            //         .await?;
+            // }
 
             // TODO: find an easy way to not start this code with a flag
             for word in splitmsg {
@@ -116,6 +150,27 @@ impl EventHandler for BeginMessageHandler {
         }
     }
 }
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct UberDuckVoiceResponse {
+    uuid: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct UberDuckFileResponse {
+    path: Option<String>,
+    started_at: Option<String>,
+    finished_at: Option<String>,
+}
+
+// # {
+// #   "started_at": "2021-07-09T17:07:58.679918",
+// #   "failed_at": null,
+// #   "finished_at": "2021-07-09T17:08:10.445369",
+// #   "path": "https://uberduck-audio-outputs.s3-us-west-2.amazonaws.com/abcd1234-96e0-45b3-b036-6feac21764e7/audio.wav"
+// # }
 
 async fn handle_obs_commands(
     obs_client: &OBSClient,
@@ -182,32 +237,159 @@ async fn handle_obs_commands(
             .await
         }
 
-        // We could maybe get this into one function
-        // and have the word blur actually there
-        // =============== //
-        // Bluring Sources //
-        // =============== //
+        "!text" => {
+            let client = reqwest::Client::new();
+
+            let voice_text = msg.contents.replace("!text", "");
+            let voice = "brock-samson".to_string();
+
+            let secret = "pk_340e0fdb-6777-4672-b22b-3e9cc5248061";
+            let username = "pub_wbzeusdvskqbbfcudd";
+            let res = client
+                .post("https://api.uberduck.ai/speak")
+                .basic_auth(username, Some(secret))
+                .json(&[("speech", voice_text), ("voice", voice)])
+                .send()
+                .await?
+                .json::<UberDuckVoiceResponse>()
+                .await?;
+
+            println!("RES {:?}", res);
+
+            println!("Attempting to Check Status");
+            loop {
+                let url = format!(
+                    "https://api.uberduck.ai/speak-status?uuid={uuid}",
+                    uuid = res.uuid
+                );
+                // Hit the URL and parse the response
+                let response = client
+                    .get(url)
+                    .basic_auth(username, Some(secret))
+                    .send()
+                    .await?;
+
+                let text = response.text().await?;
+                println!("{:?}", text);
+                let file_resp: UberDuckFileResponse =
+                    serde_json::from_str(&text)?;
+
+                // So we need ot look inside now
+                // so now we need to match
+                // Check if the failed_at parameter is null
+                match file_resp.path {
+                    Some(new_url) => {
+                        // Time to download the sound!!!
+                        // let file_resp: UberDuckFileResponse =
+                        //     serde_json::from_str(&text)?;
+                        // Set the path where you want to save the downloaded file.
+                        let local_path = "./test.wav";
+
+                        // Use the `get` method to download the file from the URL.
+                        let response = client.get(new_url).send().await?;
+
+                        // Open a file with the local path where you want to save the downloaded file.
+                        let file = File::create(local_path)?;
+
+                        // Create a `BufWriter` to write the downloaded data to the file.
+                        let mut writer = BufWriter::new(file);
+
+                        // Write the downloaded data to the file.
+                        writer.write_all(&response.bytes().await?)?;
+                        println!("WE DID IT!");
+
+                        let file = BufReader::new(
+                            File::open(local_path)
+                                // File::open(format!("./MP3s/{}.mp3", sanitized_word))
+                                .unwrap(),
+                        );
+
+                        // Works for Arch Linux
+                        let (_stream, stream_handle) =
+                            get_output_stream("pulse");
+
+                        // Works for Mac
+                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+                        let sink =
+                            rodio::Sink::try_new(&stream_handle).unwrap();
+                        // I THINK WE ARE DOING IT NOW!!!
+                        // TODO: Is there someway to suppress output here
+                        sink.append(
+                            Decoder::new(BufReader::new(file)).unwrap(),
+                        );
+
+                        sink.sleep_until_end();
+                        break;
+                    }
+                    None => {
+                        let ten_millis = time::Duration::from_millis(1000);
+                        thread::sleep(ten_millis);
+                    }
+                }
+                // Need to not sleep here
+            }
+
+            //}
+            // Do we have the path!!!
+            // how do we download
+            // println!("PATH: {:?}", res);
+            // res.path
+
+            // .json(&[("speech", "My voice is definitely not Patrick Warburton. Talk to the 8-ball"), ("voice", "brock-samson")])
+            // res.uuid
+
+            //   'https://api.uberduck.ai/speak-status?uuid=a63d7070-0578-47ff-9430-66aae5762b6a' b85e77cd-02be-4b14-bfad-a5c43ccedb56
+            // curl -u $UBER_DUCK_KEY:$UBER_DUCK_SECRET \
+            //
+            //   'https://api.uberduck.ai/speak-status?uuid=a63d7070-0578-47ff-9430-66aae5762b6a' b85e77cd-02be-4b14-bfad-a5c43ccedb56
+            //   brock-samson
+
+            // curl -u $UBER_DUCK_KEY:$UBER_DUCK_SECRET \
+            //   'https://api.uberduck.ai/speak' \
+            //   --data-raw '{"speech":"Im going to give Linux a light 6, not as strong as linus early work","voice":"theneedledrop"}'
+
+            // I need to read in uberduck
+            let user_text = &splitmsg[1..];
+            server::obs::update_and_trigger_text_move_filter(
+                "Text",
+                "OBS_Text",
+                &user_text.join(" "),
+                &obs_client,
+            )
+            .await?;
+
+            Ok(())
+        }
         "!blur" => {
             let filter_value = splitmsg
                 .get(2)
                 .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
+
             // msg.roles.is_twitch_mod()
             // msg.roles.is_twitch_founder()
             // msg.roles.is_twitch_staff()
             // msg.roles.is_twitch_sub()
-            if msg.roles.is_twitch_vip() {
-                println!("WE GOT A VIP OVER HERE");
-                server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    filter_value,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await?;
-            }
+            // if msg.roles.is_twitch_vip() {
+
+            // So maybe the source is wrong
+            // maybe the DEFAULT_MOVE_BLUR_FILTER_NAME name is wrong
+            //
+            // the 2 is also problematic
+            // and we aren't pull in the duration
+            server::obs::update_and_trigger_move_value_filter(
+                source,
+                DEFAULT_MOVE_BLUR_FILTER_NAME,
+                "Filter.Blur.Size",
+                filter_value,
+                300,
+                // 5000, // duration
+                0,
+                &obs_client,
+            )
+            .await?;
+
+            // }
+
             Ok(())
         }
 
@@ -558,7 +740,6 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
         .unwrap();
@@ -576,7 +757,11 @@ async fn main() -> Result<()> {
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-    event_loop.push(SoundHandler { sink });
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(SoundHandler { sink, obs_client });
 
     event_loop.run().await?;
 

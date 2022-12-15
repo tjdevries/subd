@@ -20,3 +20,4 @@ subd.db-shm
 subd.db-wal
 subd.*.db
 .env
+test.wav

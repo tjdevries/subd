@@ -1,4 +1,6 @@
 use crate::move_transition;
+use std::time;
+
 use crate::sdf_effects;
 use crate::stream_fx;
 use anyhow::Result;
@@ -267,6 +269,46 @@ pub async fn spin(
 // Updating and Triggering Filters //
 // =============================== //
 
+// So I need a version to update a text value
+// start very unspecific
+pub async fn update_and_trigger_text_move_filter(
+    source: &str,
+    filter_name: &str,
+    new_text: &String,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let mut new_settings: move_transition::MoveTextFilter = Default::default();
+    new_settings.move_value_type = Some(4);
+    new_settings.setting_name = "text".to_string();
+    new_settings.setting_text = new_text.to_string();
+    new_settings.value_type = 4;
+    new_settings.duration = Some(300);
+    new_settings.custom_duration = true;
+    new_settings.setting_decimals = Some(1);
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // This fixes the problem
+    let ten_millis = time::Duration::from_millis(300);
+
+    thread::sleep(ten_millis);
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    Ok(())
+}
+
 pub async fn update_and_trigger_move_value_filter(
     source: &str,
     filter_name: &str,
@@ -276,6 +318,7 @@ pub async fn update_and_trigger_move_value_filter(
     value_type: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // So we get defaults here
     let filter_details =
         match obs_client.filters().get(&source, &filter_name).await {
             Ok(val) => Ok(val),
@@ -295,6 +338,7 @@ pub async fn update_and_trigger_move_value_filter(
         }
     };
 
+    // We update some values
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
     new_settings.duration = Some(duration);

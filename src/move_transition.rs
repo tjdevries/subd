@@ -139,3 +139,34 @@ pub struct MoveSingleValueSetting {
     #[serde(rename = "Filter.SDFEffects.Outline")]
     pub outline: Option<bool>,
 }
+
+// =======================================================================
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveTextFilter {
+    #[serde(rename = "duration")]
+    pub duration: Option<u32>,
+
+    #[serde(rename = "custom_duration")]
+    pub custom_duration: bool,
+
+    #[serde(rename = "easing_match")]
+    pub easing_match: Option<u32>,
+
+    #[serde(rename = "setting_decimals")]
+    pub setting_decimals: Option<u32>,
+
+    // "move_value_type": 4,
+    #[serde(rename = "move_value_type")]
+    pub move_value_type: Option<u32>,
+
+    #[serde(rename = "setting_name")]
+    pub setting_name: String,
+    #[serde(rename = "value_type")]
+    pub value_type: u32,
+
+    #[serde(rename = "setting_text")]
+    pub setting_text: String,
+    // "setting_name": "text",
+    // "setting_text": "Ok NOW",
+    // "value_type": 4
+}

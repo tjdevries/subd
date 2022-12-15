@@ -29,6 +29,7 @@ pub enum UserPlatform {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserMessage {
     pub user_id: UserID,
+    pub user_name: String,
     pub roles: UserRoles,
     pub platform: UserPlatform,
     pub contents: String,
