@@ -35,11 +35,19 @@ pub struct UserMessage {
     pub contents: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UberDuckRequest {
+    pub voice: String,
+    pub voice_text: String,
+}
+
 // TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
+
+    UberDuckRequest(UberDuckRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general

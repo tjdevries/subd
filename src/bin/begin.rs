@@ -14,6 +14,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
 use std::{thread, time};
+use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
@@ -41,42 +42,106 @@ pub struct UberDuckHandler {
 impl EventHandler for UberDuckHandler {
     async fn handle(
         self: Box<Self>,
-        tx: broadcast::Sender<Event>,
+        _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
+
+            // How can Match with only UberDuck Messages
             let msg = match event {
-                Event::UserMessage(msg) => msg,
+                Event::UberDuckRequest(msg) => msg,
                 _ => continue,
             };
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
 
-            // we could send a tx
+            // We could have it be the thing we need
+            // do we have this?
+            // let splitmsg = msg
+            //     .contents
+            //     .split(" ")
+            //     .map(|s| s.to_string())
+            //     .collect::<Vec<String>>();
 
-            // I could pass in the tx here
-            // what is a beginmessage
-            // why do we do this
-            // we could handle other things here
-            match handle_obs_commands(
-                &tx,
-                &self.obs_client,
-                &self.sink,
-                splitmsg,
-                msg,
-            )
-            .await
-            {
-                Ok(_) => {}
-                Err(err) => {
-                    eprintln!("Error: {err}");
-                    continue;
+            let username = env::var("UBER_DUCK_KEY")
+                .expect("Failed to read UBER_DUCK_KEY environment variable");
+            let secret = env::var("UBER_DUCK_SECRET")
+                .expect("Failed to read UBER_DUCK_SECRET environment variable");
+
+            let client = reqwest::Client::new();
+            let res = client
+                .post("https://api.uberduck.ai/speak")
+                .basic_auth(username.clone(), Some(secret.clone()))
+                .json(&[("speech", msg.voice_text), ("voice", msg.voice)])
+                .send()
+                .await?
+                .json::<UberDuckVoiceResponse>()
+                .await?;
+
+            loop {
+                let url = format!(
+                    "https://api.uberduck.ai/speak-status?uuid={uuid}",
+                    uuid = res.uuid
+                );
+
+                // We look this up again because we are dumb AF
+                let username = env::var("UBER_DUCK_KEY").expect(
+                    "Failed to read UBER_DUCK_KEY environment variable",
+                );
+                let secret = env::var("UBER_DUCK_SECRET").expect(
+                    "Failed to read UBER_DUCK_SECRET environment variable",
+                );
+                // so we need client
+                // Hit the URL and parse the response
+                let response = client
+                    .get(url)
+                    .basic_auth(username, Some(secret))
+                    .send()
+                    .await?;
+
+                let text = response.text().await?;
+                println!("Uberduck Response: {:?}", text);
+                let file_resp: UberDuckFileResponse =
+                    serde_json::from_str(&text)?;
+
+                // so now we need to match
+                // Check if the failed_at parameter is null
+                match file_resp.path {
+                    Some(new_url) => {
+                        // TODO Should we change this file name
+                        let local_path = "./test.wav";
+                        let response = client.get(new_url).send().await?;
+                        let file = File::create(local_path)?;
+                        let mut writer = BufWriter::new(file);
+                        writer.write_all(&response.bytes().await?)?;
+                        println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
+
+                        let file =
+                            BufReader::new(File::open(local_path).unwrap());
+
+                        self.sink.append(
+                            Decoder::new(BufReader::new(file)).unwrap(),
+                        );
+                        self.sink.sleep_until_end();
+                        break;
+                    }
+                    None => {
+                        // Wait 1 second before seeing if the file is ready.
+                        let ten_millis = time::Duration::from_millis(1000);
+                        thread::sleep(ten_millis);
+                    }
                 }
             }
+
+            // We'll have to figure this out
+            // let user_text = &splitmsg[1..];
+            // server::obs::update_and_trigger_text_move_filter(
+            //     "Text",
+            //     "OBS_Text",
+            //     &user_text.join(" "),
+            //     &self.obs_client,
+            // )
+            // .await?;
+            // So we need to do UBER DUCK THINGS IN HERE!!!
         }
     }
 }
@@ -138,12 +203,7 @@ impl EventHandler for SoundHandler {
                 &self.obs_client,
             )
             .await?;
-            // } else {
-            //     server::obs::trigger_hotkey("OBS_KEY_7", &self.obs_client)
-            //         .await?;
-            // }
 
-            // TODO: find an easy way to not start this code with a flag
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
@@ -154,8 +214,6 @@ impl EventHandler for SoundHandler {
                             .unwrap(),
                     );
 
-                    // I THINK WE ARE DOING IT NOW!!!
-                    // TODO: Is there someway to suppress output here
                     self.sink
                         .append(Decoder::new(BufReader::new(file)).unwrap());
 
@@ -317,90 +375,108 @@ async fn handle_obs_commands(
             // let voice = "brock-samson".to_string();
             let voice = "alan-rickman".to_string();
 
-            // tx.send(
-            //     );
+            // Tx.send(Event::UberDuckRequest(voice, voice_text));
+            // argument of type `std::string::String` unexpected
+            //    expected struct `subd_types::UberDuckRequest`, found struct `std::string::String`
+
+            // so we don't need to!!
+            // IS THIS RIGHT!!!!!!!!
+            tx.send(Event::UberDuckRequest(UberDuckRequest {
+                voice,
+                voice_text,
+            }));
+            // tx.send(Event::UserMessage(UserMessage {
+            //     user_id,
+            //     user_name: msg.sender.name,
+            //     roles: user_roles,
+            //     platform: UserPlatform::Twitch,
+            //     contents: msg.text,
+            // }))?;
 
             // Create UberDuck Event
             // Or I read from somewhere else
             // or from something else
-            let username = env::var("UBER_DUCK_KEY")
-                .expect("Failed to read UBER_DUCK_KEY environment variable");
-            let secret = env::var("UBER_DUCK_SECRET")
-                .expect("Failed to read UBER_DUCK_SECRET environment variable");
+            //
+            // =====================================================================================================================================
+            // let username = env::var("UBER_DUCK_KEY")
+            //     .expect("Failed to read UBER_DUCK_KEY environment variable");
+            // let secret = env::var("UBER_DUCK_SECRET")
+            //     .expect("Failed to read UBER_DUCK_SECRET environment variable");
 
-            let res = client
-                .post("https://api.uberduck.ai/speak")
-                .basic_auth(username.clone(), Some(secret.clone()))
-                .json(&[("speech", voice_text), ("voice", voice)])
-                .send()
-                .await?
-                .json::<UberDuckVoiceResponse>()
-                .await?;
+            // let res = client
+            //     .post("https://api.uberduck.ai/speak")
+            //     .basic_auth(username.clone(), Some(secret.clone()))
+            //     .json(&[("speech", voice_text), ("voice", voice)])
+            //     .send()
+            //     .await?
+            //     .json::<UberDuckVoiceResponse>()
+            //     .await?;
 
-            loop {
-                let url = format!(
-                    "https://api.uberduck.ai/speak-status?uuid={uuid}",
-                    uuid = res.uuid
-                );
+            // loop {
+            //     let url = format!(
+            //         "https://api.uberduck.ai/speak-status?uuid={uuid}",
+            //         uuid = res.uuid
+            //     );
 
-                // We look this up again because we are dumb AF
-                let username = env::var("UBER_DUCK_KEY").expect(
-                    "Failed to read UBER_DUCK_KEY environment variable",
-                );
-                let secret = env::var("UBER_DUCK_SECRET").expect(
-                    "Failed to read UBER_DUCK_SECRET environment variable",
-                );
-                // Hit the URL and parse the response
-                let response = client
-                    .get(url)
-                    .basic_auth(username, Some(secret))
-                    .send()
-                    .await?;
+            //     // We look this up again because we are dumb AF
+            //     let username = env::var("UBER_DUCK_KEY").expect(
+            //         "Failed to read UBER_DUCK_KEY environment variable",
+            //     );
+            //     let secret = env::var("UBER_DUCK_SECRET").expect(
+            //         "Failed to read UBER_DUCK_SECRET environment variable",
+            //     );
+            //     // Hit the URL and parse the response
+            //     let response = client
+            //         .get(url)
+            //         .basic_auth(username, Some(secret))
+            //         .send()
+            //         .await?;
 
-                let text = response.text().await?;
-                println!("Uberduck Response: {:?}", text);
-                let file_resp: UberDuckFileResponse =
-                    serde_json::from_str(&text)?;
+            //     let text = response.text().await?;
+            //     println!("Uberduck Response: {:?}", text);
+            //     let file_resp: UberDuckFileResponse =
+            //         serde_json::from_str(&text)?;
 
-                // so now we need to match
-                // Check if the failed_at parameter is null
-                match file_resp.path {
-                    Some(new_url) => {
-                        // TODO Should we change this file name
-                        let local_path = "./test.wav";
-                        let response = client.get(new_url).send().await?;
-                        let file = File::create(local_path)?;
-                        let mut writer = BufWriter::new(file);
-                        writer.write_all(&response.bytes().await?)?;
-                        println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
+            //     // so now we need to match
+            //     // Check if the failed_at parameter is null
+            //     match file_resp.path {
+            //         Some(new_url) => {
+            //             // TODO Should we change this file name
+            //             let local_path = "./test.wav";
+            //             let response = client.get(new_url).send().await?;
+            //             let file = File::create(local_path)?;
+            //             let mut writer = BufWriter::new(file);
+            //             writer.write_all(&response.bytes().await?)?;
+            //             println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
 
-                        let file =
-                            BufReader::new(File::open(local_path).unwrap());
+            //             let file =
+            //                 BufReader::new(File::open(local_path).unwrap());
 
-                        sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
-                        sink.sleep_until_end();
-                        break;
-                    }
-                    None => {
-                        // Wait 1 second before seeing if the file is ready.
-                        let ten_millis = time::Duration::from_millis(1000);
-                        thread::sleep(ten_millis);
-                    }
-                }
-            }
+            //             sink.append(
+            //                 Decoder::new(BufReader::new(file)).unwrap(),
+            //             );
+            //             sink.sleep_until_end();
+            //             break;
+            //         }
+            //         None => {
+            //             // Wait 1 second before seeing if the file is ready.
+            //             let ten_millis = time::Duration::from_millis(1000);
+            //             thread::sleep(ten_millis);
+            //         }
+            //     }
+            // }
 
-            let user_text = &splitmsg[1..];
-            server::obs::update_and_trigger_text_move_filter(
-                "Text",
-                "OBS_Text",
-                &user_text.join(" "),
-                &obs_client,
-            )
-            .await?;
+            // let user_text = &splitmsg[1..];
+            // server::obs::update_and_trigger_text_move_filter(
+            //     "Text",
+            //     "OBS_Text",
+            //     &user_text.join(" "),
+            //     &obs_client,
+            // )
+            // .await?;
 
             Ok(())
+            // =====================================================================================================================================
         }
         "!blur" => {
             let filter_value = splitmsg
@@ -809,6 +885,13 @@ async fn main() -> Result<()> {
     // Because I am too dumb to share 1
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(SoundHandler { sink, obs_client });
+
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(UberDuckHandler { sink, obs_client });
 
     event_loop.run().await?;
 
