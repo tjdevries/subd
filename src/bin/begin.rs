@@ -1,8 +1,4 @@
 use anyhow::{bail, Result};
-use std::io::{BufWriter, Write};
-
-use std::{thread, time};
-
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::requests::scene_items::Scale;
@@ -10,10 +6,14 @@ use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::io::{BufWriter, Write};
+use std::{thread, time};
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
@@ -118,6 +118,7 @@ impl EventHandler for SoundHandler {
 }
 
 pub struct BeginMessageHandler {
+    sink: Sink,
     obs_client: OBSClient,
 }
 
@@ -140,7 +141,14 @@ impl EventHandler for BeginMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            match handle_obs_commands(&self.obs_client, splitmsg, msg).await {
+            match handle_obs_commands(
+                &self.obs_client,
+                &self.sink,
+                splitmsg,
+                msg,
+            )
+            .await
+            {
                 Ok(_) => {}
                 Err(err) => {
                     eprintln!("Error: {err}");
@@ -151,29 +159,28 @@ impl EventHandler for BeginMessageHandler {
     }
 }
 
-use serde::{Deserialize, Serialize};
-
 #[derive(Serialize, Deserialize, Debug)]
 struct UberDuckVoiceResponse {
     uuid: String,
 }
 
+// {
+//   "started_at": "2021-07-09T17:07:58.679918",
+//   "failed_at": null,
+//   "finished_at": "2021-07-09T17:08:10.445369",
+//   "path": "https://uberduck-audio-outputs.s3-us-west-2.amazonaws.com/abcd1234-96e0-45b3-b036-6feac21764e7/audio.wav"
+// }
 #[derive(Serialize, Deserialize, Debug)]
 struct UberDuckFileResponse {
     path: Option<String>,
     started_at: Option<String>,
+    failed_at: Option<String>,
     finished_at: Option<String>,
 }
 
-// # {
-// #   "started_at": "2021-07-09T17:07:58.679918",
-// #   "failed_at": null,
-// #   "finished_at": "2021-07-09T17:08:10.445369",
-// #   "path": "https://uberduck-audio-outputs.s3-us-west-2.amazonaws.com/abcd1234-96e0-45b3-b036-6feac21764e7/audio.wav"
-// # }
-
 async fn handle_obs_commands(
     obs_client: &OBSClient,
+    sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -240,27 +247,40 @@ async fn handle_obs_commands(
         "!text" => {
             let client = reqwest::Client::new();
 
+            // so I now need to move these
             let voice_text = msg.contents.replace("!text", "");
-            let voice = "brock-samson".to_string();
+            // So I need to look up people
+            // let voice = "brock-samson".to_string();
+            let voice = "alan-rickman".to_string();
 
-            let secret = "pk_340e0fdb-6777-4672-b22b-3e9cc5248061";
-            let username = "pub_wbzeusdvskqbbfcudd";
+            // Or I read from somewhere else
+            // or from something else
+            let username = env::var("UBER_DUCK_KEY")
+                .expect("Failed to read UBER_DUCK_KEY environment variable");
+            let secret = env::var("UBER_DUCK_SECRET")
+                .expect("Failed to read UBER_DUCK_SECRET environment variable");
+
             let res = client
                 .post("https://api.uberduck.ai/speak")
-                .basic_auth(username, Some(secret))
+                .basic_auth(username.clone(), Some(secret.clone()))
                 .json(&[("speech", voice_text), ("voice", voice)])
                 .send()
                 .await?
                 .json::<UberDuckVoiceResponse>()
                 .await?;
 
-            println!("RES {:?}", res);
-
-            println!("Attempting to Check Status");
             loop {
                 let url = format!(
                     "https://api.uberduck.ai/speak-status?uuid={uuid}",
                     uuid = res.uuid
+                );
+
+                // We look this up again because we are dumb AF
+                let username = env::var("UBER_DUCK_KEY").expect(
+                    "Failed to read UBER_DUCK_KEY environment variable",
+                );
+                let secret = env::var("UBER_DUCK_SECRET").expect(
+                    "Failed to read UBER_DUCK_SECRET environment variable",
                 );
                 // Hit the URL and parse the response
                 let response = client
@@ -270,85 +290,39 @@ async fn handle_obs_commands(
                     .await?;
 
                 let text = response.text().await?;
-                println!("{:?}", text);
+                println!("Uberduck Response: {:?}", text);
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
 
-                // So we need ot look inside now
                 // so now we need to match
                 // Check if the failed_at parameter is null
                 match file_resp.path {
                     Some(new_url) => {
-                        // Time to download the sound!!!
-                        // let file_resp: UberDuckFileResponse =
-                        //     serde_json::from_str(&text)?;
-                        // Set the path where you want to save the downloaded file.
+                        // TODO Should we change this file name
                         let local_path = "./test.wav";
-
-                        // Use the `get` method to download the file from the URL.
                         let response = client.get(new_url).send().await?;
-
-                        // Open a file with the local path where you want to save the downloaded file.
                         let file = File::create(local_path)?;
-
-                        // Create a `BufWriter` to write the downloaded data to the file.
                         let mut writer = BufWriter::new(file);
-
-                        // Write the downloaded data to the file.
                         writer.write_all(&response.bytes().await?)?;
-                        println!("WE DID IT!");
+                        println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
 
-                        let file = BufReader::new(
-                            File::open(local_path)
-                                // File::open(format!("./MP3s/{}.mp3", sanitized_word))
-                                .unwrap(),
-                        );
+                        let file =
+                            BufReader::new(File::open(local_path).unwrap());
 
-                        // Works for Arch Linux
-                        let (_stream, stream_handle) =
-                            get_output_stream("pulse");
-
-                        // Works for Mac
-                        // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-                        let sink =
-                            rodio::Sink::try_new(&stream_handle).unwrap();
-                        // I THINK WE ARE DOING IT NOW!!!
-                        // TODO: Is there someway to suppress output here
                         sink.append(
                             Decoder::new(BufReader::new(file)).unwrap(),
                         );
-
                         sink.sleep_until_end();
                         break;
                     }
                     None => {
+                        // Wait 1 second before seeing if the file is ready.
                         let ten_millis = time::Duration::from_millis(1000);
                         thread::sleep(ten_millis);
                     }
                 }
-                // Need to not sleep here
             }
 
-            //}
-            // Do we have the path!!!
-            // how do we download
-            // println!("PATH: {:?}", res);
-            // res.path
-
-            // .json(&[("speech", "My voice is definitely not Patrick Warburton. Talk to the 8-ball"), ("voice", "brock-samson")])
-            // res.uuid
-
-            //   'https://api.uberduck.ai/speak-status?uuid=a63d7070-0578-47ff-9430-66aae5762b6a' b85e77cd-02be-4b14-bfad-a5c43ccedb56
-            // curl -u $UBER_DUCK_KEY:$UBER_DUCK_SECRET \
-            //
-            //   'https://api.uberduck.ai/speak-status?uuid=a63d7070-0578-47ff-9430-66aae5762b6a' b85e77cd-02be-4b14-bfad-a5c43ccedb56
-            //   brock-samson
-
-            // curl -u $UBER_DUCK_KEY:$UBER_DUCK_SECRET \
-            //   'https://api.uberduck.ai/speak' \
-            //   --data-raw '{"speech":"Im going to give Linux a light 6, not as strong as linus early work","voice":"theneedledrop"}'
-
-            // I need to read in uberduck
             let user_text = &splitmsg[1..];
             server::obs::update_and_trigger_text_move_filter(
                 "Text",
@@ -748,8 +722,6 @@ async fn main() -> Result<()> {
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
 
-    event_loop.push(BeginMessageHandler { obs_client });
-
     // Works for Arch Linux
     let (_stream, stream_handle) = get_output_stream("pulse");
 
@@ -757,10 +729,16 @@ async fn main() -> Result<()> {
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
+    event_loop.push(BeginMessageHandler { obs_client, sink });
+
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
+
+    // We are creating a 2nd sink here
+    // Because I am too dumb to share 1
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(SoundHandler { sink, obs_client });
 
     event_loop.run().await?;
