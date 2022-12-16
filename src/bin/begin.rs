@@ -73,21 +73,6 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
-            // We need to target the right text here!!!!
-            // I THINK WE JUST NEED TO UPDATE OBS_Text
-            server::obs::update_and_trigger_text_move_filter(
-                "Text",
-                "OBS_Text",
-                &msg.message,
-                &self.obs_client,
-            )
-            .await?;
-            let username = env::var("UBER_DUCK_KEY")
-                .expect("Failed to read UBER_DUCK_KEY environment variable");
-            let secret = env::var("UBER_DUCK_SECRET")
-                .expect("Failed to read UBER_DUCK_SECRET environment variable");
-
-            // so need an actual object
             let hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
                 "mr-krabs-joewhyte".to_string(),
                 CharacterSetup {
@@ -99,13 +84,27 @@ impl EventHandler for UberDuckHandler {
             let default_hotkeys = CharacterSetup {
                 on: "OBS_KEY_6".to_string(),
                 off: "OBS_KEY_7".to_string(),
-                text_source: "OBS_Text".to_string(),
+                text_source: "Text".to_string(),
             };
             // Default
             let hotkey = match hotkeys.get(&msg.voice) {
                 Some(v) => v,
                 None => &default_hotkeys,
             };
+
+            // We need to target the right text here!!!!
+            // I THINK WE JUST NEED TO UPDATE OBS_Text
+            server::obs::update_and_trigger_text_move_filter(
+                &hotkey.text_source,
+                "OBS_Text",
+                &msg.message,
+                &self.obs_client,
+            )
+            .await?;
+            let username = env::var("UBER_DUCK_KEY")
+                .expect("Failed to read UBER_DUCK_KEY environment variable");
+            let secret = env::var("UBER_DUCK_SECRET")
+                .expect("Failed to read UBER_DUCK_SECRET environment variable");
 
             // This is every string???
             let client = reqwest::Client::new();
