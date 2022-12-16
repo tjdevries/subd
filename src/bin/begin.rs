@@ -7,6 +7,7 @@ use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::env;
 use std::fs;
@@ -35,6 +36,7 @@ const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
 pub struct UberDuckHandler {
     sink: Sink,
+    // Not YET!!!
     obs_client: OBSClient,
 }
 
@@ -79,10 +81,16 @@ impl EventHandler for UberDuckHandler {
                 .json::<UberDuckVoiceResponse>()
                 .await?;
 
+            let uuid = match res.uuid {
+                Some(x) => x,
+                None => continue,
+            };
+
+            // Start looping
             loop {
                 let url = format!(
-                    "https://api.uberduck.ai/speak-status?uuid={uuid}",
-                    uuid = res.uuid
+                    "https://api.uberduck.ai/speak-status?uuid={}",
+                    &uuid
                 );
 
                 // We look this up again because we are dumb AF
@@ -120,10 +128,28 @@ impl EventHandler for UberDuckHandler {
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
 
+                        server::obs::trigger_hotkey(
+                            "OBS_KEY_6",
+                            &self.obs_client,
+                        )
+                        .await?;
+
                         self.sink.append(
                             Decoder::new(BufReader::new(file)).unwrap(),
                         );
                         self.sink.sleep_until_end();
+
+                        // THIS IS HIDING THE PERSON AFTER
+                        // We might want to wait a little longer, then hide
+                        // we could also kick off a hide event
+                        // we wait 1 second, so they can read the text
+                        let ten_millis = time::Duration::from_millis(1000);
+                        thread::sleep(ten_millis);
+                        server::obs::trigger_hotkey(
+                            "OBS_KEY_7",
+                            &self.obs_client,
+                        )
+                        .await?;
                         break;
                     }
                     None => {
@@ -175,20 +201,39 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            if msg.user_name == "beginbotbot" {
-                let voice_text = msg.contents.to_string();
-                let voice = "Rodney Dangerfield".to_string();
+            let default_voice = "brock-samson".to_string();
+            let voices: HashMap<String, String> = HashMap::from([
+                ("beginbotbot".to_string(), "theneedledrop".to_string()),
+                ("artmattdank".to_string(), "mojo-jojo".to_string()),
+                (
+                    "carlvandergeest".to_string(),
+                    "danny-devito-angry".to_string(),
+                ),
+                ("stupac62".to_string(), "stewie-griffin".to_string()),
+                ("swenson".to_string(), "mike-wazowski".to_string()),
+                ("teej_dv".to_string(), "mr-krabs-joewhyte".to_string()),
+            ]);
 
-                let voice_text = msg.contents.replace("!text", "");
+            let voice = match voices.get(&msg.user_name) {
+                Some(v) => v,
+                None => &default_voice,
+            };
 
-                let voice = "brock-samson".to_string();
-                // What are voice and voice_text
-                tx.send(Event::UberDuckRequest(UberDuckRequest {
-                    voice,
-                    voice_text,
-                }));
-            }
-            server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
+            // This is every string???
+            let voice_text = msg.contents.to_string();
+            // We need to get the not
+            // So need a look up here
+            tx.send(Event::UberDuckRequest(UberDuckRequest {
+                voice: voice.to_string(),
+                voice_text,
+            }));
+
+            // HMM DOES THIS NOT HAPPEN AFTER????
+
+            // This needs to happen after
+            // println!("Trying to trigger OBS");
+            // Then we have to worry about the OBS part
+            // server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
 
             let mut seal_text = msg.contents.clone();
             let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
@@ -278,7 +323,7 @@ impl EventHandler for BeginMessageHandler {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct UberDuckVoiceResponse {
-    uuid: String,
+    uuid: Option<String>,
 }
 
 // {
