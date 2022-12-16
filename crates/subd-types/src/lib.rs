@@ -39,6 +39,7 @@ pub struct UserMessage {
 pub struct UberDuckRequest {
     pub voice: String,
     pub voice_text: String,
+    pub message: String,
 }
 
 // TODO: Make UberDuckEvent

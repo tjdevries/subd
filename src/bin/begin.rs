@@ -50,6 +50,13 @@ pub struct BeginMessageHandler {
     obs_client: OBSClient,
 }
 
+pub struct CharacterSetup {
+    on: String,
+    off: String,
+
+    text_source: String, // So we need the Text Here
+}
+
 #[async_trait]
 impl EventHandler for UberDuckHandler {
     async fn handle(
@@ -66,11 +73,41 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
+            // We need to target the right text here!!!!
+            // I THINK WE JUST NEED TO UPDATE OBS_Text
+            server::obs::update_and_trigger_text_move_filter(
+                "Text",
+                "OBS_Text",
+                &msg.message,
+                &self.obs_client,
+            )
+            .await?;
             let username = env::var("UBER_DUCK_KEY")
                 .expect("Failed to read UBER_DUCK_KEY environment variable");
             let secret = env::var("UBER_DUCK_SECRET")
                 .expect("Failed to read UBER_DUCK_SECRET environment variable");
 
+            // so need an actual object
+            let hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
+                "mr-krabs-joewhyte".to_string(),
+                CharacterSetup {
+                    on: "OBS_KEY_0".to_string(),
+                    off: "OBS_KEY_1".to_string(),
+                    text_source: "mr.crabs-text".to_string(),
+                },
+            )]);
+            let default_hotkeys = CharacterSetup {
+                on: "OBS_KEY_6".to_string(),
+                off: "OBS_KEY_7".to_string(),
+                text_source: "OBS_Text".to_string(),
+            };
+            // Default
+            let hotkey = match hotkeys.get(&msg.voice) {
+                Some(v) => v,
+                None => &default_hotkeys,
+            };
+
+            // This is every string???
             let client = reqwest::Client::new();
             let res = client
                 .post("https://api.uberduck.ai/speak")
@@ -128,8 +165,11 @@ impl EventHandler for UberDuckHandler {
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
 
+                        // So need the look up for characters now!!!
+                        // So this 6/7 is the key
+                        // we need to update it look up the proper speech bubble
                         server::obs::trigger_hotkey(
-                            "OBS_KEY_6",
+                            &hotkey.on,
                             &self.obs_client,
                         )
                         .await?;
@@ -146,7 +186,7 @@ impl EventHandler for UberDuckHandler {
                         let ten_millis = time::Duration::from_millis(1000);
                         thread::sleep(ten_millis);
                         server::obs::trigger_hotkey(
-                            "OBS_KEY_7",
+                            &hotkey.off,
                             &self.obs_client,
                         )
                         .await?;
@@ -201,9 +241,16 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let default_voice = "brock-samson".to_string();
+            // We need to actually move this function
+            // mickey-mouse
+            // tommy-pickles
+            // goku
+            let default_voice = "goku".to_string();
+            // let default_voice = "mickey-mouse".to_string();
+            // let default_voice = "brock-samson".to_string();
             let voices: HashMap<String, String> = HashMap::from([
-                ("beginbotbot".to_string(), "theneedledrop".to_string()),
+                ("beginbotbot".to_string(), "mr-krabs-joewhyte".to_string()),
+                // ("beginbotbot".to_string(), "theneedledrop".to_string()),
                 ("artmattdank".to_string(), "mojo-jojo".to_string()),
                 (
                     "carlvandergeest".to_string(),
@@ -219,22 +266,6 @@ impl EventHandler for SoundHandler {
                 None => &default_voice,
             };
 
-            // This is every string???
-            let voice_text = msg.contents.to_string();
-            // We need to get the not
-            // So need a look up here
-            tx.send(Event::UberDuckRequest(UberDuckRequest {
-                voice: voice.to_string(),
-                voice_text,
-            }));
-
-            // HMM DOES THIS NOT HAPPEN AFTER????
-
-            // This needs to happen after
-            // println!("Trying to trigger OBS");
-            // Then we have to worry about the OBS part
-            // server::obs::trigger_hotkey("OBS_KEY_6", &self.obs_client).await?;
-
             let mut seal_text = msg.contents.clone();
             let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
 
@@ -248,14 +279,26 @@ impl EventHandler for SoundHandler {
                         line_length_limit + line_length_modifier;
                 }
             }
+            // This is every string???
+            let voice_text = msg.contents.to_string();
+            // We need to get the not
+            // So need a look up here
+            // We need to pass more to UberDuck
+            tx.send(Event::UberDuckRequest(UberDuckRequest {
+                message: seal_text,
+                voice: voice.to_string(),
+                voice_text,
+            }));
 
-            server::obs::update_and_trigger_text_move_filter(
-                "Text",
-                "OBS_Text",
-                &seal_text,
-                &self.obs_client,
-            )
-            .await?;
+            // We need to target the right text here!!!!
+            // I THINK WE JUST NEED TO UPDATE OBS_Text
+            // server::obs::update_and_trigger_text_move_filter(
+            //     "Text",
+            //     "OBS_Text",
+            //     &seal_text,
+            //     &self.obs_client,
+            // )
+            // .await?;
 
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
@@ -411,119 +454,6 @@ async fn handle_obs_commands(
             .await
         }
 
-        "!text" => {
-            // This should just create and Event
-            let client = reqwest::Client::new();
-
-            // so I now need to move these
-            let voice_text = msg.contents.replace("!text", "");
-            // So I need to look up people
-            // let voice = "brock-samson".to_string();
-            let voice = "alan-rickman".to_string();
-
-            // Tx.send(Event::UberDuckRequest(voice, voice_text));
-            // argument of type `std::string::String` unexpected
-            //    expected struct `subd_types::UberDuckRequest`, found struct `std::string::String`
-
-            // so we don't need to!!
-            // IS THIS RIGHT!!!!!!!!
-            tx.send(Event::UberDuckRequest(UberDuckRequest {
-                voice,
-                voice_text,
-            }));
-            // tx.send(Event::UserMessage(UserMessage {
-            //     user_id,
-            //     user_name: msg.sender.name,
-            //     roles: user_roles,
-            //     platform: UserPlatform::Twitch,
-            //     contents: msg.text,
-            // }))?;
-
-            // Create UberDuck Event
-            // Or I read from somewhere else
-            // or from something else
-            //
-            // =====================================================================================================================================
-            // let username = env::var("UBER_DUCK_KEY")
-            //     .expect("Failed to read UBER_DUCK_KEY environment variable");
-            // let secret = env::var("UBER_DUCK_SECRET")
-            //     .expect("Failed to read UBER_DUCK_SECRET environment variable");
-
-            // let res = client
-            //     .post("https://api.uberduck.ai/speak")
-            //     .basic_auth(username.clone(), Some(secret.clone()))
-            //     .json(&[("speech", voice_text), ("voice", voice)])
-            //     .send()
-            //     .await?
-            //     .json::<UberDuckVoiceResponse>()
-            //     .await?;
-
-            // loop {
-            //     let url = format!(
-            //         "https://api.uberduck.ai/speak-status?uuid={uuid}",
-            //         uuid = res.uuid
-            //     );
-
-            //     // We look this up again because we are dumb AF
-            //     let username = env::var("UBER_DUCK_KEY").expect(
-            //         "Failed to read UBER_DUCK_KEY environment variable",
-            //     );
-            //     let secret = env::var("UBER_DUCK_SECRET").expect(
-            //         "Failed to read UBER_DUCK_SECRET environment variable",
-            //     );
-            //     // Hit the URL and parse the response
-            //     let response = client
-            //         .get(url)
-            //         .basic_auth(username, Some(secret))
-            //         .send()
-            //         .await?;
-
-            //     let text = response.text().await?;
-            //     println!("Uberduck Response: {:?}", text);
-            //     let file_resp: UberDuckFileResponse =
-            //         serde_json::from_str(&text)?;
-
-            //     // so now we need to match
-            //     // Check if the failed_at parameter is null
-            //     match file_resp.path {
-            //         Some(new_url) => {
-            //             // TODO Should we change this file name
-            //             let local_path = "./test.wav";
-            //             let response = client.get(new_url).send().await?;
-            //             let file = File::create(local_path)?;
-            //             let mut writer = BufWriter::new(file);
-            //             writer.write_all(&response.bytes().await?)?;
-            //             println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
-
-            //             let file =
-            //                 BufReader::new(File::open(local_path).unwrap());
-
-            //             sink.append(
-            //                 Decoder::new(BufReader::new(file)).unwrap(),
-            //             );
-            //             sink.sleep_until_end();
-            //             break;
-            //         }
-            //         None => {
-            //             // Wait 1 second before seeing if the file is ready.
-            //             let ten_millis = time::Duration::from_millis(1000);
-            //             thread::sleep(ten_millis);
-            //         }
-            //     }
-            // }
-
-            // let user_text = &splitmsg[1..];
-            // server::obs::update_and_trigger_text_move_filter(
-            //     "Text",
-            //     "OBS_Text",
-            //     &user_text.join(" "),
-            //     &obs_client,
-            // )
-            // .await?;
-
-            Ok(())
-            // =====================================================================================================================================
-        }
         "!blur" => {
             let filter_value = splitmsg
                 .get(2)
