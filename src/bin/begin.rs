@@ -36,13 +36,13 @@ const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
 pub struct UberDuckHandler {
     sink: Sink,
-    // Not YET!!!
+
+    // Should we have this here??????
     obs_client: OBSClient,
 }
 
 pub struct SoundHandler {
     sink: Sink,
-    obs_client: OBSClient,
 }
 
 pub struct BeginMessageHandler {
@@ -50,13 +50,43 @@ pub struct BeginMessageHandler {
     obs_client: OBSClient,
 }
 
+// This is really to show where the HotKeys are
 pub struct CharacterSetup {
     on: String,
     off: String,
-
-    text_source: String, // So we need the Text Here
+    text_source: String,
 }
 
+// This is not the ideal method
+fn find_obs_character(voice: &String) -> CharacterSetup {
+    let mut hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
+        "mr-krabs-joewhyte".to_string(),
+        CharacterSetup {
+            on: "OBS_KEY_0".to_string(),
+            off: "OBS_KEY_1".to_string(),
+            text_source: "mr.crabs-text".to_string(),
+        },
+    )]);
+
+    let default_hotkeys = CharacterSetup {
+        on: "OBS_KEY_6".to_string(),
+        off: "OBS_KEY_7".to_string(),
+        text_source: "Text".to_string(),
+    };
+
+    match hotkeys.remove(voice) {
+        Some(v) => v,
+        None => default_hotkeys,
+    }
+}
+
+fn uberduck_creds() -> (String, String) {
+    let username = env::var("UBER_DUCK_KEY")
+        .expect("Failed to read UBER_DUCK_KEY environment variable");
+    let secret = env::var("UBER_DUCK_SECRET")
+        .expect("Failed to read UBER_DUCK_SECRET environment variable");
+    (username, secret)
+}
 #[async_trait]
 impl EventHandler for UberDuckHandler {
     async fn handle(
@@ -67,31 +97,16 @@ impl EventHandler for UberDuckHandler {
         loop {
             let event = rx.recv().await?;
 
-            // How can Match with only UberDuck Messages
             let msg = match event {
                 Event::UberDuckRequest(msg) => msg,
                 _ => continue,
             };
 
-            let hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
-                "mr-krabs-joewhyte".to_string(),
-                CharacterSetup {
-                    on: "OBS_KEY_0".to_string(),
-                    off: "OBS_KEY_1".to_string(),
-                    text_source: "mr.crabs-text".to_string(),
-                },
-            )]);
-            let default_hotkeys = CharacterSetup {
-                on: "OBS_KEY_6".to_string(),
-                off: "OBS_KEY_7".to_string(),
-                text_source: "Text".to_string(),
-            };
-            // Default
-            let hotkey = match hotkeys.get(&msg.voice) {
-                Some(v) => v,
-                None => &default_hotkeys,
-            };
+            // This really isn't the Hot Key
+            let hotkey = find_obs_character(&msg.voice);
 
+            // We should be sending this off!!!!
+            // This should be an event I think maybe?????
             // We need to target the right text here!!!!
             // I THINK WE JUST NEED TO UPDATE OBS_Text
             server::obs::update_and_trigger_text_move_filter(
@@ -101,10 +116,8 @@ impl EventHandler for UberDuckHandler {
                 &self.obs_client,
             )
             .await?;
-            let username = env::var("UBER_DUCK_KEY")
-                .expect("Failed to read UBER_DUCK_KEY environment variable");
-            let secret = env::var("UBER_DUCK_SECRET")
-                .expect("Failed to read UBER_DUCK_SECRET environment variable");
+
+            let (username, secret) = uberduck_creds();
 
             // This is every string???
             let client = reqwest::Client::new();
@@ -129,15 +142,7 @@ impl EventHandler for UberDuckHandler {
                     &uuid
                 );
 
-                // We look this up again because we are dumb AF
-                let username = env::var("UBER_DUCK_KEY").expect(
-                    "Failed to read UBER_DUCK_KEY environment variable",
-                );
-                let secret = env::var("UBER_DUCK_SECRET").expect(
-                    "Failed to read UBER_DUCK_SECRET environment variable",
-                );
-                // so we need client
-                // Hit the URL and parse the response
+                let (username, secret) = uberduck_creds();
                 let response = client
                     .get(url)
                     .basic_auth(username, Some(secret))
@@ -198,17 +203,6 @@ impl EventHandler for UberDuckHandler {
                     }
                 }
             }
-
-            // We'll have to figure this out
-            // let user_text = &splitmsg[1..];
-            // server::obs::update_and_trigger_text_move_filter(
-            //     "Text",
-            //     "OBS_Text",
-            //     &user_text.join(" "),
-            //     &self.obs_client,
-            // )
-            // .await?;
-            // So we need to do UBER DUCK THINGS IN HERE!!!
         }
     }
 }
@@ -240,17 +234,20 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
+            // Can I put this out
             // We need to actually move this function
             // mickey-mouse
             // tommy-pickles
-            // goku
-            let default_voice = "goku".to_string();
+            // let default_voice = "goku".to_string();
+            // let default_voice = "danny-devito-angry".to_string();
+            let default_voice = "mojo-jojo".to_string();
             // let default_voice = "mickey-mouse".to_string();
             // let default_voice = "brock-samson".to_string();
             let voices: HashMap<String, String> = HashMap::from([
                 ("beginbotbot".to_string(), "mr-krabs-joewhyte".to_string()),
                 // ("beginbotbot".to_string(), "theneedledrop".to_string()),
-                ("artmattdank".to_string(), "mojo-jojo".to_string()),
+                // ("artmattdank".to_string(), "mojo-jojo".to_string()),
+                ("ArtMattDank".to_string(), "dr-nick".to_string()),
                 (
                     "carlvandergeest".to_string(),
                     "danny-devito-angry".to_string(),
@@ -278,26 +275,12 @@ impl EventHandler for SoundHandler {
                         line_length_limit + line_length_modifier;
                 }
             }
-            // This is every string???
             let voice_text = msg.contents.to_string();
-            // We need to get the not
-            // So need a look up here
-            // We need to pass more to UberDuck
-            tx.send(Event::UberDuckRequest(UberDuckRequest {
+            let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                 message: seal_text,
                 voice: voice.to_string(),
                 voice_text,
             }));
-
-            // We need to target the right text here!!!!
-            // I THINK WE JUST NEED TO UPDATE OBS_Text
-            // server::obs::update_and_trigger_text_move_filter(
-            //     "Text",
-            //     "OBS_Text",
-            //     &seal_text,
-            //     &self.obs_client,
-            // )
-            // .await?;
 
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
@@ -859,7 +842,7 @@ async fn main() -> Result<()> {
     // We are creating a 2nd sink here
     // Because I am too dumb to share 1
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    event_loop.push(SoundHandler { sink, obs_client });
+    event_loop.push(SoundHandler { sink });
 
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
