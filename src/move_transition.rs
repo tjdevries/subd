@@ -170,3 +170,48 @@ pub struct MoveTextFilter {
     #[serde(rename = "move_value_type")]
     pub move_value_type: Option<u32>,
 }
+
+// We also need a function for making these
+// This is what we need to get better at!!!!!!!!
+pub fn create_move_source_filter_settings(
+    source: &str,
+) -> MoveSourceFilterSettings {
+    let settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(300),
+        bounds: Some(Coordinates {
+            x: Some(251.0),
+            y: Some(234.0),
+        }),
+        scale: Some(Coordinates {
+            x: Some(1.0),
+            y: Some(1.0),
+        }),
+        position: Some(Coordinates {
+            x: Some(1662.0),
+            y: Some(13.0),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            bottom: Some(0.0),
+            left: Some(0.0),
+            right: Some(0.0),
+            top: Some(0.0),
+        }),
+        transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
+    };
+    settings
+}
+
+// HMMM Why can't they see this???
+// This needs to take in Custom Filters
+pub fn custom_filter_settings(
+    mut base_settings: MoveSourceFilterSettings,
+    x: f32,
+    y: f32,
+) -> MoveSourceFilterSettings {
+    base_settings.position = Some(Coordinates {
+        x: Some(x),
+        y: Some(y),
+    });
+    base_settings
+}

@@ -528,7 +528,8 @@ pub async fn top_right(scene_item: &str, obs_client: &OBSClient) -> Result<()> {
     let base_settings =
         fetch_source_settings(DEFAULT_SCENE, &scene_item, &obs_client).await?;
 
-    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+    let new_settings =
+        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -540,7 +541,8 @@ pub async fn bottom_right(
     let settings =
         fetch_source_settings(DEFAULT_SCENE, &scene_item, &obs_client).await?;
 
-    let new_settings = custom_filter_settings(settings, 12.0, 878.0);
+    let new_settings =
+        move_transition::custom_filter_settings(settings, 12.0, 878.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -754,7 +756,7 @@ pub async fn follow(
             }
         };
         if s.source_name != leader {
-            let new_settings = custom_filter_settings(
+            let new_settings = move_transition::custom_filter_settings(
                 base_settings,
                 leader_settings.position_x,
                 leader_settings.position_y,
@@ -778,8 +780,10 @@ pub async fn create_move_text_value_filter(
     filter_name: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let base_settings = create_move_source_filter_settings(scene_item);
-    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+    let base_settings =
+        move_transition::create_move_source_filter_settings(scene_item);
+    let new_settings =
+        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
 
     // "id": "move_value_filter",
     // "mixers": 0,
@@ -822,8 +826,10 @@ pub async fn create_move_source_filters(
     filter_name: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let base_settings = create_move_source_filter_settings(scene_item);
-    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+    let base_settings =
+        move_transition::create_move_source_filter_settings(scene_item);
+    let new_settings =
+        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
 
     let new_filter = obws::requests::filters::Create {
         source,
@@ -1448,49 +1454,6 @@ async fn update_move_source_filters(
     obs_client.filters().set_settings(new_filter).await?;
 
     Ok(())
-}
-
-fn create_move_source_filter_settings(
-    source: &str,
-) -> move_transition::MoveSourceFilterSettings {
-    let settings = move_transition::MoveSourceFilterSettings {
-        source: Some(source.to_string()),
-        duration: Some(300),
-        bounds: Some(move_transition::Coordinates {
-            x: Some(251.0),
-            y: Some(234.0),
-        }),
-        scale: Some(move_transition::Coordinates {
-            x: Some(1.0),
-            y: Some(1.0),
-        }),
-        position: Some(move_transition::Coordinates {
-            x: Some(1662.0),
-            y: Some(13.0),
-        }),
-        crop: Some(move_transition::MoveSourceCropSetting {
-            bottom: Some(0.0),
-            left: Some(0.0),
-            right: Some(0.0),
-            top: Some(0.0),
-        }),
-        transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
-    };
-    settings
-}
-
-// HMMM Why can't they see this???
-// This needs to take in Custom Filters
-pub fn custom_filter_settings(
-    mut base_settings: move_transition::MoveSourceFilterSettings,
-    x: f32,
-    y: f32,
-) -> move_transition::MoveSourceFilterSettings {
-    base_settings.position = Some(move_transition::Coordinates {
-        x: Some(x),
-        y: Some(y),
-    });
-    base_settings
 }
 
 async fn fetch_source_settings(
