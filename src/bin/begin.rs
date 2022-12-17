@@ -2,9 +2,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::Decoder;
 use rodio::*;
-use rodio::{Decoder, OutputStream};
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -229,30 +228,6 @@ impl EventHandler for OBSMessageHandler {
     }
 }
 
-// ==============================================================================
-
-// This should probably be moved
-// this is just for audio also
-
-fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
-    let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
-
-    let (mut _stream, mut stream_handle) = OutputStream::try_default().unwrap();
-    for device in devices {
-        let dev: rodio::Device = device.into();
-        let dev_name: String = dev.name().unwrap();
-        if dev_name == device_name {
-            println!("Device found: {}", dev_name);
-            (_stream, stream_handle) =
-                OutputStream::try_from_device(&dev).unwrap();
-        }
-    }
-    return (_stream, stream_handle);
-}
-
-// ==========================================================================================
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -310,7 +285,7 @@ async fn main() -> Result<()> {
     event_loop.push(OBSMessageHandler { obs_client });
 
     // Works for Arch Linux
-    let (_stream, stream_handle) = get_output_stream("pulse");
+    let (_stream, stream_handle) = server::audio::get_output_stream("pulse");
 
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();

@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod commands;
 pub mod move_transition;
 pub mod obs;
