@@ -1455,7 +1455,7 @@ fn create_move_source_filter_settings(
 ) -> move_transition::MoveSourceFilterSettings {
     let settings = move_transition::MoveSourceFilterSettings {
         source: Some(source.to_string()),
-        duration: Some(4444),
+        duration: Some(300),
         bounds: Some(move_transition::Coordinates {
             x: Some(251.0),
             y: Some(234.0),

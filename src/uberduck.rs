@@ -93,6 +93,14 @@ impl EventHandler for UberDuckHandler {
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
 
+                // So this text Transform is what is failing I think
+                let text_source = format!("{}-text", stream_character.source);
+                let _ = tx.send(Event::TransformOBSTextRequest(
+                    TransformOBSTextRequest {
+                        message: msg.message.clone(),
+                        text_source,
+                    },
+                ));
                 match file_resp.path {
                     Some(new_url) => {
                         // TODO Should we change this file name
@@ -103,16 +111,6 @@ impl EventHandler for UberDuckHandler {
                         let mut writer = BufWriter::new(file);
                         writer.write_all(&response.bytes().await?)?;
                         println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
-
-                        // So this text Transform is what is failing I think
-                        let text_source =
-                            format!("{}-text", stream_character.source);
-                        let _ = tx.send(Event::TransformOBSTextRequest(
-                            TransformOBSTextRequest {
-                                message: msg.message,
-                                text_source,
-                            },
-                        ));
 
                         let source = stream_character.source.clone();
                         let _ = tx.send(Event::StreamCharacterRequest(
