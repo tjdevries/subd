@@ -1294,63 +1294,50 @@ pub async fn trigger_grow(
 // Hot Keys //
 // ======== //
 
-pub async fn trigger_showing_character(
+pub async fn trigger_character_filters(
     base_source: &str,
     obs_client: &OBSClient,
+    enabled: bool,
 ) -> Result<()> {
-    let filter_name = format!("Show{}", base_source);
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
-        filter: &filter_name,
-        enabled: false,
+    let scene = "Characters";
+
+    let mut filter_name_modifier = "Hide";
+    if enabled {
+        filter_name_modifier = "Show"
     };
+
+    println!(
+        "We are going to try and {} {} sources",
+        filter_name_modifier, base_source
+    );
+
+    // So this just fails
+    let filter_name = format!("{}{}", filter_name_modifier, base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
-    let filter_name = format!("Show{}-text", base_source);
+    let filter_name = format!("{}{}-text", filter_name_modifier, base_source);
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
+        source: scene,
         filter: &filter_name,
-        enabled: false,
+        enabled: true,
     };
+    println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
-    let filter_name = format!("Show{}-speech_bubble", base_source);
+    let filter_name =
+        format!("{}{}-speech_bubble", filter_name_modifier, base_source);
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
+        source: scene,
         filter: &filter_name,
-        enabled: false,
+        enabled: true,
     };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-pub async fn trigger_hiding_character(
-    base_source: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let filter_name = format!("Hide{}", base_source);
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
-        filter: &filter_name,
-        enabled: false,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    let filter_name = format!("Hide{}-text", base_source);
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
-        filter: &filter_name,
-        enabled: false,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    let filter_name = format!("Hide{}-speech_bubble", base_source);
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Character",
-        filter: &filter_name,
-        enabled: false,
-    };
+    println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
     Ok(())

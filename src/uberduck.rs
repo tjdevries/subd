@@ -12,7 +12,6 @@ use std::{thread, time};
 use subd_types::Event;
 use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
-use subd_types::TriggerHotkeyRequest;
 use tokio::sync::broadcast;
 
 pub struct UberDuckHandler {
@@ -32,20 +31,9 @@ struct UberDuckFileResponse {
     finished_at: Option<String>,
 }
 
-// We could get rid of this
-#[derive(Debug)]
-pub struct CharacterSetup {
-    on: &'static str,
-    off: &'static str,
-    source: &'static str,
-    text_source: &'static str,
-}
-
 // Should they be optional???
 pub struct StreamCharacter {
-    text_source: String,
-    hotkey_on: String,
-    hotkey_off: String,
+    // text_source: String,
     voice: String,
     source: String,
     username: String,
@@ -116,23 +104,20 @@ impl EventHandler for UberDuckHandler {
                         writer.write_all(&response.bytes().await?)?;
                         println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
 
+                        // So this text Transform is what is failing I think
+                        let text_source =
+                            format!("{}-text", stream_character.source);
                         let _ = tx.send(Event::TransformOBSTextRequest(
                             TransformOBSTextRequest {
                                 message: msg.message,
-                                text_source: stream_character
-                                    .text_source
-                                    .to_string(),
+                                text_source,
                             },
                         ));
 
-                        let _ = tx.send(Event::TriggerHotkeyRequest(
-                            TriggerHotkeyRequest {
-                                hotkey: stream_character.hotkey_on.to_string(),
-                            },
-                        ));
+                        let source = stream_character.source.clone();
                         let _ = tx.send(Event::StreamCharacterRequest(
                             StreamCharacterRequest {
-                                source: stream_character.source,
+                                source,
                                 enabled: true,
                             },
                         ));
@@ -149,9 +134,12 @@ impl EventHandler for UberDuckHandler {
                         // we could also kick off a hide event
                         let ten_millis = time::Duration::from_millis(1000);
                         thread::sleep(ten_millis);
-                        let _ = tx.send(Event::TriggerHotkeyRequest(
-                            TriggerHotkeyRequest {
-                                hotkey: stream_character.hotkey_off.to_string(),
+
+                        let source = stream_character.source.clone();
+                        let _ = tx.send(Event::StreamCharacterRequest(
+                            StreamCharacterRequest {
+                                source,
+                                enabled: false,
                             },
                         ));
                         break;
@@ -193,6 +181,16 @@ fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "mojo-jojo";
     // let default_voice = "tommy-pickles";
 
+    // What is  the most limited
+    // You just let a user inhabit a Character
+    // and chose a voice
+    //
+    // Character -> (name, voice)
+    //
+    // HashMap
+    // so it's one character
+    // but multple voices
+    // do we have more???
     let voices2: HashMap<&str, &str> = HashMap::from([
         ("beginbotbot", "mr-krabs-joewhyte"),
         // ("beginbotbot", "theneedledrop"),
@@ -216,50 +214,32 @@ fn build_stream_character(username: &str) -> StreamCharacter {
 
     let character = find_obs_character(voice);
 
+    // let text_source = format!("{}-text", character.source);
     StreamCharacter {
         username: username.to_string(),
         voice: voice.to_string(),
-        text_source: character.text_source.to_string(),
-        source: character.source.to_string(),
-        hotkey_on: character.on.to_string(),
-        hotkey_off: character.off.to_string(),
+
+        // Why
+        // text_source: character.text_source.to_string(),
+        source: character.to_string(),
     }
 }
-// All 6 Filters
 
-// This is not ideal though
+// All 6 Filters
 // I think we should try alternative filter triggering instead
 // we need to trigger 3 filters each time
 // and we can get the names based off a pattern
 // This is not the ideal method
-fn find_obs_character(voice: &str) -> CharacterSetup {
-    let default_hotkeys = CharacterSetup {
-        on: "OBS_KEY_6",
-        off: "OBS_KEY_7",
-        source: "Seal",
-        text_source: "Text",
-    };
+fn find_obs_character(voice: &str) -> &str {
+    // This makes no sense
+    let default_hotkeys = "Seal";
 
+    // We need defaults for the source
     // TODO: We need one of these for each voice
-    let mut hotkeys: HashMap<&str, CharacterSetup> = HashMap::from([
-        (
-            "mr-krabs-joewhyte",
-            CharacterSetup {
-                on: "OBS_KEY_0",
-                off: "OBS_KEY_1",
-                text_source: "mr.crabs-text",
-                source: "mr.crabs",
-            },
-        ),
-        (
-            "danny-devito-angry",
-            CharacterSetup {
-                on: "OBS_KEY_2",
-                off: "OBS_KEY_3",
-                source: "Kevin",
-                text_source: "Kevin-text",
-            },
-        ),
+    let mut hotkeys: HashMap<&str, &str> = HashMap::from([
+        ("mojo-jojo", "Birb"),
+        ("mr-krabs-joewhyte", "mr.crabs"),
+        ("danny-devito-angry", "Kevin"),
     ]);
 
     match hotkeys.remove(voice) {

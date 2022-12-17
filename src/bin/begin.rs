@@ -5,15 +5,12 @@ use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-// use subd_types::TransformOBSTextRequest;
-// use subd_types::TriggerHotkeyRequest;
+use subd_types::Event;
 use subd_types::UberDuckRequest;
-use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -25,6 +22,52 @@ pub struct OBSMessageHandler {
 
 pub struct TriggerHotkeyHandler {
     obs_client: OBSClient,
+}
+
+pub struct StreamCharacterHandler {
+    obs_client: OBSClient,
+}
+
+pub struct TransformOBSTextHandler {
+    obs_client: OBSClient,
+}
+
+#[async_trait]
+impl EventHandler for StreamCharacterHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::StreamCharacterRequest(msg) => msg,
+                _ => continue,
+            };
+
+            println!(
+                "We are going to trigger a Stream Character: {}",
+                msg.source
+            );
+
+            if msg.enabled {
+                let _ = server::obs::trigger_character_filters(
+                    &msg.source,
+                    &self.obs_client,
+                    true,
+                )
+                .await;
+            } else {
+                let _ = server::obs::trigger_character_filters(
+                    &msg.source,
+                    &self.obs_client,
+                    false,
+                )
+                .await;
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -46,10 +89,6 @@ impl EventHandler for TriggerHotkeyHandler {
     }
 }
 
-pub struct TransformOBSTextHandler {
-    obs_client: OBSClient,
-}
-
 #[async_trait]
 impl EventHandler for TransformOBSTextHandler {
     async fn handle(
@@ -68,9 +107,10 @@ impl EventHandler for TransformOBSTextHandler {
                 "Attempting to transform OBS Text: {:?} {:?}",
                 &msg.text_source, &msg.message
             );
+            let filter_name = format!("Transform{}", msg.text_source);
             server::obs::update_and_trigger_text_move_filter(
                 &msg.text_source,
-                "OBS_Text",
+                &filter_name,
                 &msg.message,
                 &self.obs_client,
             )
@@ -293,6 +333,12 @@ async fn main() -> Result<()> {
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
     event_loop.push(TransformOBSTextHandler { obs_client });
+
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(StreamCharacterHandler { obs_client });
 
     println!("\n\n\t\tLet's Start this Loop Up!");
     event_loop.run().await?;

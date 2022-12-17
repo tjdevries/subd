@@ -64,6 +64,7 @@ pub struct StreamCharacterRequest {
     pub source: String,
     pub enabled: bool,
 }
+
 // TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {

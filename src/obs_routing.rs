@@ -61,12 +61,7 @@ pub async fn handle_obs_commands(
             let scene = "Characters";
             let base_source = "Birb";
 
-            // We should really get this into it's own Method
-            // let filter_name = "Show-Kevin";
-
-            // We need create 2 functions
-            // for triggering the show and hide of the characters
-            // This could be the base image
+            // TODO: We need to pull in this source
             let image_source =
                 obws::requests::custom::source_settings::ImageSource {
                     file: Path::new(
@@ -74,7 +69,7 @@ pub async fn handle_obs_commands(
                     ),
                     ..Default::default()
                 };
-            obs_client
+            let _ = obs_client
                 .inputs()
                 .create(obws::requests::inputs::Create {
                     scene,
@@ -91,7 +86,7 @@ pub async fn handle_obs_commands(
                     ..Default::default()
                 };
             let speech_source_name = format!("{}-speech_bubble", base_source);
-            obs_client
+            let _ = obs_client
                 .inputs()
                 .create(obws::requests::inputs::Create {
                     scene,
@@ -102,35 +97,16 @@ pub async fn handle_obs_commands(
                 })
                 .await;
 
-            // Then we need the Text
-
-            // We got to figure out how to get some recent early positions
-            // WE should try and create all these in a position
+            // Create the Text Source
             let text_settings =
                 obws::requests::custom::source_settings::TextFt2SourceV2 {
                     outline: true,
                     drop_shadow: true,
                     text: "THIS RULESSSSS WE RULE!!!!",
-                    // antialiasing: todo!(),
-                    // font: todo!(),
-                    // from_file: todo!(),
-                    // log_lines: todo!(),
-                    // log_mode: todo!(),
-                    // rgb::RGBA<u8>
-                    // color1: 4286578517,
-                    // color2: 4278190335,
-                    // "font": {
-                    //     "face": "Arial",
-                    //     "flags": 0,
-                    //     "size": 256,
-                    //     "style": "Regular"
-                    // },
-                    // text_file: todo!(),
-                    // word_wrap: todo!(),
                     ..Default::default()
                 };
             let text_source_name = format!("{}-text", base_source);
-            obs_client
+            let _ = obs_client
                 .inputs()
                 .create(obws::requests::inputs::Create {
                     scene,
@@ -141,15 +117,8 @@ pub async fn handle_obs_commands(
                 })
                 .await;
 
-            let filter_name = format!("{}-text", base_source);
-            obs::create_move_source_filters(
-                "Characters",
-                &text_source_name,
-                &filter_name,
-                &obs_client,
-            )
-            .await;
-
+            // ======================================================
+            // This is creating the Text Transform Filter
             // Not Sure of This Name
             // We just need a better name
             // Create Move-Value for 3D Transform Filter
@@ -157,9 +126,7 @@ pub async fn handle_obs_commands(
             let move_text_filter = move_transition::MoveTextFilter {
                 setting_name: "text".to_string(),
                 setting_text: "Ok NOW".to_string(),
-                value_type: 5,
-                // Something is wrong
-                // might be 5
+                value_type: 4,
                 ..Default::default()
             };
             let new_filter = obws::requests::filters::Create {
@@ -171,28 +138,21 @@ pub async fn handle_obs_commands(
             if let Err(err) = obs_client.filters().create(new_filter).await {
                 println!("Error Creating Filter: {filter_name} | {:?}", err);
             };
-            // "name": "chief-keef",
-            // Now I just need o use this
-            // pub setting_name: String,
-            // #[serde(rename = "value_type")]
-            // pub value_type: u32,
-            // #[serde(rename = "setting_text")]
-            // pub setting_text: String,
-            // We still need the Filter on Text Transform
-            // Which we haven't made yet
+
+            // ======================================================
 
             // Then we need to create 6 Filters
             let filter_name = format!("Show{}", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &base_source,
                 &filter_name,
                 &obs_client,
             )
             .await;
             let filter_name = format!("Hide{}", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &base_source,
                 &filter_name,
                 &obs_client,
@@ -200,16 +160,16 @@ pub async fn handle_obs_commands(
             .await;
 
             let filter_name = format!("Show{}-text", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &text_source_name,
                 &filter_name,
                 &obs_client,
             )
             .await;
             let filter_name = format!("Hide{}-text", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &text_source_name,
                 &filter_name,
                 &obs_client,
@@ -219,16 +179,16 @@ pub async fn handle_obs_commands(
             // Doubling for Hide is easy
             // We just need to know how to get get starting positions
             let filter_name = format!("Show{}-speech_bubble", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &speech_source_name,
                 &filter_name,
                 &obs_client,
             )
             .await;
             let filter_name = format!("Hide{}-speech_bubble", base_source);
-            obs::create_move_source_filters(
-                "Characters",
+            let _ = obs::create_move_source_filters(
+                scene,
                 &speech_source_name,
                 &filter_name,
                 &obs_client,
