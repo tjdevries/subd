@@ -18,6 +18,13 @@ const DEFAULT_SCENE: &str = "Primary";
 const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
 
+// Constants to Extract:
+// kind: "move_value_filter",
+// kind: "streamfx-filter-blur",
+// let stream_fx_filter_name = "Move_Blur";
+// let stream_fx_filter_name = "Move_Scroll";
+// filter: "Scroll",
+// kind: "scroll_filter",
 // Figure out what the name of this should really be
 // const MULTI_SETTING_VALUE_TYPE: u32 = 1;
 const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
@@ -30,19 +37,12 @@ pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
 const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
 
-// This ain't the name
+// TODO: This ain't the name
 const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 const BLUR_FILTER_NAME: &str = "Blur";
 
-// Constants to Extract:
-// kind: "move_value_filter",
-// kind: "streamfx-filter-blur",
-// let stream_fx_filter_name = "Move_Blur";
-// let stream_fx_filter_name = "Move_Scroll";
-// filter: "Scroll",
-// kind: "scroll_filter",
-
+// This is for hotkeys
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
         shift: true,
@@ -76,6 +76,60 @@ pub struct BlurSetting {
 
     #[serde(rename = "Filter.Blur.Version")]
     pub version: Option<u64>,
+}
+
+// WHY CAN'T THYE FIND YOU!!!!!
+// TODO: What kinda trash name is this???
+pub async fn handle_user_input(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!(
+        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
+        source, filter_name, filter_setting_name, duration, filter_value,
+    );
+
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    let mut new_settings = serde_json::from_value::<
+        move_transition::MoveSingleValueSetting,
+    >(filter_details.settings)
+    .unwrap();
+
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+
+    new_settings.value_type = value_type;
+
+    println!("\nNew Settings: {:?}", new_settings);
+
+    // Update the Filter
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+    thread::sleep(Duration::from_millis(100));
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
 }
 
 // =========================== //
@@ -718,6 +772,50 @@ pub async fn follow(
 // Bootstrap / Create Things //
 // ========================= //
 
+pub async fn create_move_text_value_filter(
+    source: &str,
+    scene_item: &str,
+    filter_name: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let base_settings = create_move_source_filter_settings(scene_item);
+    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+
+    // "id": "move_value_filter",
+    // "mixers": 0,
+    // "monitoring_type": 0,
+    // "muted": false,
+    // "name": "OBS_Text",
+    // "prev_ver": 469827586,
+    // "private_settings": {},
+    // "push-to-mute": false,
+    // "push-to-mute-delay": 0,
+    // "push-to-talk": false,
+    // "push-to-talk-delay": 0,
+    // "settings": {
+    //     "custom_duration": true,
+    //     "duration": 300,
+    //     "filter": "",
+    //     "move_value_type": 4,
+    //     "setting_decimals": 1,
+    //     "setting_name": "text",
+    //     "setting_text": "we are working on getting\nfunctionality up",
+    //     "value_type": 4
+    // },
+    // "sync": 0,
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: filter_name,
+        kind: "move_source_filter",
+        settings: Some(new_settings),
+    };
+    if let Err(err) = obs_client.filters().create(new_filter).await {
+        println!("Error Creating Filter: {filter_name} | {:?}", err);
+    };
+
+    Ok(())
+}
+
 pub async fn create_move_source_filters(
     source: &str,
     scene_item: &str,
@@ -881,7 +979,6 @@ pub async fn create_split_3d_transform_filters(
         };
         obs_client.filters().create(new_filter).await?;
 
-        // Create Move-Value for 3D Transform Filter
         let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
 
         let new_settings = move_transition::MoveSingleValueSetting {
@@ -958,6 +1055,7 @@ pub async fn create_filters_for_source(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
+pub async fn create_filters_for_source() -> Result<()> {
     println!("Creating Filters for Source: {}", source);
 
     let filters = match obs_client.filters().list(source).await {
@@ -1191,61 +1289,73 @@ pub async fn trigger_grow(
     Ok(())
 }
 
-pub async fn handle_user_input(
-    source: &str,
-    filter_name: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    value_type: u32,
+// =================================================================================================================================
+
+// ======== //
+// Hot Keys //
+// ======== //
+
+pub async fn trigger_showing_character(
+    base_source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    println!(
-        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
-        source, filter_name, filter_setting_name, duration, filter_value,
-    );
-
-    let filter_details =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    let mut new_settings = serde_json::from_value::<
-        move_transition::MoveSingleValueSetting,
-    >(filter_details.settings)
-    .unwrap();
-
-    new_settings.setting_name = String::from(filter_setting_name);
-    new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-
-    new_settings.value_type = value_type;
-
-    println!("\nNew Settings: {:?}", new_settings);
-
-    // Update the Filter
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-    thread::sleep(Duration::from_millis(100));
+    let filter_name = format!("Show{}", base_source);
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name = format!("Show{}-text", base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name = format!("Show{}-speech_bubble", base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
 
     Ok(())
 }
 
-// ======== //
-// Hot Keys //
-// ======== //
+pub async fn trigger_hiding_character(
+    base_source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Hide{}", base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name = format!("Hide{}-text", base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name = format!("Hide{}-speech_bubble", base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: "Character",
+        filter: &filter_name,
+        enabled: false,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
 
 pub async fn trigger_hotkey(key: &str, obs_client: &OBSClient) -> Result<()> {
     _ = obs_client
@@ -1310,10 +1420,6 @@ pub async fn set_audio_status(
     Ok(())
 }
 
-// ================= //
-// Private Functions //
-// ================= //
-
 // These are the "Camera Type" we need for each of the filter types
 // for the 3D Transform Effect
 pub fn camera_type_config() -> HashMap<&'static str, i32> {
@@ -1336,6 +1442,10 @@ pub fn camera_type_config() -> HashMap<&'static str, i32> {
         ("Shear.Y", 1),
     ])
 }
+
+// ================= //
+// Private Functions //
+// ================= //
 
 async fn update_move_source_filters(
     source: &str,
@@ -1383,6 +1493,7 @@ fn create_move_source_filter_settings(
     settings
 }
 
+// HMMM Why can't they see this???
 // This needs to take in Custom Filters
 pub fn custom_filter_settings(
     mut base_settings: move_transition::MoveSourceFilterSettings,

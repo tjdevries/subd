@@ -294,6 +294,7 @@ async fn main() -> Result<()> {
             .await?;
     event_loop.push(TransformOBSTextHandler { obs_client });
 
+    println!("\n\n\t\tLet's Start this Loop Up!");
     event_loop.run().await?;
 
     Ok(())

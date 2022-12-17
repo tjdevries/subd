@@ -1,3 +1,4 @@
+use crate::move_transition;
 use crate::obs;
 use anyhow::{bail, Result};
 use obws;
@@ -59,8 +60,12 @@ pub async fn handle_obs_commands(
             // We actually need to create the source as well
             let scene = "Characters";
             let base_source = "Birb";
+
+            // We should really get this into it's own Method
             // let filter_name = "Show-Kevin";
 
+            // We need create 2 functions
+            // for triggering the show and hide of the characters
             // This could be the base image
             let image_source =
                 obws::requests::custom::source_settings::ImageSource {
@@ -85,12 +90,12 @@ pub async fn handle_obs_commands(
                 file: Path::new("/home/begin/stream/Stream/StreamCharacters/speech_bubble.png"),
                     ..Default::default()
                 };
-            let source_name = format!("{}-speech_bubble", base_source);
+            let speech_source_name = format!("{}-speech_bubble", base_source);
             obs_client
                 .inputs()
                 .create(obws::requests::inputs::Create {
                     scene,
-                    input: &source_name,
+                    input: &speech_source_name,
                     kind: "image_source",
                     settings: Some(speech_bubble),
                     enabled: Some(true),
@@ -99,6 +104,7 @@ pub async fn handle_obs_commands(
 
             // Then we need the Text
 
+            // We got to figure out how to get some recent early positions
             // WE should try and create all these in a position
             let text_settings =
                 obws::requests::custom::source_settings::TextFt2SourceV2 {
@@ -106,7 +112,6 @@ pub async fn handle_obs_commands(
                     drop_shadow: true,
                     text: "THIS RULESSSSS WE RULE!!!!",
                     // antialiasing: todo!(),
-                    // custom_width: todo!(),
                     // font: todo!(),
                     // from_file: todo!(),
                     // log_lines: todo!(),
@@ -124,43 +129,112 @@ pub async fn handle_obs_commands(
                     // word_wrap: todo!(),
                     ..Default::default()
                 };
-            let source_name = format!("{}-text", base_source);
+            let text_source_name = format!("{}-text", base_source);
             obs_client
                 .inputs()
                 .create(obws::requests::inputs::Create {
                     scene,
-                    input: &source_name,
+                    input: &text_source_name,
                     kind: "text_ft2_source_v2",
                     settings: Some(text_settings),
                     enabled: Some(true),
                 })
                 .await;
+
+            let filter_name = format!("{}-text", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &text_source_name,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+
+            // Not Sure of This Name
+            // We just need a better name
+            // Create Move-Value for 3D Transform Filter
+            let filter_name = format!("Transform{}-text", base_source);
+            let move_text_filter = move_transition::MoveTextFilter {
+                setting_name: "text".to_string(),
+                setting_text: "Ok NOW".to_string(),
+                value_type: 5,
+                // Something is wrong
+                // might be 5
+                ..Default::default()
+            };
+            let new_filter = obws::requests::filters::Create {
+                source: &text_source_name,
+                filter: &filter_name,
+                kind: "move_value_filter",
+                settings: Some(move_text_filter),
+            };
+            if let Err(err) = obs_client.filters().create(new_filter).await {
+                println!("Error Creating Filter: {filter_name} | {:?}", err);
+            };
+            // "name": "chief-keef",
+            // Now I just need o use this
+            // pub setting_name: String,
+            // #[serde(rename = "value_type")]
+            // pub value_type: u32,
+            // #[serde(rename = "setting_text")]
+            // pub setting_text: String,
+            // We still need the Filter on Text Transform
+            // Which we haven't made yet
+
+            // Then we need to create 6 Filters
+            let filter_name = format!("Show{}", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &base_source,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+            let filter_name = format!("Hide{}", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &base_source,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+
+            let filter_name = format!("Show{}-text", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &text_source_name,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+            let filter_name = format!("Hide{}-text", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &text_source_name,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+
+            // Doubling for Hide is easy
+            // We just need to know how to get get starting positions
+            let filter_name = format!("Show{}-speech_bubble", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &speech_source_name,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
+            let filter_name = format!("Hide{}-speech_bubble", base_source);
+            obs::create_move_source_filters(
+                "Characters",
+                &speech_source_name,
+                &filter_name,
+                &obs_client,
+            )
+            .await;
             Ok(())
-            // crate::client::Inputs::create.
-
-            // obws::client::Inputs
-            // obws::requests::inputs
-            // .create(create_request);
-            // So Here we would make the 3 Sources
-            // Then maybe the 6 Filters
-            // let new_scene = obws::requests::scene_items::CreateSceneItem {
-            //     scene,
-            //     source: &source,
-            //     enabled: Some(true),
-            // };
-
-            // // TODO: Why is this crashing???
-            // obs_client.scene_items().create(new_scene).await?;
-
-            // let filter_name = "Show-Kevin";
-            // // Then we need to create 6 Filters
-            // obs::create_move_source_filters(
-            //     "Characters",
-            //     &base_source,
-            //     &filter_name,
-            //     &obs_client,
-            // )
-            // .await
         }
 
         // ================== //

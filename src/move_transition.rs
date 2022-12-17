@@ -143,6 +143,17 @@ pub struct MoveSingleValueSetting {
 // =======================================================================
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveTextFilter {
+    #[serde(rename = "setting_name")]
+    pub setting_name: String,
+    #[serde(rename = "value_type")]
+    pub value_type: u32,
+
+    #[serde(rename = "setting_text")]
+    pub setting_text: String,
+    // "setting_name": "text",
+    // "setting_text": "Ok NOW",
+    // "value_type": 4
+    //
     #[serde(rename = "duration")]
     pub duration: Option<u32>,
 
@@ -158,15 +169,4 @@ pub struct MoveTextFilter {
     // "move_value_type": 4,
     #[serde(rename = "move_value_type")]
     pub move_value_type: Option<u32>,
-
-    #[serde(rename = "setting_name")]
-    pub setting_name: String,
-    #[serde(rename = "value_type")]
-    pub value_type: u32,
-
-    #[serde(rename = "setting_text")]
-    pub setting_text: String,
-    // "setting_name": "text",
-    // "setting_text": "Ok NOW",
-    // "value_type": 4
 }

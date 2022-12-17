@@ -10,6 +10,7 @@ use std::io::BufReader;
 use std::io::{BufWriter, Write};
 use std::{thread, time};
 use subd_types::Event;
+use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::TriggerHotkeyRequest;
 use tokio::sync::broadcast;
@@ -123,9 +124,16 @@ impl EventHandler for UberDuckHandler {
                                     .to_string(),
                             },
                         ));
+
                         let _ = tx.send(Event::TriggerHotkeyRequest(
                             TriggerHotkeyRequest {
                                 hotkey: stream_character.hotkey_on.to_string(),
+                            },
+                        ));
+                        let _ = tx.send(Event::StreamCharacterRequest(
+                            StreamCharacterRequest {
+                                source: stream_character.source,
+                                enabled: true,
                             },
                         ));
 
@@ -191,6 +199,7 @@ fn build_stream_character(username: &str) -> StreamCharacter {
         // ("beginbot", "danny-devito-angry"),
         // ("beginbot", "big-gay-al"),
         ("beginbot", "mojo-jojo"),
+        // ("beginbot", "chief-keef"),
         ("ArtMattDank", "dr-nick"),
         // ("ArtMattDank", "mojo-jojo"),
         ("carlvandergeest", "danny-devito-angry"),

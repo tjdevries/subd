@@ -56,11 +56,14 @@ pub struct TransformOBSTextRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriggerHotkeyRequest {
-    // pub voice: String,
-    // pub voice_text: String,
     pub hotkey: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StreamCharacterRequest {
+    pub source: String,
+    pub enabled: bool,
+}
 // TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
@@ -70,6 +73,7 @@ pub enum Event {
     UberDuckRequest(UberDuckRequest),
     TransformOBSTextRequest(TransformOBSTextRequest),
     TriggerHotkeyRequest(TriggerHotkeyRequest),
+    StreamCharacterRequest(StreamCharacterRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general
