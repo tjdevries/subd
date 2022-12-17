@@ -15,6 +15,8 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
 use std::{thread, time};
+use subd_types::TransformOBSTextRequest;
+use subd_types::TriggerHotkeyRequest;
 use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
@@ -34,61 +36,49 @@ const DEFAULT_SOURCE: &str = "begin";
 const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 
+pub struct TriggerHotkeyHandler {
+    obs_client: OBSClient,
+}
+
+pub struct TransformOBSTextHandler {
+    obs_client: OBSClient,
+}
+
 pub struct UberDuckHandler {
     sink: Sink,
-
-    // Should we have this here??????
-    obs_client: OBSClient,
 }
 
 pub struct SoundHandler {
     sink: Sink,
 }
 
-pub struct BeginMessageHandler {
-    sink: Sink,
+pub struct OBSMessageHandler {
     obs_client: OBSClient,
 }
 
 // This is really to show where the HotKeys are
+#[derive(Debug)]
 pub struct CharacterSetup {
     on: String,
     off: String,
     text_source: String,
 }
 
-// This is not the ideal method
-fn find_obs_character(voice: &String) -> CharacterSetup {
-    let mut hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
-        "mr-krabs-joewhyte".to_string(),
-        CharacterSetup {
-            on: "OBS_KEY_0".to_string(),
-            off: "OBS_KEY_1".to_string(),
-            text_source: "mr.crabs-text".to_string(),
-        },
-    )]);
-
-    let default_hotkeys = CharacterSetup {
-        on: "OBS_KEY_6".to_string(),
-        off: "OBS_KEY_7".to_string(),
-        text_source: "Text".to_string(),
-    };
-
-    match hotkeys.remove(voice) {
-        Some(v) => v,
-        None => default_hotkeys,
-    }
+#[derive(Serialize, Deserialize, Debug)]
+struct UberDuckVoiceResponse {
+    uuid: Option<String>,
 }
 
-fn uberduck_creds() -> (String, String) {
-    let username = env::var("UBER_DUCK_KEY")
-        .expect("Failed to read UBER_DUCK_KEY environment variable");
-    let secret = env::var("UBER_DUCK_SECRET")
-        .expect("Failed to read UBER_DUCK_SECRET environment variable");
-    (username, secret)
+#[derive(Serialize, Deserialize, Debug)]
+struct UberDuckFileResponse {
+    path: Option<String>,
+    started_at: Option<String>,
+    failed_at: Option<String>,
+    finished_at: Option<String>,
 }
+
 #[async_trait]
-impl EventHandler for UberDuckHandler {
+impl EventHandler for TriggerHotkeyHandler {
     async fn handle(
         self: Box<Self>,
         _tx: broadcast::Sender<Event>,
@@ -96,26 +86,66 @@ impl EventHandler for UberDuckHandler {
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
-
             let msg = match event {
-                Event::UberDuckRequest(msg) => msg,
+                Event::TriggerHotkeyRequest(msg) => msg,
                 _ => continue,
             };
 
-            // This really isn't the Hot Key
-            let hotkey = find_obs_character(&msg.voice);
+            server::obs::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
+        }
+    }
+}
 
-            // We should be sending this off!!!!
-            // This should be an event I think maybe?????
-            // We need to target the right text here!!!!
-            // I THINK WE JUST NEED TO UPDATE OBS_Text
+#[async_trait]
+impl EventHandler for TransformOBSTextHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::TransformOBSTextRequest(msg) => msg,
+                _ => continue,
+            };
+
+            println!(
+                "Attempting to transform OBS Text: {:?} {:?}",
+                &msg.text_source, &msg.message
+            );
             server::obs::update_and_trigger_text_move_filter(
-                &hotkey.text_source,
+                &msg.text_source,
                 "OBS_Text",
                 &msg.message,
                 &self.obs_client,
             )
             .await?;
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for UberDuckHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UberDuckRequest(msg) => msg,
+                _ => continue,
+            };
+
+            let hotkey = find_obs_character(&msg.voice);
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: msg.message,
+                    text_source: hotkey.text_source,
+                },
+            ));
 
             let (username, secret) = uberduck_creds();
 
@@ -169,14 +199,10 @@ impl EventHandler for UberDuckHandler {
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
 
-                        // So need the look up for characters now!!!
-                        // So this 6/7 is the key
-                        // we need to update it look up the proper speech bubble
-                        server::obs::trigger_hotkey(
-                            &hotkey.on,
-                            &self.obs_client,
-                        )
-                        .await?;
+                        // This is sending the request I thought!
+                        let _ = tx.send(Event::TriggerHotkeyRequest(
+                            TriggerHotkeyRequest { hotkey: hotkey.on },
+                        ));
 
                         self.sink.append(
                             Decoder::new(BufReader::new(file)).unwrap(),
@@ -189,11 +215,9 @@ impl EventHandler for UberDuckHandler {
                         // we wait 1 second, so they can read the text
                         let ten_millis = time::Duration::from_millis(1000);
                         thread::sleep(ten_millis);
-                        server::obs::trigger_hotkey(
-                            &hotkey.off,
-                            &self.obs_client,
-                        )
-                        .await?;
+                        let _ = tx.send(Event::TriggerHotkeyRequest(
+                            TriggerHotkeyRequest { hotkey: hotkey.off },
+                        ));
                         break;
                     }
                     None => {
@@ -276,6 +300,8 @@ impl EventHandler for SoundHandler {
                 }
             }
             let voice_text = msg.contents.to_string();
+
+            // So it works here for some reason
             let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                 message: seal_text,
                 voice: voice.to_string(),
@@ -303,7 +329,7 @@ impl EventHandler for SoundHandler {
 }
 
 #[async_trait]
-impl EventHandler for BeginMessageHandler {
+impl EventHandler for OBSMessageHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -327,14 +353,8 @@ impl EventHandler for BeginMessageHandler {
             // what is a beginmessage
             // why do we do this
             // we could handle other things here
-            match handle_obs_commands(
-                &tx,
-                &self.obs_client,
-                &self.sink,
-                splitmsg,
-                msg,
-            )
-            .await
+            match handle_obs_commands(&tx, &self.obs_client, splitmsg, msg)
+                .await
             {
                 Ok(_) => {}
                 Err(err) => {
@@ -346,29 +366,40 @@ impl EventHandler for BeginMessageHandler {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct UberDuckVoiceResponse {
-    uuid: Option<String>,
+// This is not the ideal method
+fn find_obs_character(voice: &String) -> CharacterSetup {
+    let mut hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
+        "mr-krabs-joewhyte".to_string(),
+        CharacterSetup {
+            on: "OBS_KEY_0".to_string(),
+            off: "OBS_KEY_1".to_string(),
+            text_source: "mr.crabs-text".to_string(),
+        },
+    )]);
+
+    let default_hotkeys = CharacterSetup {
+        on: "OBS_KEY_6".to_string(),
+        off: "OBS_KEY_7".to_string(),
+        text_source: "Text".to_string(),
+    };
+
+    match hotkeys.remove(voice) {
+        Some(v) => v,
+        None => default_hotkeys,
+    }
 }
 
-// {
-//   "started_at": "2021-07-09T17:07:58.679918",
-//   "failed_at": null,
-//   "finished_at": "2021-07-09T17:08:10.445369",
-//   "path": "https://uberduck-audio-outputs.s3-us-west-2.amazonaws.com/abcd1234-96e0-45b3-b036-6feac21764e7/audio.wav"
-// }
-#[derive(Serialize, Deserialize, Debug)]
-struct UberDuckFileResponse {
-    path: Option<String>,
-    started_at: Option<String>,
-    failed_at: Option<String>,
-    finished_at: Option<String>,
+fn uberduck_creds() -> (String, String) {
+    let username = env::var("UBER_DUCK_KEY")
+        .expect("Failed to read UBER_DUCK_KEY environment variable");
+    let secret = env::var("UBER_DUCK_SECRET")
+        .expect("Failed to read UBER_DUCK_SECRET environment variable");
+    (username, secret)
 }
 
 async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
-    sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -823,6 +854,7 @@ async fn main() -> Result<()> {
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
+    event_loop.push(OBSMessageHandler { obs_client });
 
     // Works for Arch Linux
     let (_stream, stream_handle) = get_output_stream("pulse");
@@ -830,26 +862,24 @@ async fn main() -> Result<()> {
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-
-    event_loop.push(BeginMessageHandler { obs_client, sink });
-
-    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
-    let obs_client =
-        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
-            .await?;
-
-    // Lifetime or Mutex to share sink
-    // We are creating a 2nd sink here
-    // Because I am too dumb to share 1
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(SoundHandler { sink });
 
-    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    event_loop.push(UberDuckHandler { sink });
+
+    // You need your own OBS client then
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
-    event_loop.push(UberDuckHandler { sink, obs_client });
+    event_loop.push(TriggerHotkeyHandler { obs_client });
+
+    // You need your own OBS client then
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(TransformOBSTextHandler { obs_client });
 
     event_loop.run().await?;
 
