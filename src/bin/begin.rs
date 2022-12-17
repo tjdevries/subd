@@ -1,38 +1,23 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::*;
 use rodio::{Decoder, OutputStream};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::{BufWriter, Write};
-use std::{thread, time};
-use subd_types::TransformOBSTextRequest;
-use subd_types::TriggerHotkeyRequest;
+// use subd_types::TransformOBSTextRequest;
+// use subd_types::TriggerHotkeyRequest;
 use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
-
-const DEFAULT_SCENE: &str = "Primary";
-
-// We need a secondary scene, where we put all the jokes
-const MEME_SCENE: &str = "memes";
-
-// THE WORD DEFAULT IS DANGEROUS
-const DEFAULT_SOURCE: &str = "begin";
-
-// THESE NAMES AIN'T RIGHT!!!!
 
 pub struct TriggerHotkeyHandler {
     obs_client: OBSClient,
@@ -224,7 +209,7 @@ impl EventHandler for OBSMessageHandler {
             // what is a beginmessage
             // why do we do this
             // we could handle other things here
-            match server::obs::handle_obs_commands(
+            match server::obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
                 splitmsg,
