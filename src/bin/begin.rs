@@ -19,19 +19,11 @@ use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
-pub struct TriggerHotkeyHandler {
-    obs_client: OBSClient,
-}
-
-pub struct TransformOBSTextHandler {
-    obs_client: OBSClient,
-}
-
-pub struct SoundHandler {
-    sink: Sink,
-}
-
 pub struct OBSMessageHandler {
+    obs_client: OBSClient,
+}
+
+pub struct TriggerHotkeyHandler {
     obs_client: OBSClient,
 }
 
@@ -52,6 +44,10 @@ impl EventHandler for TriggerHotkeyHandler {
             server::obs::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
         }
     }
+}
+
+pub struct TransformOBSTextHandler {
+    obs_client: OBSClient,
 }
 
 #[async_trait]
@@ -83,6 +79,11 @@ impl EventHandler for TransformOBSTextHandler {
     }
 }
 
+pub struct SoundHandler {
+    sink: Sink,
+}
+
+// Move the Sound Handler
 #[async_trait]
 impl EventHandler for SoundHandler {
     async fn handle(
@@ -111,42 +112,10 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // Can I put this out
-            // We need to actually move this function
-            // mickey-mouse
-            // tommy-pickles
-            // let default_voice = "goku".to_string();
-            // let default_voice = "danny-devito-angry".to_string();
-            let default_voice = "mojo-jojo".to_string();
-            // let default_voice = "mojo-jojo".to_string();
-            // let default_voice = "mickey-mouse".to_string();
-            // let default_voice = "brock-samson".to_string();
-            let voices: HashMap<String, String> = HashMap::from([
-                ("beginbotbot".to_string(), "mr-krabs-joewhyte".to_string()),
-                ("beginbot".to_string(), "danny-devito-angry".to_string()),
-                // ("beginbotbot".to_string(), "theneedledrop".to_string()),
-                // ("artmattdank".to_string(), "mojo-jojo".to_string()),
-                ("ArtMattDank".to_string(), "dr-nick".to_string()),
-                (
-                    "carlvandergeest".to_string(),
-                    "danny-devito-angry".to_string(),
-                ),
-                ("stupac62".to_string(), "stewie-griffin".to_string()),
-                ("swenson".to_string(), "mike-wazowski".to_string()),
-                ("teej_dv".to_string(), "mr-krabs-joewhyte".to_string()),
-            ]);
-
-            let voice = match voices.get(&msg.user_name) {
-                Some(v) => v,
-                None => &default_voice,
-            };
-
             let mut seal_text = msg.contents.clone();
             let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
-
             let line_length_modifier = 20;
             let mut line_length_limit = 20;
-
             for val in spaces.iter() {
                 if val.0 > line_length_limit {
                     seal_text.replace_range(val.0..=val.0, "\n");
@@ -156,14 +125,13 @@ impl EventHandler for SoundHandler {
             }
             let voice_text = msg.contents.to_string();
 
-            // WE need ot manuplate!!!!
-            // So it works here for some reason
             let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                 message: seal_text,
-                voice: voice.to_string(),
                 voice_text,
+                username: msg.user_name,
             }));
 
+            // This also needs the OTHER WORD EFFECT!!!!
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
@@ -203,12 +171,6 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // we could send a tx
-
-            // I could pass in the tx here
-            // what is a beginmessage
-            // why do we do this
-            // we could handle other things here
             match server::obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
@@ -228,6 +190,9 @@ impl EventHandler for OBSMessageHandler {
 }
 
 // ==============================================================================
+
+// This should probably be moved
+// this is just for audio also
 
 fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
     let host = cpal::default_host();

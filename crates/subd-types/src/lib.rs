@@ -37,9 +37,13 @@ pub struct UserMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UberDuckRequest {
-    pub voice: String,
+    // Maybe Make this Optional
+    // pub voice: String,
     pub voice_text: String,
     pub message: String,
+    pub username: String,
+    // HERE I CAN CHANGE THINGS!!!!
+    //
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

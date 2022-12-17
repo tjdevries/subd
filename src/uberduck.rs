@@ -31,7 +31,7 @@ struct UberDuckFileResponse {
     finished_at: Option<String>,
 }
 
-// This is really to show where the HotKeys are
+// We could get rid of this
 #[derive(Debug)]
 pub struct CharacterSetup {
     on: &'static str,
@@ -64,6 +64,8 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
+            let stream_character = build_stream_character(&msg.username);
+
             let (username, secret) = uberduck_creds();
 
             let client = reqwest::Client::new();
@@ -72,7 +74,7 @@ impl EventHandler for UberDuckHandler {
                 .basic_auth(username.clone(), Some(secret.clone()))
                 .json(&[
                     ("speech", msg.voice_text),
-                    ("voice", msg.voice.clone()),
+                    ("voice", stream_character.voice.clone()),
                 ])
                 .send()
                 .await?
@@ -113,16 +115,17 @@ impl EventHandler for UberDuckHandler {
                         writer.write_all(&response.bytes().await?)?;
                         println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
 
-                        let hotkey = find_obs_character(&msg.voice.clone());
                         let _ = tx.send(Event::TransformOBSTextRequest(
                             TransformOBSTextRequest {
                                 message: msg.message,
-                                text_source: hotkey.text_source.to_string(),
+                                text_source: stream_character
+                                    .text_source
+                                    .to_string(),
                             },
                         ));
                         let _ = tx.send(Event::TriggerHotkeyRequest(
                             TriggerHotkeyRequest {
-                                hotkey: hotkey.on.to_string(),
+                                hotkey: stream_character.hotkey_on.to_string(),
                             },
                         ));
 
@@ -140,7 +143,7 @@ impl EventHandler for UberDuckHandler {
                         thread::sleep(ten_millis);
                         let _ = tx.send(Event::TriggerHotkeyRequest(
                             TriggerHotkeyRequest {
-                                hotkey: hotkey.off.to_string(),
+                                hotkey: stream_character.hotkey_off.to_string(),
                             },
                         ));
                         break;
@@ -164,6 +167,10 @@ fn uberduck_creds() -> (String, String) {
     (username, secret)
 }
 
+// ======================================
+
+// Character Builder
+// Then Just use that
 fn build_stream_character(username: &str) -> StreamCharacter {
     // Start with username
     //
