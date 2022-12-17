@@ -265,10 +265,12 @@ impl EventHandler for SoundHandler {
             // let default_voice = "goku".to_string();
             // let default_voice = "danny-devito-angry".to_string();
             let default_voice = "mojo-jojo".to_string();
+            // let default_voice = "mojo-jojo".to_string();
             // let default_voice = "mickey-mouse".to_string();
             // let default_voice = "brock-samson".to_string();
             let voices: HashMap<String, String> = HashMap::from([
                 ("beginbotbot".to_string(), "mr-krabs-joewhyte".to_string()),
+                ("beginbot".to_string(), "danny-devito-angry".to_string()),
                 // ("beginbotbot".to_string(), "theneedledrop".to_string()),
                 // ("artmattdank".to_string(), "mojo-jojo".to_string()),
                 ("ArtMattDank".to_string(), "dr-nick".to_string()),
@@ -301,6 +303,7 @@ impl EventHandler for SoundHandler {
             }
             let voice_text = msg.contents.to_string();
 
+            // WE need ot manuplate!!!!
             // So it works here for some reason
             let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                 message: seal_text,
@@ -366,16 +369,30 @@ impl EventHandler for OBSMessageHandler {
     }
 }
 
+// This is not ideal though
+// I think we should try alternative filter triggering instead
+// we need to trigger 3 filters each time
+// and we can get the names based offa  pattern
 // This is not the ideal method
 fn find_obs_character(voice: &String) -> CharacterSetup {
-    let mut hotkeys: HashMap<String, CharacterSetup> = HashMap::from([(
-        "mr-krabs-joewhyte".to_string(),
-        CharacterSetup {
-            on: "OBS_KEY_0".to_string(),
-            off: "OBS_KEY_1".to_string(),
-            text_source: "mr.crabs-text".to_string(),
-        },
-    )]);
+    let mut hotkeys: HashMap<String, CharacterSetup> = HashMap::from([
+        (
+            "mr-krabs-joewhyte".to_string(),
+            CharacterSetup {
+                on: "OBS_KEY_0".to_string(),
+                off: "OBS_KEY_1".to_string(),
+                text_source: "mr.crabs-text".to_string(),
+            },
+        ),
+        (
+            "danny-devito-angry".to_string(),
+            CharacterSetup {
+                on: "OBS_KEY_2".to_string(),
+                off: "OBS_KEY_3".to_string(),
+                text_source: "Kevin-text".to_string(),
+            },
+        ),
+    ]);
 
     let default_hotkeys = CharacterSetup {
         on: "OBS_KEY_6".to_string(),
@@ -398,15 +415,11 @@ fn uberduck_creds() -> (String, String) {
 }
 
 async fn handle_obs_commands(
-    tx: &broadcast::Sender<Event>,
+    _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    // We don't have any transaction here
-    //
-    //
-    //
     // This is because Begin doesn't understand Rust
     let default_source = String::from(DEFAULT_SOURCE);
 
