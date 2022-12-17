@@ -3,6 +3,7 @@ use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
+use std::path::Path;
 // use serde::{Deserialize, Serialize};
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
@@ -34,7 +35,6 @@ pub async fn handle_obs_commands(
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
-    // WE PANICKED!!!!!!!
     let filter_value = splitmsg
         .get(3)
         .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
@@ -48,6 +48,121 @@ pub async fn handle_obs_commands(
     // the source got fucked up some how
 
     match splitmsg[0].as_str() {
+        // ================== //
+        // Stream Characters //
+        // ================== //
+
+        // Creating Filters for Stream Characters
+        // let filter_name = format!("Move_Source_Home_{}", source);
+        "!character" => {
+            // So we take the source from what's passed in
+            // We actually need to create the source as well
+            let scene = "Characters";
+            let base_source = "Birb";
+            // let filter_name = "Show-Kevin";
+
+            // This could be the base image
+            let image_source =
+                obws::requests::custom::source_settings::ImageSource {
+                    file: Path::new(
+                        "/home/begin/stream/Stream/StreamCharacters/birb.png",
+                    ),
+                    ..Default::default()
+                };
+            obs_client
+                .inputs()
+                .create(obws::requests::inputs::Create {
+                    scene,
+                    input: &base_source,
+                    kind: "image_source",
+                    settings: Some(image_source),
+                    enabled: Some(true),
+                })
+                .await;
+
+            let speech_bubble =
+                obws::requests::custom::source_settings::ImageSource {
+                file: Path::new("/home/begin/stream/Stream/StreamCharacters/speech_bubble.png"),
+                    ..Default::default()
+                };
+            let source_name = format!("{}-speech_bubble", base_source);
+            obs_client
+                .inputs()
+                .create(obws::requests::inputs::Create {
+                    scene,
+                    input: &source_name,
+                    kind: "image_source",
+                    settings: Some(speech_bubble),
+                    enabled: Some(true),
+                })
+                .await;
+
+            // Then we need the Text
+
+            // WE should try and create all these in a position
+            let text_settings =
+                obws::requests::custom::source_settings::TextFt2SourceV2 {
+                    outline: true,
+                    drop_shadow: true,
+                    text: "THIS RULESSSSS WE RULE!!!!",
+                    // antialiasing: todo!(),
+                    // custom_width: todo!(),
+                    // font: todo!(),
+                    // from_file: todo!(),
+                    // log_lines: todo!(),
+                    // log_mode: todo!(),
+                    // rgb::RGBA<u8>
+                    // color1: 4286578517,
+                    // color2: 4278190335,
+                    // "font": {
+                    //     "face": "Arial",
+                    //     "flags": 0,
+                    //     "size": 256,
+                    //     "style": "Regular"
+                    // },
+                    // text_file: todo!(),
+                    // word_wrap: todo!(),
+                    ..Default::default()
+                };
+            let source_name = format!("{}-text", base_source);
+            obs_client
+                .inputs()
+                .create(obws::requests::inputs::Create {
+                    scene,
+                    input: &source_name,
+                    kind: "text_ft2_source_v2",
+                    settings: Some(text_settings),
+                    enabled: Some(true),
+                })
+                .await;
+            Ok(())
+            // crate::client::Inputs::create.
+
+            // obws::client::Inputs
+            // obws::requests::inputs
+            // .create(create_request);
+            // So Here we would make the 3 Sources
+            // Then maybe the 6 Filters
+            // let new_scene = obws::requests::scene_items::CreateSceneItem {
+            //     scene,
+            //     source: &source,
+            //     enabled: Some(true),
+            // };
+
+            // // TODO: Why is this crashing???
+            // obs_client.scene_items().create(new_scene).await?;
+
+            // let filter_name = "Show-Kevin";
+            // // Then we need to create 6 Filters
+            // obs::create_move_source_filters(
+            //     "Characters",
+            //     &base_source,
+            //     &filter_name,
+            //     &obs_client,
+            // )
+            // .await
+        }
+
         // ================== //
         // Scrolling Sources //
         // ================== //
