@@ -42,11 +42,11 @@ pub struct CharacterSetup {
 
 // Should they be optional???
 pub struct StreamCharacter {
-    source: String,
     text_source: String,
     hotkey_on: String,
     hotkey_off: String,
     voice: String,
+    source: String,
     username: String,
 }
 
@@ -189,7 +189,8 @@ fn build_stream_character(username: &str) -> StreamCharacter {
         ("beginbotbot", "mr-krabs-joewhyte"),
         // ("beginbotbot", "theneedledrop"),
         // ("beginbot", "danny-devito-angry"),
-        ("beginbot", "big-gay-al"),
+        // ("beginbot", "big-gay-al"),
+        ("beginbot", "mojo-jojo"),
         ("ArtMattDank", "dr-nick"),
         // ("ArtMattDank", "mojo-jojo"),
         ("carlvandergeest", "danny-devito-angry"),
@@ -220,9 +221,16 @@ fn build_stream_character(username: &str) -> StreamCharacter {
 // This is not ideal though
 // I think we should try alternative filter triggering instead
 // we need to trigger 3 filters each time
-// and we can get the names based offa  pattern
+// and we can get the names based off a pattern
 // This is not the ideal method
 fn find_obs_character(voice: &str) -> CharacterSetup {
+    let default_hotkeys = CharacterSetup {
+        on: "OBS_KEY_6",
+        off: "OBS_KEY_7",
+        source: "Seal",
+        text_source: "Text",
+    };
+
     // TODO: We need one of these for each voice
     let mut hotkeys: HashMap<&str, CharacterSetup> = HashMap::from([
         (
@@ -244,13 +252,6 @@ fn find_obs_character(voice: &str) -> CharacterSetup {
             },
         ),
     ]);
-
-    let default_hotkeys = CharacterSetup {
-        on: "OBS_KEY_6",
-        off: "OBS_KEY_7",
-        source: "Seal",
-        text_source: "Text",
-    };
 
     match hotkeys.remove(voice) {
         Some(v) => v,
