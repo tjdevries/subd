@@ -1055,7 +1055,6 @@ pub async fn create_filters_for_source(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-pub async fn create_filters_for_source() -> Result<()> {
     println!("Creating Filters for Source: {}", source);
 
     let filters = match obs_client.filters().list(source).await {
