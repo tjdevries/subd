@@ -17,9 +17,9 @@
     },
     "duration": 300,
     "pos": {
-        "x": 370.0,
+        "x": 267.0,
         "x_sign": " ",
-        "y": -11.0,
+        "y": 137.0,
         "y_sign": " "
     },
     "rot": 0.0,
@@ -30,6 +30,6 @@
         "y": 0.8770053386688232,
         "y_sign": " "
     },
-    "source": "Birb-speech_bubble",
-    "transform_text": "pos: x 370.0 y -11.0 rot: 0.0 scale: x 0.877 y 0.877 crop: l 0 t 0 r 0 b 0"
+    "source": "Seal-speech_bubble",
+    "transform_text": "pos: x 267.0 y 137.0 rot: 0.0 scale: x 0.877 y 0.877 crop: l 0 t 0 r 0 b 0"
 }

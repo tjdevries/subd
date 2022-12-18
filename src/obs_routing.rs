@@ -4,6 +4,7 @@ use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
+// use rgb;
 use std::path::Path;
 // use serde::{Deserialize, Serialize};
 use subd_types::{Event, UserMessage};
@@ -46,26 +47,8 @@ pub async fn handle_obs_commands(
     // for now we are going to try and have them be the same
     // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
     //
-    // the source got fucked up some how
-
-    // Move Source Filter Settings MoveSourceFilterSettings { crop: Some(MoveSourceCropSetting { bottom: Some(0.0), left: Some(0.0), top: Some(0.0), right: Some(0.0) }), bounds: Some(Coordinates { x: Some(251.0), y: Some(234.0) }), position: Some(Coordinates { x: Some(-23.0), y: Some(345.0) }), scale: Some(Coordinates { x: Some(1.0), y: Some(1.0) }), duration: Some(300), source: Some("Birb"), transform_text: Some("pos: x -23.0 y 345.0 rot: 0.0 scale: x 1.000 y 1.000 crop: l 0 t 0 r 0 b 0") }
-
     match splitmsg[0].as_str() {
-        "!durf" => {
-            // So can we assign these to someone???
-            let scene = "Characters";
-            let filter_name = "TestMove";
-            let file_path = "/home/begin/code/subd/obs_data/move_transition_left_corner.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                source,
-                filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
-            Ok(())
-        }
+        "!durf" => Ok(()),
         // ================== //
         // Stream Characters //
         // ================== //
@@ -76,13 +59,14 @@ pub async fn handle_obs_commands(
             // So we take the source from what's passed in
             // We actually need to create the source as well
             let scene = "Characters";
-            let base_source = "Birb";
+            let base_source = "Seal";
+            // let base_source = "Birb";
 
             // TODO: We need to pull in this source
             let image_source =
                 obws::requests::custom::source_settings::ImageSource {
                     file: Path::new(
-                        "/home/begin/stream/Stream/StreamCharacters/birb.png",
+                        "/home/begin/stream/Stream/StreamCharacters/Seal.png",
                     ),
                     ..Default::default()
                 };
@@ -114,14 +98,34 @@ pub async fn handle_obs_commands(
                 })
                 .await;
 
-            // Create the Text Source
+            // let font_flags = obws::common::FontFlags{ }
+            let font = obws::requests::custom::source_settings::Font {
+                face: "Arial",
+                size: 256,
+                style: "Regular",
+                ..Default::default()
+            };
+
+            // So these are fugazi???
+            // I expect these colors to be something
+            let color1 = rgb::RGBA::new(255, 0, 132, 0);
+            let color2 = rgb::RGBA::new(0, 3, 255, 1);
+
             let text_settings =
                 obws::requests::custom::source_settings::TextFt2SourceV2 {
                     outline: true,
                     drop_shadow: true,
-                    text: "THIS RULESSSSS WE RULE!!!!",
-                    ..Default::default()
+                    text: "This Rules we are doing something!",
+                    color1,
+                    color2,
+                    font,
+                    custom_width: 5,
+                    log_lines: 5,
+                    word_wrap: false,
+                    ..Default::default() // We might want to experiment from file
                 };
+
+            // We just need better values
             let text_source_name = format!("{}-text", base_source);
             let _ = obs_client
                 .inputs()
@@ -228,6 +232,7 @@ pub async fn handle_obs_commands(
                 scene,
                 &speech_source_name,
                 &filter_name,
+                file_path,
                 &obs_client,
             )
             .await;

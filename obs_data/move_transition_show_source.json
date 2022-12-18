@@ -17,19 +17,19 @@
     },
     "duration": 300,
     "pos": {
-        "x": -23.0,
+        "x": -39.0,
         "x_sign": " ",
-        "y": 345.0,
+        "y": 622.0,
         "y_sign": " "
     },
     "rot": 0.0,
     "rot_sign": " ",
     "scale": {
-        "x": 1.0,
+        "x": 0.453000009059906,
         "x_sign": " ",
-        "y": 1.0,
+        "y": 0.453000009059906,
         "y_sign": " "
     },
-    "source": "Birb",
-    "transform_text": "pos: x -23.0 y 345.0 rot: 0.0 scale: x 1.000 y 1.000 crop: l 0 t 0 r 0 b 0"
+    "source": "Seal",
+    "transform_text": "pos: x -39.0 y 622.0 rot: 0.0 scale: x 0.453 y 0.453 crop: l 0 t 0 r 0 b 0"
 }

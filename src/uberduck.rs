@@ -53,6 +53,13 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
+            // We need to check the message
+            //
+            let ch = msg.message.chars().next().unwrap();
+            if ch == '!' {
+                continue;
+            };
+
             let stream_character = build_stream_character(&msg.username);
 
             let (username, secret) = uberduck_creds();
@@ -195,7 +202,8 @@ fn build_stream_character(username: &str) -> StreamCharacter {
         // ("beginbotbot", "theneedledrop"),
         // ("beginbot", "danny-devito-angry"),
         // ("beginbot", "big-gay-al"),
-        ("beginbot", "mojo-jojo"),
+        ("beginbot", "brock-samson"),
+        // ("beginbot", "mojo-jojo"),
         // ("beginbot", "chief-keef"),
         ("ArtMattDank", "dr-nick"),
         // ("ArtMattDank", "mojo-jojo"),
@@ -237,6 +245,7 @@ fn find_obs_character(voice: &str) -> &str {
     // TODO: We need one of these for each voice
     let mut hotkeys: HashMap<&str, &str> = HashMap::from([
         ("mojo-jojo", "Birb"),
+        ("brock-samson", "Seal"),
         ("mr-krabs-joewhyte", "mr.crabs"),
         ("danny-devito-angry", "Kevin"),
     ]);
