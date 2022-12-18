@@ -1,4 +1,7 @@
+use anyhow::Result;
+use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
+use std::fs;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
@@ -140,7 +143,6 @@ pub struct MoveSingleValueSetting {
     pub outline: Option<bool>,
 }
 
-// =======================================================================
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveTextFilter {
     #[serde(rename = "setting_name")]
@@ -171,8 +173,23 @@ pub struct MoveTextFilter {
     pub move_value_type: Option<u32>,
 }
 
-// We also need a function for making these
-// This is what we need to get better at!!!!!!!!
+pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
+    let contents = fs::read_to_string(file_path).expect("Can read file");
+
+    let filter: MoveSourceFilterSettings =
+        serde_json::from_str(&contents).unwrap();
+
+    filter
+}
+
+// So we use this
+pub fn create_move_source_filter_settings_from_file(
+    file_path: &str,
+) -> MoveSourceFilterSettings {
+    let filter = parse_json_into_struct(file_path);
+    filter
+}
+
 pub fn create_move_source_filter_settings(
     source: &str,
 ) -> MoveSourceFilterSettings {
@@ -214,4 +231,70 @@ pub fn custom_filter_settings(
         y: Some(y),
     });
     base_settings
+}
+
+pub async fn create_move_text_value_filter(
+    source: &str,
+    scene_item: &str,
+    filter_name: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let base_settings = create_move_source_filter_settings(scene_item);
+    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+
+    // "id": "move_value_filter",
+    // "mixers": 0,
+    // "monitoring_type": 0,
+    // "muted": false,
+    // "name": "OBS_Text",
+    // "prev_ver": 469827586,
+    // "private_settings": {},
+    // "push-to-mute": false,
+    // "push-to-mute-delay": 0,
+    // "push-to-talk": false,
+    // "push-to-talk-delay": 0,
+    // "settings": {
+    //     "custom_duration": true,
+    //     "duration": 300,
+    //     "filter": "",
+    //     "move_value_type": 4,
+    //     "setting_decimals": 1,
+    //     "setting_name": "text",
+    //     "setting_text": "we are working on getting\nfunctionality up",
+    //     "value_type": 4
+    // },
+    // "sync": 0,
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: filter_name,
+        kind: "move_source_filter",
+        settings: Some(new_settings),
+    };
+    if let Err(err) = obs_client.filters().create(new_filter).await {
+        println!("Error Creating Filter: {filter_name} | {:?}", err);
+    };
+
+    Ok(())
+}
+
+pub async fn create_move_source_filters(
+    source: &str,
+    scene_item: &str,
+    filter_name: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let base_settings = create_move_source_filter_settings(scene_item);
+    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: filter_name,
+        kind: "move_source_filter",
+        settings: Some(new_settings),
+    };
+    if let Err(err) = obs_client.filters().create(new_filter).await {
+        println!("Error Creating Filter: {filter_name} | {:?}", err);
+    };
+
+    Ok(())
 }

@@ -48,7 +48,17 @@ pub async fn handle_obs_commands(
     //
     // the source got fucked up some how
 
+    // Move Source Filter Settings MoveSourceFilterSettings { crop: Some(MoveSourceCropSetting { bottom: Some(0.0), left: Some(0.0), top: Some(0.0), right: Some(0.0) }), bounds: Some(Coordinates { x: Some(251.0), y: Some(234.0) }), position: Some(Coordinates { x: Some(-23.0), y: Some(345.0) }), scale: Some(Coordinates { x: Some(1.0), y: Some(1.0) }), duration: Some(300), source: Some("Birb"), transform_text: Some("pos: x -23.0 y 345.0 rot: 0.0 scale: x 1.000 y 1.000 crop: l 0 t 0 r 0 b 0") }
+
     match splitmsg[0].as_str() {
+        "!durf" => {
+            // So can we assign these to someone???
+            let file_path =
+                "/home/begin/code/subd/obs_data/move_transition_left_corner.json";
+            let filter = move_transition::parse_json_into_struct(file_path);
+            println!("Move Source Filter Settings {:?}", filter);
+            Ok(())
+        }
         // ================== //
         // Stream Characters //
         // ================== //
@@ -143,7 +153,7 @@ pub async fn handle_obs_commands(
 
             // Then we need to create 6 Filters
             let filter_name = format!("Show{}", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &base_source,
                 &filter_name,
@@ -151,7 +161,7 @@ pub async fn handle_obs_commands(
             )
             .await;
             let filter_name = format!("Hide{}", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &base_source,
                 &filter_name,
@@ -160,7 +170,7 @@ pub async fn handle_obs_commands(
             .await;
 
             let filter_name = format!("Show{}-text", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &text_source_name,
                 &filter_name,
@@ -168,7 +178,7 @@ pub async fn handle_obs_commands(
             )
             .await;
             let filter_name = format!("Hide{}-text", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &text_source_name,
                 &filter_name,
@@ -179,7 +189,7 @@ pub async fn handle_obs_commands(
             // Doubling for Hide is easy
             // We just need to know how to get get starting positions
             let filter_name = format!("Show{}-speech_bubble", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &speech_source_name,
                 &filter_name,
@@ -187,7 +197,7 @@ pub async fn handle_obs_commands(
             )
             .await;
             let filter_name = format!("Hide{}-speech_bubble", base_source);
-            let _ = obs::create_move_source_filters(
+            let _ = move_transition::create_move_source_filters(
                 scene,
                 &speech_source_name,
                 &filter_name,
