@@ -202,7 +202,9 @@ fn build_stream_character(username: &str) -> StreamCharacter {
         // ("beginbotbot", "theneedledrop"),
         // ("beginbot", "danny-devito-angry"),
         // ("beginbot", "big-gay-al"),
-        ("beginbot", "brock-samson"),
+        ("beginbot", "mojo-jojo"),
+        // ("beginbot", "theneedledrop"),
+        // ("beginbot", "brock-samson"),
         // ("beginbot", "mojo-jojo"),
         // ("beginbot", "chief-keef"),
         ("ArtMattDank", "dr-nick"),
@@ -244,8 +246,17 @@ fn find_obs_character(voice: &str) -> &str {
     // We need defaults for the source
     // TODO: We need one of these for each voice
     let mut hotkeys: HashMap<&str, &str> = HashMap::from([
-        ("mojo-jojo", "Birb"),
         ("brock-samson", "Seal"),
+        // ("brock-samson", "Seal"),
+        // ("mojo-jojo", "Birb"),
+        //
+        // ("theneedledrop", "Birb"),
+        // ("theneedledrop", "Kevin"),
+        ("theneedledrop", "ArtMatt"),
+        ("mojo-jojo", "Crabs"),
+        // ("mojo-jojo", "Teej"),
+        // ("mojo-jojo", "ArtMatt"),
+        // ("theneedledrop", "Seal"),
         ("mr-krabs-joewhyte", "mr.crabs"),
         ("danny-devito-angry", "Kevin"),
     ]);

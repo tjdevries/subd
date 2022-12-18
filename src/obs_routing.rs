@@ -52,22 +52,25 @@ pub async fn handle_obs_commands(
         // ================== //
         // Stream Characters //
         // ================== //
-
-        // Creating Filters for Stream Characters
-        // let filter_name = format!("Move_Source_Home_{}", source);
         "!character" => {
-            // So we take the source from what's passed in
-            // We actually need to create the source as well
             let scene = "Characters";
-            let base_source = "Seal";
+
+            // let base_source = "Seal";
             // let base_source = "Birb";
+            // let base_source = "Kevin";
+            let base_source = "Crabs";
+            // let base_source = "Teej";
+            // let base_source = "ArtMatt";
+
+            let filename = format!(
+                "/home/begin/stream/Stream/StreamCharacters/{}.png",
+                base_source
+            );
 
             // TODO: We need to pull in this source
             let image_source =
                 obws::requests::custom::source_settings::ImageSource {
-                    file: Path::new(
-                        "/home/begin/stream/Stream/StreamCharacters/Seal.png",
-                    ),
+                    file: Path::new(&filename),
                     ..Default::default()
                 };
             let _ = obs_client
