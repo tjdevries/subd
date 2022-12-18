@@ -27,8 +27,37 @@ pub struct StreamCharacterHandler {
     obs_client: OBSClient,
 }
 
+pub struct SourceVisibilityHandler {
+    obs_client: OBSClient,
+}
+
 pub struct TransformOBSTextHandler {
     obs_client: OBSClient,
+}
+
+#[async_trait]
+impl EventHandler for SourceVisibilityHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::SourceVisibilityRequest(msg) => msg,
+                _ => continue,
+            };
+
+            let _ = server::obs::set_enabled(
+                &msg.scene,
+                &msg.source,
+                msg.enabled,
+                &self.obs_client,
+            )
+            .await;
+        }
+    }
 }
 
 #[async_trait]
@@ -102,10 +131,11 @@ impl EventHandler for TransformOBSTextHandler {
                 _ => continue,
             };
 
-            println!(
-                "Attempting to transform OBS Text: {:?} {:?}",
-                &msg.text_source, &msg.message
-            );
+            // Why was this called so mnay times???mm
+            // println!(
+            //     "Attempting to transform OBS Text: {:?} {:?}",
+            //     &msg.text_source, &msg.message
+            // );
             let filter_name = format!("Transform{}", msg.text_source);
             server::obs::update_and_trigger_text_move_filter(
                 &msg.text_source,
@@ -314,6 +344,12 @@ async fn main() -> Result<()> {
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
     event_loop.push(StreamCharacterHandler { obs_client });
+
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(SourceVisibilityHandler { obs_client });
 
     println!("\n\n\t\tLet's Start this Loop Up!");
     event_loop.run().await?;

@@ -1242,10 +1242,10 @@ pub async fn trigger_character_filters(
         filter_name_modifier = "Show"
     };
 
-    println!(
-        "We are going to try and {} {} sources",
-        filter_name_modifier, base_source
-    );
+    // println!(
+    //     "We are going to try and {} {} sources",
+    //     filter_name_modifier, base_source
+    // );
 
     // So this just fails
     let filter_name = format!("{}{}", filter_name_modifier, base_source);
@@ -1254,7 +1254,7 @@ pub async fn trigger_character_filters(
         filter: &filter_name,
         enabled: true,
     };
-    println!("Attempting to Trigger: {}", filter_name);
+    // println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
     let filter_name = format!("{}{}-text", filter_name_modifier, base_source);
@@ -1263,7 +1263,7 @@ pub async fn trigger_character_filters(
         filter: &filter_name,
         enabled: true,
     };
-    println!("Attempting to Trigger: {}", filter_name);
+    // println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
     let filter_name =
@@ -1273,7 +1273,7 @@ pub async fn trigger_character_filters(
         filter: &filter_name,
         enabled: true,
     };
-    println!("Attempting to Trigger: {}", filter_name);
+    // println!("Attempting to Trigger: {}", filter_name);
     obs_client.filters().set_enabled(filter_enabled).await?;
 
     Ok(())

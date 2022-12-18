@@ -10,6 +10,7 @@ use std::io::BufReader;
 use std::io::{BufWriter, Write};
 use std::{thread, time};
 use subd_types::Event;
+use subd_types::SourceVisibilityRequest;
 use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
@@ -95,21 +96,40 @@ impl EventHandler for UberDuckHandler {
                     .send()
                     .await?;
 
-                let text = response.text().await?;
-                println!("Uberduck Response: {:?}", text);
-                let file_resp: UberDuckFileResponse =
-                    serde_json::from_str(&text)?;
-
-                // So this text Transform is what is failing I think
-                let text_source = format!("{}-text", stream_character.source);
-                let _ = tx.send(Event::TransformOBSTextRequest(
-                    TransformOBSTextRequest {
-                        message: msg.message.clone(),
-                        text_source,
+                // Show Loading Duck
+                let _ = tx.send(Event::SourceVisibilityRequest(
+                    SourceVisibilityRequest {
+                        scene: "Characters".to_string(),
+                        source: "loading_duck".to_string(),
+                        enabled: true,
                     },
                 ));
+
+                let text = response.text().await?;
+                // we need to this to be better
+                let file_resp: UberDuckFileResponse =
+                    serde_json::from_str(&text)?;
+                println!("Uberduck Finished at: {:?}", file_resp.finished_at);
+
                 match file_resp.path {
                     Some(new_url) => {
+                        // Hide Loading Duck
+                        let _ = tx.send(Event::SourceVisibilityRequest(
+                            SourceVisibilityRequest {
+                                scene: "Characters".to_string(),
+                                source: "loading_duck".to_string(),
+                                enabled: false,
+                            },
+                        ));
+
+                        let text_source =
+                            format!("{}-text", stream_character.source);
+                        let _ = tx.send(Event::TransformOBSTextRequest(
+                            TransformOBSTextRequest {
+                                message: msg.message.clone(),
+                                text_source,
+                            },
+                        ));
                         // TODO Should we change this file name
                         // Make it unique
                         let local_path = "./test.wav";
@@ -180,6 +200,16 @@ fn build_stream_character(username: &str) -> StreamCharacter {
     //
     // Voice picks Source and Hotkeys
 
+    // let base_source = "Seal";
+    // let base_source = "Birb";
+    // let base_source = "Kevin";
+    // let base_source = "Crabs";
+    // let base_source = "Teej";
+    // let base_source = "ArtMatt";
+
+    // ====== //
+    // VOICES //
+    // ====== //
     let default_voice = "brock-samson";
     // let default_voice = "danny-devito-angry";
     // let default_voice = "goku";
@@ -187,26 +217,18 @@ fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "mojo-jojo";
     // let default_voice = "tommy-pickles";
 
-    // What is  the most limited
-    // You just let a user inhabit a Character
-    // and chose a voice
-    //
-    // Character -> (name, voice)
-    //
-    // HashMap
-    // so it's one character
-    // but multple voices
-    // do we have more???
     let voices2: HashMap<&str, &str> = HashMap::from([
-        ("beginbotbot", "mr-krabs-joewhyte"),
-        // ("beginbotbot", "theneedledrop"),
+        ("beginbot", "mr-krabs-joewhyte"),
         // ("beginbot", "danny-devito-angry"),
         // ("beginbot", "big-gay-al"),
-        ("beginbot", "mojo-jojo"),
+        // ("beginbot", "mojo-jojo"),
+        // ("beginbot", "mr-krabs-joewhyte"),
+        // ("beginbot", "mojo-jojo"),
         // ("beginbot", "theneedledrop"),
-        // ("beginbot", "brock-samson"),
         // ("beginbot", "mojo-jojo"),
         // ("beginbot", "chief-keef"),
+        ("beginbotbot", "brock-samson"),
+        // ("beginbotbot", "theneedledrop"),
         ("ArtMattDank", "dr-nick"),
         // ("ArtMattDank", "mojo-jojo"),
         ("carlvandergeest", "danny-devito-angry"),
@@ -246,18 +268,16 @@ fn find_obs_character(voice: &str) -> &str {
     // We need defaults for the source
     // TODO: We need one of these for each voice
     let mut hotkeys: HashMap<&str, &str> = HashMap::from([
-        ("brock-samson", "Seal"),
         // ("brock-samson", "Seal"),
-        // ("mojo-jojo", "Birb"),
-        //
+        ("brock-samson", "Seal"),
         // ("theneedledrop", "Birb"),
         // ("theneedledrop", "Kevin"),
+        // ("theneedledrop", "Seal"),
         ("theneedledrop", "ArtMatt"),
-        ("mojo-jojo", "Crabs"),
+        // ("mojo-jojo", "Birb"),
         // ("mojo-jojo", "Teej"),
         // ("mojo-jojo", "ArtMatt"),
-        // ("theneedledrop", "Seal"),
-        ("mr-krabs-joewhyte", "mr.crabs"),
+        ("mr-krabs-joewhyte", "Crabs"),
         ("danny-devito-angry", "Kevin"),
     ]);
 
