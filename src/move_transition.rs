@@ -182,12 +182,28 @@ pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
     filter
 }
 
-// So we use this
-pub fn create_move_source_filter_settings_from_file(
+pub async fn create_move_source_filter_from_file(
+    scene: &str,
+    source: &str,
+    filter_name: &str,
     file_path: &str,
-) -> MoveSourceFilterSettings {
-    let filter = parse_json_into_struct(file_path);
-    filter
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let mut filter = parse_json_into_struct(file_path);
+
+    filter.source = Some(source.to_string());
+
+    let new_filter = obws::requests::filters::Create {
+        source: scene,
+        filter: filter_name,
+        kind: "move_source_filter",
+        settings: Some(filter),
+    };
+    if let Err(err) = obs_client.filters().create(new_filter).await {
+        println!("Error Creating Filter: {filter_name} | {:?}", err);
+    };
+
+    Ok(())
 }
 
 pub fn create_move_source_filter_settings(
@@ -242,28 +258,6 @@ pub async fn create_move_text_value_filter(
     let base_settings = create_move_source_filter_settings(scene_item);
     let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
 
-    // "id": "move_value_filter",
-    // "mixers": 0,
-    // "monitoring_type": 0,
-    // "muted": false,
-    // "name": "OBS_Text",
-    // "prev_ver": 469827586,
-    // "private_settings": {},
-    // "push-to-mute": false,
-    // "push-to-mute-delay": 0,
-    // "push-to-talk": false,
-    // "push-to-talk-delay": 0,
-    // "settings": {
-    //     "custom_duration": true,
-    //     "duration": 300,
-    //     "filter": "",
-    //     "move_value_type": 4,
-    //     "setting_decimals": 1,
-    //     "setting_name": "text",
-    //     "setting_text": "we are working on getting\nfunctionality up",
-    //     "value_type": 4
-    // },
-    // "sync": 0,
     let new_filter = obws::requests::filters::Create {
         source,
         filter: filter_name,

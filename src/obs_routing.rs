@@ -53,10 +53,17 @@ pub async fn handle_obs_commands(
     match splitmsg[0].as_str() {
         "!durf" => {
             // So can we assign these to someone???
-            let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_left_corner.json";
-            let filter = move_transition::parse_json_into_struct(file_path);
-            println!("Move Source Filter Settings {:?}", filter);
+            let scene = "Characters";
+            let filter_name = "TestMove";
+            let file_path = "/home/begin/code/subd/obs_data/move_transition_left_corner.json";
+            let _ = move_transition::create_move_source_filter_from_file(
+                scene,
+                source,
+                filter_name,
+                file_path,
+                &obs_client,
+            )
+            .await;
             Ok(())
         }
         // ================== //
@@ -149,55 +156,75 @@ pub async fn handle_obs_commands(
                 println!("Error Creating Filter: {filter_name} | {:?}", err);
             };
 
+            // move_transition_hide_source.json
+            // move_transition_hide_speech_bubble.json
+            // move_transition_hide_text.json
+            // move_transition_show_speech_bubble.json
+            // move_transition_show_text.json
+            //
             // ======================================================
-
-            // Then we need to create 6 Filters
+            let file_path = "/home/begin/code/subd/obs_data/move_transition_show_source.json";
             let filter_name = format!("Show{}", base_source);
-            let _ = move_transition::create_move_source_filters(
+            let _ = move_transition::create_move_source_filter_from_file(
                 scene,
                 &base_source,
                 &filter_name,
+                file_path,
                 &obs_client,
             )
             .await;
+
             let filter_name = format!("Hide{}", base_source);
-            let _ = move_transition::create_move_source_filters(
+            let file_path = "/home/begin/code/subd/obs_data/move_transition_hide_source.json";
+            let _ = move_transition::create_move_source_filter_from_file(
                 scene,
                 &base_source,
                 &filter_name,
+                file_path,
                 &obs_client,
             )
             .await;
 
             let filter_name = format!("Show{}-text", base_source);
-            let _ = move_transition::create_move_source_filters(
+            let file_path =
+                "/home/begin/code/subd/obs_data/move_transition_show_text.json";
+            let _ = move_transition::create_move_source_filter_from_file(
                 scene,
                 &text_source_name,
                 &filter_name,
-                &obs_client,
-            )
-            .await;
-            let filter_name = format!("Hide{}-text", base_source);
-            let _ = move_transition::create_move_source_filters(
-                scene,
-                &text_source_name,
-                &filter_name,
+                file_path,
                 &obs_client,
             )
             .await;
 
-            // Doubling for Hide is easy
-            // We just need to know how to get get starting positions
-            let filter_name = format!("Show{}-speech_bubble", base_source);
-            let _ = move_transition::create_move_source_filters(
+            let filter_name = format!("Hide{}-text", base_source);
+            let file_path =
+                "/home/begin/code/subd/obs_data/move_transition_hide_text.json";
+            let _ = move_transition::create_move_source_filter_from_file(
                 scene,
-                &speech_source_name,
+                &text_source_name,
                 &filter_name,
+                file_path,
                 &obs_client,
             )
             .await;
+
+            let filter_name = format!("Show{}-speech_bubble", base_source);
+            let file_path =
+                "/home/begin/code/subd/obs_data/move_transition_show_speech_bubble.json";
+            let _ = move_transition::create_move_source_filter_from_file(
+                scene,
+                &speech_source_name,
+                &filter_name,
+                file_path,
+                &obs_client,
+            )
+            .await;
+
             let filter_name = format!("Hide{}-speech_bubble", base_source);
-            let _ = move_transition::create_move_source_filters(
+            let file_path =
+                "/home/begin/code/subd/obs_data/move_transition_hide_speech_bubble.json";
+            let _ = move_transition::create_move_source_filter_from_file(
                 scene,
                 &speech_source_name,
                 &filter_name,

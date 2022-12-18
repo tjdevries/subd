@@ -120,6 +120,7 @@ impl EventHandler for UberDuckHandler {
                             },
                         ));
 
+                        // Hmm We shouldn't fail here then
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
                         self.sink.append(
