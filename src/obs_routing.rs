@@ -48,6 +48,67 @@ pub async fn handle_obs_commands(
     // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
     //
     match splitmsg[0].as_str() {
+        "!soundboard_text" => {
+            let scene = "Characters";
+
+            // let font_flags = obws::common::FontFlags{ }
+            let font = obws::requests::custom::source_settings::Font {
+                face: "Arial",
+                size: 256,
+                style: "Regular",
+                ..Default::default()
+            };
+
+            // So these are fugazi???
+            // I expect these colors to be something
+            let color1 = rgb::RGBA::new(255, 0, 132, 0);
+            let color2 = rgb::RGBA::new(0, 3, 255, 1);
+
+            let text_settings =
+                obws::requests::custom::source_settings::TextFt2SourceV2 {
+                    outline: true,
+                    drop_shadow: true,
+                    text: "SoundBoard!",
+                    color1,
+                    color2,
+                    font,
+                    custom_width: 5,
+                    log_lines: 5,
+                    word_wrap: false,
+                    ..Default::default() // We might want to experiment from file
+                };
+
+            let text_source_name = "Soundboard-Text";
+            let _ = obs_client
+                .inputs()
+                .create(obws::requests::inputs::Create {
+                    scene,
+                    input: &text_source_name,
+                    kind: "text_ft2_source_v2",
+                    settings: Some(text_settings),
+                    enabled: Some(true),
+                })
+                .await;
+
+            let filter_name = "TransformSoundBoard-text";
+            let move_text_filter = move_transition::MoveTextFilter {
+                setting_name: "text".to_string(),
+                setting_text: "Ok NOW".to_string(),
+                value_type: 5,
+                ..Default::default()
+            };
+            let new_filter = obws::requests::filters::Create {
+                source: &text_source_name,
+                filter: &filter_name,
+                kind: "move_value_filter",
+                settings: Some(move_text_filter),
+            };
+            if let Err(err) = obs_client.filters().create(new_filter).await {
+                println!("Error Creating Filter: {filter_name} | {:?}", err);
+            };
+
+            Ok(())
+        }
         "!durf" => Ok(()),
         // ================== //
         // Stream Characters //
@@ -128,7 +189,6 @@ pub async fn handle_obs_commands(
                     ..Default::default() // We might want to experiment from file
                 };
 
-            // We just need better values
             let text_source_name = format!("{}-text", base_source);
             let _ = obs_client
                 .inputs()

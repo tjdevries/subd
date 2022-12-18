@@ -8,7 +8,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::thread;
+use std::time;
+use std::time::Duration;
 use subd_types::Event;
+use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
 use tracing_subscriber;
@@ -200,12 +204,21 @@ impl EventHandler for SoundHandler {
                 username: msg.user_name,
             }));
 
+            let text_source = "Soundboard-Text";
+
             // This also needs the OTHER WORD EFFECT!!!!
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
                 if mp3s.contains(&full_name) {
+                    let _ = tx.send(Event::TransformOBSTextRequest(
+                        TransformOBSTextRequest {
+                            message: sanitized_word.clone(),
+                            text_source: text_source.to_string(),
+                        },
+                    ));
+
                     let file = BufReader::new(
                         File::open(format!("./MP3s/{}.mp3", sanitized_word))
                             .unwrap(),
@@ -215,8 +228,26 @@ impl EventHandler for SoundHandler {
                         .append(Decoder::new(BufReader::new(file)).unwrap());
 
                     self.sink.sleep_until_end();
+
+                    // self.sink.volume()
+                    // self.sink.set_volume()
+                    // self.sink.len()
+
+                    // We need this so we can trigger the next word
+                    // Not sure we need this
+                    let ten_millis = time::Duration::from_millis(100);
+                    thread::sleep(ten_millis);
                 }
             }
+
+            // This might be right
+            // So this is triggering and going to fast to the next
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: "".to_string(),
+                    text_source: text_source.to_string(),
+                },
+            ));
         }
     }
 }

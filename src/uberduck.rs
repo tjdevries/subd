@@ -191,6 +191,37 @@ fn uberduck_creds() -> (String, String) {
 
 // ======================================
 
+// All 6 Filters
+// I think we should try alternative filter triggering instead
+// we need to trigger 3 filters each time
+// and we can get the names based off a pattern
+// This is not the ideal method
+fn find_obs_character(voice: &str) -> &str {
+    // This makes no sense
+    let default_hotkeys = "Seal";
+
+    // We need defaults for the source
+    // TODO: We need one of these for each voice
+    let mut hotkeys: HashMap<&str, &str> = HashMap::from([
+        // ("brock-samson", "Seal"),
+        ("brock-samson", "Seal"),
+        ("theneedledrop", "Birb"),
+        // ("theneedledrop", "Kevin"),
+        // ("theneedledrop", "Seal"),
+        // ("theneedledrop", "ArtMatt"),
+        // ("mojo-jojo", "Birb"),
+        // ("mojo-jojo", "Teej"),
+        // ("mojo-jojo", "ArtMatt"),
+        ("mr-krabs-joewhyte", "Crabs"),
+        ("danny-devito-angry", "Kevin"),
+    ]);
+
+    match hotkeys.remove(voice) {
+        Some(v) => v,
+        None => default_hotkeys,
+    }
+}
+
 // Character Builder
 // Then Just use that
 fn build_stream_character(username: &str) -> StreamCharacter {
@@ -218,13 +249,13 @@ fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "tommy-pickles";
 
     let voices2: HashMap<&str, &str> = HashMap::from([
-        ("beginbot", "mr-krabs-joewhyte"),
+        // ("beginbot", "mr-krabs-joewhyte"),
         // ("beginbot", "danny-devito-angry"),
         // ("beginbot", "big-gay-al"),
         // ("beginbot", "mojo-jojo"),
         // ("beginbot", "mr-krabs-joewhyte"),
         // ("beginbot", "mojo-jojo"),
-        // ("beginbot", "theneedledrop"),
+        ("beginbot", "theneedledrop"),
         // ("beginbot", "mojo-jojo"),
         // ("beginbot", "chief-keef"),
         ("beginbotbot", "brock-samson"),
@@ -245,44 +276,9 @@ fn build_stream_character(username: &str) -> StreamCharacter {
 
     let character = find_obs_character(voice);
 
-    // let text_source = format!("{}-text", character.source);
     StreamCharacter {
         username: username.to_string(),
         voice: voice.to_string(),
-
-        // Why
-        // text_source: character.text_source.to_string(),
         source: character.to_string(),
-    }
-}
-
-// All 6 Filters
-// I think we should try alternative filter triggering instead
-// we need to trigger 3 filters each time
-// and we can get the names based off a pattern
-// This is not the ideal method
-fn find_obs_character(voice: &str) -> &str {
-    // This makes no sense
-    let default_hotkeys = "Seal";
-
-    // We need defaults for the source
-    // TODO: We need one of these for each voice
-    let mut hotkeys: HashMap<&str, &str> = HashMap::from([
-        // ("brock-samson", "Seal"),
-        ("brock-samson", "Seal"),
-        // ("theneedledrop", "Birb"),
-        // ("theneedledrop", "Kevin"),
-        // ("theneedledrop", "Seal"),
-        ("theneedledrop", "ArtMatt"),
-        // ("mojo-jojo", "Birb"),
-        // ("mojo-jojo", "Teej"),
-        // ("mojo-jojo", "ArtMatt"),
-        ("mr-krabs-joewhyte", "Crabs"),
-        ("danny-devito-angry", "Kevin"),
-    ]);
-
-    match hotkeys.remove(voice) {
-        Some(v) => v,
-        None => default_hotkeys,
     }
 }
