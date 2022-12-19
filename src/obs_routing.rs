@@ -4,9 +4,8 @@ use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
-// use rgb;
 use std::path::Path;
-// use serde::{Deserialize, Serialize};
+use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -18,7 +17,7 @@ const DEFAULT_SOURCE: &str = "begin";
 // const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 
 pub async fn handle_obs_commands(
-    _tx: &broadcast::Sender<Event>,
+    tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -48,6 +47,41 @@ pub async fn handle_obs_commands(
     // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
     //
     match splitmsg[0].as_str() {
+        "!voice" => {
+            let default_voice = "slj".to_string();
+            let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
+
+            let spoken_string = msg
+                .contents
+                .clone()
+                .replace(&format!("!voice {}", &voice), "");
+
+            let mut seal_text = spoken_string.clone();
+            let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
+            let line_length_modifier = 20;
+            let mut line_length_limit = 20;
+            for val in spaces.iter() {
+                if val.0 > line_length_limit {
+                    seal_text.replace_range(val.0..=val.0, "\n");
+                    line_length_limit =
+                        line_length_limit + line_length_modifier;
+                }
+            }
+
+            // let voice_text = msg.contents.to_string();
+            let voice_text = spoken_string.clone();
+            // I need to get some logic to grab all the text after x position
+            println!("We trying for the voice: {} - {}", voice, voice_text);
+            // I can get that from user name
+            let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                voice: voice.to_string(),
+                message: seal_text,
+                voice_text,
+                username: msg.user_name,
+            }));
+            Ok(())
+        }
+
         "!soundboard_text" => {
             let scene = "Characters";
 

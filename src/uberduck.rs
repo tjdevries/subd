@@ -77,6 +77,8 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
+            println!("We are trying for an Uberduck request: {}", msg.voice);
+
             // We determine character
             // entirely based on username
             let stream_character = build_stream_character(&msg.username);
@@ -89,7 +91,7 @@ impl EventHandler for UberDuckHandler {
                 .basic_auth(username.clone(), Some(secret.clone()))
                 .json(&[
                     ("speech", msg.voice_text),
-                    ("voice", stream_character.voice.clone()),
+                    ("voice", msg.voice.clone()),
                 ])
                 .send()
                 .await?
@@ -234,7 +236,7 @@ fn find_obs_character(voice: &str) -> &str {
         // ("theneedledrop", "Seal"),
         // ("theneedledrop", "ArtMatt"),
         // ("mojo-jojo", "Birb"),
-        // ("mojo-jojo", "Teej"),
+        ("mojo-jojo", "Teej"),
         // ("mojo-jojo", "ArtMatt"),
         // ("mojo-jojo", "Kevin"),
         ("mr-krabs-joewhyte", "Crabs"),
@@ -276,7 +278,8 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "lil-jon";
     // let default_voice = "duke-nukem";
     // let default_voice = "e40";
-    let default_voice = "carl-sagan";
+    // let default_voice = "carl-sagan";
+    let default_voice = "johnny-bravo";
 
     // let default_voice = "e40";
     // steveharvey
@@ -296,6 +299,7 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
         // ("beginbot", "mojo-jojo"),
         // ("zanuss", "richard-ayoade"),
         ("Basileus__", "mr-krabs-joewhyte"),
+        ("Ravonus", "mojo-jojo"),
         ("beginbot", "theneedledrop"),
         ("beginbotbot", "mojo-jojo"),
         ("kungfooMe", "slj"),
