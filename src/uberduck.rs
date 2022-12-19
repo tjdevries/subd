@@ -152,6 +152,7 @@ impl EventHandler for UberDuckHandler {
                         ));
                         // TODO Should we change this file name
                         // Make it unique
+                        //
                         let local_path = "./test.wav";
                         let response = client.get(new_url).send().await?;
                         let file = File::create(local_path)?;
@@ -277,9 +278,9 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "alex-jones";
     // let default_voice = "lil-jon";
     // let default_voice = "duke-nukem";
-    // let default_voice = "e40";
+    let default_voice = "e40";
     // let default_voice = "carl-sagan";
-    let default_voice = "johnny-bravo";
+    // let default_voice = "johnny-bravo";
 
     // let default_voice = "e40";
     // steveharvey
