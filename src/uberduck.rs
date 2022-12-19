@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use events::EventHandler;
 use rodio::*;
 use serde::{Deserialize, Serialize};
@@ -8,6 +9,7 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
+use std::time::{Duration, SystemTime};
 use std::{thread, time};
 use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
@@ -47,6 +49,31 @@ pub struct StreamCharacter {
     pub source: String,
     pub username: String,
 }
+
+pub fn twitch_chat_filename(username: String) -> String {
+    let timestamp = 1627127393i64;
+    let nanoseconds = 230 * 1000000;
+    // TODO: Don't use deprecated method
+    let datetime = DateTime::<Utc>::from_utc(
+        NaiveDateTime::from_timestamp(timestamp, nanoseconds),
+        Utc,
+    );
+
+    let now: DateTime<Utc> = Utc::now();
+
+    format!("{}_{}", now.timestamp(), username)
+    // let now = SystemTime::now();
+    // match now.elapsed() {
+    //     Ok(elapsed) => {
+    //         format!("{}_{}", elapsed.as_secs(), username)
+    //     }
+    //     Err(_) => {
+    //         "test.wav".to_string()
+    //     }
+    // }
+}
+// Split UberduckRequest into !voice and username based
+//      Save the files with timestamps_and_usernames_voices in that place
 
 #[async_trait]
 impl EventHandler for UberDuckHandler {
@@ -133,7 +160,6 @@ impl EventHandler for UberDuckHandler {
 
                 match file_resp.path {
                     Some(new_url) => {
-                        // Hide Loading Duck
                         let _ = tx.send(Event::SourceVisibilityRequest(
                             SourceVisibilityRequest {
                                 scene: "Characters".to_string(),
@@ -150,12 +176,20 @@ impl EventHandler for UberDuckHandler {
                                 text_source,
                             },
                         ));
-                        // TODO Should we change this file name
-                        // Make it unique
-                        //
-                        let local_path = "./test.wav";
+
+                        // So the filename is fucking up
+                        // it's not unique
+                        let filename = twitch_chat_filename(msg.username);
+                        let full_filename = format!("{}.wav", filename);
+
+                        // I WANT TO SAVE THIS FILE
+                        println!("Trying to Save: {}", full_filename);
+                        let local_path = format!(
+                            "./TwitchChatTTSRecordings/{}",
+                            full_filename
+                        );
                         let response = client.get(new_url).send().await?;
-                        let file = File::create(local_path)?;
+                        let file = File::create(local_path.clone())?;
                         let mut writer = BufWriter::new(file);
                         writer.write_all(&response.bytes().await?)?;
                         println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
@@ -278,7 +312,8 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "alex-jones";
     // let default_voice = "lil-jon";
     // let default_voice = "duke-nukem";
-    let default_voice = "e40";
+    // let default_voice = "e40";
+    let default_voice = "sir-david-attenborough";
     // let default_voice = "carl-sagan";
     // let default_voice = "johnny-bravo";
 
