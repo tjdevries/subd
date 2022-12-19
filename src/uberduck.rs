@@ -243,6 +243,7 @@ fn find_obs_character(voice: &str) -> &str {
         ("ross-geller", "ArtMatt"),
         ("rossmann", "ArtMatt"),
         ("c-3po", "C3PO"),
+        ("carl-sagan", "Seal"),
     ]);
 
     match hotkeys.remove(voice) {
@@ -274,7 +275,9 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "alex-jones";
     // let default_voice = "lil-jon";
     // let default_voice = "duke-nukem";
-    let default_voice = "e40";
+    // let default_voice = "e40";
+    let default_voice = "carl-sagan";
+
     // let default_voice = "e40";
     // steveharvey
     // let default_voice = "danny-devito-angry";
@@ -304,7 +307,7 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
         // ("ArtMattDank", "mojo-jojo"),
         ("carlvandergeest", "danny-devito-angry"),
         ("stupac62", "stewie-griffin"),
-        ("stupac62", "rossmann"),
+        // ("stupac62", "rossmann"),
         // ("stupac62", "ross-geller"),
         ("swenson", "mike-wazowski"),
         // ("zanuss", "arbys"),

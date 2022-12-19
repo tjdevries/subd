@@ -160,9 +160,7 @@ pub async fn get_db_pool() -> sqlx::PgPool {
 //             let new_id = sqlx::query!(
 //                 r#"INSERT INTO users (twitch_id) VALUES (?)"#,
 //                 twitch_user_id
-//             )
-//             .execute(&mut *conn)
-//             .await?
+//             ) .execute(&mut *conn) .await?
 //             .last_insert_rowid();
 //
 //             Ok(new_id)
@@ -361,8 +359,7 @@ pub async fn get_db_pool() -> sqlx::PgPool {
 //         {
 //             Some(row) => UserRoles {
 //                 roles: {
-//                     let mut h = HashSet::new();
-//                     if row.is_github_sponsor {
+//                     let mut h = HashSet::new(); if row.is_github_sponsor {
 //                         h.insert(Role::GithubSponsor {
 //                             tier: "UNKNOWN".to_string(),
 //                         });
