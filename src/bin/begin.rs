@@ -10,7 +10,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::thread;
 use std::time;
-use std::time::Duration;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
@@ -178,6 +177,9 @@ impl EventHandler for SoundHandler {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
             };
+            if msg.user_name == "Nightbot" {
+                continue;
+            }
 
             let splitmsg = msg
                 .contents
@@ -197,13 +199,28 @@ impl EventHandler for SoundHandler {
                 }
             }
             let voice_text = msg.contents.to_string();
+            let stream_character =
+                server::uberduck::build_stream_character(&msg.user_name);
 
+            if msg.roles.is_twitch_sub() {
+            } else if msg.roles.is_twitch_mod() {
+            } else if msg.roles.is_twitch_staff() {
+            } else {
+            }
+
+            // However this only matters if we doin't match above
+            // or have a custom character
             let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                voice: stream_character.voice.clone(),
                 message: seal_text,
                 voice_text,
                 username: msg.user_name,
             }));
 
+            // =============================
+            // THIS IS JUST SILENCING SOUNDS
+            // =============================
+            continue;
             let text_source = "Soundboard-Text";
 
             // This also needs the OTHER WORD EFFECT!!!!
@@ -320,6 +337,8 @@ async fn main() -> Result<()> {
     //
     // This is useful because you need no lifetimes
     let pool = subd_db::get_db_pool().await;
+
+    // I got a Pool
 
     // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new(

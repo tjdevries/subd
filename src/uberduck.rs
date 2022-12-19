@@ -19,6 +19,14 @@ pub struct UberDuckHandler {
     pub sink: Sink,
 }
 
+// If we parse the full list this is all we'll use
+#[derive(Serialize, Deserialize, Debug)]
+struct UberDuckVoice {
+    category: String,
+    display_name: String,
+    name: String,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct UberDuckVoiceResponse {
     uuid: Option<String>,
@@ -35,9 +43,9 @@ struct UberDuckFileResponse {
 // Should they be optional???
 pub struct StreamCharacter {
     // text_source: String,
-    voice: String,
-    source: String,
-    username: String,
+    pub voice: String,
+    pub source: String,
+    pub username: String,
 }
 
 #[async_trait]
@@ -54,6 +62,14 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
+            // Do we filter ourt Requests in the UberDuckHandler or before
+            //
+            // msg.voice_text: String,
+            // msg.message: String,
+            // msg.username: String,
+            // self
+            // msg
+
             // We need to check the message
             //
             let ch = msg.message.chars().next().unwrap();
@@ -61,6 +77,8 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
+            // We determine character
+            // entirely based on username
             let stream_character = build_stream_character(&msg.username);
 
             let (username, secret) = uberduck_creds();
@@ -203,17 +221,28 @@ fn find_obs_character(voice: &str) -> &str {
     // We need defaults for the source
     // TODO: We need one of these for each voice
     let mut hotkeys: HashMap<&str, &str> = HashMap::from([
-        // ("brock-samson", "Seal"),
         ("brock-samson", "Seal"),
+        ("alex-jones", "Seal"),
+        ("lil-jon", "Seal"),
         ("theneedledrop", "Birb"),
+        ("richard-ayoade", "Kevin"),
+        ("spongebob", "Kevin"),
+        ("arbys", "Kevin"),
+        ("slj", "Teej"),
+        ("rodney-dangerfield", "Teej"),
         // ("theneedledrop", "Kevin"),
         // ("theneedledrop", "Seal"),
         // ("theneedledrop", "ArtMatt"),
         // ("mojo-jojo", "Birb"),
         // ("mojo-jojo", "Teej"),
         // ("mojo-jojo", "ArtMatt"),
+        // ("mojo-jojo", "Kevin"),
         ("mr-krabs-joewhyte", "Crabs"),
         ("danny-devito-angry", "Kevin"),
+        ("stewie-griffin", "ArtMatt"),
+        ("ross-geller", "ArtMatt"),
+        ("rossmann", "ArtMatt"),
+        ("c-3po", "C3PO"),
     ]);
 
     match hotkeys.remove(voice) {
@@ -224,7 +253,7 @@ fn find_obs_character(voice: &str) -> &str {
 
 // Character Builder
 // Then Just use that
-fn build_stream_character(username: &str) -> StreamCharacter {
+pub fn build_stream_character(username: &str) -> StreamCharacter {
     // Start with username
     //
     // Username picks Voice
@@ -241,12 +270,19 @@ fn build_stream_character(username: &str) -> StreamCharacter {
     // ====== //
     // VOICES //
     // ====== //
-    let default_voice = "brock-samson";
+    // let default_voice = "brock-samson";
+    // let default_voice = "alex-jones";
+    // let default_voice = "lil-jon";
+    // let default_voice = "duke-nukem";
+    let default_voice = "e40";
+    // let default_voice = "e40";
+    // steveharvey
     // let default_voice = "danny-devito-angry";
     // let default_voice = "goku";
     // let default_voice = "mickey-mouse";
     // let default_voice = "mojo-jojo";
     // let default_voice = "tommy-pickles";
+    // duke-nukem
 
     let voices2: HashMap<&str, &str> = HashMap::from([
         // ("beginbot", "mr-krabs-joewhyte"),
@@ -255,17 +291,26 @@ fn build_stream_character(username: &str) -> StreamCharacter {
         // ("beginbot", "mojo-jojo"),
         // ("beginbot", "mr-krabs-joewhyte"),
         // ("beginbot", "mojo-jojo"),
+        // ("zanuss", "richard-ayoade"),
+        ("Basileus__", "mr-krabs-joewhyte"),
         ("beginbot", "theneedledrop"),
-        // ("beginbot", "mojo-jojo"),
+        ("beginbotbot", "mojo-jojo"),
+        ("kungfooMe", "slj"),
+        // ("kungfooMe", "rodney-dangerfield"),
         // ("beginbot", "chief-keef"),
-        ("beginbotbot", "brock-samson"),
+        // ("beginbotbot", "brock-samson"),
         // ("beginbotbot", "theneedledrop"),
         ("ArtMattDank", "dr-nick"),
         // ("ArtMattDank", "mojo-jojo"),
         ("carlvandergeest", "danny-devito-angry"),
         ("stupac62", "stewie-griffin"),
+        ("stupac62", "rossmann"),
+        // ("stupac62", "ross-geller"),
         ("swenson", "mike-wazowski"),
-        ("teej_dv", "mr-krabs-joewhyte"),
+        // ("zanuss", "arbys"),
+        ("zanuss", "spongebob"),
+        ("rockerBOO", "c-3po"),
+        // ("teej_dv", "mr-krabs-joewhyte"),
         // ("theprimeagen", "big-gay-al"),
     ]);
 

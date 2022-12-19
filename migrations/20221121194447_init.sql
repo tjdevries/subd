@@ -5,6 +5,14 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
+
+CREATE TABLE user_stream_character_information(
+  user_id UUID UNIQUE NOT NULL references users,
+  obs_character TEXT NOT NULL,
+  voice TEXT NOT NULL,
+  random boolean NOT NULL
+);
+
 CREATE TABLE user_roles (
   user_id UUID UNIQUE NOT NULL references users,
   last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

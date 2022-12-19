@@ -42,6 +42,7 @@ pub struct UberDuckRequest {
     pub voice_text: String,
     pub message: String,
     pub username: String,
+    pub voice: String,
     // HERE I CAN CHANGE THINGS!!!!
     //
 }
