@@ -9,7 +9,7 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use std::{thread, time};
 use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
@@ -18,6 +18,10 @@ use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
 
 pub struct UberDuckHandler {
+    pub sink: Sink,
+}
+
+pub struct ExpertUberDuckHandler {
     pub sink: Sink,
 }
 
@@ -61,19 +65,170 @@ pub fn twitch_chat_filename(username: String) -> String {
 
     let now: DateTime<Utc> = Utc::now();
 
+    // OK NOW
     format!("{}_{}", now.timestamp(), username)
-    // let now = SystemTime::now();
-    // match now.elapsed() {
-    //     Ok(elapsed) => {
-    //         format!("{}_{}", elapsed.as_secs(), username)
-    //     }
-    //     Err(_) => {
-    //         "test.wav".to_string()
-    //     }
-    // }
 }
-// Split UberduckRequest into !voice and username based
-//      Save the files with timestamps_and_usernames_voices in that place
+
+#[async_trait]
+impl EventHandler for ExpertUberDuckHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UberDuckRequest(msg) => msg,
+                _ => continue,
+            };
+
+            // Do we filter ourt Requests in the UberDuckHandler or before
+            //
+            // msg.voice_text: String,
+            // msg.message: String,
+            // msg.username: String,
+            // self
+            // msg
+
+            // We need to check the message
+            //
+            let ch = msg.message.chars().next().unwrap();
+            if ch == '!' {
+                continue;
+            };
+
+            println!("We are trying for an Uberduck request: {}", msg.voice);
+
+            // We determine character
+            // entirely based on username
+            let stream_character = build_stream_character(&msg.username);
+
+            let (username, secret) = uberduck_creds();
+
+            let client = reqwest::Client::new();
+            let res = client
+                .post("https://api.uberduck.ai/speak")
+                .basic_auth(username.clone(), Some(secret.clone()))
+                .json(&[
+                    ("speech", msg.voice_text),
+                    ("voice", msg.voice.clone()),
+                ])
+                .send()
+                .await?
+                .json::<UberDuckVoiceResponse>()
+                .await?;
+
+            let uuid = match res.uuid {
+                Some(x) => x,
+                None => continue,
+            };
+
+            loop {
+                let url = format!(
+                    "https://api.uberduck.ai/speak-status?uuid={}",
+                    &uuid
+                );
+
+                let (username, secret) = uberduck_creds();
+                let response = client
+                    .get(url)
+                    .basic_auth(username, Some(secret))
+                    .send()
+                    .await?;
+
+                // Show Loading Duck
+                let _ = tx.send(Event::SourceVisibilityRequest(
+                    SourceVisibilityRequest {
+                        scene: "Characters".to_string(),
+                        source: "loading_duck".to_string(),
+                        enabled: true,
+                    },
+                ));
+
+                let text = response.text().await?;
+                // we need to this to be better
+                let file_resp: UberDuckFileResponse =
+                    serde_json::from_str(&text)?;
+                println!("Uberduck Finished at: {:?}", file_resp.finished_at);
+
+                match file_resp.path {
+                    Some(new_url) => {
+                        let _ = tx.send(Event::SourceVisibilityRequest(
+                            SourceVisibilityRequest {
+                                scene: "Characters".to_string(),
+                                source: "loading_duck".to_string(),
+                                enabled: false,
+                            },
+                        ));
+
+                        let text_source =
+                            format!("{}-text", stream_character.source);
+                        let _ = tx.send(Event::TransformOBSTextRequest(
+                            TransformOBSTextRequest {
+                                message: msg.message.clone(),
+                                text_source,
+                            },
+                        ));
+
+                        // So the filename is fucking up
+                        // it's not unique
+                        let filename = twitch_chat_filename(msg.username);
+                        let full_filename = format!("{}.wav", filename);
+
+                        // I WANT TO SAVE THIS FILE
+                        println!("Trying to Save: {}", full_filename);
+                        let local_path = format!(
+                            "./TwitchChatTTSRecordings/{}",
+                            full_filename
+                        );
+                        let response = client.get(new_url).send().await?;
+                        let file = File::create(local_path.clone())?;
+                        let mut writer = BufWriter::new(file);
+                        writer.write_all(&response.bytes().await?)?;
+                        println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
+
+                        let source = stream_character.source.clone();
+                        let _ = tx.send(Event::StreamCharacterRequest(
+                            StreamCharacterRequest {
+                                source,
+                                enabled: true,
+                            },
+                        ));
+
+                        // Hmm We shouldn't fail here then
+                        let file =
+                            BufReader::new(File::open(local_path).unwrap());
+                        self.sink.append(
+                            Decoder::new(BufReader::new(file)).unwrap(),
+                        );
+                        self.sink.sleep_until_end();
+
+                        // THIS IS HIDING THE PERSON AFTER
+                        // We might want to wait a little longer, then hide
+                        // we could also kick off a hide event
+                        let ten_millis = time::Duration::from_millis(1000);
+                        thread::sleep(ten_millis);
+
+                        let source = stream_character.source.clone();
+                        let _ = tx.send(Event::StreamCharacterRequest(
+                            StreamCharacterRequest {
+                                source,
+                                enabled: false,
+                            },
+                        ));
+                        break;
+                    }
+                    None => {
+                        // Wait 1 second before seeing if the file is ready.
+                        let ten_millis = time::Duration::from_millis(1000);
+                        thread::sleep(ten_millis);
+                    }
+                }
+            }
+        }
+    }
+}
 
 #[async_trait]
 impl EventHandler for UberDuckHandler {

@@ -163,7 +163,6 @@ impl EventHandler for SoundHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        // TODO: Do I need to read there here either???
         let paths = fs::read_dir("./MP3s").unwrap();
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for path in paths {
@@ -207,6 +206,8 @@ impl EventHandler for SoundHandler {
             } else if msg.roles.is_twitch_staff() {
             } else {
             }
+
+            //
 
             // However this only matters if we doin't match above
             // or have a custom character
@@ -374,6 +375,9 @@ async fn main() -> Result<()> {
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(server::uberduck::UberDuckHandler { sink });
+
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    event_loop.push(server::uberduck::ExpertUberDuckHandler { sink });
 
     // You need your own OBS client then
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
