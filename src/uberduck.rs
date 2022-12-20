@@ -54,7 +54,7 @@ pub struct StreamCharacter {
     pub username: String,
 }
 
-pub fn twitch_chat_filename(username: String) -> String {
+pub fn twitch_chat_filename(username: String, voice: String) -> String {
     let timestamp = 1627127393i64;
     let nanoseconds = 230 * 1000000;
     // TODO: Don't use deprecated method
@@ -83,7 +83,6 @@ impl EventHandler for ExpertUberDuckHandler {
                 _ => continue,
             };
 
-            // Do we filter ourt Requests in the UberDuckHandler or before
             //
             // msg.voice_text: String,
             // msg.message: String,
@@ -173,7 +172,8 @@ impl EventHandler for ExpertUberDuckHandler {
 
                         // So the filename is fucking up
                         // it's not unique
-                        let filename = twitch_chat_filename(msg.username);
+                        let filename =
+                            twitch_chat_filename(msg.username, msg.voice);
                         let full_filename = format!("{}.wav", filename);
 
                         // I WANT TO SAVE THIS FILE
@@ -334,7 +334,8 @@ impl EventHandler for UberDuckHandler {
 
                         // So the filename is fucking up
                         // it's not unique
-                        let filename = twitch_chat_filename(msg.username);
+                        let filename =
+                            twitch_chat_filename(msg.username, msg.voice);
                         let full_filename = format!("{}.wav", filename);
 
                         // I WANT TO SAVE THIS FILE
@@ -468,7 +469,8 @@ pub fn build_stream_character(username: &str) -> StreamCharacter {
     // let default_voice = "lil-jon";
     // let default_voice = "duke-nukem";
     // let default_voice = "e40";
-    let default_voice = "sir-david-attenborough";
+    // let default_voice = "sir-david-attenborough";
+    let default_voice = "morgan-freeman";
     // let default_voice = "carl-sagan";
     // let default_voice = "johnny-bravo";
 

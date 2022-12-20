@@ -12,7 +12,8 @@ begin:
 resetdb:
 	sqlx db drop -y
 	sqlx db create
-	sqlx migrate run --source crates/subd-db/migrations
+	sqlx migrate run --source migrations
+	# sqlx migrate run --source crates/subd-db/migrations
 
 serve:
 	cd crates/subd-yew && trunk serve --address 0.0.0.0

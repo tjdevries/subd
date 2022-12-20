@@ -10,6 +10,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::thread;
 use std::time;
+use subd_db::get_db_pool;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
@@ -153,6 +154,22 @@ impl EventHandler for TransformOBSTextHandler {
 
 pub struct SoundHandler {
     sink: Sink,
+    pool: sqlx::PgPool,
+}
+
+// We need to look up user voice
+pub async fn save_user_voice(pool: &sqlx::PgPool, voice: &str) -> Result<()> {
+    // subd=# \d user_stream_character_information
+
+    sqlx::query!(
+        r#"INSERT INTO user_stream_character_information (voice)
+           VALUES ( $1 )"#,
+        voice
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
 }
 
 // Move the Sound Handler
@@ -180,12 +197,6 @@ impl EventHandler for SoundHandler {
                 continue;
             }
 
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-
             let mut seal_text = msg.contents.clone();
             let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
             let line_length_modifier = 20;
@@ -201,28 +212,37 @@ impl EventHandler for SoundHandler {
             let stream_character =
                 server::uberduck::build_stream_character(&msg.user_name);
 
+            // So we need the pool!!!!
+            // save_user_voice(&self.pool, &msg.user_name).await?;
+
             if msg.roles.is_twitch_sub() {
+                // 1 or 2 words breaks the AI
+                let split = voice_text.split(" ");
+                let vec = split.collect::<Vec<&str>>();
+                if vec.len() > 2 {
+                    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                        voice: stream_character.voice.clone(),
+                        message: seal_text,
+                        voice_text,
+                        username: msg.user_name,
+                    }));
+                }
             } else if msg.roles.is_twitch_mod() {
             } else if msg.roles.is_twitch_staff() {
             } else {
             }
-
-            //
-
-            // However this only matters if we doin't match above
-            // or have a custom character
-            let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-                voice: stream_character.voice.clone(),
-                message: seal_text,
-                voice_text,
-                username: msg.user_name,
-            }));
 
             // =============================
             // THIS IS JUST SILENCING SOUNDS
             // =============================
             continue;
             let text_source = "Soundboard-Text";
+
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
 
             // This also needs the OTHER WORD EFFECT!!!!
             for word in splitmsg {
@@ -371,13 +391,17 @@ async fn main() -> Result<()> {
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    event_loop.push(SoundHandler { sink });
+
+    // So there' out DB!!!
+    let pool = get_db_pool().await;
+    // We need the
+    event_loop.push(SoundHandler { sink, pool });
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(server::uberduck::UberDuckHandler { sink });
 
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    event_loop.push(server::uberduck::ExpertUberDuckHandler { sink });
+    // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    // event_loop.push(server::uberduck::ExpertUberDuckHandler { sink });
 
     // You need your own OBS client then
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
