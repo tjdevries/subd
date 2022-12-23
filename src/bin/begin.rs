@@ -4,6 +4,7 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Decoder;
 use rodio::*;
+use sqlx::PgPool;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -11,6 +12,7 @@ use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_db::get_db_pool;
+use subd_macros::database_model;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
@@ -157,20 +159,96 @@ pub struct SoundHandler {
     pool: sqlx::PgPool,
 }
 
-// We need to look up user voice
-pub async fn save_user_voice(pool: &sqlx::PgPool, voice: &str) -> Result<()> {
-    // subd=# \d user_stream_character_information
+// ================================================================================================
 
-    sqlx::query!(
-        r#"INSERT INTO user_stream_character_information (voice)
-           VALUES ( $1 )"#,
-        voice
-    )
-    .execute(pool)
-    .await?;
+#[database_model]
+pub mod user_stream_character_information {
+    use super::*;
 
-    Ok(())
+    pub struct Model {
+        pub username: String,
+        pub obs_character: String,
+        pub voice: String,
+        pub random: bool,
+    }
 }
+
+// TODO: Take in Random
+impl user_stream_character_information::Model {
+    #[allow(dead_code)]
+
+    pub async fn save(self, pool: &PgPool) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            INSERT INTO user_stream_character_information
+            (username, obs_character, voice)
+            VALUES ( $1, $2, $3 )
+            ON CONFLICT (username)
+            DO UPDATE SET
+            obs_character = $2,
+            voice = $3
+            RETURNING username, obs_character, voice, random
+        "#,
+            self.username,
+            self.obs_character,
+            self.voice
+        )
+        .fetch_one(pool)
+        .await?)
+    }
+}
+
+pub async fn get_voice_from_username(
+    pool: &PgPool,
+    username: &str,
+) -> Result<String> {
+    let res = sqlx::query!(
+        "SELECT voice FROM user_stream_character_information WHERE username = $1",
+        username
+    ).fetch_one(pool).await?;
+    Ok(res.voice)
+}
+
+// So we need a save
+
+// pub async fn get_user_id(pool: &sqlx::PgPool, username: &str) -> Result<()> {
+//     // pub async fn get_user_id(pool: &sqlx::PgPool, username: &str) -> Result<()> {
+//     let x = Ok(sqlx::query!(
+//         "SELECT * FROM user_stream_character_information WHERE username = $1",
+//         username
+//     )
+//     .fetch_one(pool)
+//     .await?)
+//     .map(|x| x);
+
+//     Ok(())
+
+//     // I can't figure out what to return
+//     // match x {
+//     //     Ok(record) => Ok(&record.voice),
+//     //     Err(_) => Ok("brock-samson"),
+//     // }
+//     // I can unpack it here
+//     // x.
+
+//     // Ok(sqlx::query_as!(
+//     //     Self,
+//     //     r#"
+//     //     INSERT INTO user_messages (user_id, platform, contents)
+//     //     VALUES ($1, $2, $3)
+//     //     RETURNING user_id, platform as "platform: UserPlatform", contents
+//     //     "#,
+//     //     self.user_id,
+//     //     self.platform as _,
+//     //     self.contents
+//     // )
+//     // .fetch_one(pool)
+//     // .await?)
+//     // .map(|x| UserID(x.user_id)))
+// }
+
+// ================================================================================================
 
 // Move the Sound Handler
 #[async_trait]
@@ -212,8 +290,49 @@ impl EventHandler for SoundHandler {
             let stream_character =
                 server::uberduck::build_stream_character(&msg.user_name);
 
-            // So we need the pool!!!!
-            // save_user_voice(&self.pool, &msg.user_name).await?;
+            // we are saving and looking up!!!
+            //
+            // We need a save command
+            // then we need to move the code
+            // and we need to work on Parsing the Voices
+            // We got past the sound handler!!!
+            // let default_voice = "brock_samson";
+            let default_voice = "fuck";
+
+            let split = voice_text.split(" ");
+            let vec = split.collect::<Vec<&str>>();
+            let temp_v = vec[1];
+            // HERE
+            let model = user_stream_character_information::Model {
+                username: msg.user_name.clone(),
+                // voice: default_voice.to_string(),
+                voice: temp_v.to_string(),
+                obs_character: "Seal".to_string(),
+                random: false,
+            };
+
+            // Do we look up first????
+            model.save(&self.pool).await?;
+
+            let voice =
+                get_voice_from_username(&self.pool, &msg.user_name.clone())
+                    .await?;
+
+            println!("Looked up Name: {}", voice);
+            // Since we await we get the string
+            // save_user_voice(&self.pool, &msg.user_name, "Seal", default_voice)
+            //     .await?;
+
+            // Then we have to read in
+            // let voice = match get_voice_from_username(
+            //     &self.pool,
+            //     &msg.user_name.clone(),
+            // )
+            // .await?
+            // {
+            //     Some(voice) => voice,
+            //     None => continue,
+            // };
 
             if msg.roles.is_twitch_sub() {
                 // 1 or 2 words breaks the AI

@@ -7,10 +7,11 @@ CREATE TABLE users (
 
 
 CREATE TABLE user_stream_character_information(
-  user_id UUID UNIQUE NOT NULL references users,
+  /* user_id UUID UNIQUE NOT NULL references users, */
+  username TEXT NOT NULL UNIQUE,
   obs_character TEXT NOT NULL,
   voice TEXT NOT NULL,
-  random boolean NOT NULL
+  random boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE user_roles (
