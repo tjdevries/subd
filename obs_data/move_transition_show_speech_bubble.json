@@ -1,0 +1,35 @@
+{
+    "bounds": {
+        "x": 251.0,
+        "x_sign": " ",
+        "y": 234.0,
+        "y_sign": " "
+    },
+    "crop": {
+        "bottom": 0.0,
+        "bottom_sign": " ",
+        "left": 0.0,
+        "left_sign": " ",
+        "right": 0.0,
+        "right_sign": " ",
+        "top": 0.0,
+        "top_sign": " "
+    },
+    "duration": 300,
+    "pos": {
+        "x": 267.0,
+        "x_sign": " ",
+        "y": 137.0,
+        "y_sign": " "
+    },
+    "rot": 0.0,
+    "rot_sign": " ",
+    "scale": {
+        "x": 0.8766466975212097,
+        "x_sign": " ",
+        "y": 0.8770053386688232,
+        "y_sign": " "
+    },
+    "source": "Seal-speech_bubble",
+    "transform_text": "pos: x 267.0 y 137.0 rot: 0.0 scale: x 0.877 y 0.877 crop: l 0 t 0 r 0 b 0"
+}

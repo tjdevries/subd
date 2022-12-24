@@ -11,29 +11,12 @@ use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::thread;
+use std::time;
 use std::time::Duration;
 
 const DEFAULT_SCENE: &str = "Primary";
 const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
-
-// Figure out what the name of this should really be
-// const MULTI_SETTING_VALUE_TYPE: u32 = 1;
-const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-
-const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
-const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
-const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
-
-const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
-
-const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
-const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
-
-// This ain't the name
-const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
-const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
-const BLUR_FILTER_NAME: &str = "Blur";
 
 // Constants to Extract:
 // kind: "move_value_filter",
@@ -42,7 +25,27 @@ const BLUR_FILTER_NAME: &str = "Blur";
 // let stream_fx_filter_name = "Move_Scroll";
 // filter: "Scroll",
 // kind: "scroll_filter",
+// Figure out what the name of this should really be
+// const MULTI_SETTING_VALUE_TYPE: u32 = 1;
+const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 
+pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
+pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+
+pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
+pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
+pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
+pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
+
+const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
+const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
+
+// TODO: This ain't the name
+const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+const BLUR_FILTER_NAME: &str = "Blur";
+
+// This is for hotkeys
 const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
         shift: true,
@@ -78,6 +81,65 @@ pub struct BlurSetting {
     pub version: Option<u64>,
 }
 
+// WHY CAN'T THYE FIND YOU!!!!!
+// TODO: What kinda trash name is this???
+pub async fn handle_user_input(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!(
+        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
+        source, filter_name, filter_setting_name, duration, filter_value,
+    );
+
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    let mut new_settings = serde_json::from_value::<
+        move_transition::MoveSingleValueSetting,
+    >(filter_details.settings)
+    .unwrap();
+
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+
+    new_settings.value_type = value_type;
+
+    println!("\nNew Settings: {:?}", new_settings);
+
+    // Update the Filter
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // Does this need to be longer
+    thread::sleep(Duration::from_millis(200));
+
+    println!("Attempting to enable Filter: {} {}", source, filter_name);
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
 // =========================== //
 // 3D Transform Based Filters  //
 // =========================== //
@@ -88,9 +150,10 @@ pub async fn default_ortho(
     obs_client: &OBSClient,
 ) -> Result<()> {
     // Change the underlying 3D Transform Filter
-    let new_settings = stream_fx::StreamFXOrthographic {
-        ..Default::default()
-    };
+    // let new_settings = stream_fx::StreamFXOrthographic {
+    //     ..Default::default()
+    // };
+    let new_settings = move_transition::default_orthographic_settings();
 
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
@@ -266,6 +329,46 @@ pub async fn spin(
 // Updating and Triggering Filters //
 // =============================== //
 
+// So I need a version to update a text value
+// start very unspecific
+pub async fn update_and_trigger_text_move_filter(
+    source: &str,
+    filter_name: &str,
+    new_text: &String,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let mut new_settings: move_transition::MoveTextFilter = Default::default();
+    new_settings.move_value_type = Some(4);
+    new_settings.setting_name = "text".to_string();
+    new_settings.setting_text = new_text.to_string();
+    new_settings.value_type = 4;
+    new_settings.duration = Some(300);
+    new_settings.custom_duration = true;
+    new_settings.setting_decimals = Some(1);
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // This fixes the problem
+    let ten_millis = time::Duration::from_millis(300);
+
+    thread::sleep(ten_millis);
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    Ok(())
+}
+
 pub async fn update_and_trigger_move_value_filter(
     source: &str,
     filter_name: &str,
@@ -275,6 +378,7 @@ pub async fn update_and_trigger_move_value_filter(
     value_type: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // So we get defaults here
     let filter_details =
         match obs_client.filters().get(&source, &filter_name).await {
             Ok(val) => Ok(val),
@@ -294,6 +398,7 @@ pub async fn update_and_trigger_move_value_filter(
         }
     };
 
+    // We update some values
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
     new_settings.duration = Some(duration);
@@ -309,6 +414,9 @@ pub async fn update_and_trigger_move_value_filter(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
+    // we need a pause here
+    thread::sleep(Duration::from_millis(400));
+
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,
@@ -323,21 +431,22 @@ pub async fn update_and_trigger_move_value_filter(
 // =============== //
 
 pub async fn scale_source(
+    scene: &str,
     source: &str,
     x: f32,
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    // If we can't find the id for the passed in source
-    // we just return Ok
-    //
-    // Should we log an error here?
-    //
-    // is there a more Idiomatic pattern?
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    println!("Looking for ID: {} {}", scene, source);
+
+    let id = match find_id(scene, source, &obs_client).await {
         Ok(val) => val,
-        Err(_) => return Ok(()),
+        Err(err) => {
+            println!("Error find_id: {:?}", err);
+            return Ok(());
+        }
     };
+    println!("ID: {}", id);
 
     let new_scale = Scale {
         x: Some(x),
@@ -349,13 +458,15 @@ pub async fn scale_source(
     };
 
     let set_transform = SetTransform {
-        scene: DEFAULT_SCENE,
+        scene,
         item_id: id,
         transform: scene_transform,
     };
     match obs_client.scene_items().set_transform(set_transform).await {
         Ok(_) => {}
-        Err(_) => {}
+        Err(err) => {
+            println!("Error Set Transform: {:?}", err);
+        }
     }
 
     Ok(())
@@ -389,12 +500,13 @@ pub async fn scale(
 
 // Move a Source using x, y and NO Filters
 pub async fn move_source(
+    scene: &str,
     source: &str,
     x: f32,
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    let id = match find_id(scene, source, &obs_client).await {
         Ok(val) => val,
         Err(e) => {
             println!("Error Finding ID {:?} {:?}", source, e);
@@ -413,7 +525,7 @@ pub async fn move_source(
 
     // TODO: figure out looking up Scene, based on Source
     let set_transform = SetTransform {
-        scene: MEME_SCENE,
+        scene,
         item_id: id,
         transform: scene_transform,
     };
@@ -431,7 +543,8 @@ pub async fn top_right(scene_item: &str, obs_client: &OBSClient) -> Result<()> {
     let base_settings =
         fetch_source_settings(DEFAULT_SCENE, &scene_item, &obs_client).await?;
 
-    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
+    let new_settings =
+        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -443,7 +556,8 @@ pub async fn bottom_right(
     let settings =
         fetch_source_settings(DEFAULT_SCENE, &scene_item, &obs_client).await?;
 
-    let new_settings = custom_filter_settings(settings, 12.0, 878.0);
+    let new_settings =
+        move_transition::custom_filter_settings(settings, 12.0, 878.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -657,7 +771,7 @@ pub async fn follow(
             }
         };
         if s.source_name != leader {
-            let new_settings = custom_filter_settings(
+            let new_settings = move_transition::custom_filter_settings(
                 base_settings,
                 leader_settings.position_x,
                 leader_settings.position_y,
@@ -674,28 +788,6 @@ pub async fn follow(
 // ========================= //
 // Bootstrap / Create Things //
 // ========================= //
-
-pub async fn create_move_source_filters(
-    source: &str,
-    scene_item: &str,
-    filter_name: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let base_settings = create_move_source_filter_settings(scene_item);
-    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
-
-    let new_filter = obws::requests::filters::Create {
-        source,
-        filter: filter_name,
-        kind: "move_source_filter",
-        settings: Some(new_settings),
-    };
-    if let Err(err) = obs_client.filters().create(new_filter).await {
-        println!("Error Creating Filter: {filter_name} | {:?}", err);
-    };
-
-    Ok(())
-}
 
 pub async fn create_outline_filter(
     source: &str,
@@ -838,13 +930,30 @@ pub async fn create_split_3d_transform_filters(
         };
         obs_client.filters().create(new_filter).await?;
 
-        // Create Move-Value for 3D Transform Filter
         let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
 
         let new_settings = move_transition::MoveSingleValueSetting {
             move_value_type: Some(0),
             filter: String::from(filter_name),
             duration: Some(7000),
+            ..Default::default()
+        };
+        let new_filter = obws::requests::filters::Create {
+            source,
+            filter: &stream_fx_filter_name,
+            kind: MOVE_VALUE_INTERNAL_FILTER_NAME,
+            settings: Some(new_settings),
+        };
+        obs_client.filters().create(new_filter).await?;
+
+        // Create Default Move-Value for 3D Transform Filter
+        let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
+
+        let filter_name = format!("3D_{}", camera_type);
+        let new_settings = move_transition::MoveSingleValueSetting {
+            move_value_type: Some(0),
+            filter: String::from(filter_name),
+            duration: Some(3000),
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
@@ -917,7 +1026,7 @@ pub async fn create_filters_for_source(
     }
 
     let filter_name = format!("Move_Source_Home_{}", source);
-    create_move_source_filters(
+    move_transition::create_move_source_filters(
         DEFAULT_SCENE,
         &source,
         &filter_name,
@@ -1001,7 +1110,7 @@ pub async fn create_filters_for_source(
 
     let filter_name = format!("Move_Source_{}", source);
 
-    create_move_source_filters(
+    move_transition::create_move_source_filters(
         DEFAULT_SCENE,
         &source,
         &filter_name,
@@ -1092,7 +1201,17 @@ pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
 // Update and Trigger Filters //
 // ========================== //
 
+pub async fn find_scene(source: &str) -> Result<String> {
+    let scene = match source {
+        "begin" => DEFAULT_SCENE,
+        _ => MEME_SCENE,
+    };
+
+    Ok(scene.to_string())
+}
+
 pub async fn trigger_grow(
+    scene: &str,
     source: &str,
     base_scale: &Scale,
     x: f32,
@@ -1123,68 +1242,68 @@ pub async fn trigger_grow(
             };
         }
     } else {
-        if let Err(err) = scale_source(&source, x, y, &obs_client).await {
+        if let Err(err) = scale_source(&scene, &source, x, y, &obs_client).await
+        {
             println!("Error Scaling Source: {}", err)
         };
     }
     Ok(())
 }
 
-pub async fn handle_user_input(
-    source: &str,
-    filter_name: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    value_type: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    println!(
-        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
-        source, filter_name, filter_setting_name, duration, filter_value,
-    );
-
-    let filter_details =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    let mut new_settings = serde_json::from_value::<
-        move_transition::MoveSingleValueSetting,
-    >(filter_details.settings)
-    .unwrap();
-
-    new_settings.setting_name = String::from(filter_setting_name);
-    new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-
-    new_settings.value_type = value_type;
-
-    println!("\nNew Settings: {:?}", new_settings);
-
-    // Update the Filter
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-    thread::sleep(Duration::from_millis(100));
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
+// =================================================================================================================================
 
 // ======== //
 // Hot Keys //
 // ======== //
+
+pub async fn trigger_character_filters(
+    base_source: &str,
+    obs_client: &OBSClient,
+    enabled: bool,
+) -> Result<()> {
+    let scene = "Characters";
+
+    let mut filter_name_modifier = "Hide";
+    if enabled {
+        filter_name_modifier = "Show"
+    };
+
+    // println!(
+    //     "We are going to try and {} {} sources",
+    //     filter_name_modifier, base_source
+    // );
+
+    // So this just fails
+    let filter_name = format!("{}{}", filter_name_modifier, base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    // println!("Attempting to Trigger: {}", filter_name);
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name = format!("{}{}-text", filter_name_modifier, base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    // println!("Attempting to Trigger: {}", filter_name);
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    let filter_name =
+        format!("{}{}-speech_bubble", filter_name_modifier, base_source);
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    // println!("Attempting to Trigger: {}", filter_name);
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
 
 pub async fn trigger_hotkey(key: &str, obs_client: &OBSClient) -> Result<()> {
     _ = obs_client
@@ -1249,10 +1368,6 @@ pub async fn set_audio_status(
     Ok(())
 }
 
-// ================= //
-// Private Functions //
-// ================= //
-
 // These are the "Camera Type" we need for each of the filter types
 // for the 3D Transform Effect
 pub fn camera_type_config() -> HashMap<&'static str, i32> {
@@ -1276,6 +1391,10 @@ pub fn camera_type_config() -> HashMap<&'static str, i32> {
     ])
 }
 
+// ================= //
+// Private Functions //
+// ================= //
+
 async fn update_move_source_filters(
     source: &str,
     filter_name: &str,
@@ -1291,48 +1410,6 @@ async fn update_move_source_filters(
     obs_client.filters().set_settings(new_filter).await?;
 
     Ok(())
-}
-
-fn create_move_source_filter_settings(
-    source: &str,
-) -> move_transition::MoveSourceFilterSettings {
-    let settings = move_transition::MoveSourceFilterSettings {
-        source: Some(source.to_string()),
-        duration: Some(4444),
-        bounds: Some(move_transition::Coordinates {
-            x: Some(251.0),
-            y: Some(234.0),
-        }),
-        scale: Some(move_transition::Coordinates {
-            x: Some(1.0),
-            y: Some(1.0),
-        }),
-        position: Some(move_transition::Coordinates {
-            x: Some(1662.0),
-            y: Some(13.0),
-        }),
-        crop: Some(move_transition::MoveSourceCropSetting {
-            bottom: Some(0.0),
-            left: Some(0.0),
-            right: Some(0.0),
-            top: Some(0.0),
-        }),
-        transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
-    };
-    settings
-}
-
-// This needs to take in Custom Filters
-pub fn custom_filter_settings(
-    mut base_settings: move_transition::MoveSourceFilterSettings,
-    x: f32,
-    y: f32,
-) -> move_transition::MoveSourceFilterSettings {
-    base_settings.position = Some(move_transition::Coordinates {
-        x: Some(x),
-        y: Some(y),
-    });
-    base_settings
 }
 
 async fn fetch_source_settings(

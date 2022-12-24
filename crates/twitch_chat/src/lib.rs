@@ -197,6 +197,7 @@ impl EventHandler for TwitchMessageHandler {
             // and send the user message to the rest of the system.
             tx.send(Event::UserMessage(UserMessage {
                 user_id,
+                user_name: msg.sender.name,
                 roles: user_roles,
                 platform: UserPlatform::Twitch,
                 contents: msg.text,

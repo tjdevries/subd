@@ -1,100 +1,333 @@
-use anyhow::{bail, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
-use rodio::cpal::traits::{DeviceTrait, HostTrait};
+use rodio::Decoder;
 use rodio::*;
-use rodio::{Decoder, OutputStream};
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use subd_types::{Event, UserMessage};
+use std::thread;
+use std::time;
+use subd_db::get_db_pool;
+use subd_types::Event;
+use subd_types::TransformOBSTextRequest;
+use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
-const DEFAULT_SCENE: &str = "Primary";
+pub struct OBSMessageHandler {
+    obs_client: OBSClient,
+    pool: sqlx::PgPool,
+}
 
-// We need a secondary scene, where we put all the jokes
-const MEME_SCENE: &str = "memes";
+pub struct TriggerHotkeyHandler {
+    obs_client: OBSClient,
+}
 
-// THE WORD DEFAULT IS DANGEROUS
-const DEFAULT_SOURCE: &str = "begin";
+pub struct StreamCharacterHandler {
+    obs_client: OBSClient,
+}
 
-// THESE NAMES AIN'T RIGHT!!!!
-const DEFAULT_MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
-const DEFAULT_MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+pub struct SourceVisibilityHandler {
+    obs_client: OBSClient,
+}
 
-pub struct SoundHandler {}
+pub struct TransformOBSTextHandler {
+    obs_client: OBSClient,
+}
+
+pub struct SoundHandler {
+    sink: Sink,
+    pool: sqlx::PgPool,
+}
+
+// ================================================================================================
 
 #[async_trait]
-impl EventHandler for SoundHandler {
+impl EventHandler for SourceVisibilityHandler {
     async fn handle(
         self: Box<Self>,
-        _: broadcast::Sender<Event>,
+        _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
             let msg = match event {
+                Event::SourceVisibilityRequest(msg) => msg,
+                _ => continue,
+            };
+
+            let _ = server::obs::set_enabled(
+                &msg.scene,
+                &msg.source,
+                msg.enabled,
+                &self.obs_client,
+            )
+            .await;
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for StreamCharacterHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::StreamCharacterRequest(msg) => msg,
+                _ => continue,
+            };
+
+            println!(
+                "We are going to trigger a Stream Character: {}",
+                msg.source
+            );
+
+            if msg.enabled {
+                let _ = server::obs::trigger_character_filters(
+                    &msg.source,
+                    &self.obs_client,
+                    true,
+                )
+                .await;
+            } else {
+                let _ = server::obs::trigger_character_filters(
+                    &msg.source,
+                    &self.obs_client,
+                    false,
+                )
+                .await;
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for TriggerHotkeyHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::TriggerHotkeyRequest(msg) => msg,
+                _ => continue,
+            };
+
+            server::obs::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for TransformOBSTextHandler {
+    async fn handle(
+        self: Box<Self>,
+        _tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::TransformOBSTextRequest(msg) => msg,
+                _ => continue,
+            };
+
+            // Why was this called so mnay times???mm
+            // println!(
+            //     "Attempting to transform OBS Text: {:?} {:?}",
+            //     &msg.text_source, &msg.message
+            // );
+            let filter_name = format!("Transform{}", msg.text_source);
+            server::obs::update_and_trigger_text_move_filter(
+                &msg.text_source,
+                &filter_name,
+                &msg.message,
+                &self.obs_client,
+            )
+            .await?;
+        }
+    }
+}
+
+// ================================================================================================
+
+// Move the Sound Handler
+#[async_trait]
+impl EventHandler for SoundHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        let paths = fs::read_dir("./MP3s").unwrap();
+        let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+        for path in paths {
+            mp3s.insert(path.unwrap().path().display().to_string());
+        }
+
+        loop {
+            let event = rx.recv().await?;
+
+            let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
             };
+            if msg.user_name == "Nightbot" {
+                continue;
+            }
+
+            let mut seal_text = msg.contents.clone();
+            let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
+            let line_length_modifier = 20;
+            let mut line_length_limit = 20;
+            for val in spaces.iter() {
+                if val.0 > line_length_limit {
+                    seal_text.replace_range(val.0..=val.0, "\n");
+                    line_length_limit =
+                        line_length_limit + line_length_modifier;
+                }
+            }
+            let voice_text = msg.contents.to_string();
+            let stream_character = server::uberduck::build_stream_character(
+                &self.pool,
+                &msg.user_name,
+            )
+            .await?;
+
+            let split = voice_text.split(" ");
+            let vec = split.collect::<Vec<&str>>();
+            if vec.len() < 2 {
+                continue;
+            };
+
+            let state =
+                server::twitch_stream_state::get_twitch_state(&self.pool)
+                    .await?;
+
+            // I've got the state
+            // This is where we need to look up state of the Twitch Stream:
+            if msg.roles.is_twitch_staff() {
+                println!("\n\tTwitch Staff's here");
+
+                let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    // voice: "dr-robotnik-movie".to_string(),
+                    voice: "half-life-scientist".to_string(),
+                    message: seal_text,
+                    voice_text,
+                    username: msg.user_name,
+                    source: Some("Randall".to_string()),
+                }));
+            } else if msg.roles.is_twitch_mod() {
+                println!("We have a Mod!!!");
+
+                let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    voice: "brock-samson".to_string(),
+                    message: seal_text,
+                    voice_text,
+                    username: msg.user_name,
+                    source: None,
+                }));
+            } else if msg.roles.is_twitch_sub() {
+                let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    voice: stream_character.voice.clone(),
+                    message: seal_text,
+                    voice_text,
+                    username: msg.user_name,
+                    source: None,
+                }));
+
+            // If it's NOT sub-only
+            } else if !state.sub_only_tts {
+                let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    voice: stream_character.voice.clone(),
+                    message: seal_text,
+                    voice_text,
+                    username: msg.user_name,
+                    source: None,
+                }));
+            }
+
+            if !state.implicit_soundeffects {
+                continue;
+            }
+
+            // IF EXplict continue
+            // =============================
+            // THIS IS JUST SILENCING SOUNDS
+            // =============================
+
+            // We should add this to a DB lookup
+            // continue;
+            let text_source = "Soundboard-Text";
+
             let splitmsg = msg
                 .contents
                 .split(" ")
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let paths = fs::read_dir("./MP3s").unwrap();
-
-            let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-
-            for path in paths {
-                mp3s.insert(path.unwrap().path().display().to_string());
-            }
-
-            // TODO: find an easy way to not start this code with a flag
+            // This also needs the OTHER WORD EFFECT!!!!
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
                 if mp3s.contains(&full_name) {
-                    // Works for Arch Linux
-                    let (_stream, stream_handle) = get_output_stream("pulse");
-
-                    // Works for Mac
-                    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-
-                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                    let _ = tx.send(Event::TransformOBSTextRequest(
+                        TransformOBSTextRequest {
+                            message: sanitized_word.clone(),
+                            text_source: text_source.to_string(),
+                        },
+                    ));
 
                     let file = BufReader::new(
                         File::open(format!("./MP3s/{}.mp3", sanitized_word))
                             .unwrap(),
                     );
 
-                    // TODO: Is there someway to suppress output here
-                    sink.append(Decoder::new(BufReader::new(file)).unwrap());
+                    self.sink
+                        .append(Decoder::new(BufReader::new(file)).unwrap());
 
-                    sink.sleep_until_end();
+                    self.sink.sleep_until_end();
+
+                    // self.sink.volume()
+                    // self.sink.set_volume()
+                    // self.sink.len()
+
+                    // We need this so we can trigger the next word
+                    // Not sure we need this
+                    let ten_millis = time::Duration::from_millis(100);
+                    thread::sleep(ten_millis);
                 }
             }
+
+            // This might be right
+            // So this is triggering and going to fast to the next
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: "".to_string(),
+                    text_source: text_source.to_string(),
+                },
+            ));
         }
     }
 }
 
-pub struct BeginMessageHandler {
-    obs_client: OBSClient,
-}
-
 #[async_trait]
-impl EventHandler for BeginMessageHandler {
+impl EventHandler for OBSMessageHandler {
     async fn handle(
         self: Box<Self>,
-        _: broadcast::Sender<Event>,
+        tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
@@ -109,7 +342,15 @@ impl EventHandler for BeginMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            match handle_obs_commands(&self.obs_client, splitmsg, msg).await {
+            match server::obs_routing::handle_obs_commands(
+                &tx,
+                &self.obs_client,
+                &self.pool,
+                splitmsg,
+                msg,
+            )
+            .await
+            {
                 Ok(_) => {}
                 Err(err) => {
                     eprintln!("Error: {err}");
@@ -119,400 +360,6 @@ impl EventHandler for BeginMessageHandler {
         }
     }
 }
-
-async fn handle_obs_commands(
-    obs_client: &OBSClient,
-    splitmsg: Vec<String>,
-    msg: UserMessage,
-) -> Result<()> {
-    // This is because Begin doesn't understand Rust
-    let default_source = String::from(DEFAULT_SOURCE);
-
-    // We try and do some parsing on every command here
-    // These may not always be what we want, but they are sensible
-    // defaults used by many commands
-    let source: &str = splitmsg.get(1).unwrap_or(&default_source);
-
-    let duration: u32 = splitmsg
-        .get(4)
-        .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
-
-    // WE PANICKED!!!!!!!
-    let filter_value = splitmsg
-        .get(3)
-        .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
-
-    // NOTE: If we want to extract values like filter_setting_name and filter_value
-    // we need to figure a way to look up the defaults per command
-    // because they could be different types
-    // for now we are going to try and have them be the same
-    // let filter_setting_name = splitmsg.get(2).map_or("", |x| x.as_str());
-
-    match splitmsg[0].as_str() {
-        // ================== //
-        // Scrolling Sources //
-        // ================== //
-
-        // !scroll SOURCE SCROLL_SETTING SPEED DURATION (in milliseconds)
-        // !scroll begin x 5 300
-        //
-        // TODO: Stop using server::obs::handle_user_input
-        "!scroll" => {
-            let default_filter_setting_name = String::from("speed_x");
-
-            // This is ok, because we have a different default
-            let filter_setting_name =
-                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-
-            let filter_setting_name: String = match filter_setting_name.as_str()
-            {
-                "x" => String::from("speed_x"),
-                "y" => String::from("speed_y"),
-                _ => default_filter_setting_name,
-            };
-
-            // TODO: THIS 2 is SUPERFLUOUS!!!
-            // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
-            server::obs::handle_user_input(
-                source,
-                DEFAULT_MOVE_SCROLL_FILTER_NAME,
-                &filter_setting_name,
-                filter_value,
-                duration,
-                2,
-                &obs_client,
-            )
-            .await
-        }
-
-        // We could maybe get this into one function
-        // and have the word blur actually there
-        // =============== //
-        // Bluring Sources //
-        // =============== //
-        "!blur" => {
-            let filter_value = splitmsg
-                .get(2)
-                .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
-            // msg.roles.is_twitch_mod()
-            // msg.roles.is_twitch_founder()
-            // msg.roles.is_twitch_staff()
-            // msg.roles.is_twitch_sub()
-            if msg.roles.is_twitch_vip() {
-                println!("WE GOT A VIP OVER HERE");
-                server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    filter_value,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await?;
-            }
-            Ok(())
-        }
-
-        // Update to take in 2 as a const
-        "!noblur" | "!unblur" => {
-            if msg.roles.is_twitch_mod() {
-                println!("WE GOT A MOD OVER HERE");
-                server::obs::update_and_trigger_move_value_filter(
-                    source,
-                    DEFAULT_MOVE_BLUR_FILTER_NAME,
-                    "Filter.Blur.Size",
-                    0.0,
-                    5000,
-                    2,
-                    &obs_client,
-                )
-                .await?;
-            }
-            Ok(())
-        }
-
-        // =============== //
-        // Scaling Sources //
-        // =============== //
-        "!grow" | "!scale" => {
-            let x: f32 = splitmsg
-                .get(2)
-                .and_then(|temp_x| temp_x.trim().parse().ok())
-                .unwrap_or(1.0);
-            let y: f32 = splitmsg
-                .get(3)
-                .and_then(|temp_y| temp_y.trim().parse().ok())
-                .unwrap_or(1.0);
-
-            let base_scale = Scale {
-                x: Some(x),
-                y: Some(y),
-            };
-            server::obs::trigger_grow(source, &base_scale, x, y, &obs_client)
-                .await
-        }
-
-        // ====================== //
-        // 3D Transforming Sources//
-        // ====================== //
-
-        // This shit is annoying
-        // I almost want to divide it into 3 commands
-        // based on Camera Type
-        // and we have all 3
-        // that might be too much
-        // but i also might be exactly what we want
-        // only spin is wonky
-        // Should also add !spinz
-        "!spin" | "!spinx" | "spiny" => {
-            // HMMMMM
-            let default_filter_setting_name = String::from("z");
-            let filter_setting_name =
-                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-
-            server::obs::spin(
-                source,
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!hide" => server::obs::hide_sources(MEME_SCENE, &obs_client).await,
-        "!show" => {
-            server::obs::set_enabled(MEME_SCENE, source, true, &obs_client)
-                .await
-        }
-        "!def_ortho" => {
-            server::obs::default_ortho(source, duration, &obs_client).await
-        }
-        "!ortho" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            let filter_setting_name = &splitmsg[2];
-
-            server::obs::trigger_ortho(
-                source,
-                "3D_Orthographic",
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!perp" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            let filter_setting_name = &splitmsg[2];
-
-            server::obs::trigger_ortho(
-                source,
-                "3D_Perspective",
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!corner" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            let filter_setting_name = &splitmsg[2];
-
-            server::obs::trigger_ortho(
-                source,
-                "3D_CornerPin",
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-        // Perspective
-        // Corner Pin
-        // Orthographic
-
-        // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
-        // !3d begin Rotation.Z 3600 5000
-        //
-        // TODO: This is NOT Working!
-        "!3d" => {
-            // If we don't at least have a filter_name, we can't proceed
-            if splitmsg.len() < 3 {
-                bail!("We don't have a filter name, can't proceed");
-            }
-
-            let filter_setting_name = &splitmsg[2];
-
-            server::obs::trigger_3d(
-                source,
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        // ============== //
-        // Moving Sources //
-        // ============== //
-        "!move" => {
-            // TODO: Look at this fanciness
-            //       cafce25: if let [source, x, y, ..] = splitmsg {...}
-            if splitmsg.len() > 3 {
-                let source = splitmsg[1].as_str();
-                let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
-                let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
-
-                server::obs::move_source(source, x, y, &obs_client).await
-            } else {
-                Ok(())
-            }
-        }
-
-        // TODO: I'd like one-for every corner
-        "!tr" => server::obs::top_right(source, &obs_client).await,
-
-        "!bl" => server::obs::bottom_right(source, &obs_client).await,
-
-        // ================ //
-        // Compound Effects //
-        // ================ //
-        "!norm" => server::obs::norm(&source, &obs_client).await,
-
-        "!follow" => {
-            let scene = DEFAULT_SCENE;
-            let leader = splitmsg.get(1).unwrap_or(&default_source);
-            let source = leader;
-
-            server::obs::follow(source, scene, leader, &obs_client).await
-        }
-        "!staff" => server::obs::staff(DEFAULT_SOURCE, &obs_client).await,
-
-        // =============================== //
-        // Create Scenes, Sources, Filters //
-        // =============================== //
-        "!create_source" => {
-            let new_scene: obws::requests::scene_items::CreateSceneItem =
-                obws::requests::scene_items::CreateSceneItem {
-                    scene: DEFAULT_SCENE,
-                    source: &source,
-                    enabled: Some(true),
-                };
-
-            // TODO: Why is this crashing???
-            obs_client.scene_items().create(new_scene).await?;
-
-            Ok(())
-        }
-
-        // TEMP: This is for temporary testing!!!!
-        "!split" => {
-            server::obs::create_split_3d_transform_filters(source, &obs_client)
-                .await
-        }
-
-        // This sets up OBS for Begin's current setup
-        "!create_filters_for_source" => {
-            server::obs::create_filters_for_source(source, &obs_client).await
-        }
-
-        // ========================== //
-        // Show Info About OBS Setup  //
-        // ========================== //
-        // "!filter" => {
-        //     let (_command, words) = msg.message_text.split_once(" ").unwrap();
-
-        //     // TODO: Handle this error
-        //     let details =
-        //         server::obs::print_filter_info(&source, words, &obs_client)
-        //             .await?;
-        //     client
-        //         .say(twitch_username.clone(), format!("{:?}", details))
-        //         .await
-        // }
-
-        // TODO: Take in Scene
-        "!source" => {
-            server::obs::print_source_info(source, DEFAULT_SCENE, &obs_client)
-                .await
-        }
-
-        "!outline" => {
-            let source = splitmsg[1].as_str();
-            server::obs::outline(source, &obs_client).await
-        }
-
-        // ====================== //
-        // Show / Hide Subscenes //
-        // ====================== //
-        "!memes" => {
-            server::obs::set_enabled(
-                DEFAULT_SCENE,
-                MEME_SCENE,
-                true,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!nomemes" | "!nojokes" | "!work" => {
-            server::obs::set_enabled(
-                DEFAULT_SCENE,
-                MEME_SCENE,
-                false,
-                &obs_client,
-            )
-            .await
-        }
-
-        // ==================== //
-        // Change Scenes in OBS //
-        // ==================== //
-        // Rename These Commands
-        "!chat" => server::obs::trigger_hotkey("OBS_KEY_L", &obs_client).await,
-
-        "!code" => server::obs::trigger_hotkey("OBS_KEY_H", &obs_client).await,
-
-        _ => Ok(()),
-    }
-}
-
-// ==============================================================================
-
-fn get_output_stream(device_name: &str) -> (OutputStream, OutputStreamHandle) {
-    let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
-
-    let (mut _stream, mut stream_handle) = OutputStream::try_default().unwrap();
-    for device in devices {
-        let dev: rodio::Device = device.into();
-        let dev_name: String = dev.name().unwrap();
-        if dev_name == device_name {
-            println!("Device found: {}", dev_name);
-            (_stream, stream_handle) =
-                OutputStream::try_from_device(&dev).unwrap();
-        }
-    }
-    return (_stream, stream_handle);
-}
-
-// ==========================================================================================
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -546,6 +393,8 @@ async fn main() -> Result<()> {
     // This is useful because you need no lifetimes
     let pool = subd_db::get_db_pool().await;
 
+    // I got a Pool
+
     // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new(
         pool.clone(),
@@ -561,7 +410,6 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
         .unwrap();
@@ -569,10 +417,55 @@ async fn main() -> Result<()> {
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
+    let pool = get_db_pool().await;
+    event_loop.push(OBSMessageHandler { pool, obs_client });
 
-    event_loop.push(BeginMessageHandler { obs_client });
-    event_loop.push(SoundHandler {});
+    // Works for Arch Linux
+    let (_stream, stream_handle) = server::audio::get_output_stream("pulse");
 
+    // Works for Mac
+    // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+
+    // So there' out DB!!!
+    let pool = get_db_pool().await;
+    event_loop.push(SoundHandler { sink, pool });
+
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let pool = get_db_pool().await;
+    event_loop.push(server::uberduck::UberDuckHandler { pool, sink });
+
+    // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    // let pool = get_db_pool().await;
+    // event_loop.push(server::uberduck::ExpertUberDuckHandler { pool, sink });
+
+    // You need your own OBS client then
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(TriggerHotkeyHandler { obs_client });
+
+    // You need your own OBS client then
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(TransformOBSTextHandler { obs_client });
+
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(StreamCharacterHandler { obs_client });
+
+    let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
+    let obs_client =
+        OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
+            .await?;
+    event_loop.push(SourceVisibilityHandler { obs_client });
+
+    println!("\n\n\t\tLet's Start this Loop Up!");
     event_loop.run().await?;
 
     Ok(())
