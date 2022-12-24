@@ -15,9 +15,12 @@ use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
+use handlers;
+
 const DEFAULT_SCENE: &str = "Primary";
 const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
+
 
 // This should be here
 // const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
@@ -412,6 +415,8 @@ pub async fn handle_obs_commands(
             .await;
             Ok(())
         }
+
+        "!upload_image" => handlers::upload_image(msg),
 
         // ================== //
         // Scrolling Sources //

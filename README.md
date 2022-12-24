@@ -339,3 +339,7 @@ Change to the Scene where you can read code.
 ### Questions
 
 - How does scroll stop???
+
+## Remove BG
+
+- [rembg](https://github.com/danielgatis/rembg) and available on the PATH
