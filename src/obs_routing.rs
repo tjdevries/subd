@@ -147,6 +147,10 @@ pub async fn handle_obs_commands(
                 .clone()
                 .replace(&format!("!voice {}", &voice), "");
 
+            if spoken_string == "" {
+                return Ok(());
+            }
+
             let mut seal_text = spoken_string.clone();
             let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
             let line_length_modifier = 20;

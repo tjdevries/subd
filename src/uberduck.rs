@@ -240,6 +240,8 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
+            // right here we crashed
+            // !voice weed-goblin
             let ch = msg.message.chars().next().unwrap();
             if ch == '!' {
                 continue;
@@ -442,88 +444,20 @@ pub async fn build_stream_character(
     pool: &sqlx::PgPool,
     username: &str,
 ) -> Result<StreamCharacter> {
-    //// println!("Looked up Name: {}", voice);
-    //// let contents = fs::read_to_string("data/voices.json").unwrap();
-    //// let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
-    //// let mut rng = rand::thread_rng();
-    //// let random_index = rng.gen_range(0..voices.len());
-    //// let random_voice = &voices[random_index];
-    //// println!("{:?}", random_voice);
-    //// Start with username
-    ////
-    //// Username picks Voice
-    ////
-    //// Voice picks Source and Hotkeys
+    let default_voice = "arbys";
 
-    //// let base_source = "Seal";
-    //// let base_source = "Birb";
-    //// let base_source = "Kevin";
-    //// let base_source = "Crabs";
-    //// let base_source = "Teej";
-    //// let base_source = "ArtMatt";
+    let voice = match obs_routing::get_voice_from_username(pool, username).await
+    {
+        Ok(voice) => voice,
+        Err(_) => {
+            return Ok(StreamCharacter {
+                username: username.to_string(),
+                voice: default_voice.to_string(),
+                source: "Seal".to_string(),
+            })
+        }
+    };
 
-    //// ====== //
-    //// VOICES //
-    //// ====== //
-    //// let default_voice = "brock-samson";
-    //// let default_voice = "alex-jones";
-    //// let default_voice = "lil-jon";
-    //// let default_voice = "duke-nukem";
-    //// let default_voice = "e40";
-    //// let default_voice = "sir-david-attenborough";
-    //let default_voice = "morgan-freeman";
-
-    //// let default_voice = "carl-sagan";
-    //// let default_voice = "johnny-bravo";
-
-    //// let default_voice = "e40";
-    //// steveharvey
-    //// let default_voice = "danny-devito-angry";
-    //// let default_voice = "goku";
-    //// let default_voice = "mickey-mouse";
-    //// let default_voice = "mojo-jojo";
-    //// let default_voice = "tommy-pickles";
-    //// duke-nukem
-
-    //let voices2: HashMap<&str, &str> = HashMap::from([
-    //    // ("beginbot", "mr-krabs-joewhyte"),
-    //    // ("beginbot", "danny-devito-angry"),
-    //    // ("beginbot", "big-gay-al"),
-    //    // ("beginbot", "mojo-jojo"),
-    //    // ("beginbot", "mr-krabs-joewhyte"),
-    //    // ("beginbot", "mojo-jojo"),
-    //    // ("zanuss", "richard-ayoade"),
-    //    ("Basileus__", "mr-krabs-joewhyte"),
-    //    ("Ravonus", "mojo-jojo"),
-    //    ("beginbot", "theneedledrop"),
-    //    ("beginbotbot", "mojo-jojo"),
-    //    ("kungfooMe", "slj"),
-    //    // ("kungfooMe", "rodney-dangerfield"),
-    //    // ("beginbot", "chief-keef"),
-    //    // ("beginbotbot", "brock-samson"),
-    //    // ("beginbotbot", "theneedledrop"),
-    //    ("ArtMattDank", "dr-nick"),
-    //    // ("ArtMattDank", "mojo-jojo"),
-    //    ("carlvandergeest", "danny-devito-angry"),
-    //    ("stupac62", "stewie-griffin"),
-    //    // ("stupac62", "rossmann"),
-    //    // ("stupac62", "ross-geller"),
-    //    ("swenson", "mike-wazowski"),
-    //    // ("zanuss", "arbys"),
-    //    ("zanuss", "spongebob"),
-    //    ("rockerBOO", "c-3po"),
-    //    // ("teej_dv", "mr-krabs-joewhyte"),
-    //    // ("theprimeagen", "big-gay-al"),
-    //]);
-
-    //let voice = match voices2.get(username) {
-    //    Some(v) => v,
-    //    None => default_voice,
-    //};
-
-    //// here we should look inside the database for the voice!!!!!!
-    ////
-    let voice = obs_routing::get_voice_from_username(pool, username).await?;
     let character = find_obs_character(&voice);
 
     Ok(StreamCharacter {
