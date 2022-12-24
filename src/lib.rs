@@ -3,6 +3,7 @@ pub mod bootstrap;
 pub mod commands;
 pub mod move_transition;
 pub mod obs;
+pub mod obs_combo;
 pub mod obs_filters;
 pub mod obs_routing;
 pub mod raffle;

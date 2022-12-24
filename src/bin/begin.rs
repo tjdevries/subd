@@ -92,14 +92,14 @@ impl EventHandler for StreamCharacterHandler {
             );
 
             if msg.enabled {
-                let _ = server::obs::trigger_character_filters(
+                let _ = server::obs_combo::trigger_character_filters(
                     &msg.source,
                     &self.obs_client,
                     true,
                 )
                 .await;
             } else {
-                let _ = server::obs::trigger_character_filters(
+                let _ = server::obs_combo::trigger_character_filters(
                     &msg.source,
                     &self.obs_client,
                     false,

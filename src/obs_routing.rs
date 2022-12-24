@@ -1,6 +1,7 @@
 use crate::bootstrap;
 use crate::move_transition;
 use crate::obs;
+use crate::obs_combo;
 use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
@@ -683,16 +684,16 @@ pub async fn handle_obs_commands(
         // ================ //
         // Compound Effects //
         // ================ //
-        "!norm" => obs::norm(&source, &obs_client).await,
+        "!norm" => obs_combo::norm(&source, &obs_client).await,
 
         "!follow" => {
             let scene = DEFAULT_SCENE;
             let leader = splitmsg.get(1).unwrap_or(&default_source);
             let source = leader;
 
-            obs::follow(source, scene, leader, &obs_client).await
+            obs_combo::follow(source, scene, leader, &obs_client).await
         }
-        "!staff" => obs::staff(DEFAULT_SOURCE, &obs_client).await,
+        "!staff" => obs_combo::staff(DEFAULT_SOURCE, &obs_client).await,
 
         // =============================== //
         // Create Scenes, Sources, Filters //
