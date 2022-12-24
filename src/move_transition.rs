@@ -1,11 +1,15 @@
 use crate::move_transition;
 use crate::obs;
+use crate::obs_source;
 use crate::stream_fx;
 use anyhow::Result;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use std::fs;
+
+pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
+pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
@@ -299,6 +303,10 @@ pub async fn create_move_source_filters(
 
 // ======================================================================================================
 
+// =========================== //
+// 3D Transform Based Filters  //
+// =========================== //
+
 pub async fn trigger_ortho(
     source: &str,
     filter_name: &str,
@@ -349,12 +357,173 @@ pub async fn trigger_ortho(
     Ok(())
 }
 
+// ============================================================================================
+//
+// TODO: This needs some heavy refactoring
+// This only affects 3D transforms
+pub async fn trigger_3d(
+    source: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let camera_types_per_filter = obs::camera_type_config();
+    // if !camera_types_per_filter.contains_key(&filter_setting_name) {
+    //     continue;
+    // }
+
+    // THIS CRASHESSSSSSS
+    // WE NEED TO LOOK UP
+    let camera_number = camera_types_per_filter[&filter_setting_name];
+
+    // Look up information about the current "3D Transform" filter
+    // IS THIS FUCKED????
+    let filter_details = obs_client
+        .filters()
+        .get(&source, THE_3D_TRANSFORM_FILTER_NAME)
+        .await;
+
+    // Does this leave early??????
+    let filt: SourceFilter = match filter_details {
+        Ok(val) => val,
+        Err(_) => return Ok(()),
+    };
+
+    // TODO: Explore we are seeing this:
+    // Error With New Settings: Error("missing field `Commit`", line: 0, column: 0)
+    // // IS THIS STILL HAPPENING???
+    let mut new_settings = match serde_json::from_value::<
+        stream_fx::StreamFXSettings,
+    >(filt.settings)
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error With New Settings: {:?}", e);
+            stream_fx::StreamFXSettings {
+                ..Default::default()
+            }
+        }
+    };
+
+    // I think we also want to return though!!!!
+    // and not continue on here
+
+    // resetting this Camera Mode
+    new_settings.camera_mode = Some(camera_number);
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: THE_3D_TRANSFORM_FILTER_NAME,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    obs::handle_user_input(
+        source,
+        "Move_Stream_FX",
+        filter_setting_name,
+        filter_value,
+        duration,
+        SINGLE_SETTING_VALUE_TYPE,
+        &obs_client,
+    )
+    .await
+}
+
+// ===================================================================================
+
+pub async fn spin(
+    source: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let setting_name = match filter_setting_name {
+        "spin" | "z" => "Rotation.Z",
+        "spinx" | "x" => "Rotation.X",
+        "spiny" | "y" => "Rotation.Y",
+        _ => "Rotation.Z",
+    };
+
+    // So if we ?
+    // we fuck up???
+    match obs::update_and_trigger_move_value_filter(
+        source,
+        THE_3D_TRANSFORM_FILTER_NAME,
+        setting_name,
+        filter_value,
+        duration,
+        2, // not sure if this is the right value
+        &obs_client,
+    )
+    .await
+    {
+        Ok(_) => {}
+        Err(e) => {
+            println!("Error Updating and Triggering Value in !spin {:?}", e);
+        }
+    }
+
+    Ok(())
+}
+
+// MOVE SOURCE ====================================================================
+//
+// Updates the Move Filter with new Move Filter Settings
+// Then calls the filter
+pub async fn move_with_move_source(
+    filter_name: &str,
+    new_settings: move_transition::MoveSourceFilterSettings,
+    obs_client: &obws::Client,
+) -> Result<()> {
+    update_move_source_filters(
+        obs::DEFAULT_SCENE,
+        filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: obs::DEFAULT_SCENE,
+        filter: &filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
+async fn update_move_source_filters(
+    source: &str,
+    filter_name: &str,
+    new_settings: move_transition::MoveSourceFilterSettings,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let new_filter = obws::requests::filters::SetSettings {
+        source,
+        filter: filter_name,
+        settings: Some(new_settings),
+        overlay: Some(false),
+    };
+    obs_client.filters().set_settings(new_filter).await?;
+
+    Ok(())
+}
+
+// ===============================================================================
+//
+// FETCHING
+
 pub async fn fetch_source_settings(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<move_transition::MoveSourceFilterSettings> {
-    let id = match obs::find_id(scene, source, &obs_client).await {
+    let id = match obs_source::find_id(scene, source, &obs_client).await {
         Ok(val) => val,
         Err(_) => {
             return Ok(move_transition::MoveSourceFilterSettings {

@@ -3,19 +3,9 @@ use crate::sdf_effects;
 use crate::stream_fx;
 use anyhow::Result;
 use obws;
-use obws::requests::scene_items::{
-    Position, Scale, SceneItemTransform, SetTransform,
-};
-use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::thread;
-use std::time;
-use std::time::Duration;
 
 const DEFAULT_SCENE: &str = "Primary";
-const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
@@ -31,13 +21,13 @@ const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 const BLUR_FILTER_NAME: &str = "Blur";
 
 // This is for hotkeys
-const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
-    obws::requests::hotkeys::KeyModifiers {
-        shift: true,
-        control: true,
-        alt: true,
-        command: true,
-    };
+// const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
+//     obws::requests::hotkeys::KeyModifiers {
+//         shift: true,
+//         control: true,
+//         alt: true,
+//         command: true,
+//     };
 
 pub async fn create_outline_filter(
     source: &str,

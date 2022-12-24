@@ -2,6 +2,7 @@ use crate::bootstrap;
 use crate::move_transition;
 use crate::obs;
 use crate::obs_combo;
+use crate::obs_source;
 use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
@@ -19,9 +20,9 @@ use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
-const DEFAULT_SCENE: &str = "Primary";
-const MEME_SCENE: &str = "memes";
-const DEFAULT_SOURCE: &str = "begin";
+pub const DEFAULT_SCENE: &str = "Primary";
+pub const MEME_SCENE: &str = "memes";
+pub const DEFAULT_SOURCE: &str = "begin";
 
 // This should be here
 // const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
@@ -560,7 +561,7 @@ pub async fn handle_obs_commands(
             let filter_setting_name =
                 splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
-            obs::spin(
+            move_transition::spin(
                 source,
                 filter_setting_name,
                 filter_value,
@@ -646,7 +647,7 @@ pub async fn handle_obs_commands(
 
             let filter_setting_name = &splitmsg[2];
 
-            obs::trigger_3d(
+            move_transition::trigger_3d(
                 source,
                 filter_setting_name,
                 filter_value,
@@ -670,7 +671,7 @@ pub async fn handle_obs_commands(
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
-                obs::move_source(&scene, source, x, y, &obs_client).await
+                obs_source::move_source(&scene, source, x, y, &obs_client).await
             } else {
                 Ok(())
             }

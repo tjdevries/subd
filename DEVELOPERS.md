@@ -1,5 +1,26 @@
 # Developers
 
+- obs_routing.rs
+    - All heavy-lifting logic should be in other files
+    - it should be purely routing
+
+------------------------
+
+## From Now On
+
+- We start w/ Cam, Desktop, Mic
+
+- We bootstrap from there every stream
+
+----
+
+- built bootstrap
+- build source
+
+
+
+-------------------------------------i
+
 ## Problem Childs
 
 - obs.rs         | 1517

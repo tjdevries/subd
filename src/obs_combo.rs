@@ -4,7 +4,6 @@ use anyhow::Result;
 use obws;
 use obws::requests::scene_items::{Scale, SceneItemTransform, SetTransform};
 use obws::Client as OBSClient;
-use std::time::Duration;
 
 pub const DEFAULT_SCENE: &str = "Primary";
 pub const MEME_SCENE: &str = "memes";
@@ -236,7 +235,7 @@ pub async fn follow(
                 continue;
             }
         }
-        let base_settings = match obs::fetch_source_settings(
+        let base_settings = match move_transition::fetch_source_settings(
             DEFAULT_SCENE,
             &s.source_name,
             &obs_client,
