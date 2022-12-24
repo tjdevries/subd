@@ -1,3 +1,6 @@
+use crate::obs;
+use anyhow::Result;
+use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 
 // TODO: consider serde defaults???
@@ -99,4 +102,29 @@ pub struct SDFEffectsSettings {
 
     #[serde(rename = "Version")]
     pub version: Option<u64>,
+}
+
+// This just fetches settings around SDF Effects
+// AND NOTHING ELSE!!!
+pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
+    let filter_details = match obs_client
+        .filters()
+        .get(source, obs::SDF_EFFECTS_FILTER_NAME)
+        .await
+    {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error Getting Filter Details: {:?}", e);
+            return Ok(());
+        }
+    };
+
+    // TODO: This could through an Error Here
+    let new_settings =
+        serde_json::from_value::<SDFEffectsSettings>(filter_details.settings)
+            .unwrap();
+
+    println!("\nFetched Settings: {:?}\n", new_settings);
+
+    Ok(())
 }

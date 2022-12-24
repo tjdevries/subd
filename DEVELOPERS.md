@@ -1,5 +1,45 @@
 # Developers
 
+## Current Begin Refactor
+
+- clean up
+    - obs_combo.rs
+    - obs_source.rs
+    - stream_character.rs
+    - streamfx.rs
+    - uberduck.rs
+
+- move_transition
+- move_transition_effects
+- move_transition_bootstrap
+
+- bootstrap.rs
+    - This is an interesting idea for starting my stream from scratch
+
+---
+
+## Next TODOs
+
+- Transform-Text for move-transition struct
+    with a Test!!!!!
+
+- figure out colors for outline handler
+
+- Figure out changing states and showing the chat the current state easily
+
+- Clean up individual effects
+
+- Abstract out the filter_type number everywhere
+
+---
+
+## Bootstrap Idea: From Now On
+
+- We start w/ Cam, Desktop, Mic
+- We bootstrap from there every stream
+
+---------------------------------------------------
+
 This program connects to many different services, and some of those sources need
 special software installed. So it's important to read careful about how to
 connect (or ignore those features) to each source.
@@ -115,3 +155,15 @@ make resetdb
 
 At this point you should be ready to compile
 
+
+----
+
+## Architecture
+
+- begin.rs
+    - entry point to running a begin stream
+
+## begin.rs
+
+- Create various connections
+- Launchs the Event loop with the various handlers

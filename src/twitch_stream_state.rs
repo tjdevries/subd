@@ -38,7 +38,7 @@ pub async fn update_implicit_soundeffects(
     soundeffects: bool,
     pool: &PgPool,
 ) -> Result<()> {
-    let res = sqlx::query!(
+    let _res = sqlx::query!(
         "UPDATE twitch_stream_state SET implicit_soundeffects = $1",
         soundeffects
     )
