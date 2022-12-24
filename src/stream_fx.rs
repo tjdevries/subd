@@ -1,3 +1,8 @@
+use crate::move_transition;
+use crate::obs;
+use anyhow::Result;
+use obws::responses::filters::SourceFilter;
+use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -206,4 +211,71 @@ impl Default for StreamFXSettings {
             rotation_z: Some(0.),
         }
     }
+}
+
+pub async fn default_ortho(
+    source: &str,
+    _duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let new_settings = move_transition::default_orthographic_settings();
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "3D_Orthographic",
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    Ok(())
+}
+
+pub async fn trigger_ortho(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let move_transition_filter_name = format!("Move_{}", filter_name);
+
+    let filter_details = obs_client.filters().get(&source, &filter_name).await;
+
+    let filt: SourceFilter = match filter_details {
+        Ok(val) => val,
+        Err(_) => return Ok(()),
+    };
+
+    let new_settings =
+        match serde_json::from_value::<StreamFXSettings>(filt.settings) {
+            Ok(val) => val,
+            Err(e) => {
+                println!("Error With New Settings: {:?}", e);
+                StreamFXSettings {
+                    ..Default::default()
+                }
+            }
+        };
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    _ = obs::handle_user_input(
+        source,
+        &move_transition_filter_name,
+        filter_setting_name,
+        filter_value,
+        duration,
+        obs::SINGLE_SETTING_VALUE_TYPE,
+        &obs_client,
+    )
+    .await;
+    Ok(())
 }

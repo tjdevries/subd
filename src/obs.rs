@@ -17,30 +17,15 @@ use std::time::Duration;
 const DEFAULT_SCENE: &str = "Primary";
 const MEME_SCENE: &str = "memes";
 const DEFAULT_SOURCE: &str = "begin";
-
-// Constants to Extract:
-// kind: "move_value_filter",
-// kind: "streamfx-filter-blur",
-// let stream_fx_filter_name = "Move_Blur";
-// let stream_fx_filter_name = "Move_Scroll";
-// filter: "Scroll",
-// kind: "scroll_filter",
-// Figure out what the name of this should really be
-// const MULTI_SETTING_VALUE_TYPE: u32 = 1;
-const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-
+pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
-
 pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
 pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
-
 const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
 const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
-
-// TODO: This ain't the name
 const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 const BLUR_FILTER_NAME: &str = "Blur";
@@ -54,32 +39,10 @@ const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
         command: true,
     };
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ScrollSettings {
-    #[serde(rename = "speed_x")]
-    pub speed_x: Option<f32>,
-
-    #[serde(rename = "speed_y")]
-    pub speed_y: Option<f32>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BlurSetting {
-    #[serde(rename = "Commit")]
-    pub commit: Option<String>,
-
-    #[serde(rename = "Filter.Blur.Size")]
-    pub size: Option<f32>,
-
-    #[serde(rename = "Filter.Blur.StepScale")]
-    pub step_scale: Option<bool>,
-
-    #[serde(rename = "Filter.Blur.StepType")]
-    pub step_type: Option<String>,
-
-    #[serde(rename = "Filter.Blur.Version")]
-    pub version: Option<u64>,
-}
+// ==============================================================
+//
+// Structs
+//
 
 // WHY CAN'T THYE FIND YOU!!!!!
 // TODO: What kinda trash name is this???
@@ -144,28 +107,6 @@ pub async fn handle_user_input(
 // 3D Transform Based Filters  //
 // =========================== //
 
-pub async fn default_ortho(
-    source: &str,
-    _duration: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    // Change the underlying 3D Transform Filter
-    // let new_settings = stream_fx::StreamFXOrthographic {
-    //     ..Default::default()
-    // };
-    let new_settings = move_transition::default_orthographic_settings();
-
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "3D_Orthographic",
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-
-    Ok(())
-}
-
 pub async fn trigger_ortho(
     source: &str,
     filter_name: &str,
@@ -215,6 +156,8 @@ pub async fn trigger_ortho(
     .await;
     Ok(())
 }
+
+// ==============================================================================
 
 // TODO: This needs some heavy refactoring
 // This only affects 3D transforms

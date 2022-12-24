@@ -1,6 +1,7 @@
 use crate::move_transition;
 use crate::obs;
 use crate::stream_character;
+use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
 use anyhow::{bail, Result};
@@ -571,7 +572,9 @@ pub async fn handle_obs_commands(
         "!show" => {
             obs::set_enabled(MEME_SCENE, source, true, &obs_client).await
         }
-        "!def_ortho" => obs::default_ortho(source, duration, &obs_client).await,
+        "!def_ortho" => {
+            stream_fx::default_ortho(source, duration, &obs_client).await
+        }
         "!ortho" => {
             if splitmsg.len() < 3 {
                 return Ok(());

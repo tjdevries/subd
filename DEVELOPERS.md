@@ -1,5 +1,19 @@
 # Developers
 
+## Problem Childs
+
+- obs.rs         | 1517
+- obs_routing.rs | 767
+
+- Plugin-Specific
+- MultiCommands
+
+----------------------------------
+
+- uberduck.rs    | 300
+
+---------------------------------------------------
+
 This program connects to many different services, and some of those sources need
 special software installed. So it's important to read careful about how to
 connect (or ignore those features) to each source.

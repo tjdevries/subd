@@ -2,6 +2,7 @@ pub mod audio;
 pub mod commands;
 pub mod move_transition;
 pub mod obs;
+pub mod obs_filters;
 pub mod obs_routing;
 pub mod raffle;
 pub mod sdf_effects;
