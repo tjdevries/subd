@@ -1,15 +1,16 @@
 use crate::move_transition;
 use crate::obs;
+use crate::stream_character;
+use crate::uberduck;
 use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
-use rand::{thread_rng, Rng};
-use serde::{Deserialize, Serialize};
-use sqlx::PgPool;
+use rand::thread_rng;
+use rand::Rng;
 use std::fs;
 use std::path::Path;
-use subd_macros::database_model;
+use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
@@ -20,30 +21,6 @@ const DEFAULT_SOURCE: &str = "begin";
 
 // This should be here
 // const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Voice {
-    category: String,
-    display_name: String,
-    model_id: String,
-    name: String,
-    // Fields we don't need
-    // added_at: f64,
-    // architecture: String,
-    // contributors: Vec<String>,
-    // controls: bool,
-    // is_active: bool,
-    // memberships: Vec<String>,
-    // is_private: bool,
-    // is_primary: bool,
-    // symbol_set: String,
-    // voicemodel_uuid: String,
-    // hifi_gan_vocoder: String,
-    // ml_model_id: u32,
-    // speaker_id: Option<u8>,
-    // language: String,
-}
-
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
@@ -79,8 +56,9 @@ pub async fn handle_obs_commands(
         // Need to finish using this
         "!random" => {
             let contents = fs::read_to_string("data/voices.json").unwrap();
-            let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
-            let mut rng = rand::thread_rng();
+            let voices: Vec<uberduck::Voice> =
+                serde_json::from_str(&contents).unwrap();
+            let mut rng = thread_rng();
             let random_index = rng.gen_range(0..voices.len());
             let random_voice = &voices[random_index];
 
@@ -102,6 +80,13 @@ pub async fn handle_obs_commands(
 
             let voice_text = spoken_string.clone();
 
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: random_voice.name.clone(),
+                    text_source: "Soundboard-Text".to_string(),
+                },
+            ));
+
             let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                 voice: random_voice.name.clone(),
                 message: seal_text,
@@ -117,24 +102,16 @@ pub async fn handle_obs_commands(
 
             // We need to look up first
             // and not change other things actually
-            let model = user_stream_character_information::Model {
-                username: msg.user_name.clone(),
-                voice: voice.to_string(),
-                obs_character: "Seal".to_string(),
-                random: false,
-            };
+            let model =
+                stream_character::user_stream_character_information::Model {
+                    username: msg.user_name.clone(),
+                    voice: voice.to_string(),
+                    obs_character: "Seal".to_string(),
+                    random: false,
+                };
 
             model.save(pool).await?;
 
-            // let voice =
-            //     get_voice_from_username(pool, &msg.user_name.clone()).await?;
-            // println!("Looked up Name: {}", voice);
-            // let contents = fs::read_to_string("data/voices.json").unwrap();
-            // let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
-            // let mut rng = rand::thread_rng();
-            // let random_index = rng.gen_range(0..voices.len());
-            // let random_voice = &voices[random_index];
-            // println!("{:?}", random_voice);
             Ok(())
         }
 
@@ -760,55 +737,4 @@ pub async fn handle_obs_commands(
 
         _ => Ok(()),
     }
-}
-
-// ==============================================================
-
-#[database_model]
-pub mod user_stream_character_information {
-    use super::*;
-
-    pub struct Model {
-        pub username: String,
-        pub obs_character: String,
-        pub voice: String,
-        pub random: bool,
-    }
-}
-
-// TODO: Take in Random
-impl user_stream_character_information::Model {
-    #[allow(dead_code)]
-
-    pub async fn save(self, pool: &PgPool) -> Result<Self> {
-        Ok(sqlx::query_as!(
-            Self,
-            r#"
-            INSERT INTO user_stream_character_information
-            (username, obs_character, voice)
-            VALUES ( $1, $2, $3 )
-            ON CONFLICT (username)
-            DO UPDATE SET
-            obs_character = $2,
-            voice = $3
-            RETURNING username, obs_character, voice, random
-        "#,
-            self.username,
-            self.obs_character,
-            self.voice
-        )
-        .fetch_one(pool)
-        .await?)
-    }
-}
-
-pub async fn get_voice_from_username(
-    pool: &PgPool,
-    username: &str,
-) -> Result<String> {
-    let res = sqlx::query!(
-        "SELECT voice FROM user_stream_character_information WHERE username = $1",
-        username
-    ).fetch_one(pool).await?;
-    Ok(res.voice)
 }

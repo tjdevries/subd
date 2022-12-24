@@ -1,7 +1,7 @@
-use crate::obs_routing;
+use crate::stream_character;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use events::EventHandler;
 use rodio::*;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,6 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
-// use std::time::Duration;
 use std::{thread, time};
 use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
@@ -58,18 +57,17 @@ pub struct StreamCharacter {
     pub username: String,
 }
 
-pub fn twitch_chat_filename(username: String, voice: String) -> String {
-    let timestamp = 1627127393i64;
-    let nanoseconds = 230 * 1000000;
-    // TODO: Don't use deprecated method
-    let datetime = DateTime::<Utc>::from_utc(
-        NaiveDateTime::from_timestamp(timestamp, nanoseconds),
-        Utc,
-    );
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Voice {
+    pub category: String,
+    pub display_name: String,
+    pub model_id: String,
+    pub name: String,
+}
 
+pub fn twitch_chat_filename(username: String, voice: String) -> String {
     let now: DateTime<Utc> = Utc::now();
 
-    // OK NOW
     format!("{}_{}_{}", now.timestamp(), username, voice)
 }
 
@@ -446,17 +444,17 @@ pub async fn build_stream_character(
 ) -> Result<StreamCharacter> {
     let default_voice = "arbys";
 
-    let voice = match obs_routing::get_voice_from_username(pool, username).await
-    {
-        Ok(voice) => voice,
-        Err(_) => {
-            return Ok(StreamCharacter {
-                username: username.to_string(),
-                voice: default_voice.to_string(),
-                source: "Seal".to_string(),
-            })
-        }
-    };
+    let voice =
+        match stream_character::get_voice_from_username(pool, username).await {
+            Ok(voice) => voice,
+            Err(_) => {
+                return Ok(StreamCharacter {
+                    username: username.to_string(),
+                    voice: default_voice.to_string(),
+                    source: "Seal".to_string(),
+                })
+            }
+        };
 
     let character = find_obs_character(&voice);
 
