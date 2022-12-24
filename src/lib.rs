@@ -1,4 +1,5 @@
 pub mod audio;
+pub mod bootstrap;
 pub mod commands;
 pub mod move_transition;
 pub mod obs;

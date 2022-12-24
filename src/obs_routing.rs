@@ -1,3 +1,4 @@
+use crate::bootstrap;
 use crate::move_transition;
 use crate::obs;
 use crate::stream_character;
@@ -582,7 +583,7 @@ pub async fn handle_obs_commands(
 
             let filter_setting_name = &splitmsg[2];
 
-            obs::trigger_ortho(
+            stream_fx::trigger_ortho(
                 source,
                 "3D_Orthographic",
                 filter_setting_name,
@@ -600,7 +601,7 @@ pub async fn handle_obs_commands(
 
             let filter_setting_name = &splitmsg[2];
 
-            obs::trigger_ortho(
+            stream_fx::trigger_ortho(
                 source,
                 "3D_Perspective",
                 filter_setting_name,
@@ -618,7 +619,7 @@ pub async fn handle_obs_commands(
 
             let filter_setting_name = &splitmsg[2];
 
-            obs::trigger_ortho(
+            stream_fx::trigger_ortho(
                 source,
                 "3D_CornerPin",
                 filter_setting_name,
@@ -712,12 +713,13 @@ pub async fn handle_obs_commands(
 
         // TEMP: This is for temporary testing!!!!
         "!split" => {
-            obs::create_split_3d_transform_filters(source, &obs_client).await
+            bootstrap::create_split_3d_transform_filters(source, &obs_client)
+                .await
         }
 
         // This sets up OBS for Begin's current setup
         "!create_filters_for_source" => {
-            obs::create_filters_for_source(source, &obs_client).await
+            bootstrap::create_filters_for_source(source, &obs_client).await
         }
 
         // ========================== //
