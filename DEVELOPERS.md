@@ -115,3 +115,15 @@ make resetdb
 
 At this point you should be ready to compile
 
+
+----
+
+## Architecture
+
+- begin.rs
+    - entry point to running a begin stream
+
+## begin.rs
+
+- Create various connections
+- Launchs the Event loop with the various handlers
