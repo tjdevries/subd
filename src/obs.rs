@@ -789,7 +789,7 @@ pub fn camera_type_config() -> HashMap<&'static str, i32> {
 // Private Functions //
 // ================= //
 
-async fn find_id(
+pub async fn find_id(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,

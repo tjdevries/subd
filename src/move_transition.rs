@@ -1,4 +1,8 @@
+use crate::move_transition;
+use crate::obs;
+use crate::stream_fx;
 use anyhow::Result;
+use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -291,4 +295,121 @@ pub async fn create_move_source_filters(
     };
 
     Ok(())
+}
+
+// ======================================================================================================
+
+pub async fn trigger_ortho(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let move_transition_filter_name = format!("Move_{}", filter_name);
+
+    let filter_details = obs_client.filters().get(&source, &filter_name).await;
+
+    let filt: SourceFilter = match filter_details {
+        Ok(val) => val,
+        Err(_) => return Ok(()),
+    };
+
+    let new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
+        filt.settings,
+    ) {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error With New Settings: {:?}", e);
+            stream_fx::StreamFXSettings {
+                ..Default::default()
+            }
+        }
+    };
+
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    _ = obs::handle_user_input(
+        source,
+        &move_transition_filter_name,
+        filter_setting_name,
+        filter_value,
+        duration,
+        obs::SINGLE_SETTING_VALUE_TYPE,
+        &obs_client,
+    )
+    .await;
+    Ok(())
+}
+
+pub async fn fetch_source_settings(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<move_transition::MoveSourceFilterSettings> {
+    let id = match obs::find_id(scene, source, &obs_client).await {
+        Ok(val) => val,
+        Err(_) => {
+            return Ok(move_transition::MoveSourceFilterSettings {
+                ..Default::default()
+            })
+        }
+    };
+
+    let settings = match obs_client.scene_items().transform(scene, id).await {
+        Ok(val) => val,
+        Err(err) => {
+            println!("Error Fetching Transform Settings: {:?}", err);
+            let blank_transform =
+                obws::responses::scene_items::SceneItemTransform {
+                    ..Default::default()
+                };
+            blank_transform
+        }
+    };
+
+    let transform_text = format!(
+        "pos: x {} y {} rot: 0.0 bounds: x {} y {} crop: l {} t {} r {} b {}",
+        settings.position_x,
+        settings.position_y,
+        settings.bounds_width,
+        settings.bounds_height,
+        settings.crop_left,
+        settings.crop_top,
+        settings.crop_right,
+        settings.crop_bottom
+    );
+
+    let new_settings = move_transition::MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(move_transition::Coordinates {
+            x: Some(settings.bounds_width),
+            y: Some(settings.bounds_height),
+        }),
+        scale: Some(move_transition::Coordinates {
+            x: Some(settings.scale_x),
+            y: Some(settings.scale_y),
+        }),
+        position: Some(move_transition::Coordinates {
+            x: Some(settings.position_x),
+            y: Some(settings.position_y),
+        }),
+        crop: Some(move_transition::MoveSourceCropSetting {
+            left: Some(settings.crop_left as f32),
+            right: Some(settings.crop_right as f32),
+            bottom: Some(settings.crop_bottom as f32),
+            top: Some(settings.crop_top as f32),
+        }),
+        transform_text: Some(transform_text.to_string()),
+    };
+
+    Ok(new_settings)
 }
