@@ -46,6 +46,11 @@ pub async fn handle_obs_commands(
         .get(3)
         .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
 
+    let scene = match obs::find_scene(source).await {
+        Ok(scene) => scene.to_string(),
+        Err(_) => MEME_SCENE.to_string(),
+    };
+
     // NOTE: If we want to extract values like filter_setting_name and filter_value
     // we need to figure a way to look up the defaults per command
     // because they could be different types
@@ -430,11 +435,13 @@ pub async fn handle_obs_commands(
                 _ => default_filter_setting_name,
             };
 
+            println!("Starting to Scroll: {} {}", source, filter_setting_name);
+
             // TODO: THIS 2 is SUPERFLUOUS!!!
             // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
             obs::handle_user_input(
                 source,
-                obs::DEFAULT_SCROLL_FILTER_NAME,
+                obs::MOVE_SCROLL_FILTER_NAME,
                 &filter_setting_name,
                 filter_value,
                 duration,
@@ -449,24 +456,12 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
 
-            // msg.roles.is_twitch_mod()
-            // msg.roles.is_twitch_founder()
-            // msg.roles.is_twitch_staff()
-            // msg.roles.is_twitch_sub()
-            // if msg.roles.is_twitch_vip() {
-
-            // So maybe the source is wrong
-            // maybe the DEFAULT_MOVE_BLUR_FILTER_NAME name is wrong
-            //
-            // the 2 is also problematic
-            // and we aren't pull in the duration
             obs::update_and_trigger_move_value_filter(
                 source,
-                obs::DEFAULT_BLUR_FILTER_NAME,
+                obs::MOVE_BLUR_FILTER_NAME,
                 "Filter.Blur.Size",
                 filter_value,
-                300,
-                // 5000, // duration
+                duration,
                 0,
                 &obs_client,
             )
@@ -512,7 +507,8 @@ pub async fn handle_obs_commands(
                 x: Some(x),
                 y: Some(y),
             };
-            obs::trigger_grow(source, &base_scale, x, y, &obs_client).await
+            obs::trigger_grow(&scene, source, &base_scale, x, y, &obs_client)
+                .await
         }
 
         // ====================== //
@@ -633,12 +629,15 @@ pub async fn handle_obs_commands(
         "!move" => {
             // TODO: Look at this fanciness
             //       cafce25: if let [source, x, y, ..] = splitmsg {...}
+
+            println!("!move {} {}", scene, source);
+
             if splitmsg.len() > 3 {
                 let source = splitmsg[1].as_str();
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
-                obs::move_source(source, x, y, &obs_client).await
+                obs::move_source(&scene, source, x, y, &obs_client).await
             } else {
                 Ok(())
             }

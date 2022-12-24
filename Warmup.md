@@ -19,8 +19,6 @@ linux arch alphine
 !work
 
 !scroll begin speed_x 500 10000
-
-!scroll shark speed_x 500
 ```
 
 #### Working on
@@ -43,5 +41,5 @@ We have to wait extra long or something
 
 !move snoop 500 500
 
-!scale snoop 200 200
+!scale snoop 200 2000
 ```

@@ -29,9 +29,12 @@ const DEFAULT_SOURCE: &str = "begin";
 // const MULTI_SETTING_VALUE_TYPE: u32 = 1;
 const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 
-const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
+pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
+pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+
+pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
-const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
+pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 
 const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
@@ -121,7 +124,12 @@ pub async fn handle_user_input(
         overlay: None,
     };
     obs_client.filters().set_settings(new_settings).await?;
-    thread::sleep(Duration::from_millis(100));
+
+    // Does this need to be longer
+    thread::sleep(Duration::from_millis(200));
+
+    println!("Attempting to enable Filter: {} {}", source, filter_name);
+
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,
@@ -406,6 +414,9 @@ pub async fn update_and_trigger_move_value_filter(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
+    // we need a pause here
+    thread::sleep(Duration::from_millis(400));
+
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,
@@ -420,21 +431,22 @@ pub async fn update_and_trigger_move_value_filter(
 // =============== //
 
 pub async fn scale_source(
+    scene: &str,
     source: &str,
     x: f32,
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    // If we can't find the id for the passed in source
-    // we just return Ok
-    //
-    // Should we log an error here?
-    //
-    // is there a more Idiomatic pattern?
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    println!("Looking for ID: {} {}", scene, source);
+
+    let id = match find_id(scene, source, &obs_client).await {
         Ok(val) => val,
-        Err(_) => return Ok(()),
+        Err(err) => {
+            println!("Error find_id: {:?}", err);
+            return Ok(());
+        }
     };
+    println!("ID: {}", id);
 
     let new_scale = Scale {
         x: Some(x),
@@ -446,13 +458,15 @@ pub async fn scale_source(
     };
 
     let set_transform = SetTransform {
-        scene: DEFAULT_SCENE,
+        scene,
         item_id: id,
         transform: scene_transform,
     };
     match obs_client.scene_items().set_transform(set_transform).await {
         Ok(_) => {}
-        Err(_) => {}
+        Err(err) => {
+            println!("Error Set Transform: {:?}", err);
+        }
     }
 
     Ok(())
@@ -486,12 +500,13 @@ pub async fn scale(
 
 // Move a Source using x, y and NO Filters
 pub async fn move_source(
+    scene: &str,
     source: &str,
     x: f32,
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    let id = match find_id(scene, source, &obs_client).await {
         Ok(val) => val,
         Err(e) => {
             println!("Error Finding ID {:?} {:?}", source, e);
@@ -510,7 +525,7 @@ pub async fn move_source(
 
     // TODO: figure out looking up Scene, based on Source
     let set_transform = SetTransform {
-        scene: MEME_SCENE,
+        scene,
         item_id: id,
         transform: scene_transform,
     };
@@ -1186,7 +1201,17 @@ pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
 // Update and Trigger Filters //
 // ========================== //
 
+pub async fn find_scene(source: &str) -> Result<String> {
+    let scene = match source {
+        "begin" => DEFAULT_SCENE,
+        _ => MEME_SCENE,
+    };
+
+    Ok(scene.to_string())
+}
+
 pub async fn trigger_grow(
+    scene: &str,
     source: &str,
     base_scale: &Scale,
     x: f32,
@@ -1217,7 +1242,8 @@ pub async fn trigger_grow(
             };
         }
     } else {
-        if let Err(err) = scale_source(&source, x, y, &obs_client).await {
+        if let Err(err) = scale_source(&scene, &source, x, y, &obs_client).await
+        {
             println!("Error Scaling Source: {}", err)
         };
     }
