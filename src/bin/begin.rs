@@ -4,7 +4,6 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Decoder;
 use rodio::*;
-use sqlx::PgPool;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -12,7 +11,6 @@ use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_db::get_db_pool;
-use subd_macros::database_model;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
@@ -23,6 +21,7 @@ use tracing_subscriber::EnvFilter;
 
 pub struct OBSMessageHandler {
     obs_client: OBSClient,
+    pool: sqlx::PgPool,
 }
 
 pub struct TriggerHotkeyHandler {
@@ -40,6 +39,13 @@ pub struct SourceVisibilityHandler {
 pub struct TransformOBSTextHandler {
     obs_client: OBSClient,
 }
+
+pub struct SoundHandler {
+    sink: Sink,
+    pool: sqlx::PgPool,
+}
+
+// ================================================================================================
 
 #[async_trait]
 impl EventHandler for SourceVisibilityHandler {
@@ -154,100 +160,6 @@ impl EventHandler for TransformOBSTextHandler {
     }
 }
 
-pub struct SoundHandler {
-    sink: Sink,
-    pool: sqlx::PgPool,
-}
-
-// ================================================================================================
-
-#[database_model]
-pub mod user_stream_character_information {
-    use super::*;
-
-    pub struct Model {
-        pub username: String,
-        pub obs_character: String,
-        pub voice: String,
-        pub random: bool,
-    }
-}
-
-// TODO: Take in Random
-impl user_stream_character_information::Model {
-    #[allow(dead_code)]
-
-    pub async fn save(self, pool: &PgPool) -> Result<Self> {
-        Ok(sqlx::query_as!(
-            Self,
-            r#"
-            INSERT INTO user_stream_character_information
-            (username, obs_character, voice)
-            VALUES ( $1, $2, $3 )
-            ON CONFLICT (username)
-            DO UPDATE SET
-            obs_character = $2,
-            voice = $3
-            RETURNING username, obs_character, voice, random
-        "#,
-            self.username,
-            self.obs_character,
-            self.voice
-        )
-        .fetch_one(pool)
-        .await?)
-    }
-}
-
-pub async fn get_voice_from_username(
-    pool: &PgPool,
-    username: &str,
-) -> Result<String> {
-    let res = sqlx::query!(
-        "SELECT voice FROM user_stream_character_information WHERE username = $1",
-        username
-    ).fetch_one(pool).await?;
-    Ok(res.voice)
-}
-
-// So we need a save
-
-// pub async fn get_user_id(pool: &sqlx::PgPool, username: &str) -> Result<()> {
-//     // pub async fn get_user_id(pool: &sqlx::PgPool, username: &str) -> Result<()> {
-//     let x = Ok(sqlx::query!(
-//         "SELECT * FROM user_stream_character_information WHERE username = $1",
-//         username
-//     )
-//     .fetch_one(pool)
-//     .await?)
-//     .map(|x| x);
-
-//     Ok(())
-
-//     // I can't figure out what to return
-//     // match x {
-//     //     Ok(record) => Ok(&record.voice),
-//     //     Err(_) => Ok("brock-samson"),
-//     // }
-//     // I can unpack it here
-//     // x.
-
-//     // Ok(sqlx::query_as!(
-//     //     Self,
-//     //     r#"
-//     //     INSERT INTO user_messages (user_id, platform, contents)
-//     //     VALUES ($1, $2, $3)
-//     //     RETURNING user_id, platform as "platform: UserPlatform", contents
-//     //     "#,
-//     //     self.user_id,
-//     //     self.platform as _,
-//     //     self.contents
-//     // )
-//     // .fetch_one(pool)
-//     // .await?)
-//     // .map(|x| UserID(x.user_id)))
-// }
-
 // ================================================================================================
 
 // Move the Sound Handler
@@ -287,53 +199,13 @@ impl EventHandler for SoundHandler {
                 }
             }
             let voice_text = msg.contents.to_string();
-            let stream_character =
-                server::uberduck::build_stream_character(&msg.user_name);
+            let stream_character = server::uberduck::build_stream_character(
+                &self.pool,
+                &msg.user_name,
+            )
+            .await?;
 
-            // we are saving and looking up!!!
-            //
-            // We need a save command
-            // then we need to move the code
-            // and we need to work on Parsing the Voices
-            // We got past the sound handler!!!
-            // let default_voice = "brock_samson";
-            let default_voice = "fuck";
-
-            let split = voice_text.split(" ");
-            let vec = split.collect::<Vec<&str>>();
-            let temp_v = vec[1];
-            // HERE
-            let model = user_stream_character_information::Model {
-                username: msg.user_name.clone(),
-                // voice: default_voice.to_string(),
-                voice: temp_v.to_string(),
-                obs_character: "Seal".to_string(),
-                random: false,
-            };
-
-            // Do we look up first????
-            model.save(&self.pool).await?;
-
-            let voice =
-                get_voice_from_username(&self.pool, &msg.user_name.clone())
-                    .await?;
-
-            println!("Looked up Name: {}", voice);
-            // Since we await we get the string
-            // save_user_voice(&self.pool, &msg.user_name, "Seal", default_voice)
-            //     .await?;
-
-            // Then we have to read in
-            // let voice = match get_voice_from_username(
-            //     &self.pool,
-            //     &msg.user_name.clone(),
-            // )
-            // .await?
-            // {
-            //     Some(voice) => voice,
-            //     None => continue,
-            // };
-
+            // We pass the voice off the stream character
             if msg.roles.is_twitch_sub() {
                 // 1 or 2 words breaks the AI
                 let split = voice_text.split(" ");
@@ -431,6 +303,7 @@ impl EventHandler for OBSMessageHandler {
             match server::obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
+                &self.pool,
                 splitmsg,
                 msg,
             )
@@ -502,7 +375,8 @@ async fn main() -> Result<()> {
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
             .await?;
-    event_loop.push(OBSMessageHandler { obs_client });
+    let pool = get_db_pool().await;
+    event_loop.push(OBSMessageHandler { pool, obs_client });
 
     // Works for Arch Linux
     let (_stream, stream_handle) = server::audio::get_output_stream("pulse");
@@ -513,14 +387,15 @@ async fn main() -> Result<()> {
 
     // So there' out DB!!!
     let pool = get_db_pool().await;
-    // We need the
     event_loop.push(SoundHandler { sink, pool });
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    event_loop.push(server::uberduck::UberDuckHandler { sink });
+    let pool = get_db_pool().await;
+    event_loop.push(server::uberduck::UberDuckHandler { pool, sink });
 
     // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    // event_loop.push(server::uberduck::ExpertUberDuckHandler { sink });
+    // let pool = get_db_pool().await;
+    // event_loop.push(server::uberduck::ExpertUberDuckHandler { pool, sink });
 
     // You need your own OBS client then
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();

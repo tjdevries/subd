@@ -1,3 +1,4 @@
+use crate::obs_routing;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, NaiveDateTime, Utc};
@@ -9,7 +10,7 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
-use std::time::Duration;
+// use std::time::Duration;
 use std::{thread, time};
 use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
@@ -19,10 +20,12 @@ use tokio::sync::broadcast;
 
 pub struct UberDuckHandler {
     pub sink: Sink,
+    pub pool: sqlx::PgPool,
 }
 
 pub struct ExpertUberDuckHandler {
     pub sink: Sink,
+    pub pool: sqlx::PgPool,
 }
 
 // If we parse the full list this is all we'll use
@@ -47,6 +50,7 @@ struct UberDuckFileResponse {
 }
 
 // Should they be optional???
+#[derive(Serialize, Deserialize, Debug)]
 pub struct StreamCharacter {
     // text_source: String,
     pub voice: String,
@@ -66,7 +70,7 @@ pub fn twitch_chat_filename(username: String, voice: String) -> String {
     let now: DateTime<Utc> = Utc::now();
 
     // OK NOW
-    format!("{}_{}", now.timestamp(), username)
+    format!("{}_{}_{}", now.timestamp(), username, voice)
 }
 
 #[async_trait]
@@ -83,15 +87,6 @@ impl EventHandler for ExpertUberDuckHandler {
                 _ => continue,
             };
 
-            //
-            // msg.voice_text: String,
-            // msg.message: String,
-            // msg.username: String,
-            // self
-            // msg
-
-            // We need to check the message
-            //
             let ch = msg.message.chars().next().unwrap();
             if ch == '!' {
                 continue;
@@ -101,7 +96,8 @@ impl EventHandler for ExpertUberDuckHandler {
 
             // We determine character
             // entirely based on username
-            let stream_character = build_stream_character(&msg.username);
+            let stream_character =
+                build_stream_character(&self.pool, &msg.username).await?;
 
             let (username, secret) = uberduck_creds();
 
@@ -244,16 +240,6 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
-            // Do we filter ourt Requests in the UberDuckHandler or before
-            //
-            // msg.voice_text: String,
-            // msg.message: String,
-            // msg.username: String,
-            // self
-            // msg
-
-            // We need to check the message
-            //
             let ch = msg.message.chars().next().unwrap();
             if ch == '!' {
                 continue;
@@ -263,7 +249,12 @@ impl EventHandler for UberDuckHandler {
 
             // We determine character
             // entirely based on username
-            let stream_character = build_stream_character(&msg.username);
+            // HERE WE LOOK UP!!!
+
+            let stream_character =
+                build_stream_character(&self.pool, &msg.username).await?;
+
+            println!("\n\tStream Character: {:?}\n", stream_character);
 
             let (username, secret) = uberduck_creds();
 
@@ -447,83 +438,97 @@ fn find_obs_character(voice: &str) -> &str {
 
 // Character Builder
 // Then Just use that
-pub fn build_stream_character(username: &str) -> StreamCharacter {
-    // Start with username
-    //
-    // Username picks Voice
-    //
-    // Voice picks Source and Hotkeys
+pub async fn build_stream_character(
+    pool: &sqlx::PgPool,
+    username: &str,
+) -> Result<StreamCharacter> {
+    //// println!("Looked up Name: {}", voice);
+    //// let contents = fs::read_to_string("data/voices.json").unwrap();
+    //// let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
+    //// let mut rng = rand::thread_rng();
+    //// let random_index = rng.gen_range(0..voices.len());
+    //// let random_voice = &voices[random_index];
+    //// println!("{:?}", random_voice);
+    //// Start with username
+    ////
+    //// Username picks Voice
+    ////
+    //// Voice picks Source and Hotkeys
 
-    // let base_source = "Seal";
-    // let base_source = "Birb";
-    // let base_source = "Kevin";
-    // let base_source = "Crabs";
-    // let base_source = "Teej";
-    // let base_source = "ArtMatt";
+    //// let base_source = "Seal";
+    //// let base_source = "Birb";
+    //// let base_source = "Kevin";
+    //// let base_source = "Crabs";
+    //// let base_source = "Teej";
+    //// let base_source = "ArtMatt";
 
-    // ====== //
-    // VOICES //
-    // ====== //
-    // let default_voice = "brock-samson";
-    // let default_voice = "alex-jones";
-    // let default_voice = "lil-jon";
-    // let default_voice = "duke-nukem";
-    // let default_voice = "e40";
-    // let default_voice = "sir-david-attenborough";
-    let default_voice = "morgan-freeman";
-    // let default_voice = "carl-sagan";
-    // let default_voice = "johnny-bravo";
+    //// ====== //
+    //// VOICES //
+    //// ====== //
+    //// let default_voice = "brock-samson";
+    //// let default_voice = "alex-jones";
+    //// let default_voice = "lil-jon";
+    //// let default_voice = "duke-nukem";
+    //// let default_voice = "e40";
+    //// let default_voice = "sir-david-attenborough";
+    //let default_voice = "morgan-freeman";
 
-    // let default_voice = "e40";
-    // steveharvey
-    // let default_voice = "danny-devito-angry";
-    // let default_voice = "goku";
-    // let default_voice = "mickey-mouse";
-    // let default_voice = "mojo-jojo";
-    // let default_voice = "tommy-pickles";
-    // duke-nukem
+    //// let default_voice = "carl-sagan";
+    //// let default_voice = "johnny-bravo";
 
-    let voices2: HashMap<&str, &str> = HashMap::from([
-        // ("beginbot", "mr-krabs-joewhyte"),
-        // ("beginbot", "danny-devito-angry"),
-        // ("beginbot", "big-gay-al"),
-        // ("beginbot", "mojo-jojo"),
-        // ("beginbot", "mr-krabs-joewhyte"),
-        // ("beginbot", "mojo-jojo"),
-        // ("zanuss", "richard-ayoade"),
-        ("Basileus__", "mr-krabs-joewhyte"),
-        ("Ravonus", "mojo-jojo"),
-        ("beginbot", "theneedledrop"),
-        ("beginbotbot", "mojo-jojo"),
-        ("kungfooMe", "slj"),
-        // ("kungfooMe", "rodney-dangerfield"),
-        // ("beginbot", "chief-keef"),
-        // ("beginbotbot", "brock-samson"),
-        // ("beginbotbot", "theneedledrop"),
-        ("ArtMattDank", "dr-nick"),
-        // ("ArtMattDank", "mojo-jojo"),
-        ("carlvandergeest", "danny-devito-angry"),
-        ("stupac62", "stewie-griffin"),
-        // ("stupac62", "rossmann"),
-        // ("stupac62", "ross-geller"),
-        ("swenson", "mike-wazowski"),
-        // ("zanuss", "arbys"),
-        ("zanuss", "spongebob"),
-        ("rockerBOO", "c-3po"),
-        // ("teej_dv", "mr-krabs-joewhyte"),
-        // ("theprimeagen", "big-gay-al"),
-    ]);
+    //// let default_voice = "e40";
+    //// steveharvey
+    //// let default_voice = "danny-devito-angry";
+    //// let default_voice = "goku";
+    //// let default_voice = "mickey-mouse";
+    //// let default_voice = "mojo-jojo";
+    //// let default_voice = "tommy-pickles";
+    //// duke-nukem
 
-    let voice = match voices2.get(username) {
-        Some(v) => v,
-        None => default_voice,
-    };
+    //let voices2: HashMap<&str, &str> = HashMap::from([
+    //    // ("beginbot", "mr-krabs-joewhyte"),
+    //    // ("beginbot", "danny-devito-angry"),
+    //    // ("beginbot", "big-gay-al"),
+    //    // ("beginbot", "mojo-jojo"),
+    //    // ("beginbot", "mr-krabs-joewhyte"),
+    //    // ("beginbot", "mojo-jojo"),
+    //    // ("zanuss", "richard-ayoade"),
+    //    ("Basileus__", "mr-krabs-joewhyte"),
+    //    ("Ravonus", "mojo-jojo"),
+    //    ("beginbot", "theneedledrop"),
+    //    ("beginbotbot", "mojo-jojo"),
+    //    ("kungfooMe", "slj"),
+    //    // ("kungfooMe", "rodney-dangerfield"),
+    //    // ("beginbot", "chief-keef"),
+    //    // ("beginbotbot", "brock-samson"),
+    //    // ("beginbotbot", "theneedledrop"),
+    //    ("ArtMattDank", "dr-nick"),
+    //    // ("ArtMattDank", "mojo-jojo"),
+    //    ("carlvandergeest", "danny-devito-angry"),
+    //    ("stupac62", "stewie-griffin"),
+    //    // ("stupac62", "rossmann"),
+    //    // ("stupac62", "ross-geller"),
+    //    ("swenson", "mike-wazowski"),
+    //    // ("zanuss", "arbys"),
+    //    ("zanuss", "spongebob"),
+    //    ("rockerBOO", "c-3po"),
+    //    // ("teej_dv", "mr-krabs-joewhyte"),
+    //    // ("theprimeagen", "big-gay-al"),
+    //]);
 
-    let character = find_obs_character(voice);
+    //let voice = match voices2.get(username) {
+    //    Some(v) => v,
+    //    None => default_voice,
+    //};
 
-    StreamCharacter {
+    //// here we should look inside the database for the voice!!!!!!
+    ////
+    let voice = obs_routing::get_voice_from_username(pool, username).await?;
+    let character = find_obs_character(&voice);
+
+    Ok(StreamCharacter {
         username: username.to_string(),
         voice: voice.to_string(),
         source: character.to_string(),
-    }
+    })
 }
