@@ -2,6 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
+use rand::rngs::ThreadRng;
 use rodio::Decoder;
 use rodio::*;
 use server::audio;
@@ -10,6 +11,8 @@ use server::obs_combo;
 use server::obs_hotkeys;
 use server::obs_routing;
 use server::obs_source;
+use server::obs_text;
+use server::stream_character;
 use server::twitch_stream_state;
 use server::uberduck;
 use std::collections::HashSet;
@@ -27,7 +30,9 @@ use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::EnvFilter;
 
+// if I add random to this thing!!!
 pub struct OBSMessageHandler {
+    // rng: ThreadRng,
     obs_client: OBSClient,
     pool: sqlx::PgPool,
 }
@@ -149,20 +154,6 @@ impl EventHandler for TransformOBSTextHandler {
     }
 }
 
-pub async fn breakup_text(contents: String) -> Result<String> {
-    let mut seal_text = contents.clone();
-    let spaces: Vec<_> = contents.match_indices(" ").collect();
-    let line_length_modifier = 20;
-    let mut line_length_limit = 20;
-    for val in spaces.iter() {
-        if val.0 > line_length_limit {
-            seal_text.replace_range(val.0..=val.0, "\n");
-            line_length_limit = line_length_limit + line_length_modifier;
-        }
-    }
-    Ok(seal_text)
-}
-
 // ================================================================================================
 
 // Looks through raw-text to either play TTS or play soundeffects
@@ -191,10 +182,11 @@ impl EventHandler for SoundHandler {
                 _ => continue,
             };
 
-            let seal_text = match breakup_text(msg.contents.clone()).await {
-                Ok(seal_text) => seal_text,
-                Err(_) => continue,
-            };
+            let seal_text =
+                match obs_text::breakup_text(msg.contents.clone()).await {
+                    Ok(seal_text) => seal_text,
+                    Err(_) => continue,
+                };
 
             let voice_text = msg.contents.to_string();
 
@@ -205,9 +197,11 @@ impl EventHandler for SoundHandler {
                 continue;
             };
 
-            let stream_character =
-                uberduck::build_stream_character(&self.pool, &msg.user_name)
-                    .await?;
+            let stream_character = stream_character::build_stream_character(
+                &self.pool,
+                &msg.user_name,
+            )
+            .await?;
 
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
@@ -418,6 +412,8 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    let mut rng = rand::thread_rng();
+    // So we can generate one on the top!!!
     event_loop.push(OBSMessageHandler {
         obs_client,
         pool: pool.clone(),

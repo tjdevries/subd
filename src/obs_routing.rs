@@ -16,6 +16,11 @@ use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
+// use rand::rngs::StdRng;
+// use rand::thread_rng;
+// use rand::Rng;
+// use rand::SeedableRng;
+use std::fs;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -58,19 +63,27 @@ pub async fn handle_obs_commands(
     match splitmsg[0].as_str() {
         // This needs to be Mod only
         "!implicit" => {
-            twitch_stream_state::update_implicit_soundeffects(true, &pool)
-                .await?;
+            let _ =
+                twitch_stream_state::update_implicit_soundeffects(true, &pool)
+                    .await;
             Ok(())
         }
-
         "!random" => {
-            uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
+            // Not Ideal
+            let contents = fs::read_to_string("data/voices.json").unwrap();
+            let voices: Vec<uberduck::Voice> =
+                serde_json::from_str(&contents).unwrap();
+
+            // let mut rng = thread_rng();
+            // let mut rng: StdRng = SeedableRng::from_entropy();
+            // let random_index = rng.gen_range(0..voices.len());
+
+            uberduck::use_random_voice(msg.contents.clone(), msg.user_name)
                 .await?;
             Ok(())
         }
 
-        "!set_character" => Ok(()),
-
+        // "!set_character" => Ok(()),
         "!set_voice" => {
             let default_voice = "brock_samson".to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
@@ -443,7 +456,6 @@ pub async fn handle_obs_commands(
         "!chat" => obs_hotkeys::trigger_hotkey("OBS_KEY_L", &obs_client).await,
 
         "!code" => obs_hotkeys::trigger_hotkey("OBS_KEY_H", &obs_client).await,
-
         _ => Ok(()),
     }
 }

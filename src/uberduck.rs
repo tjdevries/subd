@@ -1,19 +1,22 @@
 use crate::obs;
+use crate::obs_text;
 use crate::stream_character;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use events::EventHandler;
-use rand::thread_rng;
-use rand::Rng;
+// use std::rand::{task_rng, Rng};
+
+// use rand::thread_rng;
 use rodio::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
+// use std::rand;
+// use std::rand::Rng;
 use std::{thread, time};
 use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
@@ -53,15 +56,6 @@ struct UberDuckFileResponse {
     finished_at: Option<String>,
 }
 
-// Should they be optional???
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StreamCharacter {
-    // text_source: String,
-    pub voice: String,
-    pub source: String,
-    pub username: String,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Voice {
     pub category: String,
@@ -90,8 +84,6 @@ impl EventHandler for UberDuckHandler {
                 _ => continue,
             };
 
-            // right here we crashed
-            // !voice weed-goblin
             let ch = msg.message.chars().next().unwrap();
             if ch == '!' {
                 continue;
@@ -99,12 +91,11 @@ impl EventHandler for UberDuckHandler {
 
             println!("We are trying for an Uberduck request: {}", msg.voice);
 
-            // We determine character
-            // entirely based on username
-            // HERE WE LOOK UP!!!
-
-            let stream_character =
-                build_stream_character(&self.pool, &msg.username).await?;
+            let stream_character = stream_character::build_stream_character(
+                &self.pool,
+                &msg.username,
+            )
+            .await?;
             println!("\n\tStream Character: {:?}\n", stream_character);
 
             let source = match msg.source {
@@ -145,6 +136,7 @@ impl EventHandler for UberDuckHandler {
                     .send()
                     .await?;
 
+                // TODO: abstract this out
                 // Show Loading Duck
                 let _ = tx.send(Event::SourceVisibilityRequest(
                     SourceVisibilityRequest {
@@ -155,7 +147,6 @@ impl EventHandler for UberDuckHandler {
                 ));
 
                 let text = response.text().await?;
-                // we need to this to be better
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
                 println!("Uberduck Finished at: {:?}", file_resp.finished_at);
@@ -179,13 +170,10 @@ impl EventHandler for UberDuckHandler {
                             },
                         ));
 
-                        // So the filename is fucking up
-                        // it's not unique
                         let filename =
                             twitch_chat_filename(msg.username, msg.voice);
                         let full_filename = format!("{}.wav", filename);
 
-                        // I WANT TO SAVE THIS FILE
                         println!("Trying to Save: {}", full_filename);
                         let local_path = format!(
                             "./TwitchChatTTSRecordings/{}",
@@ -204,7 +192,6 @@ impl EventHandler for UberDuckHandler {
                             },
                         ));
 
-                        // Hmm We shouldn't fail here then
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
                         self.sink.append(
@@ -254,43 +241,15 @@ fn uberduck_creds() -> (String, String) {
 // we need to trigger 3 filters each time
 // and we can get the names based off a pattern
 // This is not the ideal method
-fn find_obs_character(voice: &str) -> &str {
-    // This makes no sense
-    let default_hotkeys = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
+pub fn find_obs_character(_voice: &str) -> &str {
+    // TODO
+    //      - first username
+    //      - then voice
+    //
+    //
+    let default_source = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
 
-    // We need defaults for the source
-    // TODO: We need one of these for each voice
-    let mut hotkeys: HashMap<&str, &str> = HashMap::from([
-        ("brock-samson", "Seal"),
-        ("alex-jones", "Seal"),
-        ("lil-jon", "Seal"),
-        ("theneedledrop", "Birb"),
-        ("richard-ayoade", "Kevin"),
-        ("spongebob", "Kevin"),
-        ("arbys", "Kevin"),
-        ("slj", "Teej"),
-        ("rodney-dangerfield", "Teej"),
-        // ("theneedledrop", "Kevin"),
-        // ("theneedledrop", "Seal"),
-        // ("theneedledrop", "ArtMatt"),
-        // ("mojo-jojo", "Birb"),
-        ("mojo-jojo", "Teej"),
-        // ("mojo-jojo", "ArtMatt"),
-        // ("mojo-jojo", "Kevin"),
-        ("mr-krabs-joewhyte", "Crabs"),
-        ("danny-devito-angry", "Kevin"),
-        ("stewie-griffin", "ArtMatt"),
-        ("ross-geller", "ArtMatt"),
-        ("rossmann", "ArtMatt"),
-        ("c-3po", "C3PO"),
-        ("carl-sagan", "Seal"),
-        ("dr-robotnik-movie", "Randall"),
-    ]);
-
-    match hotkeys.remove(voice) {
-        Some(v) => v,
-        None => default_hotkeys,
-    }
+    default_source
 }
 
 pub async fn set_voice(
@@ -298,17 +257,13 @@ pub async fn set_voice(
     username: String,
     pool: &sqlx::PgPool,
 ) -> Result<()> {
-    // This should be abstracted
-
-    // We need to look up first
-    // and not change other things actually
     let model = stream_character::user_stream_character_information::Model {
         username: username.clone(),
         voice: voice.to_string(),
+        // This should be abstracted
         obs_character: "Seal".to_string(),
         random: false,
     };
-
     model.save(pool).await?;
 
     Ok(())
@@ -327,22 +282,13 @@ pub async fn talk_in_voice(
         return Ok(());
     }
 
-    let mut seal_text = spoken_string.clone();
-    let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
-    let line_length_modifier = 20;
-    let mut line_length_limit = 20;
-    for val in spaces.iter() {
-        if val.0 > line_length_limit {
-            seal_text.replace_range(val.0..=val.0, "\n");
-            line_length_limit = line_length_limit + line_length_modifier;
-        }
-    }
+    let seal_text = match obs_text::breakup_text(contents.clone()).await {
+        Ok(seal_text) => seal_text,
+        Err(_) => return Ok(()),
+    };
 
-    // let voice_text = msg.contents.to_string();
     let voice_text = spoken_string.clone();
-    // I need to get some logic to grab all the text after x position
     println!("We trying for the voice: {} - {}", voice, voice_text);
-    // I can get that from user name
     let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
         voice: voice.to_string(),
         message: seal_text,
@@ -356,72 +302,45 @@ pub async fn talk_in_voice(
 pub async fn use_random_voice(
     _contents: String,
     username: String,
-    tx: &broadcast::Sender<Event>,
+    // tx: &broadcast::Sender<Event>,
 ) -> Result<()> {
     let contents = fs::read_to_string("data/voices.json").unwrap();
     let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
-    let mut rng = thread_rng();
-    let random_index = rng.gen_range(0..voices.len());
-    let random_voice = &voices[random_index];
+
+    // THIS SUCKs
+    // let mut rng = rand::task_rng();
+
+    // If I add this it all fails
+    // let mut rng = thread_rng();
+    // let random_index = rng.gen_range(0..voices.len());
+    // let random_voice = &voices[random_index];
+    //
+    // I can't add this line in an async function
+    // let mut rng = rand::thread_rng();
+    let random_voice = &voices[0];
 
     println!("Random Voice Chosen: {:?}", random_voice);
 
     let spoken_string = contents.clone().replace("!random", "");
 
-    let mut seal_text = spoken_string.clone();
-    let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
-    let line_length_modifier = 20;
-    let mut line_length_limit = 20;
-    for val in spaces.iter() {
-        if val.0 > line_length_limit {
-            seal_text.replace_range(val.0..=val.0, "\n");
-            line_length_limit = line_length_limit + line_length_modifier;
-        }
-    }
+    let seal_text = match obs_text::breakup_text(contents.clone()).await {
+        Ok(seal_text) => seal_text,
+        Err(_) => return Ok(()),
+    };
 
     let voice_text = spoken_string.clone();
 
-    let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
-        message: random_voice.name.clone(),
-        text_source: "Soundboard-Text".to_string(),
-    }));
+    // let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
+    //     message: random_voice.name.clone(),
+    //     text_source: "Soundboard-Text".to_string(),
+    // }));
 
-    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-        voice: random_voice.name.clone(),
-        message: seal_text,
-        voice_text,
-        username,
-        source: None,
-    }));
+    // let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+    //     voice: random_voice.name.clone(),
+    //     message: seal_text,
+    //     voice_text,
+    //     username,
+    //     source: None,
+    // }));
     Ok(())
-}
-
-// Character Builder
-// Then Just use that
-pub async fn build_stream_character(
-    pool: &sqlx::PgPool,
-    username: &str,
-) -> Result<StreamCharacter> {
-    // TODO: Abstract this out
-    let default_voice = "arbys";
-
-    let voice =
-        match stream_character::get_voice_from_username(pool, username).await {
-            Ok(voice) => voice,
-            Err(_) => {
-                return Ok(StreamCharacter {
-                    username: username.to_string(),
-                    voice: default_voice.to_string(),
-                    source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
-                })
-            }
-        };
-
-    let character = find_obs_character(&voice);
-
-    Ok(StreamCharacter {
-        username: username.to_string(),
-        voice: voice.to_string(),
-        source: character.to_string(),
-    })
 }

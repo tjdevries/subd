@@ -1,10 +1,22 @@
 use crate::move_transition;
 use crate::move_transition_bootstrap;
+use crate::obs;
+use crate::uberduck;
 use anyhow::Result;
 use obws::Client as OBSClient;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::path::Path;
 use subd_macros::database_model;
+
+// Should they be optional???
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StreamCharacter {
+    // text_source: String,
+    pub voice: String,
+    pub source: String,
+    pub username: String,
+}
 
 #[database_model]
 pub mod user_stream_character_information {
@@ -257,4 +269,33 @@ pub async fn create_new_obs_character(
     )
     .await;
     Ok(())
+}
+
+// Character Builder
+// Then Just use that
+pub async fn build_stream_character(
+    pool: &sqlx::PgPool,
+    username: &str,
+) -> Result<StreamCharacter> {
+    // TODO: Abstract this out
+    let default_voice = "arbys";
+
+    let voice = match get_voice_from_username(pool, username).await {
+        Ok(voice) => voice,
+        Err(_) => {
+            return Ok(StreamCharacter {
+                username: username.to_string(),
+                voice: default_voice.to_string(),
+                source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+            })
+        }
+    };
+
+    let character = uberduck::find_obs_character(&voice);
+
+    Ok(StreamCharacter {
+        username: username.to_string(),
+        voice: voice.to_string(),
+        source: character.to_string(),
+    })
 }
