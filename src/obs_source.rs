@@ -174,3 +174,82 @@ pub async fn bottom_right(
     )
     .await
 }
+
+// ================= //
+// Hide/Show Actions //
+// ================= //
+
+pub async fn show_source(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    set_enabled(scene, source, true, obs_client).await
+}
+
+pub async fn set_enabled(
+    scene: &str,
+    source: &str,
+    enabled: bool,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    match find_id(scene, source, &obs_client).await {
+        Err(e) => {
+            println!("Error finding ID for source {:?} {:?}", source, e)
+        }
+        Ok(id) => {
+            let set_enabled: obws::requests::scene_items::SetEnabled =
+                obws::requests::scene_items::SetEnabled {
+                    enabled,
+                    item_id: id,
+                    scene,
+                };
+
+            match obs_client.scene_items().set_enabled(set_enabled).await {
+                Err(e) => {
+                    println!("Error Enabling Source: {:?} {:?}", source, e);
+                }
+                _ => (),
+            }
+        }
+    };
+    Ok(())
+}
+
+async fn set_enabled_on_all_sources(
+    scene: &str,
+    enabled: bool,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    match obs_client.scene_items().list(scene).await {
+        Ok(items) => {
+            for item in items {
+                match set_enabled(
+                    scene,
+                    &item.source_name,
+                    enabled,
+                    &obs_client,
+                )
+                .await
+                {
+                    Ok(_) => (),
+                    Err(e) => {
+                        println!(
+                            "Error SetEnabled State of source {:?} {:?}",
+                            item.source_name, e
+                        );
+                    }
+                }
+            }
+            return Ok(());
+        }
+        Err(e) => {
+            println!("Error listing Scene Items for {:?} {:?}", scene, e);
+            return Ok(());
+        }
+    }
+}
+
+pub async fn hide_sources(scene: &str, obs_client: &OBSClient) -> Result<()> {
+    set_enabled_on_all_sources(scene, false, &obs_client).await
+}

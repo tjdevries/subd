@@ -488,7 +488,7 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
 
-            obs::update_and_trigger_move_value_filter(
+            move_transition::update_and_trigger_move_value_filter(
                 source,
                 obs::MOVE_BLUR_FILTER_NAME,
                 "Filter.Blur.Size",
@@ -508,7 +508,7 @@ pub async fn handle_obs_commands(
         "!noblur" | "!unblur" => {
             if msg.roles.is_twitch_mod() {
                 println!("WE GOT A MOD OVER HERE");
-                obs::update_and_trigger_move_value_filter(
+                move_transition::update_and_trigger_move_value_filter(
                     source,
                     obs::DEFAULT_BLUR_FILTER_NAME,
                     "Filter.Blur.Size",
@@ -571,9 +571,9 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        "!hide" => obs::hide_sources(MEME_SCENE, &obs_client).await,
+        "!hide" => obs_source::hide_sources(MEME_SCENE, &obs_client).await,
         "!show" => {
-            obs::set_enabled(MEME_SCENE, source, true, &obs_client).await
+            obs_source::set_enabled(MEME_SCENE, source, true, &obs_client).await
         }
         "!def_ortho" => {
             stream_fx::default_ortho(source, duration, &obs_client).await
@@ -678,9 +678,9 @@ pub async fn handle_obs_commands(
         }
 
         // TODO: I'd like one-for every corner
-        "!tr" => obs::top_right(source, &obs_client).await,
+        "!tr" => move_transition::top_right(source, &obs_client).await,
 
-        "!bl" => obs::bottom_right(source, &obs_client).await,
+        "!bl" => move_transition::bottom_right(source, &obs_client).await,
 
         // ================ //
         // Compound Effects //
@@ -753,12 +753,23 @@ pub async fn handle_obs_commands(
         // Show / Hide Subscenes //
         // ====================== //
         "!memes" => {
-            obs::set_enabled(DEFAULT_SCENE, MEME_SCENE, true, &obs_client).await
+            obs_source::set_enabled(
+                DEFAULT_SCENE,
+                MEME_SCENE,
+                true,
+                &obs_client,
+            )
+            .await
         }
 
         "!nomemes" | "!nojokes" | "!work" => {
-            obs::set_enabled(DEFAULT_SCENE, MEME_SCENE, false, &obs_client)
-                .await
+            obs_source::set_enabled(
+                DEFAULT_SCENE,
+                MEME_SCENE,
+                false,
+                &obs_client,
+            )
+            .await
         }
 
         // ==================== //

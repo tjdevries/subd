@@ -7,7 +7,6 @@ use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use std::collections::HashMap;
 use std::thread;
-use std::time;
 use std::time::Duration;
 
 // TODO: We need to audit all of these
@@ -96,92 +95,6 @@ pub async fn handle_user_input(
 }
 
 // ==============================================================================
-
-// ================ //
-// Just Move Things //
-// ================ //
-
-// We need to move these as well
-pub async fn top_right(scene_item: &str, obs_client: &OBSClient) -> Result<()> {
-    let base_settings = move_transition::fetch_source_settings(
-        DEFAULT_SCENE,
-        &scene_item,
-        &obs_client,
-    )
-    .await?;
-
-    let new_settings =
-        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
-    let filter_name = format!("Move_Source_{}", scene_item);
-    move_with_move_source(&filter_name, new_settings, &obs_client).await
-}
-
-pub async fn bottom_right(
-    scene_item: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let settings = move_transition::fetch_source_settings(
-        DEFAULT_SCENE,
-        &scene_item,
-        &obs_client,
-    )
-    .await?;
-
-    let new_settings =
-        move_transition::custom_filter_settings(settings, 12.0, 878.0);
-    let filter_name = format!("Move_Source_{}", scene_item);
-    move_with_move_source(&filter_name, new_settings, &obs_client).await
-}
-
-// ================= //
-// Hide/Show Actions //
-// ================= //
-
-pub async fn show_source(
-    scene: &str,
-    source: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    set_enabled(scene, source, true, obs_client).await
-}
-
-async fn set_enabled_on_all_sources(
-    scene: &str,
-    enabled: bool,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    match obs_client.scene_items().list(scene).await {
-        Ok(items) => {
-            for item in items {
-                match set_enabled(
-                    scene,
-                    &item.source_name,
-                    enabled,
-                    &obs_client,
-                )
-                .await
-                {
-                    Ok(_) => (),
-                    Err(e) => {
-                        println!(
-                            "Error SetEnabled State of source {:?} {:?}",
-                            item.source_name, e
-                        );
-                    }
-                }
-            }
-            return Ok(());
-        }
-        Err(e) => {
-            println!("Error listing Scene Items for {:?} {:?}", scene, e);
-            return Ok(());
-        }
-    }
-}
-
-pub async fn hide_sources(scene: &str, obs_client: &OBSClient) -> Result<()> {
-    set_enabled_on_all_sources(scene, false, &obs_client).await
-}
 
 // ========== //
 // Fetch Info //
@@ -342,40 +255,6 @@ pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
     Ok(())
 }
 
-// =================== //
-// Hide / Show Sources //
-// =================== //
-
-// MOBR
-pub async fn set_enabled(
-    scene: &str,
-    source: &str,
-    enabled: bool,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    match obs_source::find_id(scene, source, &obs_client).await {
-        Err(e) => {
-            println!("Error finding ID for source {:?} {:?}", source, e)
-        }
-        Ok(id) => {
-            let set_enabled: obws::requests::scene_items::SetEnabled =
-                obws::requests::scene_items::SetEnabled {
-                    enabled,
-                    item_id: id,
-                    scene,
-                };
-
-            match obs_client.scene_items().set_enabled(set_enabled).await {
-                Err(e) => {
-                    println!("Error Enabling Source: {:?} {:?}", source, e);
-                }
-                _ => (),
-            }
-        }
-    };
-    Ok(())
-}
-
 // ============== //
 // Audio Settings //
 // ============== //
@@ -458,103 +337,5 @@ async fn update_move_source_filters(
     };
     obs_client.filters().set_settings(new_filter).await?;
 
-    Ok(())
-}
-
-pub async fn update_and_trigger_move_value_filter(
-    source: &str,
-    filter_name: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    value_type: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    // So we get defaults here
-    let filter_details =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    let mut new_settings = match serde_json::from_value::<
-        move_transition::MoveSingleValueSetting,
-    >(filter_details.settings)
-    {
-        Ok(val) => val,
-        Err(e) => {
-            println!("Error: {:?}", e);
-            move_transition::MoveSingleValueSetting {
-                ..Default::default()
-            }
-        }
-    };
-
-    // We update some values
-    new_settings.setting_name = String::from(filter_setting_name);
-    new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-
-    new_settings.value_type = value_type;
-
-    // Update the Filter
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-
-    // we need a pause here
-    thread::sleep(Duration::from_millis(400));
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-// So I need a version to update a text value
-// start very unspecific
-pub async fn update_and_trigger_text_move_filter(
-    source: &str,
-    filter_name: &str,
-    new_text: &String,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let mut new_settings: move_transition::MoveTextFilter = Default::default();
-    new_settings.move_value_type = Some(4);
-    new_settings.setting_name = "text".to_string();
-    new_settings.setting_text = new_text.to_string();
-    new_settings.value_type = 4;
-    new_settings.duration = Some(300);
-    new_settings.custom_duration = true;
-    new_settings.setting_decimals = Some(1);
-
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-
-    obs_client.filters().set_settings(new_settings).await?;
-
-    // This fixes the problem
-    let ten_millis = time::Duration::from_millis(300);
-
-    thread::sleep(ten_millis);
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
     Ok(())
 }

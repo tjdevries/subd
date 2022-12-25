@@ -159,7 +159,7 @@ async fn find_id(
 // =======================================================================================
 
 pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
-    _ = obs::update_and_trigger_move_value_filter(
+    _ = move_transition::update_and_trigger_move_value_filter(
         source,
         "Move_Blur",
         "Filter.Blur.Size",

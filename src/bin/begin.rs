@@ -61,7 +61,7 @@ impl EventHandler for SourceVisibilityHandler {
                 _ => continue,
             };
 
-            let _ = server::obs::set_enabled(
+            let _ = server::obs_source::set_enabled(
                 &msg.scene,
                 &msg.source,
                 msg.enabled,
@@ -144,7 +144,7 @@ impl EventHandler for TransformOBSTextHandler {
             };
 
             let filter_name = format!("Transform{}", msg.text_source);
-            server::obs::update_and_trigger_text_move_filter(
+            server::move_transition::update_and_trigger_text_move_filter(
                 &msg.text_source,
                 &filter_name,
                 &msg.message,
