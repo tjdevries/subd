@@ -4,6 +4,14 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Decoder;
 use rodio::*;
+use server::audio;
+use server::move_transition;
+use server::obs_combo;
+use server::obs_hotkeys;
+use server::obs_routing;
+use server::obs_source;
+use server::twitch_stream_state;
+use server::uberduck;
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
@@ -61,7 +69,7 @@ impl EventHandler for SourceVisibilityHandler {
                 _ => continue,
             };
 
-            let _ = server::obs_source::set_enabled(
+            let _ = obs_source::set_enabled(
                 &msg.scene,
                 &msg.source,
                 msg.enabled,
@@ -86,7 +94,7 @@ impl EventHandler for StreamCharacterHandler {
                 _ => continue,
             };
 
-            let _ = server::obs_combo::trigger_character_filters(
+            let _ = obs_combo::trigger_character_filters(
                 &msg.source,
                 &self.obs_client,
                 msg.enabled,
@@ -110,8 +118,7 @@ impl EventHandler for TriggerHotkeyHandler {
                 _ => continue,
             };
 
-            server::obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client)
-                .await?;
+            obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
         }
     }
 }
@@ -131,14 +138,13 @@ impl EventHandler for TransformOBSTextHandler {
             };
 
             let filter_name = format!("Transform{}", msg.text_source);
-            let _ =
-                server::move_transition::update_and_trigger_text_move_filter(
-                    &msg.text_source,
-                    &filter_name,
-                    &msg.message,
-                    &self.obs_client,
-                )
-                .await;
+            let _ = move_transition::update_and_trigger_text_move_filter(
+                &msg.text_source,
+                &filter_name,
+                &msg.message,
+                &self.obs_client,
+            )
+            .await;
         }
     }
 }
@@ -199,15 +205,12 @@ impl EventHandler for SoundHandler {
                 continue;
             };
 
-            let stream_character = server::uberduck::build_stream_character(
-                &self.pool,
-                &msg.user_name,
-            )
-            .await?;
+            let stream_character =
+                uberduck::build_stream_character(&self.pool, &msg.user_name)
+                    .await?;
 
             let state =
-                server::twitch_stream_state::get_twitch_state(&self.pool)
-                    .await?;
+                twitch_stream_state::get_twitch_state(&self.pool).await?;
 
             if msg.roles.is_twitch_staff() {
                 let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
@@ -326,7 +329,7 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            match server::obs_routing::handle_obs_commands(
+            match obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
                 &self.pool,
@@ -421,7 +424,7 @@ async fn main() -> Result<()> {
     });
 
     // Works for Arch Linux
-    let (_stream, stream_handle) = server::audio::get_output_stream("pulse");
+    let (_stream, stream_handle) = audio::get_output_stream("pulse");
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -433,7 +436,7 @@ async fn main() -> Result<()> {
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     let pool = get_db_pool().await;
-    event_loop.push(server::uberduck::UberDuckHandler { pool, sink });
+    event_loop.push(uberduck::UberDuckHandler { pool, sink });
 
     let obs_client = OBSClient::connect(
         obs_websocket_address.clone(),
