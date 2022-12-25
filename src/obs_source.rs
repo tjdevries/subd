@@ -300,3 +300,29 @@ pub async fn trigger_grow(
     }
     Ok(())
 }
+
+pub async fn print_source_info(
+    source: &str,
+    scene: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let id = match find_id(obs::MEME_SCENE, source, &obs_client).await {
+        Ok(val) => val,
+        Err(_) => return Ok(()),
+    };
+
+    let settings = match obs_client.scene_items().transform(scene, id).await {
+        Ok(val) => val,
+        Err(err) => {
+            println!("Error Fetching Transform Settings: {:?}", err);
+            let blank_transform =
+                obws::responses::scene_items::SceneItemTransform {
+                    ..Default::default()
+                };
+            blank_transform
+        }
+    };
+
+    println!("Source: {:?}", settings);
+    Ok(())
+}

@@ -1,5 +1,4 @@
 use crate::move_transition;
-use crate::obs_source;
 use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
@@ -23,15 +22,6 @@ pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 
-// This is for hotkeys
-pub const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
-    obws::requests::hotkeys::KeyModifiers {
-        shift: true,
-        control: true,
-        alt: true,
-        command: true,
-    };
-
 // ==============================================================
 
 // TODO: What kinda trash name is this???
@@ -48,6 +38,8 @@ pub async fn handle_user_input(
         "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
         source, filter_name, filter_setting_name, duration, filter_value,
     );
+
+    // THIS IS A SINGLE SETTING MOVE HANDLER
 
     let filter_details =
         match obs_client.filters().get(&source, &filter_name).await {
@@ -98,32 +90,6 @@ pub async fn handle_user_input(
 // Fetch Info //
 // ========== //
 
-pub async fn print_source_info(
-    source: &str,
-    scene: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let id = match obs_source::find_id(MEME_SCENE, source, &obs_client).await {
-        Ok(val) => val,
-        Err(_) => return Ok(()),
-    };
-
-    let settings = match obs_client.scene_items().transform(scene, id).await {
-        Ok(val) => val,
-        Err(err) => {
-            println!("Error Fetching Transform Settings: {:?}", err);
-            let blank_transform =
-                obws::responses::scene_items::SceneItemTransform {
-                    ..Default::default()
-                };
-            blank_transform
-        }
-    };
-
-    println!("Source: {:?}", settings);
-    Ok(())
-}
-
 pub async fn print_filter_info(
     source: &str,
     words: &str,
@@ -141,51 +107,4 @@ pub async fn print_filter_info(
 
     println!("Filter Details {:?}", filter_details);
     Ok(String::from(format!("{:?}", filter_details)))
-}
-
-// =======================================================================================================
-
-// ============= //
-// Change Scenes //
-// ============= //
-
-pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
-    obs_client.scenes().set_current_program_scene(&name).await?;
-    Ok(())
-}
-
-pub async fn find_scene(source: &str) -> Result<String> {
-    let scene = match source {
-        "begin" => DEFAULT_SCENE,
-        _ => MEME_SCENE,
-    };
-
-    Ok(scene.to_string())
-}
-
-// =======================================================================
-
-// ======== //
-// Hot Keys //
-// ======== //
-
-pub async fn trigger_hotkey(key: &str, obs_client: &OBSClient) -> Result<()> {
-    _ = obs_client
-        .hotkeys()
-        .trigger_by_sequence(key, SUPER_KEY)
-        .await;
-    Ok(())
-}
-
-// ============== //
-// Audio Settings //
-// ============== //
-
-pub async fn set_audio_status(
-    _obs_conn: &obws::Client,
-    _name: &str,
-    _status: bool,
-) -> Result<()> {
-    // obs_conn.sources().(name, !status).await?;
-    Ok(())
 }

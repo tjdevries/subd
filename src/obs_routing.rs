@@ -2,6 +2,8 @@ use crate::bootstrap;
 use crate::move_transition;
 use crate::obs;
 use crate::obs_combo;
+use crate::obs_hotkeys;
+use crate::obs_scenes;
 use crate::obs_source;
 use crate::sdf_effects;
 use crate::stream_character;
@@ -52,7 +54,7 @@ pub async fn handle_obs_commands(
         .get(3)
         .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
 
-    let scene = match obs::find_scene(source).await {
+    let scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
         Err(_) => MEME_SCENE.to_string(),
     };
@@ -749,7 +751,8 @@ pub async fn handle_obs_commands(
 
         // TODO: Take in Scene
         "!source" => {
-            obs::print_source_info(source, DEFAULT_SCENE, &obs_client).await
+            obs_source::print_source_info(source, DEFAULT_SCENE, &obs_client)
+                .await
         }
 
         "!outline" => {
@@ -784,9 +787,9 @@ pub async fn handle_obs_commands(
         // Change Scenes in OBS //
         // ==================== //
         // Rename These Commands
-        "!chat" => obs::trigger_hotkey("OBS_KEY_L", &obs_client).await,
+        "!chat" => obs_hotkeys::trigger_hotkey("OBS_KEY_L", &obs_client).await,
 
-        "!code" => obs::trigger_hotkey("OBS_KEY_H", &obs_client).await,
+        "!code" => obs_hotkeys::trigger_hotkey("OBS_KEY_H", &obs_client).await,
 
         _ => Ok(()),
     }

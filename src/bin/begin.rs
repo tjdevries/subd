@@ -124,7 +124,8 @@ impl EventHandler for TriggerHotkeyHandler {
                 _ => continue,
             };
 
-            server::obs::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
+            server::obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client)
+                .await?;
         }
     }
 }

@@ -1,5 +1,6 @@
 use crate::move_transition;
 use crate::obs;
+use crate::obs_hotkeys;
 use anyhow::Result;
 use obws;
 use obws::requests::scene_items::{Scale, SceneItemTransform, SetTransform};
@@ -186,9 +187,10 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     )
     .await?;
 
+    // TODO: This should triggered from a fucntion
     obs_client
         .hotkeys()
-        .trigger_by_sequence("OBS_KEY_U", obs::SUPER_KEY)
+        .trigger_by_sequence("OBS_KEY_U", obs_hotkeys::SUPER_KEY)
         .await?;
     Ok(())
 }
