@@ -68,6 +68,7 @@ pub async fn handle_obs_commands(
                 .await?;
             Ok(())
         }
+
         // Need to finish using this
         "!random" => {
             let contents = fs::read_to_string("data/voices.json").unwrap();
@@ -112,24 +113,7 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        "!set_character" => {
-            // let default_character = "Seal".to_string();
-            // let character: &str = splitmsg.get(1).unwrap_or(&default_character);
-
-            // // We need to look up first
-            // // and not change other things actually
-            // let model =
-            //     stream_character::user_stream_character_information::Model {
-            //         username: msg.user_name.clone(),
-            //         voice: voice.to_string(),
-            //         obs_character: "Seal".to_string(),
-            //         random: false,
-            //     };
-
-            // model.save(pool).await?;
-
-            Ok(())
-        }
+        "!set_character" => Ok(()),
 
         "!set_voice" => {
             let default_voice = "brock_samson".to_string();
@@ -191,64 +175,8 @@ pub async fn handle_obs_commands(
         }
 
         "!soundboard_text" => {
-            let scene = "Characters";
-
-            // let font_flags = obws::common::FontFlags{ }
-            let font = obws::requests::custom::source_settings::Font {
-                face: "Arial",
-                size: 256,
-                style: "Regular",
-                ..Default::default()
-            };
-
-            // So these are fugazi???
-            // I expect these colors to be something
-            let color1 = rgb::RGBA::new(255, 0, 132, 0);
-            let color2 = rgb::RGBA::new(0, 3, 255, 1);
-
-            let text_settings =
-                obws::requests::custom::source_settings::TextFt2SourceV2 {
-                    outline: true,
-                    drop_shadow: true,
-                    text: "SoundBoard!",
-                    color1,
-                    color2,
-                    font,
-                    custom_width: 5,
-                    log_lines: 5,
-                    word_wrap: false,
-                    ..Default::default() // We might want to experiment from file
-                };
-
-            let text_source_name = "Soundboard-Text";
-            let _ = obs_client
-                .inputs()
-                .create(obws::requests::inputs::Create {
-                    scene,
-                    input: &text_source_name,
-                    kind: "text_ft2_source_v2",
-                    settings: Some(text_settings),
-                    enabled: Some(true),
-                })
-                .await;
-
-            let filter_name = "TransformSoundBoard-text";
-            let move_text_filter = move_transition::MoveTextFilter {
-                setting_name: "text".to_string(),
-                setting_text: "Ok NOW".to_string(),
-                value_type: 5,
-                ..Default::default()
-            };
-            let new_filter = obws::requests::filters::Create {
-                source: &text_source_name,
-                filter: &filter_name,
-                kind: "move_value_filter",
-                settings: Some(move_text_filter),
-            };
-            if let Err(err) = obs_client.filters().create(new_filter).await {
-                println!("Error Creating Filter: {filter_name} | {:?}", err);
-            };
-
+            move_transition_bootstrap::create_soundboard_text(obs_client)
+                .await?;
             Ok(())
         }
         "!durf" => Ok(()),
@@ -256,199 +184,11 @@ pub async fn handle_obs_commands(
         // Stream Characters //
         // ================== //
         "!character" => {
-            let scene = "Characters";
-
-            // let base_source = "Seal";
-            // let base_source = "Birb";
-            // let base_source = "Kevin";
-            let base_source = "Randall";
-            // let base_source = "Teej";
-            // let base_source = "ArtMatt";
-
-            let filename = format!(
-                "/home/begin/stream/Stream/StreamCharacters/{}.png",
-                base_source
-            );
-
-            // TODO: We need to pull in this source
-            let image_source =
-                obws::requests::custom::source_settings::ImageSource {
-                    file: Path::new(&filename),
-                    ..Default::default()
-                };
-            let _ = obs_client
-                .inputs()
-                .create(obws::requests::inputs::Create {
-                    scene,
-                    input: &base_source,
-                    kind: "image_source",
-                    settings: Some(image_source),
-                    enabled: Some(true),
-                })
-                .await;
-
-            let speech_bubble =
-                obws::requests::custom::source_settings::ImageSource {
-                file: Path::new("/home/begin/stream/Stream/StreamCharacters/speech_bubble.png"),
-                    ..Default::default()
-                };
-            let speech_source_name = format!("{}-speech_bubble", base_source);
-            let _ = obs_client
-                .inputs()
-                .create(obws::requests::inputs::Create {
-                    scene,
-                    input: &speech_source_name,
-                    kind: "image_source",
-                    settings: Some(speech_bubble),
-                    enabled: Some(true),
-                })
-                .await;
-
-            // let font_flags = obws::common::FontFlags{ }
-            let font = obws::requests::custom::source_settings::Font {
-                face: "Arial",
-                size: 256,
-                style: "Regular",
-                ..Default::default()
-            };
-
-            // So these are fugazi???
-            // I expect these colors to be something
-            let color1 = rgb::RGBA::new(255, 0, 132, 0);
-            let color2 = rgb::RGBA::new(0, 3, 255, 1);
-
-            let text_settings =
-                obws::requests::custom::source_settings::TextFt2SourceV2 {
-                    outline: true,
-                    drop_shadow: true,
-                    text: "This Rules we are doing something!",
-                    color1,
-                    color2,
-                    font,
-                    custom_width: 5,
-                    log_lines: 5,
-                    word_wrap: false,
-                    ..Default::default() // We might want to experiment from file
-                };
-
-            let text_source_name = format!("{}-text", base_source);
-            let _ = obs_client
-                .inputs()
-                .create(obws::requests::inputs::Create {
-                    scene,
-                    input: &text_source_name,
-                    kind: "text_ft2_source_v2",
-                    settings: Some(text_settings),
-                    enabled: Some(true),
-                })
-                .await;
-
-            // ======================================================
-            // This is creating the Text Transform Filter
-            // Not Sure of This Name
-            // We just need a better name
-            // Create Move-Value for 3D Transform Filter
-            let filter_name = format!("Transform{}-text", base_source);
-            let move_text_filter = move_transition::MoveTextFilter {
-                setting_name: "text".to_string(),
-                setting_text: "Ok NOW".to_string(),
-                value_type: 4,
-                ..Default::default()
-            };
-            let new_filter = obws::requests::filters::Create {
-                source: &text_source_name,
-                filter: &filter_name,
-                kind: "move_value_filter",
-                settings: Some(move_text_filter),
-            };
-            if let Err(err) = obs_client.filters().create(new_filter).await {
-                println!("Error Creating Filter: {filter_name} | {:?}", err);
-            };
-
-            // move_transition_hide_source.json
-            // move_transition_hide_speech_bubble.json
-            // move_transition_hide_text.json
-            // move_transition_show_speech_bubble.json
-            // move_transition_show_text.json
-            //
-            // ======================================================
-            let file_path = "/home/begin/code/subd/obs_data/move_transition_show_source.json";
-            let filter_name = format!("Show{}", base_source);
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &base_source,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
-
-            let filter_name = format!("Hide{}", base_source);
-            let file_path = "/home/begin/code/subd/obs_data/move_transition_hide_source.json";
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &base_source,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
-
-            let filter_name = format!("Show{}-text", base_source);
-            let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_show_text.json";
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &text_source_name,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
-
-            let filter_name = format!("Hide{}-text", base_source);
-            let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_hide_text.json";
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &text_source_name,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
-
-            let filter_name = format!("Show{}-speech_bubble", base_source);
-            let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_show_speech_bubble.json";
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &speech_source_name,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
-
-            let filter_name = format!("Hide{}-speech_bubble", base_source);
-            let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_hide_speech_bubble.json";
-            let _ =
-                move_transition_bootstrap::create_move_source_filter_from_file(
-                    scene,
-                    &speech_source_name,
-                    &filter_name,
-                    file_path,
-                    &obs_client,
-                )
-                .await;
+            stream_character::create_new_obs_character(obs_client).await?;
             Ok(())
         }
+
+        // ===============================================================================================
 
         // ================== //
         // Scrolling Sources //
@@ -488,6 +228,9 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        // ============ //
+        // Blur Sources //
+        // ============ //
         "!blur" => {
             let filter_value = splitmsg
                 .get(2)
@@ -558,17 +301,7 @@ pub async fn handle_obs_commands(
         // ====================== //
         // 3D Transforming Sources//
         // ====================== //
-
-        // This shit is annoying
-        // I almost want to divide it into 3 commands
-        // based on Camera Type
-        // and we have all 3
-        // that might be too much
-        // but i also might be exactly what we want
-        // only spin is wonky
-        // Should also add !spinz
         "!spin" | "!spinx" | "spiny" => {
-            // HMMMMM
             let default_filter_setting_name = String::from("z");
             let filter_setting_name =
                 splitmsg.get(2).unwrap_or(&default_filter_setting_name);
@@ -588,6 +321,10 @@ pub async fn handle_obs_commands(
             obs_source::set_enabled(obs::MEME_SCENE, source, true, &obs_client)
                 .await
         }
+
+        // ==================================================================
+        // == 3D Filter =====================================================
+        // ==================================================================
         "!def_ortho" => {
             stream_fx::default_ortho(source, duration, &obs_client).await
         }
@@ -738,21 +475,6 @@ pub async fn handle_obs_commands(
         "!create_filters_for_source" => {
             bootstrap::create_filters_for_source(source, &obs_client).await
         }
-
-        // ========================== //
-        // Show Info About OBS Setup  //
-        // ========================== //
-        // "!filter" => {
-        //     let (_command, words) = msg.message_text.split_once(" ").unwrap();
-
-        //     // TODO: Handle this error
-        //     let details =
-        //         print_filter_info(&source, words, &obs_client)
-        //             .await?;
-        //     client
-        //         .say(twitch_username.clone(), format!("{:?}", details))
-        //         .await
-        // }
 
         // TODO: Take in Scene
         "!source" => {

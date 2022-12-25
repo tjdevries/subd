@@ -82,6 +82,8 @@ pub struct MoveMultipleValuesSetting {
     pub rotation_z: Option<f32>,
 }
 
+// THESE EXTRA VALUES ARE BULLSHIT!!!
+// WE NEED TO ABSTRACT THEM AWAY
 // TODO: We need to organize this by:
 //       - generic values
 //       - values per filter-type
@@ -207,75 +209,6 @@ pub fn custom_filter_settings(
     base_settings
 }
 
-// ===============================================================================
-// == FETCHING ===================================================================
-// ===============================================================================
-
-pub async fn fetch_source_settings(
-    scene: &str,
-    source: &str,
-    obs_client: &OBSClient,
-) -> Result<MoveSourceFilterSettings> {
-    let id = match obs_source::find_id(scene, source, &obs_client).await {
-        Ok(val) => val,
-        Err(_) => {
-            return Ok(MoveSourceFilterSettings {
-                ..Default::default()
-            })
-        }
-    };
-
-    let settings = match obs_client.scene_items().transform(scene, id).await {
-        Ok(val) => val,
-        Err(err) => {
-            println!("Error Fetching Transform Settings: {:?}", err);
-            let blank_transform =
-                obws::responses::scene_items::SceneItemTransform {
-                    ..Default::default()
-                };
-            blank_transform
-        }
-    };
-
-    let transform_text = format!(
-        "pos: x {} y {} rot: 0.0 bounds: x {} y {} crop: l {} t {} r {} b {}",
-        settings.position_x,
-        settings.position_y,
-        settings.bounds_width,
-        settings.bounds_height,
-        settings.crop_left,
-        settings.crop_top,
-        settings.crop_right,
-        settings.crop_bottom
-    );
-
-    let new_settings = MoveSourceFilterSettings {
-        source: Some(source.to_string()),
-        duration: Some(4444),
-        bounds: Some(Coordinates {
-            x: Some(settings.bounds_width),
-            y: Some(settings.bounds_height),
-        }),
-        scale: Some(Coordinates {
-            x: Some(settings.scale_x),
-            y: Some(settings.scale_y),
-        }),
-        position: Some(Coordinates {
-            x: Some(settings.position_x),
-            y: Some(settings.position_y),
-        }),
-        crop: Some(MoveSourceCropSetting {
-            left: Some(settings.crop_left as f32),
-            right: Some(settings.crop_right as f32),
-            bottom: Some(settings.crop_bottom as f32),
-            top: Some(settings.crop_top as f32),
-        }),
-        transform_text: Some(transform_text.to_string()),
-    };
-
-    Ok(new_settings)
-}
-
 // ===============================================================
 // == TEXT =======================================================
 // ===============================================================
@@ -307,6 +240,7 @@ pub async fn update_and_trigger_text_move_filter(
     obs_client.filters().set_settings(new_settings).await?;
 
     // This fixes the problem
+    // TODO: this should be abstracted into a constant
     let ten_millis = time::Duration::from_millis(300);
 
     thread::sleep(ten_millis);
@@ -391,16 +325,17 @@ pub async fn update_and_trigger_move_value_filter(
     new_settings.value_type = value_type;
 
     // Create a SetSettings struct & use it to update the OBS settings
+    // TODO: Should this moved into the update_move_source_filters function?
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: &filter_name,
         settings: new_settings,
         overlay: None,
     };
-
     obs_client.filters().set_settings(new_settings).await?;
 
     // Pause so the settings can take effect before triggering the filter
+    // TODO: Extract out into variable
     thread::sleep(Duration::from_millis(400));
 
     // Trigger the filter
@@ -436,4 +371,74 @@ async fn update_move_source_filters(
     obs_client.filters().set_settings(new_filter).await?;
 
     Ok(())
+}
+
+// ===============================================================================
+// == FETCHING ===================================================================
+// ===============================================================================
+
+// This function is long!!!
+pub async fn fetch_source_settings(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<MoveSourceFilterSettings> {
+    let id = match obs_source::find_id(scene, source, &obs_client).await {
+        Ok(val) => val,
+        Err(_) => {
+            return Ok(MoveSourceFilterSettings {
+                ..Default::default()
+            })
+        }
+    };
+
+    let settings = match obs_client.scene_items().transform(scene, id).await {
+        Ok(val) => val,
+        Err(err) => {
+            println!("Error Fetching Transform Settings: {:?}", err);
+            let blank_transform =
+                obws::responses::scene_items::SceneItemTransform {
+                    ..Default::default()
+                };
+            blank_transform
+        }
+    };
+
+    let transform_text = format!(
+        "pos: x {} y {} rot: 0.0 bounds: x {} y {} crop: l {} t {} r {} b {}",
+        settings.position_x,
+        settings.position_y,
+        settings.bounds_width,
+        settings.bounds_height,
+        settings.crop_left,
+        settings.crop_top,
+        settings.crop_right,
+        settings.crop_bottom
+    );
+
+    let new_settings = MoveSourceFilterSettings {
+        source: Some(source.to_string()),
+        duration: Some(4444),
+        bounds: Some(Coordinates {
+            x: Some(settings.bounds_width),
+            y: Some(settings.bounds_height),
+        }),
+        scale: Some(Coordinates {
+            x: Some(settings.scale_x),
+            y: Some(settings.scale_y),
+        }),
+        position: Some(Coordinates {
+            x: Some(settings.position_x),
+            y: Some(settings.position_y),
+        }),
+        crop: Some(MoveSourceCropSetting {
+            left: Some(settings.crop_left as f32),
+            right: Some(settings.crop_right as f32),
+            bottom: Some(settings.crop_bottom as f32),
+            top: Some(settings.crop_top as f32),
+        }),
+        transform_text: Some(transform_text.to_string()),
+    };
+
+    Ok(new_settings)
 }

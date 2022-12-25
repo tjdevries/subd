@@ -2,7 +2,6 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
-// This is for hotkeys
 pub const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
     obws::requests::hotkeys::KeyModifiers {
         shift: true,

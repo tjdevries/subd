@@ -159,6 +159,7 @@ impl EventHandler for UberDuckHandler {
                 match file_resp.path {
                     Some(new_url) => {
                         let _ = tx.send(Event::SourceVisibilityRequest(
+                            // Abstract these values out
                             SourceVisibilityRequest {
                                 scene: "Characters".to_string(),
                                 source: "loading_duck".to_string(),
@@ -294,6 +295,7 @@ pub async fn build_stream_character(
     pool: &sqlx::PgPool,
     username: &str,
 ) -> Result<StreamCharacter> {
+    // TODO: Abstract this out
     let default_voice = "arbys";
 
     let voice =

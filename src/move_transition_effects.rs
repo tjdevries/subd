@@ -55,6 +55,7 @@ pub async fn spin(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // This feels like it belongs somewhere higher-up in the code
     let setting_name = match filter_setting_name {
         "spin" | "z" => "Rotation.Z",
         "spinx" | "x" => "Rotation.X",
@@ -69,6 +70,7 @@ pub async fn spin(
         filter_value,
         duration,
         2, // not sure if this is the right value
+        // THIS NEEDS TO BE ABSTRACTEDDDDDD
         &obs_client,
     )
     .await
@@ -92,30 +94,19 @@ pub async fn trigger_3d(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let camera_types_per_filter = stream_fx::camera_type_config();
-    // if !camera_types_per_filter.contains_key(&filter_setting_name) {
-    //     continue;
-    // }
 
-    // THIS CRASHESSSSSSS
-    // WE NEED TO LOOK UP
     let camera_number = camera_types_per_filter[&filter_setting_name];
 
-    // Look up information about the current "3D Transform" filter
-    // IS THIS FUCKED????
     let filter_details = obs_client
         .filters()
         .get(&source, obs::THE_3D_TRANSFORM_FILTER_NAME)
         .await;
 
-    // Does this leave early??????
     let filt: SourceFilter = match filter_details {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
 
-    // TODO: Explore we are seeing this:
-    // Error With New Settings: Error("missing field `Commit`", line: 0, column: 0)
-    // // IS THIS STILL HAPPENING???
     let mut new_settings = match serde_json::from_value::<
         stream_fx::StreamFXSettings,
     >(filt.settings)
@@ -129,10 +120,7 @@ pub async fn trigger_3d(
         }
     };
 
-    // I think we also want to return though!!!!
-    // and not continue on here
-
-    // resetting this Camera Mode
+    // Eesetting this Camera Mode
     new_settings.camera_mode = Some(camera_number);
 
     let new_settings = obws::requests::filters::SetSettings {
@@ -145,7 +133,7 @@ pub async fn trigger_3d(
 
     move_transition::update_and_trigger_move_value_filter(
         source,
-        "Move_Stream_FX",
+        "Move_Stream_FX", // TODO Abstract this
         filter_setting_name,
         filter_value,
         duration,

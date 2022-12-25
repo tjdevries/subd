@@ -1,5 +1,15 @@
 # Developers
 
+- Clean up OBS_routing.rs
+- Keep cleaning up constants
+- Clean up individual effects
+- Abstract out the filter_type number everywhere
+- clean up uberduck
+- Figure out changing states and showing the chat easily
+- Map out handlers
+
+---
+
 ## Move-Transition Refactor
 
 - move_source
