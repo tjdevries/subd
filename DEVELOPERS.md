@@ -1,12 +1,10 @@
 # Developers
 
-- Clean up OBS_routing.rs
-- Keep cleaning up constants
+- clean up uberduck
+- Map out handlers
+- Figure out changing states and showing the chat easily
 - Clean up individual effects
 - Abstract out the filter_type number everywhere
-- clean up uberduck
-- Figure out changing states and showing the chat easily
-- Map out handlers
 
 ---
 

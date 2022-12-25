@@ -86,26 +86,12 @@ impl EventHandler for StreamCharacterHandler {
                 _ => continue,
             };
 
-            println!(
-                "We are going to trigger a Stream Character: {}",
-                msg.source
-            );
-
-            if msg.enabled {
-                let _ = server::obs_combo::trigger_character_filters(
-                    &msg.source,
-                    &self.obs_client,
-                    true,
-                )
-                .await;
-            } else {
-                let _ = server::obs_combo::trigger_character_filters(
-                    &msg.source,
-                    &self.obs_client,
-                    false,
-                )
-                .await;
-            }
+            let _ = server::obs_combo::trigger_character_filters(
+                &msg.source,
+                &self.obs_client,
+                msg.enabled,
+            )
+            .await;
         }
     }
 }
@@ -145,24 +131,35 @@ impl EventHandler for TransformOBSTextHandler {
             };
 
             let filter_name = format!("Transform{}", msg.text_source);
-            server::move_transition::update_and_trigger_text_move_filter(
-                &msg.text_source,
-                &filter_name,
-                &msg.message,
-                &self.obs_client,
-            )
-            .await?;
+            let _ =
+                server::move_transition::update_and_trigger_text_move_filter(
+                    &msg.text_source,
+                    &filter_name,
+                    &msg.message,
+                    &self.obs_client,
+                )
+                .await;
         }
     }
 }
 
+pub async fn breakup_text(contents: String) -> Result<String> {
+    let mut seal_text = contents.clone();
+    let spaces: Vec<_> = contents.match_indices(" ").collect();
+    let line_length_modifier = 20;
+    let mut line_length_limit = 20;
+    for val in spaces.iter() {
+        if val.0 > line_length_limit {
+            seal_text.replace_range(val.0..=val.0, "\n");
+            line_length_limit = line_length_limit + line_length_modifier;
+        }
+    }
+    Ok(seal_text)
+}
+
 // ================================================================================================
 
-// Looks through raw-text
-// to either
-// play TTS
-//
-// or play soundeffects
+// Looks through raw-text to either play TTS or play soundeffects
 #[async_trait]
 impl EventHandler for SoundHandler {
     async fn handle(
@@ -178,50 +175,43 @@ impl EventHandler for SoundHandler {
 
         loop {
             let event = rx.recv().await?;
-
             let msg = match event {
-                Event::UserMessage(msg) => msg,
+                Event::UserMessage(msg) => {
+                    if msg.user_name == "Nightbot" {
+                        continue;
+                    }
+                    msg
+                }
                 _ => continue,
             };
-            if msg.user_name == "Nightbot" {
-                continue;
-            }
 
-            let mut seal_text = msg.contents.clone();
-            let spaces: Vec<_> = msg.contents.match_indices(" ").collect();
-            let line_length_modifier = 20;
-            let mut line_length_limit = 20;
-            for val in spaces.iter() {
-                if val.0 > line_length_limit {
-                    seal_text.replace_range(val.0..=val.0, "\n");
-                    line_length_limit =
-                        line_length_limit + line_length_modifier;
-                }
-            }
+            let seal_text = match breakup_text(msg.contents.clone()).await {
+                Ok(seal_text) => seal_text,
+                Err(_) => continue,
+            };
+
             let voice_text = msg.contents.to_string();
-            let stream_character = server::uberduck::build_stream_character(
-                &self.pool,
-                &msg.user_name,
-            )
-            .await?;
 
+            // Anything less than 3 words we don't use
             let split = voice_text.split(" ");
             let vec = split.collect::<Vec<&str>>();
             if vec.len() < 2 {
                 continue;
             };
 
+            let stream_character = server::uberduck::build_stream_character(
+                &self.pool,
+                &msg.user_name,
+            )
+            .await?;
+
             let state =
                 server::twitch_stream_state::get_twitch_state(&self.pool)
                     .await?;
 
-            // I've got the state
-            // This is where we need to look up state of the Twitch Stream:
             if msg.roles.is_twitch_staff() {
-                println!("\n\tTwitch Staff's here");
-
                 let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-                    // voice: "dr-robotnik-movie".to_string(),
+                    // TODO: abstract this
                     voice: "half-life-scientist".to_string(),
                     message: seal_text,
                     voice_text,
@@ -229,8 +219,6 @@ impl EventHandler for SoundHandler {
                     source: Some("Randall".to_string()),
                 }));
             } else if msg.roles.is_twitch_mod() {
-                println!("We have a Mod!!!");
-
                 let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                     voice: "brock-samson".to_string(),
                     message: seal_text,
@@ -247,6 +235,7 @@ impl EventHandler for SoundHandler {
                     source: None,
                 }));
 
+            // This only occurs when the state is NOT in sub-only mode
             // If it's NOT sub-only
             } else if !state.sub_only_tts {
                 let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
@@ -258,17 +247,13 @@ impl EventHandler for SoundHandler {
                 }));
             }
 
+            // If we have the implicit_soundeffects enabled
+            // we go past this!
             if !state.implicit_soundeffects {
                 continue;
             }
 
-            // IF EXplict continue
-            // =============================
-            // THIS IS JUST SILENCING SOUNDS
-            // =============================
-
-            // We should add this to a DB lookup
-            // continue;
+            // TODO: This should be abstracted
             let text_source = "Soundboard-Text";
 
             let splitmsg = msg
@@ -277,7 +262,6 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // This also needs the OTHER WORD EFFECT!!!!
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
@@ -300,19 +284,19 @@ impl EventHandler for SoundHandler {
 
                     self.sink.sleep_until_end();
 
+                    // TODO: Look into using these!
                     // self.sink.volume()
                     // self.sink.set_volume()
                     // self.sink.len()
 
                     // We need this so we can trigger the next word
-                    // Not sure we need this
+                    // TODO: We should abstract
+                    // and figure out a better way of determine the time
                     let ten_millis = time::Duration::from_millis(100);
                     thread::sleep(ten_millis);
                 }
             }
 
-            // This might be right
-            // So this is triggering and going to fast to the next
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: "".to_string(),
@@ -386,12 +370,12 @@ async fn main() -> Result<()> {
         }
     }
 
+    // Advice!
     // codyphobe:
-    //
-    // For the OBSClient cloning,
-    // could you pass the OBSClient in the constructor when making event_loop,
-    // then pass self.obsclient into each handler's handle method inside
-    // EventLoop#run
+    //           For the OBSClient cloning,
+    //           could you pass the OBSClient in the constructor when making event_loop,
+    //           then pass self.obsclient into each handler's handle method inside
+    //           EventLoop#run
 
     // Create 1 Event Loop
     // Push handles onto the loop
