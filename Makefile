@@ -3,6 +3,9 @@ default:
 	# cargo build
 	# cargo check
 
+fix:
+	cargo fix --lib -p server
+
 chat:
 	cargo run --bin chat
 

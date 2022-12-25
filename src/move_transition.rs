@@ -346,7 +346,7 @@ pub async fn trigger_ortho(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
-    _ = obs::handle_user_input(
+    _ = move_setting_with_move_value_filter(
         source,
         &move_transition_filter_name,
         filter_setting_name,
@@ -422,7 +422,7 @@ pub async fn trigger_3d(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
-    obs::handle_user_input(
+    move_setting_with_move_value_filter(
         source,
         "Move_Stream_FX",
         filter_setting_name,
@@ -699,6 +699,68 @@ pub async fn update_and_trigger_move_value_filter(
 
     // we need a pause here
     thread::sleep(Duration::from_millis(400));
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
+// ===============================================================
+//
+// TODO: What kinda trash name is this???
+pub async fn move_setting_with_move_value_filter(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!(
+        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
+        source, filter_name, filter_setting_name, duration, filter_value,
+    );
+
+    // THIS IS A SINGLE SETTING MOVE HANDLER
+
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    let mut new_settings = serde_json::from_value::<MoveSingleValueSetting>(
+        filter_details.settings,
+    )
+    .unwrap();
+
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+
+    new_settings.value_type = value_type;
+
+    println!("\nNew Settings: {:?}", new_settings);
+
+    // Update the Filter
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // Does this need to be longer
+    thread::sleep(Duration::from_millis(200));
+
+    println!("Attempting to enable Filter: {} {}", source, filter_name);
 
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,

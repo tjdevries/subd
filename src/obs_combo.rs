@@ -1,5 +1,5 @@
 use crate::move_transition;
-use crate::obs;
+
 use crate::obs_hotkeys;
 use anyhow::Result;
 use obws;
@@ -176,7 +176,7 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     let filter_setting_name = "speed_x";
     let filter_value = -115200.0;
     let duration = 5000;
-    obs::handle_user_input(
+    move_transition::move_setting_with_move_value_filter(
         source,
         filter_name,
         filter_setting_name,
