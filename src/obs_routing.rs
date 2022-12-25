@@ -3,6 +3,7 @@ use crate::move_transition;
 use crate::obs;
 use crate::obs_combo;
 use crate::obs_source;
+use crate::sdf_effects;
 use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
@@ -539,8 +540,15 @@ pub async fn handle_obs_commands(
                 x: Some(x),
                 y: Some(y),
             };
-            obs::trigger_grow(&scene, source, &base_scale, x, y, &obs_client)
-                .await
+            obs_source::trigger_grow(
+                &scene,
+                source,
+                &base_scale,
+                x,
+                y,
+                &obs_client,
+            )
+            .await
         }
 
         // ====================== //
@@ -746,7 +754,7 @@ pub async fn handle_obs_commands(
 
         "!outline" => {
             let source = splitmsg[1].as_str();
-            obs::outline(source, &obs_client).await
+            sdf_effects::outline(source, &obs_client).await
         }
 
         // ====================== //

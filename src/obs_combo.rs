@@ -255,7 +255,7 @@ pub async fn follow(
                 leader_settings.position_y,
             );
             let filter_name = format!("Move_Source_{}", s.source_name);
-            _ = obs::move_with_move_source(
+            _ = move_transition::move_with_move_source(
                 &filter_name,
                 new_settings,
                 &obs_client,

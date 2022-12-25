@@ -253,3 +253,50 @@ async fn set_enabled_on_all_sources(
 pub async fn hide_sources(scene: &str, obs_client: &OBSClient) -> Result<()> {
     set_enabled_on_all_sources(scene, false, &obs_client).await
 }
+
+// ===========================================
+//
+// SCALING AGAIN
+pub async fn trigger_grow(
+    scene: &str,
+    source: &str,
+    base_scale: &Scale,
+    x: f32,
+    y: f32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!(
+        "\n\t~~~ Attempting to Scale: {} | X: {:?} Y: {:?}",
+        source, base_scale.x, base_scale.y
+    );
+
+    if source == "all" {
+        let sources = obs_client.scene_items().list(obs::DEFAULT_SCENE).await?;
+        for source in sources {
+            let new_scale = Scale {
+                x: base_scale.x,
+                y: base_scale.y,
+            };
+            let id = match find_id(
+                obs::MEME_SCENE,
+                &source.source_name,
+                &obs_client,
+            )
+            .await
+            {
+                Ok(val) => val,
+                Err(_) => return Ok(()),
+            };
+
+            if let Err(err) = scale(id, new_scale, &obs_client).await {
+                println!("Error Finding ID: {}", err)
+            };
+        }
+    } else {
+        if let Err(err) = scale_source(&scene, &source, x, y, &obs_client).await
+        {
+            println!("Error Scaling Source: {}", err)
+        };
+    }
+    Ok(())
+}

@@ -1,4 +1,3 @@
-use crate::move_transition;
 use crate::obs;
 use crate::obs_source;
 use crate::stream_fx;
@@ -371,7 +370,7 @@ pub async fn trigger_3d(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let camera_types_per_filter = obs::camera_type_config();
+    let camera_types_per_filter = stream_fx::camera_type_config();
     // if !camera_types_per_filter.contains_key(&filter_setting_name) {
     //     continue;
     // }
@@ -451,7 +450,7 @@ pub async fn spin(
         _ => "Rotation.Z",
     };
 
-    match move_transition::update_and_trigger_move_value_filter(
+    match update_and_trigger_move_value_filter(
         source,
         THE_3D_TRANSFORM_FILTER_NAME,
         setting_name,
@@ -477,7 +476,7 @@ pub async fn spin(
 // Then calls the filter
 pub async fn move_with_move_source(
     filter_name: &str,
-    new_settings: move_transition::MoveSourceFilterSettings,
+    new_settings: MoveSourceFilterSettings,
     obs_client: &obws::Client,
 ) -> Result<()> {
     update_move_source_filters(
@@ -501,7 +500,7 @@ pub async fn move_with_move_source(
 async fn update_move_source_filters(
     source: &str,
     filter_name: &str,
-    new_settings: move_transition::MoveSourceFilterSettings,
+    new_settings: MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let new_filter = obws::requests::filters::SetSettings {
@@ -517,15 +516,11 @@ async fn update_move_source_filters(
 
 // TODO: NOT USED!!!!
 pub async fn top_right(scene_item: &str, obs_client: &OBSClient) -> Result<()> {
-    let base_settings = move_transition::fetch_source_settings(
-        obs::DEFAULT_SCENE,
-        &scene_item,
-        &obs_client,
-    )
-    .await?;
+    let base_settings =
+        fetch_source_settings(obs::DEFAULT_SCENE, &scene_item, &obs_client)
+            .await?;
 
-    let new_settings =
-        move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
+    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -534,15 +529,11 @@ pub async fn bottom_right(
     scene_item: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let settings = move_transition::fetch_source_settings(
-        obs::DEFAULT_SCENE,
-        &scene_item,
-        &obs_client,
-    )
-    .await?;
+    let settings =
+        fetch_source_settings(obs::DEFAULT_SCENE, &scene_item, &obs_client)
+            .await?;
 
-    let new_settings =
-        move_transition::custom_filter_settings(settings, 12.0, 878.0);
+    let new_settings = custom_filter_settings(settings, 12.0, 878.0);
     let filter_name = format!("Move_Source_{}", scene_item);
     move_with_move_source(&filter_name, new_settings, &obs_client).await
 }
@@ -555,11 +546,11 @@ pub async fn fetch_source_settings(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<move_transition::MoveSourceFilterSettings> {
+) -> Result<MoveSourceFilterSettings> {
     let id = match obs_source::find_id(scene, source, &obs_client).await {
         Ok(val) => val,
         Err(_) => {
-            return Ok(move_transition::MoveSourceFilterSettings {
+            return Ok(MoveSourceFilterSettings {
                 ..Default::default()
             })
         }
@@ -589,22 +580,22 @@ pub async fn fetch_source_settings(
         settings.crop_bottom
     );
 
-    let new_settings = move_transition::MoveSourceFilterSettings {
+    let new_settings = MoveSourceFilterSettings {
         source: Some(source.to_string()),
         duration: Some(4444),
-        bounds: Some(move_transition::Coordinates {
+        bounds: Some(Coordinates {
             x: Some(settings.bounds_width),
             y: Some(settings.bounds_height),
         }),
-        scale: Some(move_transition::Coordinates {
+        scale: Some(Coordinates {
             x: Some(settings.scale_x),
             y: Some(settings.scale_y),
         }),
-        position: Some(move_transition::Coordinates {
+        position: Some(Coordinates {
             x: Some(settings.position_x),
             y: Some(settings.position_y),
         }),
-        crop: Some(move_transition::MoveSourceCropSetting {
+        crop: Some(MoveSourceCropSetting {
             left: Some(settings.crop_left as f32),
             right: Some(settings.crop_right as f32),
             bottom: Some(settings.crop_bottom as f32),
@@ -628,7 +619,7 @@ pub async fn update_and_trigger_text_move_filter(
     new_text: &String,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let mut new_settings: move_transition::MoveTextFilter = Default::default();
+    let mut new_settings: MoveTextFilter = Default::default();
     new_settings.move_value_type = Some(4);
     new_settings.setting_name = "text".to_string();
     new_settings.setting_text = new_text.to_string();

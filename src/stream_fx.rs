@@ -4,6 +4,7 @@ use anyhow::Result;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StreamFXCornerPin {
@@ -278,4 +279,30 @@ pub async fn trigger_ortho(
     )
     .await;
     Ok(())
+}
+
+// ==========================================================================
+
+// THIS IS FOR STREAM_FX
+// These are the "Camera Type" we need for each of the filter types
+// for the 3D Transform Effect
+pub fn camera_type_config() -> HashMap<&'static str, i32> {
+    HashMap::from([
+        ("Corners.TopLeft.X", 2),
+        ("Corners.BottomLeft.Y", 0),
+        ("Corners.TopLeft.X", 0),
+        ("Corners.TopLeft.Y", 0),
+        ("Filter.Rotation.Z", 0),
+        ("Filter.Shear.X", 0),
+        ("Filter.Transform.Rotation.Z", 0),
+        ("Rotation.X", 0),
+        ("Rotation.Y", 0),
+        ("Rotation.Z", 0),
+        ("Position.X", 1),
+        ("Position.Y", 1),
+        ("Scale.X", 1),
+        ("Scale.Y", 1),
+        ("Shear.X", 1),
+        ("Shear.Y", 1),
+    ])
 }
