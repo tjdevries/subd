@@ -321,11 +321,13 @@ pub async fn update_and_trigger_text_move_filter(
 }
 
 // ===================================================================================
-// == MOVE SOURCE ====================================================================
+// == Highest Level MOVE SOURCE ======================================================
 // ===================================================================================
 
-// Updates the Move Filter with new Move Filter Settings
-// Then calls the filter
+// We update the filter with the settings passed in
+// we then trigger than scene
+//
+// TODO: This needs to take in a scene
 pub async fn move_with_move_source(
     filter_name: &str,
     new_settings: MoveSourceFilterSettings,
@@ -349,6 +351,76 @@ pub async fn move_with_move_source(
     Ok(())
 }
 
+// ===================================================================================
+// == MOVE SOURCE ====================================================================
+// ===================================================================================
+
+pub async fn update_and_trigger_move_value_filter(
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    // Fetch the current settings of the filter we are going to update and trigger
+    let filter_details =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    // Parse the settings into a MoveSingleValueSetting struct
+    let mut new_settings = match serde_json::from_value::<MoveSingleValueSetting>(
+        filter_details.settings,
+    ) {
+        Ok(val) => val,
+        Err(e) => {
+            println!("Error: {:?}", e);
+            MoveSingleValueSetting {
+                ..Default::default()
+            }
+        }
+    };
+
+    // Update the settings based on what is passed into the function
+    new_settings.setting_name = String::from(filter_setting_name);
+    new_settings.setting_float = filter_value;
+    new_settings.duration = Some(duration);
+    new_settings.value_type = value_type;
+
+    // Create a SetSettings struct & use it to update the OBS settings
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: &filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+
+    obs_client.filters().set_settings(new_settings).await?;
+
+    // Pause so the settings can take effect before triggering the filter
+    thread::sleep(Duration::from_millis(400));
+
+    // Trigger the filter
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    // We always return Ok, because even if we fail to enable we want to continue our program
+    // TODO: this might not be true since await? will bubble up an error?
+    Ok(())
+}
+
+// ====================================================================
+// == LOWER LEVEL???? =================================================
+// ====================================================================
+
+// This takes in settings and updates a filter
 async fn update_move_source_filters(
     source: &str,
     filter_name: &str,
@@ -362,122 +434,6 @@ async fn update_move_source_filters(
         overlay: Some(false),
     };
     obs_client.filters().set_settings(new_filter).await?;
-
-    Ok(())
-}
-pub async fn update_and_trigger_move_value_filter(
-    source: &str,
-    filter_name: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    value_type: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    // So we get defaults here
-    let filter_details =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    let mut new_settings = match serde_json::from_value::<MoveSingleValueSetting>(
-        filter_details.settings,
-    ) {
-        Ok(val) => val,
-        Err(e) => {
-            println!("Error: {:?}", e);
-            MoveSingleValueSetting {
-                ..Default::default()
-            }
-        }
-    };
-
-    // We update some values
-    new_settings.setting_name = String::from(filter_setting_name);
-    new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-
-    new_settings.value_type = value_type;
-
-    // Update the Filter
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-
-    // we need a pause here
-    thread::sleep(Duration::from_millis(400));
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-// TODO: What kinda trash name is this???
-pub async fn move_setting_with_move_value_filter(
-    source: &str,
-    filter_name: &str,
-    filter_setting_name: &str,
-    filter_value: f32,
-    duration: u32,
-    value_type: u32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    println!(
-        "Handle User Input: Source {:?} | Filter Name: {:?} | Filter Setting Name: {:?} | Duration: {:?} | Value: {:?}",
-        source, filter_name, filter_setting_name, duration, filter_value,
-    );
-
-    // THIS IS A SINGLE SETTING MOVE HANDLER
-
-    let filter_details =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    let mut new_settings = serde_json::from_value::<MoveSingleValueSetting>(
-        filter_details.settings,
-    )
-    .unwrap();
-
-    new_settings.setting_name = String::from(filter_setting_name);
-    new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-
-    new_settings.value_type = value_type;
-
-    println!("\nNew Settings: {:?}", new_settings);
-
-    // Update the Filter
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-
-    // Does this need to be longer
-    thread::sleep(Duration::from_millis(200));
-
-    println!("Attempting to enable Filter: {} {}", source, filter_name);
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
-        filter: filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
 
     Ok(())
 }

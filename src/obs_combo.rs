@@ -164,7 +164,7 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     let filter_setting_name = "speed_x";
     let filter_value = -115200.0;
     let duration = 5000;
-    move_transition::move_setting_with_move_value_filter(
+    move_transition::update_and_trigger_move_value_filter(
         source,
         filter_name,
         filter_setting_name,

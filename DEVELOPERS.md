@@ -2,12 +2,50 @@
 
 ## Move-Transition Refactor
 
+- move_source
+- move_value
+
+- move_single_setting
+- move_multiple_settings
+
+- move_multiple_settings
+- move_single_setting
+
+-----
+
+## Might Be Good
+
+- update_and_trigger_move_value_filter
+
+----
+
+- move_multiple_source_settings
+- move_multiple_value_settings
+- move_single_source_setting
+- move_single_value_setting
 
 move_with_move_source
-update_move_source_filters
-update_and_trigger_move_value_filter
-move_setting_with_move_value_filter
 
+- update_and_trigger_move_value_filter
+- move_setting_with_move_value_filter
+
+update_move_source_filters
+
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
+
+    source: &str,
+    filter_name: &str,
+    filter_setting_name: &str,
+    filter_value: f32,
+    duration: u32,
+    value_type: u32,
+    obs_client: &OBSClient,
 ---
 
 move_transition

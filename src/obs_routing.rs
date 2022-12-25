@@ -476,7 +476,7 @@ pub async fn handle_obs_commands(
 
             // TODO: THIS 2 is SUPERFLUOUS!!!
             // WE SHOULD RE-WRITE THIS METHOD NOT TO USE IT
-            move_transition::move_setting_with_move_value_filter(
+            move_transition::update_and_trigger_move_value_filter(
                 source,
                 obs::MOVE_SCROLL_FILTER_NAME,
                 &filter_setting_name,
