@@ -94,11 +94,8 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
-            println!("We are trying for an Uberduck request: {}", msg.voice);
-
             let stream_character =
                 build_stream_character(&self.pool, &msg.username).await?;
-            println!("\n\tStream Character: {:?}\n", stream_character);
 
             let source = match msg.source {
                 Some(source) => source,
@@ -151,7 +148,19 @@ impl EventHandler for UberDuckHandler {
                 // we need to this to be better
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
-                println!("Uberduck Finished at: {:?}", file_resp.finished_at);
+                println!(
+                    "Uberduck: Finished: {:?} | Failed: {:?}",
+                    file_resp.finished_at, file_resp.failed_at
+                );
+
+                match file_resp.failed_at {
+                    Some(_) => {
+                        // TODO: Need to figure out who needs to see this error
+                        println!("Failed to get Uberduck speech");
+                        break;
+                    }
+                    _ => {}
+                };
 
                 match file_resp.path {
                     Some(new_url) => {
@@ -172,8 +181,6 @@ impl EventHandler for UberDuckHandler {
                             },
                         ));
 
-                        // So the filename is fucking up
-                        // it's not unique
                         let filename =
                             twitch_chat_filename(msg.username, msg.voice);
                         let full_filename = format!("{}.wav", filename);
@@ -308,21 +315,18 @@ pub async fn talk_in_voice(
 }
 
 pub async fn use_random_voice(
-    _contents: String,
+    contents: String,
     username: String,
     tx: &broadcast::Sender<Event>,
 ) -> Result<()> {
-    let contents = fs::read_to_string("data/voices.json").unwrap();
-    let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
+    let voices_contents = fs::read_to_string("data/voices.json").unwrap();
+    let voices: Vec<Voice> = serde_json::from_str(&voices_contents).unwrap();
     let mut rng = thread_rng();
     let random_index = rng.gen_range(0..voices.len());
     let random_voice = &voices[random_index];
 
-    println!("Random Voice Chosen: {:?}", random_voice);
-
     let spoken_string = contents.clone().replace("!random", "");
-
-    let seal_text = chop_text(spoken_string.clone());
+    let speech_bubble_text = chop_text(spoken_string.clone());
     let voice_text = spoken_string.clone();
 
     let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
@@ -332,7 +336,7 @@ pub async fn use_random_voice(
 
     let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
         voice: random_voice.name.clone(),
-        message: seal_text,
+        message: speech_bubble_text,
         voice_text,
         username,
         source: None,

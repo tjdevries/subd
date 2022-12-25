@@ -2,9 +2,12 @@
 
 ## Current Begin Refactor
 
+- There is a chance that the program is going to crash everywhere!!!
+    - But we just need to make sure the top level can handle the error fine
+
 - clean up
-    - obs_combo.rs
     - obs_source.rs
+    - obs_combo.rs
     - stream_character.rs
     - streamfx.rs
     - uberduck.rs

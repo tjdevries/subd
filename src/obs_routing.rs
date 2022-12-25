@@ -67,14 +67,18 @@ pub async fn handle_obs_commands(
                 .await?;
             Ok(())
         }
+        "!explicit" => {
+            twitch_stream_state::update_implicit_soundeffects(false, &pool)
+                .await?;
+            Ok(())
+        }
 
         // ===========================================
         // == Voices & Characters
         // ===========================================
         "!random" => {
             uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
-                .await?;
-            Ok(())
+                .await
         }
 
         "!set_voice" => {
@@ -133,6 +137,7 @@ pub async fn handle_obs_commands(
                 _ => default_filter_setting_name,
             };
 
+            // SO THIS IS FAILING!!!
             println!("Starting to Scroll: {} {}", source, filter_setting_name);
 
             move_transition::update_and_trigger_move_value_filter(
@@ -199,6 +204,9 @@ pub async fn handle_obs_commands(
                 x: Some(x),
                 y: Some(y),
             };
+
+            // HOW DOES IT KNOW THE SCENE?????
+            // THIS AIN'T WORKING???
             obs_source::trigger_grow(
                 &scene,
                 source,
@@ -227,10 +235,15 @@ pub async fn handle_obs_commands(
         }
 
         // TODO: I'd like one-for every corner
-        "!tr" => move_transition_effects::top_right(source, &obs_client).await,
+        "!tr" => {
+            println!("Scene: {} | Source: {}", scene, source);
+            move_transition_effects::top_right(&scene, source, &obs_client)
+                .await
+        }
 
         "!bl" => {
-            move_transition_effects::bottom_right(source, &obs_client).await
+            move_transition_effects::bottom_right(&scene, source, &obs_client)
+                .await
         }
 
         // ===========================================
@@ -285,6 +298,7 @@ pub async fn handle_obs_commands(
         }
 
         // TEMP: This is for temporary testing!!!!
+        // TODO: Rename this
         "!split" => {
             bootstrap::create_split_3d_transform_filters(source, &obs_client)
                 .await
