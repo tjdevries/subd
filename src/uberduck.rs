@@ -1,3 +1,4 @@
+use crate::obs;
 use crate::stream_character;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -16,8 +17,6 @@ use subd_types::SourceVisibilityRequest;
 use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
-
-pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
 
 pub struct UberDuckHandler {
     pub sink: Sink,
@@ -252,7 +251,7 @@ fn uberduck_creds() -> (String, String) {
 // This is not the ideal method
 fn find_obs_character(voice: &str) -> &str {
     // This makes no sense
-    let default_hotkeys = DEFAULT_STREAM_CHARACTER_SOURCE;
+    let default_hotkeys = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
 
     // We need defaults for the source
     // TODO: We need one of these for each voice
@@ -304,7 +303,7 @@ pub async fn build_stream_character(
                 return Ok(StreamCharacter {
                     username: username.to_string(),
                     voice: default_voice.to_string(),
-                    source: DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+                    source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
                 })
             }
         };

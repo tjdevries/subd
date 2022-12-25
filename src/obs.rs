@@ -4,6 +4,7 @@ use obws::Client as OBSClient;
 
 // TODO: We need to audit all of these
 
+pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
 pub const DEFAULT_SCENE: &str = "Primary";
 pub const MEME_SCENE: &str = "memes";
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;

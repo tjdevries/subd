@@ -1,10 +1,8 @@
-// Spin and Stuff
 use crate::move_transition;
 use crate::obs;
 use crate::stream_fx;
 use anyhow::Result;
 use obws::responses::filters::SourceFilter;
-
 use obws::Client as OBSClient;
 
 pub async fn top_right(scene_item: &str, obs_client: &OBSClient) -> Result<()> {

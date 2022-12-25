@@ -155,7 +155,9 @@ pub struct MoveTextFilter {
     pub move_value_type: Option<u32>,
 }
 
-// =================================================================================
+// ======================================================================
+// == Defaults ==========================================================
+// ======================================================================
 
 pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
     let filter = String::from("3D_Orthographic");
@@ -180,7 +182,10 @@ pub fn default_perspective_settings() {}
 pub fn default_corner_pin_settings() {}
 
 // =======================================================================
+// == Utilities ==========================================================
+// =======================================================================
 
+// This is a simple utility method
 pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
     let contents = fs::read_to_string(file_path).expect("Can read file");
 
@@ -190,8 +195,6 @@ pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
     filter
 }
 
-// HMMM Why can't they see this???
-// This needs to take in Custom Filters
 pub fn custom_filter_settings(
     mut base_settings: MoveSourceFilterSettings,
     x: f32,
@@ -204,53 +207,9 @@ pub fn custom_filter_settings(
     base_settings
 }
 
-// MOVE SOURCE ====================================================================
-//
-// Updates the Move Filter with new Move Filter Settings
-// Then calls the filter
-pub async fn move_with_move_source(
-    filter_name: &str,
-    new_settings: MoveSourceFilterSettings,
-    obs_client: &obws::Client,
-) -> Result<()> {
-    update_move_source_filters(
-        obs::DEFAULT_SCENE,
-        filter_name,
-        new_settings,
-        &obs_client,
-    )
-    .await?;
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: obs::DEFAULT_SCENE,
-        filter: &filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-async fn update_move_source_filters(
-    source: &str,
-    filter_name: &str,
-    new_settings: MoveSourceFilterSettings,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let new_filter = obws::requests::filters::SetSettings {
-        source,
-        filter: filter_name,
-        settings: Some(new_settings),
-        overlay: Some(false),
-    };
-    obs_client.filters().set_settings(new_filter).await?;
-
-    Ok(())
-}
-
 // ===============================================================================
-//
-// FETCHING
+// == FETCHING ===================================================================
+// ===============================================================================
 
 pub async fn fetch_source_settings(
     scene: &str,
@@ -318,7 +277,7 @@ pub async fn fetch_source_settings(
 }
 
 // ===============================================================
-// == TEXT ==
+// == TEXT =======================================================
 // ===============================================================
 
 // So I need a version to update a text value
@@ -361,8 +320,51 @@ pub async fn update_and_trigger_text_move_filter(
     Ok(())
 }
 
-// ============================================================
-//
+// ===================================================================================
+// == MOVE SOURCE ====================================================================
+// ===================================================================================
+
+// Updates the Move Filter with new Move Filter Settings
+// Then calls the filter
+pub async fn move_with_move_source(
+    filter_name: &str,
+    new_settings: MoveSourceFilterSettings,
+    obs_client: &obws::Client,
+) -> Result<()> {
+    update_move_source_filters(
+        obs::DEFAULT_SCENE,
+        filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: obs::DEFAULT_SCENE,
+        filter: &filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
+async fn update_move_source_filters(
+    source: &str,
+    filter_name: &str,
+    new_settings: MoveSourceFilterSettings,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let new_filter = obws::requests::filters::SetSettings {
+        source,
+        filter: filter_name,
+        settings: Some(new_settings),
+        overlay: Some(false),
+    };
+    obs_client.filters().set_settings(new_filter).await?;
+
+    Ok(())
+}
 pub async fn update_and_trigger_move_value_filter(
     source: &str,
     filter_name: &str,
@@ -420,8 +422,6 @@ pub async fn update_and_trigger_move_value_filter(
     Ok(())
 }
 
-// ===============================================================
-//
 // TODO: What kinda trash name is this???
 pub async fn move_setting_with_move_value_filter(
     source: &str,

@@ -25,8 +25,6 @@ use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
-// This should be here
-// const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,

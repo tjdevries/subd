@@ -1,5 +1,15 @@
 # Developers
 
+## Move-Transition Refactor
+
+
+move_with_move_source
+update_move_source_filters
+update_and_trigger_move_value_filter
+move_setting_with_move_value_filter
+
+---
+
 move_transition
 move_transition_bootstrap
 move_transition_effects
