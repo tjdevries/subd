@@ -1,3 +1,4 @@
+use crate::move_transition_bootstrap;
 use crate::obs;
 use crate::obs_source;
 use crate::stream_fx;
@@ -12,6 +13,10 @@ use std::time::Duration;
 
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+
+// move_transition_effects
+// move_transition_bootstrap
+// move_transition_X
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
@@ -87,29 +92,6 @@ pub struct MoveMultipleValuesSetting {
     pub rotation_z: Option<f32>,
 }
 
-pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
-    let filter = String::from("3D_Orthographic");
-    MoveMultipleValuesSetting {
-        filter: Some(filter),
-        move_value_type: Some(1),
-        value_type: Some(0),
-        position_x: Some(0.0),
-        position_y: Some(0.0),
-        rotation_x: Some(0.0),
-        rotation_y: Some(0.0),
-        rotation_z: Some(0.0),
-        scale_x: Some(100.0),
-        scale_y: Some(100.0),
-        shear_x: Some(0.0),
-        shear_y: Some(0.0),
-    }
-}
-
-pub fn default_perspective_settings() {}
-
-pub fn default_corner_pin_settings() {}
-
-// =======================================================================
 // TODO: We need to organize this by:
 //       - generic values
 //       - values per filter-type
@@ -183,6 +165,32 @@ pub struct MoveTextFilter {
     pub move_value_type: Option<u32>,
 }
 
+// =================================================================================
+
+pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
+    let filter = String::from("3D_Orthographic");
+    MoveMultipleValuesSetting {
+        filter: Some(filter),
+        move_value_type: Some(1),
+        value_type: Some(0),
+        position_x: Some(0.0),
+        position_y: Some(0.0),
+        rotation_x: Some(0.0),
+        rotation_y: Some(0.0),
+        rotation_z: Some(0.0),
+        scale_x: Some(100.0),
+        scale_y: Some(100.0),
+        shear_x: Some(0.0),
+        shear_y: Some(0.0),
+    }
+}
+
+pub fn default_perspective_settings() {}
+
+pub fn default_corner_pin_settings() {}
+
+// =======================================================================
+
 pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
     let contents = fs::read_to_string(file_path).expect("Can read file");
 
@@ -192,58 +200,58 @@ pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
     filter
 }
 
-pub async fn create_move_source_filter_from_file(
-    scene: &str,
-    source: &str,
-    filter_name: &str,
-    file_path: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let mut filter = parse_json_into_struct(file_path);
+// pub async fn create_move_source_filter_from_file(
+//     scene: &str,
+//     source: &str,
+//     filter_name: &str,
+//     file_path: &str,
+//     obs_client: &OBSClient,
+// ) -> Result<()> {
+//     let mut filter = parse_json_into_struct(file_path);
 
-    filter.source = Some(source.to_string());
+//     filter.source = Some(source.to_string());
 
-    let new_filter = obws::requests::filters::Create {
-        source: scene,
-        filter: filter_name,
-        kind: "move_source_filter",
-        settings: Some(filter),
-    };
-    if let Err(err) = obs_client.filters().create(new_filter).await {
-        println!("Error Creating Filter: {filter_name} | {:?}", err);
-    };
+//     let new_filter = obws::requests::filters::Create {
+//         source: scene,
+//         filter: filter_name,
+//         kind: "move_source_filter",
+//         settings: Some(filter),
+//     };
+//     if let Err(err) = obs_client.filters().create(new_filter).await {
+//         println!("Error Creating Filter: {filter_name} | {:?}", err);
+//     };
 
-    Ok(())
-}
+//     Ok(())
+// }
 
-pub fn create_move_source_filter_settings(
-    source: &str,
-) -> MoveSourceFilterSettings {
-    let settings = MoveSourceFilterSettings {
-        source: Some(source.to_string()),
-        duration: Some(300),
-        bounds: Some(Coordinates {
-            x: Some(251.0),
-            y: Some(234.0),
-        }),
-        scale: Some(Coordinates {
-            x: Some(1.0),
-            y: Some(1.0),
-        }),
-        position: Some(Coordinates {
-            x: Some(1662.0),
-            y: Some(13.0),
-        }),
-        crop: Some(MoveSourceCropSetting {
-            bottom: Some(0.0),
-            left: Some(0.0),
-            right: Some(0.0),
-            top: Some(0.0),
-        }),
-        transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
-    };
-    settings
-}
+// pub fn create_move_source_filter_settings(
+//     source: &str,
+// ) -> MoveSourceFilterSettings {
+//     let settings = MoveSourceFilterSettings {
+//         source: Some(source.to_string()),
+//         duration: Some(300),
+//         bounds: Some(Coordinates {
+//             x: Some(251.0),
+//             y: Some(234.0),
+//         }),
+//         scale: Some(Coordinates {
+//             x: Some(1.0),
+//             y: Some(1.0),
+//         }),
+//         position: Some(Coordinates {
+//             x: Some(1662.0),
+//             y: Some(13.0),
+//         }),
+//         crop: Some(MoveSourceCropSetting {
+//             bottom: Some(0.0),
+//             left: Some(0.0),
+//             right: Some(0.0),
+//             top: Some(0.0),
+//         }),
+//         transform_text: Some("pos: x 1662.0 y 13.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0".to_string())
+//     };
+//     settings
+// }
 
 // HMMM Why can't they see this???
 // This needs to take in Custom Filters
@@ -265,7 +273,10 @@ pub async fn create_move_text_value_filter(
     filter_name: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let base_settings = create_move_source_filter_settings(scene_item);
+    let base_settings =
+        move_transition_bootstrap::create_move_source_filter_settings(
+            scene_item,
+        );
     let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
 
     let new_filter = obws::requests::filters::Create {
@@ -287,7 +298,10 @@ pub async fn create_move_source_filters(
     filter_name: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let base_settings = create_move_source_filter_settings(scene_item);
+    let base_settings =
+        move_transition_bootstrap::create_move_source_filter_settings(
+            scene_item,
+        );
     let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
 
     let new_filter = obws::requests::filters::Create {

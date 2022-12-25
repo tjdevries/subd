@@ -1,5 +1,6 @@
 use crate::bootstrap;
 use crate::move_transition;
+use crate::move_transition_bootstrap;
 use crate::obs;
 use crate::obs_combo;
 use crate::obs_hotkeys;
@@ -378,73 +379,79 @@ pub async fn handle_obs_commands(
             // ======================================================
             let file_path = "/home/begin/code/subd/obs_data/move_transition_show_source.json";
             let filter_name = format!("Show{}", base_source);
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &base_source,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &base_source,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
 
             let filter_name = format!("Hide{}", base_source);
             let file_path = "/home/begin/code/subd/obs_data/move_transition_hide_source.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &base_source,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &base_source,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
 
             let filter_name = format!("Show{}-text", base_source);
             let file_path =
                 "/home/begin/code/subd/obs_data/move_transition_show_text.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &text_source_name,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &text_source_name,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
 
             let filter_name = format!("Hide{}-text", base_source);
             let file_path =
                 "/home/begin/code/subd/obs_data/move_transition_hide_text.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &text_source_name,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &text_source_name,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
 
             let filter_name = format!("Show{}-speech_bubble", base_source);
             let file_path =
                 "/home/begin/code/subd/obs_data/move_transition_show_speech_bubble.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &speech_source_name,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &speech_source_name,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
 
             let filter_name = format!("Hide{}-speech_bubble", base_source);
             let file_path =
                 "/home/begin/code/subd/obs_data/move_transition_hide_speech_bubble.json";
-            let _ = move_transition::create_move_source_filter_from_file(
-                scene,
-                &speech_source_name,
-                &filter_name,
-                file_path,
-                &obs_client,
-            )
-            .await;
+            let _ =
+                move_transition_bootstrap::create_move_source_filter_from_file(
+                    scene,
+                    &speech_source_name,
+                    &filter_name,
+                    file_path,
+                    &obs_client,
+                )
+                .await;
             Ok(())
         }
 
