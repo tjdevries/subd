@@ -1,4 +1,5 @@
 use crate::move_transition;
+use crate::move_transition_bootstrap;
 use crate::sdf_effects;
 use crate::stream_fx;
 use anyhow::Result;
@@ -19,15 +20,6 @@ const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
 const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 const BLUR_FILTER_NAME: &str = "Blur";
-
-// This is for hotkeys
-// const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
-//     obws::requests::hotkeys::KeyModifiers {
-//         shift: true,
-//         control: true,
-//         alt: true,
-//         command: true,
-//     };
 
 pub async fn create_outline_filter(
     source: &str,
@@ -266,7 +258,7 @@ pub async fn create_filters_for_source(
     }
 
     let filter_name = format!("Move_Source_Home_{}", source);
-    move_transition::create_move_source_filters(
+    move_transition_bootstrap::create_move_source_filters(
         DEFAULT_SCENE,
         &source,
         &filter_name,
@@ -350,7 +342,7 @@ pub async fn create_filters_for_source(
 
     let filter_name = format!("Move_Source_{}", source);
 
-    move_transition::create_move_source_filters(
+    move_transition_bootstrap::create_move_source_filters(
         DEFAULT_SCENE,
         &source,
         &filter_name,

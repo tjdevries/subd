@@ -579,7 +579,7 @@ pub async fn handle_obs_commands(
             let filter_setting_name =
                 splitmsg.get(2).unwrap_or(&default_filter_setting_name);
 
-            move_transition::spin(
+            move_transition_effects::spin(
                 source,
                 filter_setting_name,
                 filter_value,
@@ -665,7 +665,7 @@ pub async fn handle_obs_commands(
 
             let filter_setting_name = &splitmsg[2];
 
-            move_transition::trigger_3d(
+            move_transition_effects::trigger_3d(
                 source,
                 filter_setting_name,
                 filter_value,
