@@ -1,3 +1,4 @@
+use anyhow::Result;
 use rodio::cpal::traits::{DeviceTrait, HostTrait};
 use rodio::OutputStream;
 use rodio::*;
@@ -19,4 +20,17 @@ pub fn get_output_stream(
         }
     }
     return (_stream, stream_handle);
+}
+
+// ============== //
+// Audio Settings //
+// ============== //
+
+pub async fn set_audio_status(
+    _obs_conn: &obws::Client,
+    _name: &str,
+    _status: bool,
+) -> Result<()> {
+    // obs_conn.sources().(name, !status).await?;
+    Ok(())
 }
