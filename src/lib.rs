@@ -3,6 +3,7 @@ pub mod bootstrap;
 pub mod commands;
 pub mod move_transition;
 pub mod move_transition_bootstrap;
+pub mod move_transition_effects;
 pub mod obs;
 pub mod obs_combo;
 pub mod obs_hotkeys;

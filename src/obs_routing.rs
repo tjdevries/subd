@@ -1,6 +1,7 @@
 use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
+use crate::move_transition_effects;
 use crate::obs;
 use crate::obs_combo;
 use crate::obs_hotkeys;
@@ -695,9 +696,11 @@ pub async fn handle_obs_commands(
         }
 
         // TODO: I'd like one-for every corner
-        "!tr" => move_transition::top_right(source, &obs_client).await,
+        "!tr" => move_transition_effects::top_right(source, &obs_client).await,
 
-        "!bl" => move_transition::bottom_right(source, &obs_client).await,
+        "!bl" => {
+            move_transition_effects::bottom_right(source, &obs_client).await
+        }
 
         // ================ //
         // Compound Effects //
