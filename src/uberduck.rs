@@ -4,10 +4,13 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use events::EventHandler;
+use rand::thread_rng;
+use rand::Rng;
 use rodio::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
+use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::{BufWriter, Write};
@@ -16,6 +19,7 @@ use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
 use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
+use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
 
 pub struct UberDuckHandler {
@@ -287,6 +291,109 @@ fn find_obs_character(voice: &str) -> &str {
         Some(v) => v,
         None => default_hotkeys,
     }
+}
+
+pub async fn set_voice(
+    voice: String,
+    username: String,
+    pool: &sqlx::PgPool,
+) -> Result<()> {
+    // This should be abstracted
+
+    // We need to look up first
+    // and not change other things actually
+    let model = stream_character::user_stream_character_information::Model {
+        username: username.clone(),
+        voice: voice.to_string(),
+        obs_character: "Seal".to_string(),
+        random: false,
+    };
+
+    model.save(pool).await?;
+
+    Ok(())
+}
+
+pub async fn talk_in_voice(
+    contents: String,
+    voice: String,
+    username: String,
+    tx: &broadcast::Sender<Event>,
+) -> Result<()> {
+    let spoken_string =
+        contents.clone().replace(&format!("!voice {}", &voice), "");
+
+    if spoken_string == "" {
+        return Ok(());
+    }
+
+    let mut seal_text = spoken_string.clone();
+    let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
+    let line_length_modifier = 20;
+    let mut line_length_limit = 20;
+    for val in spaces.iter() {
+        if val.0 > line_length_limit {
+            seal_text.replace_range(val.0..=val.0, "\n");
+            line_length_limit = line_length_limit + line_length_modifier;
+        }
+    }
+
+    // let voice_text = msg.contents.to_string();
+    let voice_text = spoken_string.clone();
+    // I need to get some logic to grab all the text after x position
+    println!("We trying for the voice: {} - {}", voice, voice_text);
+    // I can get that from user name
+    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+        voice: voice.to_string(),
+        message: seal_text,
+        voice_text,
+        username,
+        source: None,
+    }));
+    Ok(())
+}
+
+pub async fn use_random_voice(
+    _contents: String,
+    username: String,
+    tx: &broadcast::Sender<Event>,
+) -> Result<()> {
+    let contents = fs::read_to_string("data/voices.json").unwrap();
+    let voices: Vec<Voice> = serde_json::from_str(&contents).unwrap();
+    let mut rng = thread_rng();
+    let random_index = rng.gen_range(0..voices.len());
+    let random_voice = &voices[random_index];
+
+    println!("Random Voice Chosen: {:?}", random_voice);
+
+    let spoken_string = contents.clone().replace("!random", "");
+
+    let mut seal_text = spoken_string.clone();
+    let spaces: Vec<_> = spoken_string.match_indices(" ").collect();
+    let line_length_modifier = 20;
+    let mut line_length_limit = 20;
+    for val in spaces.iter() {
+        if val.0 > line_length_limit {
+            seal_text.replace_range(val.0..=val.0, "\n");
+            line_length_limit = line_length_limit + line_length_modifier;
+        }
+    }
+
+    let voice_text = spoken_string.clone();
+
+    let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
+        message: random_voice.name.clone(),
+        text_source: "Soundboard-Text".to_string(),
+    }));
+
+    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+        voice: random_voice.name.clone(),
+        message: seal_text,
+        voice_text,
+        username,
+        source: None,
+    }));
+    Ok(())
 }
 
 // Character Builder
