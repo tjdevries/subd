@@ -66,7 +66,7 @@ pub async fn spin(
 
     match move_transition::update_and_trigger_move_value_filter(
         source,
-        move_transition::THE_3D_TRANSFORM_FILTER_NAME,
+        obs::THE_3D_TRANSFORM_FILTER_NAME,
         setting_name,
         filter_value,
         duration,
@@ -106,7 +106,7 @@ pub async fn trigger_3d(
     // IS THIS FUCKED????
     let filter_details = obs_client
         .filters()
-        .get(&source, move_transition::THE_3D_TRANSFORM_FILTER_NAME)
+        .get(&source, obs::THE_3D_TRANSFORM_FILTER_NAME)
         .await;
 
     // Does this leave early??????
@@ -139,7 +139,7 @@ pub async fn trigger_3d(
 
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
-        filter: move_transition::THE_3D_TRANSFORM_FILTER_NAME,
+        filter: obs::THE_3D_TRANSFORM_FILTER_NAME,
         settings: new_settings,
         overlay: None,
     };
@@ -151,7 +151,7 @@ pub async fn trigger_3d(
         filter_setting_name,
         filter_value,
         duration,
-        move_transition::SINGLE_SETTING_VALUE_TYPE,
+        obs::SINGLE_SETTING_VALUE_TYPE,
         &obs_client,
     )
     .await

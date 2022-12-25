@@ -2,9 +2,6 @@ use crate::move_transition;
 use anyhow::Result;
 use obws::Client as OBSClient;
 
-pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
-
 pub async fn create_move_source_filter_from_file(
     scene: &str,
     source: &str,

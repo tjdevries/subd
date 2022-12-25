@@ -1,22 +1,10 @@
 use crate::move_transition;
-
+use crate::obs;
 use crate::obs_hotkeys;
 use anyhow::Result;
 use obws;
 use obws::requests::scene_items::{Scale, SceneItemTransform, SetTransform};
 use obws::Client as OBSClient;
-
-pub const DEFAULT_SCENE: &str = "Primary";
-pub const MEME_SCENE: &str = "memes";
-pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
-pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
-pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
-pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
-pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
-pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
-pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
-pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 
 pub async fn trigger_character_filters(
     base_source: &str,
@@ -72,7 +60,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
 
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
-        filter: &DEFAULT_STREAM_FX_FILTER_NAME,
+        filter: &obs::DEFAULT_STREAM_FX_FILTER_NAME,
         enabled: true,
     };
     match obs_client.filters().set_enabled(filter_enabled).await {
@@ -81,7 +69,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
     }
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
-        filter: &DEFAULT_SCROLL_FILTER_NAME,
+        filter: &obs::DEFAULT_SCROLL_FILTER_NAME,
         enabled: true,
     };
     // This is not the way
@@ -91,7 +79,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
     }
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
-        filter: &DEFAULT_BLUR_FILTER_NAME,
+        filter: &obs::DEFAULT_BLUR_FILTER_NAME,
         enabled: true,
     };
     match obs_client.filters().set_enabled(filter_enabled).await {
@@ -99,7 +87,7 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
         Err(_) => return Ok(()),
     }
 
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    let id = match find_id(obs::MEME_SCENE, source, &obs_client).await {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
@@ -132,7 +120,7 @@ pub async fn scale(
     };
 
     let set_transform = SetTransform {
-        scene: DEFAULT_SCENE,
+        scene: obs::DEFAULT_SCENE,
         item_id: id,
         transform: scene_transform,
     };
@@ -202,7 +190,7 @@ pub async fn follow(
     leader: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id = match find_id(MEME_SCENE, source, &obs_client).await {
+    let id = match find_id(obs::MEME_SCENE, source, &obs_client).await {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
@@ -229,7 +217,7 @@ pub async fn follow(
             }
         };
 
-    let sources = obs_client.scene_items().list(DEFAULT_SCENE).await?;
+    let sources = obs_client.scene_items().list(obs::DEFAULT_SCENE).await?;
     for s in sources {
         for bad_source in &untouchable_sources {
             if bad_source == &s.source_name {
@@ -238,7 +226,7 @@ pub async fn follow(
             }
         }
         let base_settings = match move_transition::fetch_source_settings(
-            DEFAULT_SCENE,
+            obs::DEFAULT_SCENE,
             &s.source_name,
             &obs_client,
         )

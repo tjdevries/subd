@@ -25,10 +25,6 @@ use subd_types::UberDuckRequest;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
-pub const DEFAULT_SCENE: &str = "Primary";
-pub const MEME_SCENE: &str = "memes";
-pub const DEFAULT_SOURCE: &str = "begin";
-
 // This should be here
 // const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 pub async fn handle_obs_commands(
@@ -39,7 +35,7 @@ pub async fn handle_obs_commands(
     msg: UserMessage,
 ) -> Result<()> {
     // This is because Begin doesn't understand Rust
-    let default_source = String::from(DEFAULT_SOURCE);
+    let default_source = String::from(obs::DEFAULT_SOURCE);
 
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
@@ -58,7 +54,7 @@ pub async fn handle_obs_commands(
 
     let scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
-        Err(_) => MEME_SCENE.to_string(),
+        Err(_) => obs::MEME_SCENE.to_string(),
     };
 
     // NOTE: If we want to extract values like filter_setting_name and filter_value
@@ -589,9 +585,10 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        "!hide" => obs_source::hide_sources(MEME_SCENE, &obs_client).await,
+        "!hide" => obs_source::hide_sources(obs::MEME_SCENE, &obs_client).await,
         "!show" => {
-            obs_source::set_enabled(MEME_SCENE, source, true, &obs_client).await
+            obs_source::set_enabled(obs::MEME_SCENE, source, true, &obs_client)
+                .await
         }
         "!def_ortho" => {
             stream_fx::default_ortho(source, duration, &obs_client).await
@@ -708,13 +705,13 @@ pub async fn handle_obs_commands(
         "!norm" => obs_combo::norm(&source, &obs_client).await,
 
         "!follow" => {
-            let scene = DEFAULT_SCENE;
+            let scene = obs::DEFAULT_SCENE;
             let leader = splitmsg.get(1).unwrap_or(&default_source);
             let source = leader;
 
             obs_combo::follow(source, scene, leader, &obs_client).await
         }
-        "!staff" => obs_combo::staff(DEFAULT_SOURCE, &obs_client).await,
+        "!staff" => obs_combo::staff(obs::DEFAULT_SOURCE, &obs_client).await,
 
         // =============================== //
         // Create Scenes, Sources, Filters //
@@ -722,7 +719,7 @@ pub async fn handle_obs_commands(
         "!create_source" => {
             let new_scene: obws::requests::scene_items::CreateSceneItem =
                 obws::requests::scene_items::CreateSceneItem {
-                    scene: DEFAULT_SCENE,
+                    scene: obs::DEFAULT_SCENE,
                     source: &source,
                     enabled: Some(true),
                 };
@@ -761,8 +758,12 @@ pub async fn handle_obs_commands(
 
         // TODO: Take in Scene
         "!source" => {
-            obs_source::print_source_info(source, DEFAULT_SCENE, &obs_client)
-                .await
+            obs_source::print_source_info(
+                source,
+                obs::DEFAULT_SCENE,
+                &obs_client,
+            )
+            .await
         }
 
         "!outline" => {
@@ -775,8 +776,8 @@ pub async fn handle_obs_commands(
         // ====================== //
         "!memes" => {
             obs_source::set_enabled(
-                DEFAULT_SCENE,
-                MEME_SCENE,
+                obs::DEFAULT_SCENE,
+                obs::MEME_SCENE,
                 true,
                 &obs_client,
             )
@@ -785,8 +786,8 @@ pub async fn handle_obs_commands(
 
         "!nomemes" | "!nojokes" | "!work" => {
             obs_source::set_enabled(
-                DEFAULT_SCENE,
-                MEME_SCENE,
+                obs::DEFAULT_SCENE,
+                obs::MEME_SCENE,
                 false,
                 &obs_client,
             )

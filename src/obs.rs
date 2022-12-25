@@ -3,20 +3,19 @@ use obws;
 use obws::Client as OBSClient;
 
 // TODO: We need to audit all of these
+
 pub const DEFAULT_SCENE: &str = "Primary";
 pub const MEME_SCENE: &str = "memes";
-
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-
 pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
 pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
-
 pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+pub const DEFAULT_SOURCE: &str = "begin";
 
 // ========== //
 // Fetch Info //

@@ -8,13 +8,6 @@ use std::thread;
 use std::time;
 use std::time::Duration;
 
-pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
-pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
-
-// move_transition_effects
-// move_transition_bootstrap
-// move_transition_X
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
     #[serde(rename = "bottom")]

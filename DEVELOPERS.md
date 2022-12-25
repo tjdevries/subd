@@ -1,5 +1,33 @@
 # Developers
 
+move_transition
+move_transition_bootstrap
+move_transition_effects
+
+obs
+obs_combo
+obs_hotkeys
+obs_routing
+obs_scenes
+obs_source
+
+obs_filters/
+    -> Need to figure this out
+
+stream_character
+uberduck
+twitch_stream_state
+
+
+stream_fx
+sdf_effects
+
+bootstrap
+
+audio
+
+----
+
 - obs_routing.rs
     - All heavy-lifting logic should be in other files
     - it should be purely routing

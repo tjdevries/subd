@@ -1,6 +1,5 @@
 use crate::move_transition;
 use crate::obs;
-use crate::obs_routing;
 use anyhow::Result;
 use obws::requests::scene_items::{
     Position, Scale, SceneItemTransform, SetTransform,
@@ -78,7 +77,7 @@ pub async fn scale(
     };
 
     let set_transform = SetTransform {
-        scene: obs_routing::DEFAULT_SCENE,
+        scene: obs::DEFAULT_SCENE,
         item_id: id,
         transform: scene_transform,
     };
