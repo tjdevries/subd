@@ -7,8 +7,6 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
-// TODO: Extract out the rest of the constants
-
 pub async fn create_outline_filter(
     source: &str,
     obs_client: &OBSClient,

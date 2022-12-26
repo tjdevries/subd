@@ -82,8 +82,7 @@ pub async fn handle_obs_commands(
         }
 
         "!set_voice" => {
-            // TODO: Abstract this out
-            let default_voice = "brock_samson".to_string();
+            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::set_voice(
                 voice.to_string(),
@@ -94,8 +93,7 @@ pub async fn handle_obs_commands(
         }
 
         "!voice" => {
-            // TODO: Abstract this out
-            let default_voice = "slj".to_string();
+            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::talk_in_voice(
                 msg.contents.clone(),
@@ -292,14 +290,11 @@ pub async fn handle_obs_commands(
                     enabled: Some(true),
                 };
 
-            // TODO: Why is this crashing???
             obs_client.scene_items().create(new_scene).await?;
             Ok(())
         }
 
-        // TEMP: This is for temporary testing!!!!
-        // TODO: Rename this
-        "!split" => {
+        "!create_3d_filters" => {
             bootstrap::create_split_3d_transform_filters(source, &obs_client)
                 .await
         }
@@ -312,15 +307,8 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Debug Info
         // ===========================================
-
-        // TODO: Take in Scene
         "!source" => {
-            obs_source::print_source_info(
-                source,
-                obs::DEFAULT_SCENE,
-                &obs_client,
-            )
-            .await
+            obs_source::print_source_info(source, &scene, &obs_client).await
         }
 
         // This doesn't seem like it would just be info

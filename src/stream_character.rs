@@ -18,7 +18,6 @@ pub mod user_stream_character_information {
     }
 }
 
-// TODO: Take in Random
 impl user_stream_character_information::Model {
     #[allow(dead_code)]
 

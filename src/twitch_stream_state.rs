@@ -13,7 +13,6 @@ pub mod twitch_stream_state {
     }
 }
 
-// TODO: Take in Random
 impl twitch_stream_state::Model {
     #[allow(dead_code)]
 

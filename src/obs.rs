@@ -11,6 +11,7 @@ pub const MEME_SCENE: &str = "memes";
 
 // Sources
 pub const DEFAULT_SOURCE: &str = "begin";
+pub const UBERDUCK_LOADING_SOURCE: &str = "loading_duck";
 
 // Characters
 pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
@@ -19,6 +20,7 @@ pub const TWITCH_STAFF_OBS_SOURCE: &str = "half-life-scientist";
 // Voices
 pub const TWITCH_STAFF_VOICE: &str = "Randall";
 pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
+pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
 
 // Dynamic Source
 pub const SOUNDBOARD_TEXT_SOURCE_NAME: &str = "Soundboard-Text";
