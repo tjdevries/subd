@@ -263,20 +263,16 @@ pub async fn update_and_trigger_text_move_filter(
 //
 // TODO: This needs to take in a scene
 pub async fn move_with_move_source(
+    scene: &str,
     filter_name: &str,
     new_settings: MoveSourceFilterSettings,
     obs_client: &obws::Client,
 ) -> Result<()> {
-    update_move_source_filters(
-        obs::DEFAULT_SCENE,
-        filter_name,
-        new_settings,
-        &obs_client,
-    )
-    .await?;
+    update_move_source_filters(scene, filter_name, new_settings, &obs_client)
+        .await?;
 
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: obs::DEFAULT_SCENE,
+        source: scene,
         filter: &filter_name,
         enabled: true,
     };

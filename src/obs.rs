@@ -39,6 +39,9 @@ pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 
 // Filter Constant
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
+pub const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
+pub const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
+pub const BLUR_FILTER_NAME: &str = "Blur";
 
 pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()

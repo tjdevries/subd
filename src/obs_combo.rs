@@ -12,7 +12,7 @@ pub async fn trigger_character_filters(
     obs_client: &OBSClient,
     enabled: bool,
 ) -> Result<()> {
-    let scene = "Characters";
+    let scene = obs::CHARACTERS_SCENE;
 
     let mut filter_name_modifier = "Hide";
     if enabled {
@@ -98,9 +98,6 @@ pub async fn norm(source: &str, obs_client: &OBSClient) -> Result<()> {
 }
 
 // ============================================================================
-// ============================================================================
-// ============================================================================
-// ============================================================================
 
 pub async fn scale(
     id: i64,
@@ -138,6 +135,7 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     )
     .await;
 
+    // These should be abstracted
     // What are these doing here like this?
     let filter_name = "Move_Source";
     let filter_setting_name = "speed_x";
@@ -154,7 +152,8 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
     )
     .await?;
 
-    // TODO: This should triggered from a fucntion
+    // TODO: This should triggered from a function
+    // This shouldn't be a hotkey based thang
     obs_client
         .hotkeys()
         .trigger_by_sequence("OBS_KEY_U", obs_hotkeys::SUPER_KEY)
@@ -175,6 +174,7 @@ pub async fn follow(
             Err(_) => return Ok(()),
         };
 
+    // This needs to be configurable
     let untouchable_sources: Vec<String> = vec![
         "Screen".to_string(),
         "SBF_Condo".to_string(),
@@ -226,6 +226,7 @@ pub async fn follow(
             );
             let filter_name = format!("Move_Source_{}", s.source_name);
             _ = move_transition::move_with_move_source(
+                scene,
                 &filter_name,
                 new_settings,
                 &obs_client,
