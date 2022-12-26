@@ -1,4 +1,3 @@
-use crate::obs;
 use crate::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
@@ -342,8 +341,6 @@ pub async fn update_and_trigger_move_value_filter(
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
 
-    // We always return Ok, because even if we fail to enable we want to continue our program
-    // TODO: this might not be true since await? will bubble up an error?
     Ok(())
 }
 

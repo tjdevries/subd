@@ -111,9 +111,7 @@ pub async fn handle_obs_commands(
         "!set_character" => Ok(()),
 
         "!character" => {
-            // TODO: Abstract this out
-            let base_source = "Randall";
-            stream_character::create_new_obs_character(base_source, obs_client)
+            stream_character::create_new_obs_character(source, obs_client)
                 .await?;
             Ok(())
         }
@@ -170,8 +168,7 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        // TODO: Update these values to be variables
-        //       so we know what they do
+        // TODO: Update these values to be variables so we know what they do
         "!noblur" | "!unblur" => {
             move_transition::update_and_trigger_move_value_filter(
                 source,
@@ -361,6 +358,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -380,6 +378,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -399,6 +398,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -414,14 +414,14 @@ pub async fn handle_obs_commands(
 
         // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
         // !3d begin Rotation.Z 3600 5000
-        //
-        // TODO: This is NOT Working!
         "!3d" => {
             // If we don't at least have a filter_name, we can't proceed
             if splitmsg.len() < 3 {
                 bail!("We don't have a filter name, can't proceed");
             }
 
+            // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             move_transition_effects::trigger_3d(

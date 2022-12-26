@@ -138,8 +138,8 @@ impl EventHandler for UberDuckHandler {
                 // Show Loading Duck
                 let _ = tx.send(Event::SourceVisibilityRequest(
                     SourceVisibilityRequest {
-                        scene: "Characters".to_string(),
-                        source: "loading_duck".to_string(),
+                        scene: obs::CHARACTERS_SCENE.to_string(),
+                        source: obs::UBERDUCK_LOADING_SOURCE.to_string(),
                         enabled: true,
                     },
                 ));
@@ -278,7 +278,7 @@ pub async fn set_voice(
     let model = stream_character::user_stream_character_information::Model {
         username: username.clone(),
         voice: voice.to_string(),
-        obs_character: "Seal".to_string(),
+        obs_character: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
         random: false,
     };
 
@@ -331,6 +331,8 @@ pub async fn use_random_voice(
 
     let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
         message: random_voice.name.clone(),
+
+        // TODO: This should probably be a different Text Source
         text_source: "Soundboard-Text".to_string(),
     }));
 
