@@ -11,14 +11,16 @@ pub const MEME_SCENE: &str = "memes";
 
 // Sources
 pub const DEFAULT_SOURCE: &str = "begin";
+pub const UBERDUCK_LOADING_SOURCE: &str = "loading_duck";
 
 // Characters
 pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
-pub const TWITCH_STAFF_OBS_SOURCE: &str = "half-life-scientist";
+pub const TWITCH_STAFF_OBS_SOURCE: &str = "Randall";
 
 // Voices
-pub const TWITCH_STAFF_VOICE: &str = "Randall";
+pub const TWITCH_STAFF_VOICE: &str = "half-life-scientist";
 pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
+pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
 
 // Dynamic Source
 pub const SOUNDBOARD_TEXT_SOURCE_NAME: &str = "Soundboard-Text";
@@ -32,16 +34,24 @@ pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";
 // Dynamic Filters
 pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
 pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+pub const MOVE_OUTLINE_FILTER_NAME: &str = "Move_Outline";
+pub const MOVE_STREAM_FX_FILTER_NAME: &str = "Move_Stream_FX";
 
 // Dynamic Filters but Default Filters
 pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
 pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+pub const BLUR_FILTER_NAME: &str = "Blur";
+pub const SCROLL_FILTER_NAME: &str = "Scroll";
 
 // Filter Constant
-pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
+pub const BLUR_INTERNAL_FILTER_NAME: &str = "streamfx-filter-blur";
+pub const SCROLL_INTERNAL_FILTER_NAME: &str = "scroll_filter";
 pub const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
 pub const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
-pub const BLUR_FILTER_NAME: &str = "Blur";
+pub const SDF_EFFECTS_INTERNAL_FILTER_NAME: &str =
+    "streamfx-filter-sdf-effects";
+
+pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
 
 pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()

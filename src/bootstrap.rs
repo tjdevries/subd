@@ -7,13 +7,11 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
-// TODO: Extract out the rest of the constants
-
 pub async fn create_outline_filter(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Outline";
+    let stream_fx_filter_name = obs::MOVE_OUTLINE_FILTER_NAME.to_string();
 
     // We look up Begin's Outline Settings
     let filter_details = match obs_client
@@ -36,7 +34,7 @@ pub async fn create_outline_filter(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::SDF_EFFECTS_FILTER_NAME,
-        kind: "streamfx-filter-sdf-effects",
+        kind: &obs::SDF_EFFECTS_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -51,8 +49,8 @@ pub async fn create_outline_filter(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: stream_fx_filter_name,
-        kind: "move_value_filter",
+        filter: &stream_fx_filter_name,
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -64,7 +62,7 @@ pub async fn create_blur_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Blur";
+    let stream_fx_filter_name = obs::MOVE_BLUR_FILTER_NAME.to_string();
 
     let stream_fx_settings = stream_fx::StreamFXSettings {
         ..Default::default()
@@ -72,7 +70,7 @@ pub async fn create_blur_filters(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::BLUR_FILTER_NAME,
-        kind: "streamfx-filter-blur",
+        kind: &obs::BLUR_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(stream_fx_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -86,8 +84,8 @@ pub async fn create_blur_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: stream_fx_filter_name,
-        kind: "move_value_filter",
+        filter: &stream_fx_filter_name,
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -99,15 +97,15 @@ pub async fn create_scroll_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Scroll";
+    let stream_fx_filter_name = obs::MOVE_SCROLL_FILTER_NAME.to_string();
 
     let stream_fx_settings = stream_fx::StreamFXSettings {
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: "Scroll",
-        kind: "scroll_filter",
+        filter: &obs::SCROLL_FILTER_NAME.to_string(),
+        kind: &obs::SCROLL_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(stream_fx_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -115,14 +113,14 @@ pub async fn create_scroll_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(0),
-        filter: String::from("Scroll"),
+        filter: String::from(&obs::SCROLL_FILTER_NAME.to_string()),
         duration: Some(7000),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: stream_fx_filter_name,
-        kind: "move_value_filter",
+        filter: &stream_fx_filter_name,
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -191,7 +189,7 @@ pub async fn create_3d_transform_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let stream_fx_filter_name = "Move_Stream_FX";
+    let stream_fx_filter_name = obs::MOVE_STREAM_FX_FILTER_NAME.to_string();
 
     let stream_fx_settings = stream_fx::StreamFXSettings {
         ..Default::default()
@@ -199,7 +197,7 @@ pub async fn create_3d_transform_filters(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::THE_3D_TRANSFORM_FILTER_NAME,
-        kind: "streamfx-filter-transform",
+        kind: &obs::STREAM_FX_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(stream_fx_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -213,8 +211,8 @@ pub async fn create_3d_transform_filters(
     };
     let new_filter = obws::requests::filters::Create {
         source,
-        filter: stream_fx_filter_name,
-        kind: "move_value_filter",
+        filter: &stream_fx_filter_name,
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -270,22 +268,21 @@ pub async fn create_filters_for_source(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::DEFAULT_STREAM_FX_FILTER_NAME,
-        kind: "move_value_filter",
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
 
-    // This is For Scroll
     let new_settings = move_transition::MoveSingleValueSetting {
         move_value_type: Some(1),
-        filter: String::from("Scroll"),
+        filter: String::from(&obs::SCROLL_FILTER_NAME.to_string()),
         duration: Some(7000),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::DEFAULT_SCROLL_FILTER_NAME,
-        kind: "move_value_filter",
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -302,8 +299,7 @@ pub async fn create_filters_for_source(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::DEFAULT_BLUR_FILTER_NAME,
-        kind: "move_value_filter",
-
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;
@@ -323,7 +319,7 @@ pub async fn create_filters_for_source(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: obs::DEFAULT_SDF_EFFECTS_FILTER_NAME,
-        kind: "move_value_filter",
+        kind: &obs::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
         settings: Some(new_settings),
     };
     obs_client.filters().create(new_filter).await?;

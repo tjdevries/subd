@@ -1,5 +1,6 @@
 use crate::move_transition;
 use crate::move_transition_bootstrap;
+use crate::obs;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
@@ -18,7 +19,6 @@ pub mod user_stream_character_information {
     }
 }
 
-// TODO: Take in Random
 impl user_stream_character_information::Model {
     #[allow(dead_code)]
 
@@ -63,16 +63,9 @@ pub async fn create_new_obs_character(
     base_source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let scene = "Characters";
+    let scene = obs::CHARACTERS_SCENE.to_string();
 
-    // // let base_source = "Seal";
-    // // let base_source = "Birb";
-    // // let base_source = "Kevin";
-    // let base_source = "Randall";
-    // // let base_source = "Teej";
-    // // let base_source = "ArtMatt";
-
-    // TODO: Make this relative
+    // TODO: Make this relative and configurable for where the user store's it's OBS Assets
     let filename = format!(
         "/home/begin/stream/Stream/StreamCharacters/{}.png",
         base_source
@@ -88,7 +81,7 @@ pub async fn create_new_obs_character(
     let _ = obs_client
         .inputs()
         .create(obws::requests::inputs::Create {
-            scene,
+            scene: &scene,
             input: &base_source,
             kind: "image_source",
             settings: Some(image_source),
@@ -97,6 +90,7 @@ pub async fn create_new_obs_character(
         .await;
 
     // TODO: Fix this path
+    // We need to include this in the assets of the project
     let speech_bubble = obws::requests::custom::source_settings::ImageSource {
         file: Path::new(
             "/home/begin/stream/Stream/StreamCharacters/speech_bubble.png",
@@ -107,7 +101,7 @@ pub async fn create_new_obs_character(
     let _ = obs_client
         .inputs()
         .create(obws::requests::inputs::Create {
-            scene,
+            scene: &scene,
             input: &speech_source_name,
             kind: "image_source",
             settings: Some(speech_bubble),
@@ -145,7 +139,7 @@ pub async fn create_new_obs_character(
     let _ = obs_client
         .inputs()
         .create(obws::requests::inputs::Create {
-            scene,
+            scene: &scene,
             input: &text_source_name,
             kind: "text_ft2_source_v2",
             settings: Some(text_settings),
@@ -174,12 +168,10 @@ pub async fn create_new_obs_character(
         println!("Error Creating Filter: {filter_name} | {:?}", err);
     };
 
-    // TODO: Abstract this, Fix this
-    let file_path =
-        "/home/begin/code/subd/obs_data/move_transition_show_source.json";
+    let file_path = "./obs_data/move_transition_show_source.json";
     let filter_name = format!("Show{}", base_source);
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &base_source,
         &filter_name,
         file_path,
@@ -188,11 +180,9 @@ pub async fn create_new_obs_character(
     .await;
 
     let filter_name = format!("Hide{}", base_source);
-    // TODO: Abstract this, Fix this
-    let file_path =
-        "/home/begin/code/subd/obs_data/move_transition_hide_source.json";
+    let file_path = "./obs_data/move_transition_hide_source.json";
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &base_source,
         &filter_name,
         file_path,
@@ -201,11 +191,9 @@ pub async fn create_new_obs_character(
     .await;
 
     let filter_name = format!("Show{}-text", base_source);
-    // TODO: Abstract this, Fix this
-    let file_path =
-        "/home/begin/code/subd/obs_data/move_transition_show_text.json";
+    let file_path = "./obs_data/move_transition_show_text.json";
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &text_source_name,
         &filter_name,
         file_path,
@@ -214,11 +202,9 @@ pub async fn create_new_obs_character(
     .await;
 
     let filter_name = format!("Hide{}-text", base_source);
-    // TODO: Abstract this, Fix this
-    let file_path =
-        "/home/begin/code/subd/obs_data/move_transition_hide_text.json";
+    let file_path = "./obs_data/move_transition_hide_text.json";
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &text_source_name,
         &filter_name,
         file_path,
@@ -227,11 +213,9 @@ pub async fn create_new_obs_character(
     .await;
 
     let filter_name = format!("Show{}-speech_bubble", base_source);
-    // TODO: Abstract this, Fix this
-    let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_show_speech_bubble.json";
+    let file_path = "./obs_data/move_transition_show_speech_bubble.json";
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &speech_source_name,
         &filter_name,
         file_path,
@@ -239,12 +223,10 @@ pub async fn create_new_obs_character(
     )
     .await;
 
-    // TODO: Abstract this, Fix this
     let filter_name = format!("Hide{}-speech_bubble", base_source);
-    let file_path =
-                "/home/begin/code/subd/obs_data/move_transition_hide_speech_bubble.json";
+    let file_path = "./obs_data/move_transition_hide_speech_bubble.json";
     let _ = move_transition_bootstrap::create_move_source_filter_from_file(
-        scene,
+        &scene,
         &speech_source_name,
         &filter_name,
         file_path,

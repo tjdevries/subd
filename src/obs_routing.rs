@@ -82,8 +82,7 @@ pub async fn handle_obs_commands(
         }
 
         "!set_voice" => {
-            // TODO: Abstract this out
-            let default_voice = "brock_samson".to_string();
+            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::set_voice(
                 voice.to_string(),
@@ -94,8 +93,7 @@ pub async fn handle_obs_commands(
         }
 
         "!voice" => {
-            // TODO: Abstract this out
-            let default_voice = "slj".to_string();
+            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::talk_in_voice(
                 msg.contents.clone(),
@@ -113,9 +111,7 @@ pub async fn handle_obs_commands(
         "!set_character" => Ok(()),
 
         "!character" => {
-            // TODO: Abstract this out
-            let base_source = "Randall";
-            stream_character::create_new_obs_character(base_source, obs_client)
+            stream_character::create_new_obs_character(source, obs_client)
                 .await?;
             Ok(())
         }
@@ -172,8 +168,7 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        // TODO: Update these values to be variables
-        //       so we know what they do
+        // TODO: Update these values to be variables so we know what they do
         "!noblur" | "!unblur" => {
             move_transition::update_and_trigger_move_value_filter(
                 source,
@@ -292,14 +287,11 @@ pub async fn handle_obs_commands(
                     enabled: Some(true),
                 };
 
-            // TODO: Why is this crashing???
             obs_client.scene_items().create(new_scene).await?;
             Ok(())
         }
 
-        // TEMP: This is for temporary testing!!!!
-        // TODO: Rename this
-        "!split" => {
+        "!create_3d_filters" => {
             bootstrap::create_split_3d_transform_filters(source, &obs_client)
                 .await
         }
@@ -312,15 +304,8 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Debug Info
         // ===========================================
-
-        // TODO: Take in Scene
         "!source" => {
-            obs_source::print_source_info(
-                source,
-                obs::DEFAULT_SCENE,
-                &obs_client,
-            )
-            .await
+            obs_source::print_source_info(source, &scene, &obs_client).await
         }
 
         // This doesn't seem like it would just be info
@@ -373,6 +358,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -392,6 +378,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -411,6 +398,7 @@ pub async fn handle_obs_commands(
             };
 
             // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             stream_fx::trigger_ortho(
@@ -426,14 +414,14 @@ pub async fn handle_obs_commands(
 
         // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
         // !3d begin Rotation.Z 3600 5000
-        //
-        // TODO: This is NOT Working!
         "!3d" => {
             // If we don't at least have a filter_name, we can't proceed
             if splitmsg.len() < 3 {
                 bail!("We don't have a filter name, can't proceed");
             }
 
+            // TODO: This should be done with unwrap
+            // What is the default???
             let filter_setting_name = &splitmsg[2];
 
             move_transition_effects::trigger_3d(

@@ -76,8 +76,7 @@ pub async fn spin(
         setting_name,
         filter_value,
         duration,
-        2, // not sure if this is the right value
-        // THIS NEEDS TO BE ABSTRACTEDDDDDD
+        2, // not sure if this is the right value | THIS NEEDS TO BE ABSTRACTED
         &obs_client,
     )
     .await
@@ -127,7 +126,7 @@ pub async fn trigger_3d(
         }
     };
 
-    // Eesetting this Camera Mode
+    // Resetting this Camera Mode
     new_settings.camera_mode = Some(camera_number);
 
     let new_settings = obws::requests::filters::SetSettings {
