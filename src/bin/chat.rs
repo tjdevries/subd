@@ -23,6 +23,7 @@ use obws::Client as OBSClient;
 use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 
+use server::themesong;
 use server::user_messages;
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
@@ -204,13 +205,6 @@ async fn handle_twitch_msg(
     //         themesong::delete_themesong(&mut conn, splitmsg[2].as_str()).await?
     //     }
     //
-    //     // TODO: Add !themesong delete so users can just delete their themesong
-    //     if msg.message_text.starts_with("!themesong") {
-    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Request {
-    //             msg: msg.clone(),
-    //         }))?;
-    //     }
-    //
     //     if msg.message_text.starts_with("!set ") {
     //         println!("  ... doing set command: {:?}", msg.message_text);
     //         let set_result = handle_set_command(&mut conn, &client, msg).await;
@@ -222,80 +216,80 @@ async fn handle_twitch_msg(
     // }
 }
 
-async fn _handle_set_command<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    _conn: &mut sqlx::PgConnection,
-    _client: &TwitchIRCClient<T, L>,
-    msg: twitch_irc::message::PrivmsgMessage,
-) -> Result<()> {
-    let splitmsg = msg
-        .message_text
-        .split(" ")
-        .map(|s| s.to_string())
-        .collect::<Vec<String>>();
-
-    // !set github <login>
-    if splitmsg[1] == "github" {
-        todo!("Github");
-        //     println!("  ... split msg: {:?}", splitmsg);
-        //
-        //     if splitmsg.len() != 3 {
-        //         say(client, format!("@{}: !set github <login>", msg.sender.name))
-        //             .await?;
-        //         return Ok(());
-        //     }
-        //
-        //     let user_id =
-        //         subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
-        //
-        //     let github_login = splitmsg[2].clone();
-        //     subd_db::set_github_info_for_user(
-        //         conn,
-        //         &user_id,
-        //         github_login.as_str(),
-        //     )
-        //     .await?;
-        //     say(
-        //         client,
-        //         format!(
-        //             "Succesfully set: twitch {} -> github {}",
-        //             msg.sender.name, github_login
-        //         ),
-        //     )
-        //     .await?;
-        //
-        //     return Ok(());
-    }
-
-    // TODO(user_roles)
-    if !msg
-        .badges
-        .iter()
-        .any(|f| f.name == "broadcaster" || f.name == "moderator")
-    {
-        return Err(anyhow!("Not authorized User"));
-    }
-
-    // if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
-    //     let twitch_user = splitmsg[3].replace("@", "");
-    //     let user_id =
-    //         match subd_db::get_user_from_twitch_user_name(conn, &twitch_user)
-    //             .await?
-    //         {
-    //             Some(user_id) => user_id,
-    //             None => return Ok(()),
-    //         };
-    //     themesong::mark_themesong_unplayed(conn, &user_id).await?;
-    //     println!(
-    //         "  Successfully marked themseong unplayed for: {:?}",
-    //         twitch_user
-    //     );
-    // }
-
-    Ok(())
-}
+// async fn _handle_set_command<
+//     T: twitch_irc::transport::Transport,
+//     L: twitch_irc::login::LoginCredentials,
+// >(
+//     _conn: &mut sqlx::PgPool,
+//     _client: &TwitchIRCClient<T, L>,
+//     msg: twitch_irc::message::PrivmsgMessage,
+// ) -> Result<()> {
+//     let splitmsg = msg
+//         .message_text
+//         .split(" ")
+//         .map(|s| s.to_string())
+//         .collect::<Vec<String>>();
+//
+//     // !set github <login>
+//     if splitmsg[1] == "github" {
+//         todo!("Github");
+//         //     println!("  ... split msg: {:?}", splitmsg);
+//         //
+//         //     if splitmsg.len() != 3 {
+//         //         say(client, format!("@{}: !set github <login>", msg.sender.name))
+//         //             .await?;
+//         //         return Ok(());
+//         //     }
+//         //
+//         //     let user_id =
+//         //         subd_db::get_user_from_twitch_user(conn, &msg.sender.id).await?;
+//         //
+//         //     let github_login = splitmsg[2].clone();
+//         //     subd_db::set_github_info_for_user(
+//         //         conn,
+//         //         &user_id,
+//         //         github_login.as_str(),
+//         //     )
+//         //     .await?;
+//         //     say(
+//         //         client,
+//         //         format!(
+//         //             "Succesfully set: twitch {} -> github {}",
+//         //             msg.sender.name, github_login
+//         //         ),
+//         //     )
+//         //     .await?;
+//         //
+//         //     return Ok(());
+//     }
+//
+//     // TODO(user_roles)
+//     if !msg
+//         .badges
+//         .iter()
+//         .any(|f| f.name == "broadcaster" || f.name == "moderator")
+//     {
+//         return Err(anyhow!("Not authorized User"));
+//     }
+//
+//     // if splitmsg[1] == "themesong" && splitmsg[2] == "unplayed" {
+//     //     let twitch_user = splitmsg[3].replace("@", "");
+//     //     let user_id =
+//     //         match subd_db::get_user_from_twitch_user_name(conn, &twitch_user)
+//     //             .await?
+//     //         {
+//     //             Some(user_id) => user_id,
+//     //             None => return Ok(()),
+//     //         };
+//     //     themesong::mark_themesong_unplayed(conn, &user_id).await?;
+//     //     println!(
+//     //         "  Successfully marked themseong unplayed for: {:?}",
+//     //         twitch_user
+//     //     );
+//     // }
+//
+//     Ok(())
+// }
 
 async fn yew_inner_loop(
     stream: TcpStream,
@@ -495,118 +489,6 @@ async fn handle_obs_stuff(
     Ok(())
 }
 
-async fn handle_themesong_download(
-    _tx: broadcast::Sender<Event>,
-    _rx: broadcast::Receiver<Event>,
-) -> Result<()> {
-    let _conn = subd_db::get_db_pool().await;
-
-    let config = get_chat_config();
-    let (_, _client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-
-    // loop {
-    //     let event = rx.recv().await?;
-    //     let msg = match event {
-    //         Event::ThemesongDownload(ThemesongDownload::Request { msg }) => msg,
-    //         _ => continue,
-    //     };
-    //
-    //     let user_id =
-    //         subd_db::get_user_from_twitch_user(&mut conn, &msg.sender.id)
-    //             .await?;
-    //     let user_roles = subd_db::get_user_roles(&mut conn, &user_id).await?;
-    //
-    //     let splitmsg = msg
-    //         .message_text
-    //         .split(" ")
-    //         .map(|s| s.to_string())
-    //         .collect::<Vec<String>>();
-    //
-    //     if splitmsg.len() == 1 {
-    //         say(&client, "format: !themesong <url> 00:00.00 00:00.00").await?;
-    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Format {
-    //             sender: msg.sender.name.clone(),
-    //         }))?;
-    //         continue;
-    //     } else if splitmsg.len() != 4 {
-    //         say(
-    //             &client,
-    //             "Incorrect themesong format. Required: !themesong <url> 00:00 00:00",
-    //         )
-    //         .await?;
-    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Finish {
-    //             display_name: msg.sender.name.clone(),
-    //             success: false,
-    //         }))?;
-    //         continue;
-    //     }
-    //
-    //     if themesong::can_user_access_themesong(&user_roles) {
-    //         // Notify that we are starting a download
-    //         tx.send(Event::ThemesongDownload(ThemesongDownload::Start {
-    //             display_name: msg.sender.name.clone(),
-    //         }))?;
-    //
-    //         match themesong::download_themesong(
-    //             &mut conn,
-    //             &user_id,
-    //             &msg.sender.name,
-    //             splitmsg[1].as_str(),
-    //             splitmsg[2].as_str(),
-    //             splitmsg[3].as_str(),
-    //         )
-    //         .await
-    //         {
-    //             Ok(_) => {
-    //                 println!("Successfully downloaded themesong");
-    //                 tx.send(Event::ThemesongDownload(
-    //                     ThemesongDownload::Finish {
-    //                         display_name: msg.sender.name.clone(),
-    //                         success: true,
-    //                     },
-    //                 ))?;
-    //
-    //                 continue;
-    //             }
-    //             Err(err) => {
-    //                 say(&client, format!("Failed to download: {:?}", err))
-    //                     .await?;
-    //                 tx.send(Event::ThemesongDownload(
-    //                     ThemesongDownload::Finish {
-    //                         display_name: msg.sender.name.clone(),
-    //                         success: false,
-    //                     },
-    //                 ))?;
-    //
-    //                 continue;
-    //             }
-    //         };
-    //     } else {
-    //         say(
-    //             &client,
-    //             "You must be a GH Sponsor or sub/mod/VIP to do this",
-    //         )
-    //         .await?;
-    //     }
-    // }
-    Ok(())
-}
-
-// async fn say<
-//     T: twitch_irc::transport::Transport,
-//     L: twitch_irc::login::LoginCredentials,
-// >(
-//     client: &TwitchIRCClient<T, L>,
-//     msg: impl Into<String>,
-// ) -> Result<()> {
-//     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-//     client.say(twitch_username.to_string(), msg.into()).await?;
-//     Ok(())
-// }
-
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -667,6 +549,13 @@ async fn main() -> Result<()> {
     ));
 
     event_loop.push(user_messages::UserMessageHandler {});
+
+    event_loop.push(themesong::ThemesongListener::new());
+    event_loop.push(themesong::ThemesongDownloader::new(
+        pool.clone(),
+        user_service::Service::new(pool.clone()).await,
+    ));
+    event_loop.push(themesong::ThemesongPlayer::new(pool.clone()));
 
     event_loop.run().await?;
 

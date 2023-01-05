@@ -78,7 +78,7 @@ impl Component for ThemesongDownloader {
             ThemesongDownload::Request { msg } => {
                 html! {
                     <div class={"subd-themesong"}>
-                        { format!("Requesting themesong for: {}", msg.sender.name.clone()) }
+                        { format!("Requesting themesong for: {}", msg.user_name.clone()) }
                     </div>
                 }
             }

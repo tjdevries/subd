@@ -116,8 +116,8 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        // !upload_image URL 
-        "!upload_image" => handlers::upload_image(msg),
+        // !upload_image URL
+        // "!upload_image" => handlers::upload_image(msg),
 
         // ===========================================
         // == Scrolling

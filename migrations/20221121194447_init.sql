@@ -11,8 +11,6 @@ CREATE TABLE twitch_stream_state(
   implicit_soundeffects boolean NOT NULL DEFAULT false
 );
 
-INSERT INTO 
-
 CREATE TABLE user_stream_character_information(
   /* user_id UUID UNIQUE NOT NULL references users, */
   username TEXT NOT NULL UNIQUE,

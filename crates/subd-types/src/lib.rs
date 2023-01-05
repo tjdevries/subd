@@ -17,7 +17,7 @@ pub struct UserID(pub uuid::Uuid);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
-#[derive(sqlx::Type, Debug, Serialize, Deserialize, Clone)]
+#[derive(sqlx::Type, Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum UserPlatform {
     Twitch,
@@ -26,7 +26,7 @@ pub enum UserPlatform {
     Discord,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UserMessage {
     pub user_id: UserID,
     pub user_name: String,
@@ -162,7 +162,7 @@ pub struct LunchBytesTopic {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ThemesongDownload {
-    Request { msg: twitch::TwitchMessage },
+    Request { msg: UserMessage },
     Start { display_name: String },
     Finish { display_name: String, success: bool },
     Format { sender: String },

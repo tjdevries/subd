@@ -1,18 +1,22 @@
+use std::io::{BufReader, Cursor};
+
 use anyhow::Result;
 use async_trait::async_trait;
 use psl::Psl;
 use reqwest::Url;
-use sqlx::{PgConnection, PgPool};
+use sqlx::PgPool;
 use subd_types::{Event, ThemesongDownload, ThemesongPlay, UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
 
+use crate::audio;
+
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
 pub async fn play_themesong_for_today(
-    conn: &mut PgConnection,
+    conn: &mut PgPool,
     user_id: &UserID,
-    sink: &rodio::Sink,
+    sink: &rodio::OutputStreamHandle,
 ) -> Result<()> {
     if has_played_themesong_today(conn, user_id).await? {
         return Ok(());
@@ -25,10 +29,7 @@ pub async fn play_themesong_for_today(
     Ok(())
 }
 
-pub async fn delete_themesong(
-    conn: &mut PgConnection,
-    display_name: &str,
-) -> Result<()> {
+pub async fn delete_themesong(pool: &PgPool, display_name: &str) -> Result<()> {
     let _display_name = display_name.replace("@", "").to_lowercase();
     // let user_id =
     //     subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
@@ -36,29 +37,26 @@ pub async fn delete_themesong(
 
     let user_id = uuid::Uuid::new_v4();
     sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = $1", user_id)
-        .execute(&mut *conn)
+        .execute(pool)
         .await?;
 
     Ok(())
 }
 
-async fn mark_themesong_played(
-    conn: &mut PgConnection,
-    user_id: &UserID,
-) -> Result<()> {
+async fn mark_themesong_played(pool: &PgPool, user_id: &UserID) -> Result<()> {
     // Insert that we've played their theme song
     sqlx::query!(
         "INSERT INTO USER_THEME_SONG_HISTORY (user_id) VALUES ($1)",
         user_id.0
     )
-    .execute(&mut *conn)
+    .execute(pool)
     .await?;
 
     Ok(())
 }
 
 pub async fn mark_themesong_unplayed(
-    conn: &mut PgConnection,
+    pool: &PgPool,
     user_id: &UserID,
 ) -> Result<()> {
     // Insert that we've played their theme song
@@ -66,14 +64,14 @@ pub async fn mark_themesong_unplayed(
         "DELETE FROM USER_THEME_SONG_HISTORY WHERE user_id = ($1) AND date(played_at) = date(CURRENT_TIMESTAMP)",
         user_id.0
     )
-    .execute(&mut *conn)
+    .execute(pool)
     .await?;
 
     Ok(())
 }
 
 pub async fn has_played_themesong_today(
-    conn: &mut PgConnection,
+    pool: &PgPool,
     user_id: &UserID,
 ) -> Result<bool> {
     let played_count = sqlx::query!(
@@ -85,7 +83,7 @@ pub async fn has_played_themesong_today(
         "#,
         user_id.0
     )
-    .fetch_one(&mut *conn)
+    .fetch_one(pool)
     .await?;
 
     Ok(played_count.result.unwrap() > 0)
@@ -173,7 +171,7 @@ pub fn can_user_access_themesong(user_roles: &UserRoles) -> bool {
 
 // TODO: We should probably not copy & paste this like this
 pub async fn should_play_themesong(
-    conn: &mut PgConnection,
+    conn: &PgPool,
     user_id: &UserID,
     user_roles: &UserRoles,
 ) -> Result<bool> {
@@ -189,7 +187,7 @@ pub async fn should_play_themesong(
         "SELECT user_id FROM user_theme_songs WHERE user_id = $1",
         user_id.0
     )
-    .fetch_optional(&mut *conn)
+    .fetch_optional(conn)
     .await?;
 
     match themesong {
@@ -200,36 +198,57 @@ pub async fn should_play_themesong(
 
 // Play a themesong. Does not wait for sink to complete playing
 pub async fn play_themesong(
-    _conn: &mut PgConnection,
-    _user_id: &UserID,
-    _sink: &rodio::Sink,
+    pool: &PgPool,
+    user_id: &UserID,
+    sink: &rodio::OutputStreamHandle,
 ) -> Result<bool> {
-    todo!("play_themesong");
-    // let themesong = sqlx::query!(
-    //     "SELECT song FROM user_theme_songs WHERE user_id = $1",
-    //     user_id
-    // )
-    // .fetch_optional(&mut *conn)
-    // .await?;
-    //
-    // let themesong = match themesong {
-    //     Some(themesong) => themesong,
-    //     None => {
-    //         println!("theme_song: No themesong available for: {:?}", user_id);
-    //         return Ok(false);
-    //     }
-    // };
-    //
+    println!("playing themesong... {:?}", user_id);
+
+    let themesong = sqlx::query!(
+        "SELECT song FROM user_theme_songs WHERE user_id = $1",
+        user_id.0
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let themesong = match themesong {
+        Some(themesong) => themesong,
+        None => {
+            println!("theme_song: No themesong available for: {:?}", user_id);
+            return Ok(false);
+        }
+    };
+
+    println!("got themesong");
+
     // let rodioer =
     //     rodio::Decoder::new(BufReader::new(Cursor::new(themesong.song)))
     //         .unwrap();
-    // // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
-    // // do that yet, this probably wouldn't work with queued themesongs (for example)
-    // // rodioer.total_duration();
-    //
+    // TODO: I would like to turn this off after the sink finishes playing, but I don't know how to
+    // do that yet, this probably wouldn't work with queued themesongs (for example)
+    // rodioer.total_duration();
+
+    println!("appending...");
+
+    let sink = sink
+        .play_once(BufReader::new(Cursor::new(themesong.song)))
+        .expect("to play a song");
+
+    sink.detach();
+
     // sink.append(rodioer);
-    //
-    // Ok(true)
+    // sink.play();
+    // sink.sleep_until_end();
+    // sink.sleep_until_end();
+
+    println!("... done");
+
+    // TODO: Look into using these!
+    // self.sink.volume()
+    // self.sink.set_volume()
+    // self.sink.len()
+
+    Ok(true)
 }
 
 pub fn validate_themesong(themesong_url: &str) -> Result<String> {
@@ -307,15 +326,19 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
 }
 
 pub struct ThemesongPlayer {
-    conn: PgConnection,
-    sink: rodio::Sink,
+    pool: PgPool,
+    // sink: rodio::Sink,
+    handle: rodio::OutputStreamHandle,
 }
 
 impl ThemesongPlayer {
-    pub fn new(conn: PgConnection) -> Self {
-        let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-        let sink = rodio::Sink::try_new(&handle).unwrap();
-        ThemesongPlayer { conn, sink }
+    pub fn new(pool: PgPool) -> Self {
+        let (stream, handle) = rodio::OutputStream::try_default().unwrap();
+
+        // TODO: How to now leak this... it's ok though, it just gets called once
+        Box::leak(Box::new(stream));
+
+        ThemesongPlayer { pool, handle }
     }
 }
 
@@ -330,19 +353,21 @@ impl events::EventHandler for ThemesongPlayer {
             let event = rx.recv().await?;
             match event {
                 Event::ThemesongPlay(ThemesongPlay::Start {
-                    user_id, ..
+                    user_id,
+                    display_name,
                 }) => {
-                    println!("=> Playing themesong");
+                    println!("=> Playing themesong: {}", display_name);
+
                     play_themesong_for_today(
-                        &mut self.conn,
+                        &mut self.pool,
                         &user_id,
-                        &self.sink,
+                        &self.handle,
                     )
                     .await?;
                 }
                 Event::UserMessage(msg) => {
                     if should_play_themesong(
-                        &mut self.conn,
+                        &mut self.pool,
                         &msg.user_id,
                         &msg.roles,
                     )
@@ -351,7 +376,7 @@ impl events::EventHandler for ThemesongPlayer {
                         println!("  Sending themesong play event...");
                         tx.send(Event::ThemesongPlay(ThemesongPlay::Start {
                             user_id: msg.user_id,
-                            display_name: "TODO: find a real name".to_string(),
+                            display_name: msg.user_name,
                         }))?;
                     }
                 }
@@ -362,11 +387,46 @@ impl events::EventHandler for ThemesongPlayer {
     }
 }
 
+pub struct ThemesongListener {}
+
+impl ThemesongListener {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+#[async_trait]
+impl events::EventHandler for ThemesongListener {
+    async fn handle(
+        mut self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+
+            if msg.contents.starts_with("!themesong") {
+                tx.send(Event::ThemesongDownload(
+                    ThemesongDownload::Request { msg },
+                ))?;
+            }
+        }
+    }
+}
+
 pub struct ThemesongDownloader {
-    // pool: sqlx::PgPool,
     pool: sqlx::PgPool,
-    twitch: twitch_service::Service,
     users: user_service::Service,
+}
+
+impl ThemesongDownloader {
+    pub fn new(pool: sqlx::PgPool, users: user_service::Service) -> Self {
+        Self { pool, users }
+    }
 }
 
 #[async_trait]
@@ -385,11 +445,7 @@ impl events::EventHandler for ThemesongDownloader {
                 _ => continue,
             };
 
-            let user_id = match self.twitch.get_user_id(msg.sender.id).await? {
-                Some(user_id) => user_id,
-                None => continue,
-            };
-
+            let user_id = msg.user_id;
             let user_roles = self
                 .users
                 .get_roles(&user_id)
@@ -397,7 +453,7 @@ impl events::EventHandler for ThemesongDownloader {
                 .ok_or(anyhow::anyhow!("empty user_roles"))?;
 
             let splitmsg = msg
-                .text
+                .contents
                 .split(" ")
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
@@ -407,25 +463,25 @@ impl events::EventHandler for ThemesongDownloader {
                     "format: !themesong <url> mm:ss mm:ss".to_string(),
                 ))?;
 
-                tx.send(ThemesongDownload::format(msg.sender.name))?;
+                tx.send(ThemesongDownload::format(msg.user_name))?;
                 continue;
             } else if splitmsg.len() != 4 {
                 tx.send(Event::RequestTwitchMessage(
                     "Incorrect themesong format. Required: !themesong <url> mm:ss mm:ss".to_string()
                 ))?;
 
-                tx.send(ThemesongDownload::finish(msg.sender.name, false))?;
+                tx.send(ThemesongDownload::finish(msg.user_name, false))?;
                 continue;
             }
 
             if can_user_access_themesong(&user_roles) {
                 // Notify that we are starting a download
-                tx.send(ThemesongDownload::start(msg.sender.name.clone()))?;
+                tx.send(ThemesongDownload::start(msg.user_name.clone()))?;
 
                 match download_themesong(
                     &self.pool,
                     &user_id,
-                    msg.sender.name.as_str(),
+                    msg.user_name.as_str(),
                     splitmsg[1].as_str(),
                     splitmsg[2].as_str(),
                     splitmsg[3].as_str(),
@@ -436,7 +492,7 @@ impl events::EventHandler for ThemesongDownloader {
                         info!("Successfully downloaded themesong");
 
                         tx.send(ThemesongDownload::finish(
-                            msg.sender.name,
+                            msg.user_name,
                             true,
                         ))?;
 
@@ -450,7 +506,7 @@ impl events::EventHandler for ThemesongDownloader {
 
                         tx.send(Event::ThemesongDownload(
                             ThemesongDownload::Finish {
-                                display_name: msg.sender.name.clone(),
+                                display_name: msg.user_name.clone(),
                                 success: false,
                             },
                         ))?;
