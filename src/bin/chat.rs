@@ -488,6 +488,17 @@ async fn handle_obs_stuff(
 
     Ok(())
 }
+// async fn say<
+//     T: twitch_irc::transport::Transport,
+//     L: twitch_irc::login::LoginCredentials,
+// >(
+//     client: &TwitchIRCClient<T, L>,
+//     msg: impl Into<String>,
+// ) -> Result<()> {
+//     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+//     client.say(twitch_username.to_string(), msg.into()).await?;
+//     Ok(())
+// }
 
 #[tokio::main]
 async fn main() -> Result<()> {

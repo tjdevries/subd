@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 use twitch_api2::pubsub::channel_points::Redemption;
 pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 
+#[cfg(feature = "sql")]
 pub mod consts;
+
 pub mod twitch;
 
 // TODO: How do we derive this better?
@@ -17,8 +19,12 @@ pub struct UserID(pub uuid::Uuid);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
-#[derive(sqlx::Type, Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[cfg_attr(
+    feature = "sql",
+    derive(sqlx::Type),
+    sqlx(type_name = "user_platform", rename_all = "SCREAMING_SNAKE_CASE")
+)]
 pub enum UserPlatform {
     Twitch,
     Youtube,
@@ -350,62 +356,4 @@ impl TwitchSubscriptionEvent {
         }
         .to_string()
     }
-}
-
-pub fn get_nyx_sub() -> TwitchSubscriptionEvent {
-    let twitch_username = consts::get_twitch_broadcaster_username();
-    let twitch_channel_id = consts::get_twitch_broadcaster_channel_id();
-    let message = serde_json::json!(
-    {
-        "channel_name": twitch_username,
-        "benefit_end_month": 11,
-        "user_name": "nyxkrage",
-        "display_name": "NyxKrage",
-        "channel_id": twitch_channel_id,
-        "user_id": "1234",
-        "time": "2020-10-20T22:17:43.242793831Z",
-        "sub_message": {
-        "message": "You are my favorite streamer",
-        "emotes": null,
-        },
-        "sub_plan": "1000",
-        "sub_plan_name": "Channel Subscription (emilgardis)",
-        "months": 0,
-        "cumulative_months": 1,
-        "context": "sub",
-        "is_gift": false,
-        "multi_month_duration": 0,
-    });
-
-    let subscription = serde_json::from_value(message).unwrap();
-    TwitchSubscriptionEvent { subscription }
-}
-
-pub fn get_prime_sub() -> TwitchSubscriptionEvent {
-    let twitch_username = consts::get_twitch_broadcaster_username();
-    let twitch_channel_id = consts::get_twitch_broadcaster_channel_id();
-    let message = serde_json::json!(
-    {
-        "benefit_end_month": 11,
-        "user_name": "theprimeagen",
-        "display_name": "ThePrimeagen",
-        "channel_name": twitch_username,
-        "channel_id": twitch_channel_id,
-        "user_id": "1234",
-        "time": "2020-10-20T22:17:43.242793831Z",
-        "sub_message": {
-            "message": "You are my favorite streamer",
-            "emotes": null
-        },
-        "sub_plan": "1000",
-        "sub_plan_name": "Channel Subscription (emilgardis)",
-        "months": 0,
-        "cumulative_months": 1,
-        "context": "sub",
-        "is_gift": false,
-        "multi_month_duration": 0
-    });
-
-    let subscription = serde_json::from_value(message).unwrap();
-    TwitchSubscriptionEvent { subscription }
 }

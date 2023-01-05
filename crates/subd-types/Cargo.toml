@@ -12,8 +12,16 @@ once_cell.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
-sqlx = { workspace = true, features = [] }
+sqlx = { workspace = true, features = [], optional = true }
 uuid.workspace = true
 
-twitch-irc = { workspace = true, default-features = false, features = [ "with-serde" ] }
-twitch_api2 = { workspace = true, features = [ "pubsub", "twitch_oauth2" ]}
+# twitch-irc = { workspace = true, default-features = false, features = [ "with-serde" ] }
+# TODO: It would be great to figure out how to do this without havin to copy this in
+twitch-irc = { version = "4.0.0", default-features = false, features = [
+    "with-serde",
+] }
+twitch_api2 = { version = "0.6.1", features = [ "pubsub", "twitch_oauth2" ]}
+
+[features]
+default = ["sql"]
+sql = ["dep:sqlx"]

@@ -6,13 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-subd-types = { path = "../subd-types/" }
+subd-types = { path = "../subd-types/", default-features = false, features = [] }
 
 serde.workspace = true
 serde_json.workspace = true
 chrono = { workspace = true, features = [ "wasmbind" ] }
-tungstenite = { workspace = true, features = [] }
-twitch-irc = { workspace = true, default-features = false, features = [
+tungstenite = { version = "0.17.2", default-features = false, features = [ ] }
+twitch-irc = { version = "4.0.0", default-features = false, features = [
     "with-serde",
 ] }
 
