@@ -404,7 +404,7 @@ async fn main() -> Result<()> {
 
     // Works for Arch Linux
     let (_stream, stream_handle) =
-        audio::get_output_stream("pluse").expect("stream handle");
+        audio::get_output_stream("pulse").expect("stream handle");
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -432,7 +432,195 @@ async fn main() -> Result<()> {
     event_loop.push(SourceVisibilityHandler { obs_client });
 
     println!("\n\n\t\tLet's Start this Loop Up!");
+    let _ = main2().await;
     event_loop.run().await?;
 
     Ok(())
 }
+
+use twitter_v2::api_result::ApiResponse;
+use twitter_v2::authorization::{BearerToken, Oauth2Token};
+use twitter_v2::id::NumericId;
+use twitter_v2::query::{
+    SpaceExpansion, SpaceField, TopicField, TweetField, UserField,
+};
+use twitter_v2::Space;
+use twitter_v2::TwitterApi;
+
+// |          --------- ^^^^^^^^^^ the trait `IntoNumericId` is not implemented for `&str`
+
+async fn main2() -> Result<()> {
+    let otherside_guild_id = NumericId::new(1521585633445122048);
+    // let other_guild_tweet = 1607890390811840512;
+    let phil_tweet = NumericId::new(1608588236452167681);
+
+    let phil_id = NumericId::new(34440817);
+
+    let auth =
+        BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+
+    // let tweet = TwitterApi::new(auth)
+    //     .get_tweet(phil_tweet)
+    //     .tweet_fields([TweetField::AuthorId, TweetField::CreatedAt])
+    //     .send()
+    //     .await?
+    //     .into_data()
+    //     .expect("this tweet should exist");
+    // println!("{:?}", tweet);
+
+    // let auth =
+    //     BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+
+    // So this ID doesn't seem right
+    // We need to figure out a different one
+    // println!("{:?}", space);
+    //
+    let auth =
+        BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+
+    // /(invited_user_ids, speaker_ids, creator_id, host_ids, topics_ids)/ expansions
+    // 1ypKddPokoaKW
+    // let space = TwitterApi::new(auth)
+    //     .get_spaces_by_creator_ids([otherside_guild_id])
+    //     // So these aren't working how I expected
+    //     // I thought doing this could show the topics
+    //     .topic_fields([
+    //         TopicField::Id,
+    //         TopicField::Name,
+    //         TopicField::Description,
+    //     ])
+    //     .user_fields([
+    //         UserField::CreatedAt,
+    //         UserField::Description,
+    //         UserField::Id,
+    //         UserField::Name,
+    //         // UserField::PinnedTweetId,
+    //         // UserField::ProfileImageUrl,
+    //         // UserField::PublicMetrics,
+    //         UserField::Username,
+    //         UserField::Verified,
+    //         // Entities,
+    //         // Location,
+    //         // Protected,
+    //         // Url,
+    //         // Withheld,
+    //     ])
+    //     .expansions([
+    //         SpaceExpansion::HostIds,
+    //         // SpaceExpansion::InvitedUserIds,
+    //         SpaceExpansion::SpeakerIds,
+    //         SpaceExpansion::CreatorId,
+    //     ])
+    //     .space_fields([
+    //         SpaceField::HostIds,
+    //         SpaceField::CreatedAt,
+    //         SpaceField::CreatorId,
+    //         SpaceField::Id,
+    //         // SpaceField::Lang,
+    //         // SpaceField::InvitedUserIds,
+    //         SpaceField::ParticipantCount,
+    //         SpaceField::SpeakerIds,
+    //         SpaceField::StartedAt,
+    //         SpaceField::EndedAt,
+    //         // SpaceField::SubscriberCount,
+    //         SpaceField::TopicIds,
+    //         SpaceField::State,
+    //         SpaceField::Title,
+    //         // SpaceField::UpdatedAt,
+    //         SpaceField::ScheduledStart,
+    //         // SpaceField::IsTicketed,
+    //     ])
+    //     .send()
+    //     .await?
+    //     .into_data()
+    //     .expect("Space Not Found");
+    // println!("\n\n\t\tSpace: {:?}", space);
+
+    let auth =
+        BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+
+    let space = TwitterApi::new(auth)
+        .get_space("1ypKddPokoaKW")
+        .topic_fields([
+            TopicField::Id,
+            TopicField::Name,
+            TopicField::Description,
+        ])
+        .user_fields([
+            UserField::CreatedAt,
+            UserField::Description,
+            UserField::Id,
+            UserField::Name,
+            UserField::PinnedTweetId,
+            UserField::ProfileImageUrl,
+            UserField::PublicMetrics,
+            UserField::Username,
+            UserField::Verified,
+            // Entities,
+            // Location,
+            // Protected,
+            // Url,
+            // Withheld,
+        ])
+        .expansions([
+            SpaceExpansion::HostIds,
+            SpaceExpansion::SpeakerIds,
+            SpaceExpansion::CreatorId,
+            // SpaceExpansion::InvitedUserIds,
+        ])
+        .space_fields([
+            SpaceField::HostIds,
+            SpaceField::CreatedAt,
+            SpaceField::CreatorId,
+            SpaceField::Id,
+            SpaceField::ParticipantCount,
+            SpaceField::SpeakerIds,
+            SpaceField::StartedAt,
+            SpaceField::EndedAt,
+            SpaceField::TopicIds,
+            SpaceField::State,
+            SpaceField::Title,
+            SpaceField::ScheduledStart,
+            // SpaceField::Lang,
+            // SpaceField::InvitedUserIds,
+            // SpaceField::SubscriberCount,
+            // SpaceField::UpdatedAt,
+            // SpaceField::IsTicketed,
+        ])
+        .send()
+        .await?;
+
+    let includes = space.includes().expect("expected includes");
+    println!("\n\n\t\tIncludes: {:?}", includes);
+
+    // So How do I say plz lemme use this space
+    let data = space.data().expect("expected data");
+    println!("\n\n\t\tSpace: {:?}", data);
+
+    // how do we use this space again
+
+    // Why can't I use this again
+    // let data = space.into_data().expect("Wha");
+    // .into_data()
+    // .into_meta()
+    // .into_errors()
+
+    // println!("\n\n\t\tSpace: {:?}", space);
+    // println!("\n\n\t\tTopics: {:?}", space.into_includes);
+    // println!("\n\n\t\tTopics: {:?}", space.topics);
+
+    // println!("\t\tSpace: {:?}", space);
+
+    // So I don't know how I should get a stored oauth2_token here
+    // So how do we make a stored Oauthtoken here
+    // let auth: Oauth2Token = serde_json::from_str(&stored_oauth2_token)?;
+    Ok(())
+}
+
+// async fn find_includes(
+//     space: &ApiResponse<BearerToken, Space, ()>,
+// ) -> Result<()> {
+//     // Can we return the space tho???
+//     let includes = space.into_includes().expect("expected includes");
+//     Ok(())
+// }
