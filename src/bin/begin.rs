@@ -590,30 +590,25 @@ async fn main2() -> Result<()> {
         .send()
         .await?;
 
-    let includes = space.includes().expect("expected includes");
-    println!("\n\n\t\tIncludes: {:?}", includes);
+    let data = space.data().expect("Expected space data");
+    println!("{:?}", data);
 
-    // So How do I say plz lemme use this space
-    let data = space.data().expect("expected data");
-    println!("\n\n\t\tSpace: {:?}", data);
+    println!("Looking for Tweets for Space");
 
-    // how do we use this space again
+    let stored_oauth2_token =
+        std::fs::read_to_string("./.oauth2_token.json").unwrap();
+    let auth: Oauth2Token = serde_json::from_str(&stored_oauth2_token)?;
 
-    // Why can't I use this again
-    // let data = space.into_data().expect("Wha");
-    // .into_data()
-    // .into_meta()
-    // .into_errors()
+    let tweets = TwitterApi::new(auth)
+        .get_space_tweets("1djGXlXZogOGZ")
+        .send()
+        .await?;
 
-    // println!("\n\n\t\tSpace: {:?}", space);
-    // println!("\n\n\t\tTopics: {:?}", space.into_includes);
-    // println!("\n\n\t\tTopics: {:?}", space.topics);
-
-    // println!("\t\tSpace: {:?}", space);
-
+    let tweet_data = tweets.data().expect("Couldn't find tweets");
+    println!("\n\t\tTweets:{:?}", tweet_data);
+    // O-AUTH
     // So I don't know how I should get a stored oauth2_token here
     // So how do we make a stored Oauthtoken here
-    // let auth: Oauth2Token = serde_json::from_str(&stored_oauth2_token)?;
     Ok(())
 }
 

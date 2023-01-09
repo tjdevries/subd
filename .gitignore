@@ -25,3 +25,4 @@ subd.db-wal
 subd.*.db
 .env
 test.wav
+.oauth_token.json
