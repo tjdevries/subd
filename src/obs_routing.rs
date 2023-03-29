@@ -21,6 +21,9 @@ use std::fs;
 use std::io::prelude::*;
 // use std::io::Error;
 use std::process::Command;
+use std::thread;
+use std::time;
+use std::time::Duration;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -116,6 +119,22 @@ pub async fn handle_obs_commands(
                 eprintln!("Error: {}", error);
             }
 
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                "skybox",
+                false,
+                &obs_client,
+            )
+            .await;
+            let ten_millis = time::Duration::from_millis(300);
+            thread::sleep(ten_millis);
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                "skybox",
+                true,
+                &obs_client,
+            )
+            .await;
             Ok(())
         }
         "!set_voice" => {
