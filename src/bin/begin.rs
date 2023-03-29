@@ -185,10 +185,6 @@ impl EventHandler for SoundHandler {
                 _ => continue,
             };
 
-            // fmt.Sprintf("Hello: %s", msg.contents);
-            let m = format!("\n\tSound Handler: {}", msg.contents);
-            println!("{:?}", m);
-
             // if msg.roles.is_twitch_staff() {
 
             let spoken_string = msg.contents.clone();
@@ -205,6 +201,9 @@ impl EventHandler for SoundHandler {
             let stream_character =
                 uberduck::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
+
+            let m = format!("\n\tStream Character: {:?}", stream_character);
+            println!("{:?}", m);
 
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
@@ -223,8 +222,6 @@ impl EventHandler for SoundHandler {
                 character.source =
                     Some(server::obs::TWITCH_STAFF_VOICE.to_string());
             } else if msg.user_name == "beginbotbot" {
-                println!("BEGINBOTBOTTO!!!!");
-
                 // So this is
                 // TODO: Get better voice
                 character.voice =
@@ -232,8 +229,7 @@ impl EventHandler for SoundHandler {
                 // character.voice = Some("stephen-a-smith".to_string());
                 // Some("stephen-a-smith".to_string())
             } else if msg.roles.is_twitch_mod() {
-                character.voice =
-                    Some(server::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
+                character.voice = Some(stream_character.voice)
             } else if msg.roles.is_twitch_sub() {
                 character.voice = Some(stream_character.voice.clone());
             } else if !state.sub_only_tts {
@@ -242,7 +238,11 @@ impl EventHandler for SoundHandler {
                 character.voice = Some(stream_character.voice.clone());
             }
 
-            println!("WE MADE IT!");
+            let m = format!(
+                "\n\tUberDuck Request: {:?} | {}",
+                character.voice, msg.contents
+            );
+            println!("{:?}", m);
 
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
