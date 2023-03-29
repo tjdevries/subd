@@ -37,11 +37,11 @@ pub struct TriggerHotkeyHandler {
     obs_client: OBSClient,
 }
 
-pub struct StreamCharacterHandler {
+pub struct SourceVisibilityHandler {
     obs_client: OBSClient,
 }
 
-pub struct SourceVisibilityHandler {
+pub struct StreamCharacterHandler {
     obs_client: OBSClient,
 }
 
@@ -189,7 +189,7 @@ impl EventHandler for SoundHandler {
             let m = format!("\n\tSound Handler: {}", msg.contents);
             println!("{:?}", m);
 
-            println!("Roles {:?}", msg.roles);
+            // if msg.roles.is_twitch_staff() {
 
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
@@ -209,8 +209,6 @@ impl EventHandler for SoundHandler {
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
 
-            // Are we failing here???
-
             let mut character = Character {
                 ..Default::default()
             };
@@ -224,19 +222,27 @@ impl EventHandler for SoundHandler {
                     Some(server::obs::TWITCH_STAFF_OBS_SOURCE.to_string());
                 character.source =
                     Some(server::obs::TWITCH_STAFF_VOICE.to_string());
+            } else if msg.user_name == "beginbotbot" {
+                println!("BEGINBOTBOTTO!!!!");
+
+                // So this is
+                // TODO: Get better voice
+                character.voice =
+                    Some(server::obs::TWITCH_HELPER_VOICE.to_string());
+                // character.voice = Some("stephen-a-smith".to_string());
+                // Some("stephen-a-smith".to_string())
             } else if msg.roles.is_twitch_mod() {
                 character.voice =
                     Some(server::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
             } else if msg.roles.is_twitch_sub() {
                 character.voice = Some(stream_character.voice.clone());
             } else if !state.sub_only_tts {
-           
                 // This is what everyone get's to speak with
                 // if we are allowing non-subs to speak
                 character.voice = Some(stream_character.voice.clone());
             }
-            
-            println!("WE MADE IT!"); 
+
+            println!("WE MADE IT!");
 
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
@@ -439,10 +445,10 @@ async fn main() -> Result<()> {
     event_loop.push(TransformOBSTextHandler { obs_client });
 
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(StreamCharacterHandler { obs_client });
+    event_loop.push(SourceVisibilityHandler { obs_client });
 
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(SourceVisibilityHandler { obs_client });
+    event_loop.push(StreamCharacterHandler { obs_client });
 
     println!("\n\n\t\tLet's Start this Loop Up!");
     // We aren't running!!!!
