@@ -16,6 +16,11 @@ use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
+// use std::fs::File;
+use std::fs;
+use std::io::prelude::*;
+// use std::io::Error;
+use std::process::Command;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -81,6 +86,38 @@ pub async fn handle_obs_commands(
                 .await
         }
 
+        "!skybox" => {
+            let content = msg.contents;
+            let file_path = "/home/begin/code/BeginGPT/tmp/user_skybox.txt";
+            if let Err(e) = write_to_file(file_path, &content) {
+                eprintln!("Error writing to file: {}", e);
+            }
+
+            let go_executable_path =
+                "/home/begin/code/BeginGPT/skybox_generator/skybox_generator";
+            let argument_prompt_file = "-prompt_file";
+            let prompt_file_path = file_path;
+            // let prompt_file_path =
+            //     "/home/begin/code/BeginGPT/tmp/transcription.txt";
+
+            // Write some Text to a file and reference that path
+
+            let output = Command::new(go_executable_path)
+                .arg(argument_prompt_file)
+                .arg(prompt_file_path)
+                .output()
+                .expect("Failed to execute Go program.");
+
+            if output.status.success() {
+                let result = String::from_utf8_lossy(&output.stdout);
+                println!("Output: {}", result);
+            } else {
+                let error = String::from_utf8_lossy(&output.stderr);
+                eprintln!("Error: {}", error);
+            }
+
+            Ok(())
+        }
         "!set_voice" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
@@ -439,4 +476,10 @@ pub async fn handle_obs_commands(
 
         _ => Ok(()),
     }
+}
+
+fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(content.as_bytes())?;
+    Ok(())
 }
