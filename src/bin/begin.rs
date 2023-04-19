@@ -186,15 +186,11 @@ impl EventHandler for SoundHandler {
                 _ => continue,
             };
 
-            // fmt.Sprintf("Hello: %s", msg.contents);
-            let m = format!("\n\tSound Handler: {}", msg.contents);
-            println!("{:?}", m);
-
             // if msg.roles.is_twitch_staff() {
 
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
-            let speech_bubble_text = uberduck::chop_text(spoken_string);
+            let _speech_bubble_text = uberduck::chop_text(spoken_string);
 
             // Anything less than 3 words we don't use
             let split = voice_text.split(" ");
@@ -249,8 +245,6 @@ impl EventHandler for SoundHandler {
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
                 Some(voice) => {
-                    println!("Voice: {}\n", voice.clone());
-
                     let records = vec![Record {
                         field_1: voice.clone(),
                         field_2: voice_text.clone(),
@@ -261,7 +255,6 @@ impl EventHandler for SoundHandler {
                         "/home/begin/code/BeginGPT/tmp/voice_character.csv";
                     write_records_to_csv(&csv_path, &records)?;
 
-                    println!("Values saved to CSV file: {}", csv_path);
                     // let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
                     //     voice,
                     //     message: speech_bubble_text,

@@ -109,7 +109,64 @@ pub async fn handle_obs_commands(
                 .await
         }
 
+        // !remix REMIX_ID STYLE_ID "WRITE YOUR PROMPT HERE"
+        "!remix" => {
+            println!("Running Skybox Remix for {}", msg.user_name);
+
+            let go_executable_path =
+                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
+
+            let default_remix_id = "2295844".to_string();
+
+            let remix_flag = "-remix";
+            let remix_id_flag = "-remix_id";
+            let prompt_flag = "-prompt";
+            let prompt = msg.contents;
+
+            let remix_id: &str = splitmsg.get(1).unwrap_or(&default_remix_id);
+
+            // ./bin/GoBeginGPT -remix -remix_id=2295844 -prompt="Office covered in Dank Weed"
+            let output = Command::new(go_executable_path)
+                .arg(remix_flag)
+                .arg(remix_id_flag)
+                .arg(remix_id)
+                .arg(prompt_flag)
+                .arg(prompt)
+                .output()
+                .expect("Failed to execute Go program.");
+
+            if output.status.success() {
+                let result = String::from_utf8_lossy(&output.stdout);
+                println!("Output: {}", result);
+            } else {
+                let error = String::from_utf8_lossy(&output.stderr);
+                eprintln!("Error: {}", error);
+            }
+
+            // This
+            // TODO: Extract out into function
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                "skybox",
+                false,
+                &obs_client,
+            )
+            .await;
+            let ten_millis = time::Duration::from_millis(300);
+            thread::sleep(ten_millis);
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                "skybox",
+                true,
+                &obs_client,
+            )
+            .await;
+            Ok(())
+        }
+
         "!skybox" => {
+            println!("Running Skybox for {}", msg.user_name);
+
             let content = msg.contents;
             let file_path = "/home/begin/code/BeginGPT/tmp/user_skybox.txt";
             if let Err(e) = write_to_file(file_path, &content) {
@@ -120,8 +177,6 @@ pub async fn handle_obs_commands(
                 "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
             let argument_prompt_file = "-prompt_file";
             let prompt_file_path = file_path;
-
-            // Write some Text to a file and reference that path
 
             // how do we direct standard out
             let output = Command::new(go_executable_path)
