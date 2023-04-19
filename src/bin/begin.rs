@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use csv::Writer;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Decoder;
@@ -185,6 +186,10 @@ impl EventHandler for SoundHandler {
                 _ => continue,
             };
 
+            // fmt.Sprintf("Hello: %s", msg.contents);
+            let m = format!("\n\tSound Handler: {}", msg.contents);
+            println!("{:?}", m);
+
             // if msg.roles.is_twitch_staff() {
 
             let spoken_string = msg.contents.clone();
@@ -198,17 +203,19 @@ impl EventHandler for SoundHandler {
                 continue;
             };
 
+            // What does this do?
             let stream_character =
                 uberduck::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
 
-            let m = format!("\n\tStream Character: {:?}", stream_character);
-            println!("{:?}", m);
-
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
 
+            let voice = stream_character.voice.clone();
+
+            // voice: stream_character.voice,
             let mut character = Character {
+                voice: Some(voice),
                 ..Default::default()
             };
 
@@ -229,7 +236,8 @@ impl EventHandler for SoundHandler {
                 // character.voice = Some("stephen-a-smith".to_string());
                 // Some("stephen-a-smith".to_string())
             } else if msg.roles.is_twitch_mod() {
-                character.voice = Some(stream_character.voice)
+                // character.voice =
+                //     Some(server::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
             } else if msg.roles.is_twitch_sub() {
                 character.voice = Some(stream_character.voice.clone());
             } else if !state.sub_only_tts {
@@ -238,22 +246,29 @@ impl EventHandler for SoundHandler {
                 character.voice = Some(stream_character.voice.clone());
             }
 
-            let m = format!(
-                "\n\tUberDuck Request: {:?} | {}",
-                character.voice, msg.contents
-            );
-            println!("{:?}", m);
-
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
                 Some(voice) => {
-                    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-                        voice,
-                        message: speech_bubble_text,
-                        voice_text,
-                        username: msg.user_name,
-                        source: character.source,
-                    }));
+                    println!("Voice: {}\n", voice.clone());
+
+                    let records = vec![Record {
+                        field_1: voice.clone(),
+                        field_2: voice_text.clone(),
+                    }];
+
+                    // Write records to a CSV file
+                    let csv_path =
+                        "/home/begin/code/BeginGPT/tmp/voice_character.csv";
+                    write_records_to_csv(&csv_path, &records)?;
+
+                    println!("Values saved to CSV file: {}", csv_path);
+                    // let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+                    //     voice,
+                    //     message: speech_bubble_text,
+                    //     voice_text,
+                    //     username: msg.user_name,
+                    //     source: character.source,
+                    // }));
                 }
                 None => {}
             }
@@ -316,6 +331,25 @@ impl EventHandler for SoundHandler {
             ));
         }
     }
+}
+
+// Define a custom data structure to hold the values
+#[derive(Serialize)]
+struct Record {
+    field_1: String,
+    field_2: String,
+}
+
+fn write_records_to_csv(path: &str, records: &[Record]) -> Result<()> {
+    let mut writer = Writer::from_path(path)?;
+
+    for record in records {
+        writer.serialize(record)?;
+    }
+
+    writer.flush()?;
+
+    Ok(())
 }
 
 #[async_trait]

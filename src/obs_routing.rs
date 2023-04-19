@@ -59,6 +59,26 @@ pub async fn handle_obs_commands(
     //       because they could be different types
 
     match splitmsg[0].as_str() {
+        "!reload_rapper" => {
+            let source = "SpeechBubble";
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                source,
+                false,
+                &obs_client,
+            )
+            .await;
+            let ten_millis = time::Duration::from_millis(300);
+            thread::sleep(ten_millis);
+            let _ = obs_source::set_enabled(
+                obs::DEFAULT_SCENE,
+                source,
+                true,
+                &obs_client,
+            )
+            .await;
+            Ok(())
+        }
         // ===========================================
         // == Test Area
         // ===========================================
@@ -97,14 +117,13 @@ pub async fn handle_obs_commands(
             }
 
             let go_executable_path =
-                "/home/begin/code/BeginGPT/skybox_generator/skybox_generator";
+                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
             let argument_prompt_file = "-prompt_file";
             let prompt_file_path = file_path;
-            // let prompt_file_path =
-            //     "/home/begin/code/BeginGPT/tmp/transcription.txt";
 
             // Write some Text to a file and reference that path
 
+            // how do we direct standard out
             let output = Command::new(go_executable_path)
                 .arg(argument_prompt_file)
                 .arg(prompt_file_path)

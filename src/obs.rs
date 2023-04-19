@@ -23,7 +23,8 @@ pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
 // pub const TWITCH_HELPER_VOICE: &str = "e40";
 pub const TWITCH_HELPER_VOICE: &str = "c-3po";
 // pub const TWITCH_HELPER_VOICE: &str = "snoop-dogg";
-pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
+// pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
+pub const TWITCH_DEFAULT_VOICE: &str = "neo";
 
 // Dynamic Source
 pub const SOUNDBOARD_TEXT_SOURCE_NAME: &str = "Soundboard-Text";
