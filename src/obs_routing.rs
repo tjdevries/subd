@@ -117,19 +117,48 @@ pub async fn handle_obs_commands(
                 "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
 
             let default_remix_id = "2295844".to_string();
+            let default_prompt = "danker".to_string();
 
             let remix_flag = "-remix";
             let remix_id_flag = "-remix_id";
             let prompt_flag = "-prompt";
-            let prompt = msg.contents;
+            let style_flag = "-style";
 
+            // How can I check if the "2" argument is a number
             let remix_id: &str = splitmsg.get(1).unwrap_or(&default_remix_id);
 
-            // ./bin/GoBeginGPT -remix -remix_id=2295844 -prompt="Office covered in Dank Weed"
+            let style_id_str: &str = splitmsg.get(2).unwrap_or(&default_prompt);
+            let style_id_int: Result<i32, _> = style_id_str.parse();
+
+            let style_id = match style_id_int {
+                Ok(id) => id,
+                Err(_) => 0,
+            };
+
+            // let prompt = default_prompt.clone();
+            // let prompt_skip if style_id == 0 {
+            //     = 2;
+            // } else {
+            // let prompt_skip = 3;
+            // // let result =
+            // //     splitmsg.iter().skip(3).collect::<Vec<&String>>().join(" ");
+            // }
+
+            let prompt_skip = if style_id == 0 { 2 } else { 3 };
+            let prompt = splitmsg
+                .clone()
+                .into_iter()
+                .skip(prompt_skip)
+                .collect::<Vec<String>>()
+                .join(" ");
+
+            // ./bin/GoBeginGPT -remix -remix_id=2295844 -style=20 -prompt="Office covered in Dank Weed"
             let output = Command::new(go_executable_path)
                 .arg(remix_flag)
                 .arg(remix_id_flag)
                 .arg(remix_id)
+                .arg(style_flag)
+                .arg(style_id_str.clone())
                 .arg(prompt_flag)
                 .arg(prompt)
                 .output()
