@@ -225,7 +225,6 @@ impl EventHandler for SoundHandler {
                 character.source =
                     Some(server::obs::TWITCH_STAFF_VOICE.to_string());
             } else if msg.user_name == "beginbotbot" {
-                // So this is
                 // TODO: Get better voice
                 character.voice =
                     Some(server::obs::TWITCH_HELPER_VOICE.to_string());
@@ -242,6 +241,7 @@ impl EventHandler for SoundHandler {
                 character.voice = Some(stream_character.voice.clone());
             }
 
+            // If the character
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
                 Some(voice) => {

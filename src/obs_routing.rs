@@ -109,8 +109,133 @@ pub async fn handle_obs_commands(
                 .await
         }
 
-        // !remix REMIX_ID STYLE_ID "WRITE YOUR PROMPT HERE"
+        "!previous" => {
+            let default_skybox_id = String::from("2449796");
+            let skybox_id: &str = splitmsg.get(1).unwrap_or(&default_skybox_id);
+            let file_path =
+                "/home/begin/code/BeginGPT/tmp/current/previous.txt";
+            if let Err(e) = write_to_file(file_path, &skybox_id) {
+                eprintln!("Error writing to file: {}", e);
+            }
+
+            println!("Attempting to Return to previous Skybox! {}", skybox_id);
+            Ok(())
+        }
+
+        // This needs to take an ID
+        "!styles" => {
+            // HELLO
+            let go_executable_path =
+                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
+            let styles_flag = "-styles";
+            let output = Command::new(go_executable_path)
+                .arg(styles_flag)
+                .output()
+                .expect("Failed to execute Go program.");
+
+            if output.status.success() {
+                let result = String::from_utf8_lossy(&output.stdout);
+                println!("Output: {}", result);
+            } else {
+                let error = String::from_utf8_lossy(&output.stderr);
+                eprintln!("Error: {}", error);
+            }
+            Ok(())
+        }
+        "!bar1" => {
+            _ = trigger_obs_move_filter_and_wesocket(
+                &obs_client,
+                "BeginBar1",
+                "bar1",
+            )
+            .await;
+            Ok(())
+        }
+
+        "!bar" => {
+            _ = trigger_obs_move_filter_and_wesocket(
+                &obs_client,
+                "BeginBar2",
+                "bar",
+            )
+            .await;
+            Ok(())
+        }
+
+        "!lunch" => {
+            _ = trigger_obs_move_filter_and_wesocket(
+                &obs_client,
+                "BeginOffice2",
+                "lunch",
+            )
+            .await;
+            Ok(())
+        }
+
+        "!office" => {
+            _ = trigger_obs_move_filter_and_wesocket(
+                &obs_client,
+                "BeginOffice1",
+                "office",
+            )
+            .await;
+            Ok(())
+        }
+
+        "!duet" => {
+            let prompt = splitmsg
+                .clone()
+                .into_iter()
+                .skip(1)
+                .collect::<Vec<String>>()
+                .join(" ");
+
+            // We need to use the "duet primer"
+            //
+            // we need to save in /tmp/current/duet.txt
+            // I need to pass this prompt to chatgpt4
+            Ok(())
+        }
+
+        // We need to eventually take in style IDs
+        "!skybox" => {
+            let skybox_info = splitmsg
+                .clone()
+                .into_iter()
+                .skip(1)
+                .collect::<Vec<String>>()
+                .join(" ");
+            let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
+            if let Err(e) = write_to_file(file_path, &skybox_info) {
+                eprintln!("Error writing to file: {}", e);
+            }
+
+            println!("Attempting to Generate Skybox! {}", skybox_info);
+
+            Ok(())
+        }
+
         "!remix" => {
+            let remix_info = splitmsg
+                .clone()
+                .into_iter()
+                .skip(1)
+                .collect::<Vec<String>>()
+                .join(" ");
+            let file_path = "/home/begin/code/BeginGPT/tmp/current/remix.txt";
+            if let Err(e) = write_to_file(file_path, &remix_info) {
+                eprintln!("Error writing to file: {}", e);
+            }
+
+            println!("Attempting to  Remix! {}", remix_info);
+
+            // OK NOw
+            // Just save this
+            Ok(())
+        }
+
+        // !remix REMIX_ID STYLE_ID "WRITE YOUR PROMPT HERE"
+        "!old_remix" => {
             println!("Running Skybox Remix for {}", msg.user_name);
 
             let go_executable_path =
@@ -134,15 +259,6 @@ pub async fn handle_obs_commands(
                 Ok(id) => id,
                 Err(_) => 0,
             };
-
-            // let prompt = default_prompt.clone();
-            // let prompt_skip if style_id == 0 {
-            //     = 2;
-            // } else {
-            // let prompt_skip = 3;
-            // // let result =
-            // //     splitmsg.iter().skip(3).collect::<Vec<&String>>().join(" ");
-            // }
 
             let prompt_skip = if style_id == 0 { 2 } else { 3 };
             let prompt = splitmsg
@@ -193,7 +309,7 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        "!skybox" => {
+        "!old_skybox" => {
             println!("Running Skybox for {}", msg.user_name);
 
             let content = msg.contents;
@@ -240,6 +356,7 @@ pub async fn handle_obs_commands(
             .await;
             Ok(())
         }
+
         "!set_voice" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
@@ -604,4 +721,27 @@ fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     let mut file = fs::File::create(file_path)?;
     file.write_all(content.as_bytes())?;
     Ok(())
+}
+
+pub async fn trigger_obs_move_filter_and_wesocket(
+    obs_client: &OBSClient,
+    filter_name: &str,
+    content: &str,
+) -> Result<()> {
+    let scene = "Primary";
+    // TODO: make this dynamic
+    // let content = "lunch";
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    let file_path = "/home/begin/code/BeginGPT/tmp/current/move.txt";
+
+    if let Err(e) = write_to_file(file_path, &content) {
+        eprintln!("Error writing to file: {}", e);
+    }
+    return Ok(());
 }
