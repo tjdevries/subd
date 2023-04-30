@@ -24,6 +24,10 @@ use std::process::Command;
 use std::thread;
 use std::time;
 use std::time::Duration;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -142,8 +146,10 @@ pub async fn handle_obs_commands(
             }
             Ok(())
         }
+        // One is the name of an OBS Filter
+        // One is the name of a custom websocket message
         "!bar1" => {
-            _ = trigger_obs_move_filter_and_wesocket(
+            _ = trigger_obs_move_filter_and_websocket(
                 &obs_client,
                 "BeginBar1",
                 "bar1",
@@ -152,8 +158,28 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
+        // Examples:
+        //           !goto OBS_POSITION OPTIONAL_SKYBOX_ID
+        //           !goto bar1
+        //           !goto bar1 2451596
+        //
+        //           We save bar1 (which is a set of coordinates for the pannellum)
+        "!goto" => {
+            let default_skybox_scene = String::from("office");
+            let skybox_scene: &str =
+                splitmsg.get(1).unwrap_or(&default_skybox_scene);
+
+            let default_skybox_id = String::from("");
+            let skybox_id: &str = splitmsg.get(2).unwrap_or(&default_skybox_id);
+
+            println!("Triggering Scene: {} {}", skybox_scene, skybox_id);
+            // we need to look up if a file exists
+            _ = trigger_scene(&obs_client, &skybox_scene, skybox_id).await;
+            Ok(())
+        }
+
         "!bar" => {
-            _ = trigger_obs_move_filter_and_wesocket(
+            _ = trigger_obs_move_filter_and_websocket(
                 &obs_client,
                 "BeginBar2",
                 "bar",
@@ -163,7 +189,7 @@ pub async fn handle_obs_commands(
         }
 
         "!lunch" => {
-            _ = trigger_obs_move_filter_and_wesocket(
+            _ = trigger_obs_move_filter_and_websocket(
                 &obs_client,
                 "BeginOffice2",
                 "lunch",
@@ -173,7 +199,7 @@ pub async fn handle_obs_commands(
         }
 
         "!office" => {
-            _ = trigger_obs_move_filter_and_wesocket(
+            _ = trigger_obs_move_filter_and_websocket(
                 &obs_client,
                 "BeginOffice1",
                 "office",
@@ -723,7 +749,96 @@ fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub async fn trigger_obs_move_filter_and_wesocket(
+// OBS_filter_name
+// skybox_id
+pub async fn trigger_scene(
+    obs_client: &OBSClient,
+    filter_name: &str,
+    skybox_id: &str,
+) -> Result<()> {
+    let scene = "Primary";
+    // TODO: make this dynamic
+    // let content = "lunch";
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    let file_path = "/home/begin/code/BeginGPT/tmp/current/move.txt";
+
+    let skybox_id_map = HashMap::from([
+        ("office".to_string(), "2443168".to_string()),
+        ("office1".to_string(), "2443168".to_lowercase()),
+        ("bar1".to_string(), "2451051".to_string()),
+        ("bar".to_string(), "2449796".to_string()),
+    ]);
+
+    // const pannellumMoveFunctions = {
+    //   'office1': {
+    //     'func': office,
+    //     'id': "2443168",
+    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/skybox_sterile_office_environment_amazon_hq_style__a8185e0b9204af34__2443168_a8185e0b9204af34__.jpg?ver=1",
+    //   },
+    //   'office': {
+    //     'func': office,
+    //     'id': "2443168",
+    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/skybox_sterile_office_environment_amazon_hq_style__a8185e0b9204af34__2443168_a8185e0b9204af34__.jpg?ver=1",
+    //   },
+    //   'bar':  {
+    //     'func': bar,
+    //     'id': "2449796",
+    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/cocktail_bar__b65346d0a00befc9__2449796_b65346d0a00befc9__2449796.jpg?ver=1",
+    //   },
+    //   'bar1': {
+    //     'func': bar1,
+    //     'id': "2451051",
+    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/dirty_dingy_bar_biker_dudes_sticky_floors__b5373f30090673cf__2451051_b.jpg?ver=1",
+    //   }
+    // };
+
+    // let skybox_path = "";
+
+    let skybox_path = if skybox_id == "" {
+        let new_skybox_id = &skybox_id_map[filter_name.clone()];
+        format!(
+            "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
+            new_skybox_id
+        )
+    } else {
+        format!(
+            "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
+            skybox_id
+        )
+    };
+
+    // This URL is rare
+    // unless you look up ID based on
+    println!("Checking for Archive: {}", skybox_path);
+    let skybox_url_exists = std::path::Path::new(&skybox_path).exists();
+
+    if skybox_url_exists {
+        let url = fs::read_to_string(skybox_path).expect("Can read file");
+        let new_skybox_command = format!("{} {}", &filter_name, url);
+        if let Err(e) = write_to_file(file_path, &new_skybox_command) {
+            eprintln!("Error writing to file: {}", e);
+        }
+    } else {
+        if let Err(e) = write_to_file(file_path, &filter_name) {
+            eprintln!("Error writing to file: {}", e);
+        }
+    }
+
+    // let mut owned_string: String = "hello ".to_owned();
+    // let borrowed_string: &str = "world";
+    // owned_string.push_str(borrowed_string);
+    // println!("{}", owned_string);
+
+    return Ok(());
+}
+
+pub async fn trigger_obs_move_filter_and_websocket(
     obs_client: &OBSClient,
     filter_name: &str,
     content: &str,
@@ -745,3 +860,33 @@ pub async fn trigger_obs_move_filter_and_wesocket(
     }
     return Ok(());
 }
+
+// "!bar" => {
+//     _ = trigger_obs_move_filter_and_websocket(
+//         &obs_client,
+//         "BeginBar2",
+//         "bar",
+//     )
+//     .await;
+//     Ok(())
+// }
+
+// "!lunch" => {
+//     _ = trigger_obs_move_filter_and_websocket(
+//         &obs_client,
+//         "BeginOffice2",
+//         "lunch",
+//     )
+//     .await;
+//     Ok(())
+// }
+
+// "!office" => {
+//     _ = trigger_obs_move_filter_and_websocket(
+//         &obs_client,
+//         "BeginOffice1",
+//         "office",
+//     )
+//     .await;
+//     Ok(())
+// }
