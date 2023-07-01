@@ -28,15 +28,18 @@ use tracing_subscriber;
 // use tracing_subscriber::util::SubscriberInitExt;
 // use tracing_subscriber::EnvFilter;
 
+#[allow(dead_code)]
 pub struct Skybox {
     pool: sqlx::PgPool,
     name: String,
 }
 
+#[allow(dead_code)]
 pub struct SkyboxHandler {
     pool: sqlx::PgPool,
 }
 
+#[allow(dead_code)]
 pub struct SkyboxRemixHandler {
     pool: sqlx::PgPool,
 }
@@ -485,21 +488,21 @@ async fn main() -> Result<()> {
     // Uberduck handles voice messages
     event_loop.push(uberduck::UberDuckHandler { pool, sink });
 
-    // OBS Hotkeys are controlled here
-    let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(TriggerHotkeyHandler { obs_client });
-
-    // OBS Text is controlled here
-    let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(TransformOBSTextHandler { obs_client });
-
-    // OBS Sources are controlled here
-    let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(SourceVisibilityHandler { obs_client });
-
-    // OBS Stream Characters are controlled here
-    let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(StreamCharacterHandler { obs_client });
+    // // OBS Hotkeys are controlled here
+    // let obs_client = server::obs::create_obs_client().await?;
+    // event_loop.push(TriggerHotkeyHandler { obs_client });
+    //
+    // // OBS Text is controlled here
+    // let obs_client = server::obs::create_obs_client().await?;
+    // event_loop.push(TransformOBSTextHandler { obs_client });
+    //
+    // // OBS Sources are controlled here
+    // let obs_client = server::obs::create_obs_client().await?;
+    // event_loop.push(SourceVisibilityHandler { obs_client });
+    //
+    // // OBS Stream Characters are controlled here
+    // let obs_client = server::obs::create_obs_client().await?;
+    // event_loop.push(StreamCharacterHandler { obs_client });
 
     // let _ = main().await;
     event_loop.run().await?;
