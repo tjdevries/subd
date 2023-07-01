@@ -1,24 +1,9 @@
-use anyhow::Result;
-use async_trait::async_trait;
-// use csv::Writer;
-use events::EventHandler;
-use obws::Client as OBSClient;
-// use serde::{Deserialize, Serialize};
 use server::audio;
-use server::move_transition;
-use server::obs_combo;
-use server::obs_hotkeys;
-use server::obs_source;
-// use server::twitch_stream_state;
-use server::uberduck;
+use anyhow::Result;
 use server::handlers;
-// use std::collections::HashSet;
+use server::uberduck;
 use subd_db::get_db_pool;
-use subd_types::Event;
-// use subd_types::TransformOBSTextRequest;
-use tokio::sync::broadcast;
 
-// use tracing_subscriber;
 
 #[allow(dead_code)]
 pub struct Skybox {
@@ -34,115 +19,6 @@ pub struct SkyboxHandler {
 #[allow(dead_code)]
 pub struct SkyboxRemixHandler {
     pool: sqlx::PgPool,
-}
-
-pub struct TriggerHotkeyHandler {
-    obs_client: OBSClient,
-}
-
-pub struct SourceVisibilityHandler {
-    obs_client: OBSClient,
-}
-
-pub struct StreamCharacterHandler {
-    obs_client: OBSClient,
-}
-
-pub struct TransformOBSTextHandler {
-    obs_client: OBSClient,
-}
-
-// ================================================================================================
-
-#[async_trait]
-impl EventHandler for SourceVisibilityHandler {
-    async fn handle(
-        self: Box<Self>,
-        _tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::SourceVisibilityRequest(msg) => msg,
-                _ => continue, }; let _ = obs_source::set_enabled(
-                &msg.scene,
-                &msg.source,
-                msg.enabled,
-                &self.obs_client,
-            )
-            .await;
-        }
-    }
-}
-
-#[async_trait]
-impl EventHandler for StreamCharacterHandler {
-    async fn handle(
-        self: Box<Self>,
-        _tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::StreamCharacterRequest(msg) => msg,
-                _ => continue,
-            };
-
-            let _ = obs_combo::trigger_character_filters(
-                &msg.source,
-                &self.obs_client,
-                msg.enabled,
-            )
-            .await;
-        }
-    }
-}
-
-#[async_trait]
-impl EventHandler for TriggerHotkeyHandler {
-    async fn handle(
-        self: Box<Self>,
-        _tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::TriggerHotkeyRequest(msg) => msg,
-                _ => continue,
-            };
-
-            obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
-        }
-    }
-}
-
-#[async_trait]
-impl EventHandler for TransformOBSTextHandler {
-    async fn handle(
-        self: Box<Self>,
-        _tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::TransformOBSTextRequest(msg) => msg,
-                _ => continue,
-            };
-
-            let filter_name = format!("Transform{}", msg.text_source);
-            let _ = move_transition::update_and_trigger_text_move_filter(
-                &msg.text_source,
-                &filter_name,
-                &msg.message,
-                &self.obs_client,
-            )
-            .await;
-        }
-    }
 }
 
 // ============ //
@@ -241,19 +117,19 @@ async fn main() -> Result<()> {
 
     // // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(TriggerHotkeyHandler { obs_client });
+    event_loop.push(handlers::trigger_obs_hotkey::TriggerHotkeyHandler { obs_client });
     //
     // // OBS Text is controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(TransformOBSTextHandler { obs_client });
+    event_loop.push(handlers::transform_obs_test::TransformOBSTextHandler { obs_client });
     //
     // // OBS Sources are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(SourceVisibilityHandler { obs_client });
+    event_loop.push(handlers::source_visibility::SourceVisibilityHandler { obs_client });
     //
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(StreamCharacterHandler { obs_client });
+    event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
     // let _ = main().await;
     event_loop.run().await?;
