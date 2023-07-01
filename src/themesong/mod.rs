@@ -9,7 +9,7 @@ use subd_types::{Event, ThemesongDownload, ThemesongPlay, UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
 
-use crate::audio;
+// use crate::audio;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 

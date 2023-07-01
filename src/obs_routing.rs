@@ -1,4 +1,3 @@
-use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -12,6 +11,7 @@ use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
+use crate::bootstrap;
 use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
@@ -23,11 +23,8 @@ use std::io::prelude::*;
 use std::process::Command;
 use std::thread;
 use std::time;
-use std::time::Duration;
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Mutex,
-};
+// use std::time::Duration;
+use std::collections::HashMap;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -209,12 +206,12 @@ pub async fn handle_obs_commands(
         }
 
         "!duet" => {
-            let prompt = splitmsg
-                .clone()
-                .into_iter()
-                .skip(1)
-                .collect::<Vec<String>>()
-                .join(" ");
+            // let prompt = splitmsg
+            //     .clone()
+            //     .into_iter()
+            //     .skip(1)
+            //     .collect::<Vec<String>>()
+            //     .join(" ");
 
             // We need to use the "duet primer"
             //
