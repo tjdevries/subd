@@ -23,11 +23,23 @@ use std::time;
 use subd_db::get_db_pool;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
-use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
 use tracing_subscriber;
-use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
+// use tracing_subscriber::util::SubscriberInitExt;
+// use tracing_subscriber::EnvFilter;
+
+pub struct Skybox {
+    pool: sqlx::PgPool,
+    name: String,
+}
+
+pub struct SkyboxHandler {
+    pool: sqlx::PgPool,
+}
+
+pub struct SkyboxRemixHandler {
+    pool: sqlx::PgPool,
+}
 
 pub struct OBSMessageHandler {
     obs_client: OBSClient,
@@ -364,6 +376,8 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
+            // THEORY: We don't know if this is an explicit OBS message at this stage
+            println!("\n{:?}", msg);
             match obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
@@ -391,10 +405,10 @@ impl EventHandler for OBSMessageHandler {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         // .with_max_level(Level::TRACE)
-        .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
+        // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
         .without_time()
         .with_target(false)
-        .finish()
+        // .finish()
         .init();
 
     {
@@ -442,19 +456,23 @@ async fn main() -> Result<()> {
         .await,
     ));
 
+    // This really is named wrong
+    // this handles more than OBS
+    // and it's also earlier in the program
+    // but it takes an obs_client and pool none-the-less
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(OBSMessageHandler {
         obs_client,
         pool: pool.clone(),
     });
 
+    // TODO: This should be abstracted
     // Works for Arch Linux
     let (_stream, stream_handle) =
         audio::get_output_stream("pulse").expect("stream handle");
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    // This should be abstracted
 
     event_loop.push(SoundHandler {
         sink,
@@ -463,26 +481,32 @@ async fn main() -> Result<()> {
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     let pool = get_db_pool().await;
+
+    // Uberduck handles voice messages
     event_loop.push(uberduck::UberDuckHandler { pool, sink });
 
+    // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(TriggerHotkeyHandler { obs_client });
 
+    // OBS Text is controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(TransformOBSTextHandler { obs_client });
 
+    // OBS Sources are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(SourceVisibilityHandler { obs_client });
 
+    // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(StreamCharacterHandler { obs_client });
 
-    println!("\n\n\t\tLet's Start this Loop Up!");
-    // We aren't running!!!!
     // let _ = main().await;
     event_loop.run().await?;
+    println!("\n\n\t\tStarting begin.rs!");
+    println!("====================================================\n\n");
 
+    // Shouldn't this pause?
+    // So we are failing at the ok????
     Ok(())
 }
-
-// so We can seperate all this!
