@@ -4,41 +4,8 @@ use server::handlers;
 use server::uberduck;
 use subd_db::get_db_pool;
 
-
-#[allow(dead_code)]
-pub struct Skybox {
-    pool: sqlx::PgPool,
-    name: String,
-}
-
-#[allow(dead_code)]
-pub struct SkyboxHandler {
-    pool: sqlx::PgPool,
-}
-
-#[allow(dead_code)]
-pub struct SkyboxRemixHandler {
-    pool: sqlx::PgPool,
-}
-
-// ============ //
-// === Main === //
-// ============ //
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    // TODO: The tracing subscriber API updated
-    // not sure how to set max level
-    //
-    // I think this is what is spitting out the Error Message
-    // tracing_subscriber::fmt()
-    //     // .with_max_level(Level::TRACE)
-    //     // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
-    //     .without_time()
-    //     .with_target(false)
-    //     // .finish()
-    //     .init();
-
     {
         use rustrict::{add_word, Type};
 
