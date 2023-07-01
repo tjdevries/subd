@@ -400,19 +400,23 @@ impl EventHandler for OBSMessageHandler {
     }
 }
 
-// ==== //
-// Main //
-// ==== //
+// ============ //
+// === Main === //
+// ============ //
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        // .with_max_level(Level::TRACE)
-        // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
-        .without_time()
-        .with_target(false)
-        // .finish()
-        .init();
+    // TODO: The tracing subscriber API updated
+    // not sure how to set max level
+    //
+    // I think this is what is spitting out the Error Message
+    // tracing_subscriber::fmt()
+    //     // .with_max_level(Level::TRACE)
+    //     // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
+    //     .without_time()
+    //     .with_target(false)
+    //     // .finish()
+    //     .init();
 
     {
         use rustrict::{add_word, Type};
@@ -449,7 +453,9 @@ async fn main() -> Result<()> {
         "beginbot".to_string(),
     )?);
 
-    // Does stuff with twitch messages
+    // TODO: Update this description to be more exact
+    // Saves the message and extracts out some information
+    // for easier routing
     event_loop.push(twitch_chat::TwitchMessageHandler::new(
         pool.clone(),
         twitch_service::Service::new(
@@ -458,7 +464,7 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-
+    //
     // This really is named wrong
     // this handles more than OBS
     // and it's also earlier in the program
