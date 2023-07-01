@@ -8,7 +8,6 @@ use server::audio;
 use server::move_transition;
 use server::obs_combo;
 use server::obs_hotkeys;
-use server::obs_routing;
 use server::obs_source;
 // use server::twitch_stream_state;
 use server::uberduck;
@@ -34,11 +33,6 @@ pub struct SkyboxHandler {
 
 #[allow(dead_code)]
 pub struct SkyboxRemixHandler {
-    pool: sqlx::PgPool,
-}
-
-pub struct OBSMessageHandler {
-    obs_client: OBSClient,
     pool: sqlx::PgPool,
 }
 
@@ -71,10 +65,7 @@ impl EventHandler for SourceVisibilityHandler {
             let event = rx.recv().await?;
             let msg = match event {
                 Event::SourceVisibilityRequest(msg) => msg,
-                _ => continue,
-            };
-
-            let _ = obs_source::set_enabled(
+                _ => continue, }; let _ = obs_source::set_enabled(
                 &msg.scene,
                 &msg.source,
                 msg.enabled,
@@ -154,49 +145,6 @@ impl EventHandler for TransformOBSTextHandler {
     }
 }
 
-// ================================================================================================
-
-
-#[async_trait]
-impl EventHandler for OBSMessageHandler {
-    async fn handle(
-        self: Box<Self>,
-        tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::UserMessage(msg) => msg,
-                _ => continue,
-            };
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-
-            // THEORY: We don't know if this is an explicit OBS message at this stage
-            println!("\n{:?}", msg);
-            match obs_routing::handle_obs_commands(
-                &tx,
-                &self.obs_client,
-                &self.pool,
-                splitmsg,
-                msg,
-            )
-            .await
-            {
-                Ok(_) => {}
-                Err(err) => {
-                    eprintln!("Error: {err}");
-                    continue;
-                }
-            }
-        }
-    }
-}
-
 // ============ //
 // === Main === //
 // ============ //
@@ -267,7 +215,7 @@ async fn main() -> Result<()> {
     // and it's also earlier in the program
     // but it takes an obs_client and pool none-the-less
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(OBSMessageHandler {
+    event_loop.push(handlers::obs_messages::OBSMessageHandler {
         obs_client,
         pool: pool.clone(),
     });
