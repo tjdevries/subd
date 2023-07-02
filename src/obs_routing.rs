@@ -100,7 +100,7 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Stream State
         // ===========================================
-        "!implicit" => {
+        "!implicit" | "!peace" => {
             twitch_stream_state::update_implicit_soundeffects(&pool)
                 .await?;
             Ok(())
