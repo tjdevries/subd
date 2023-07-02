@@ -29,11 +29,100 @@ pub struct SoundHandler {
     pub pool: sqlx::PgPool,
 }
 
+pub struct ExplicitSoundHandler {
+    pub sink: Sink,
+    pub pool: sqlx::PgPool,
+}
+
+
 // Define a custom data structure to hold the values
 #[derive(Serialize)]
 struct Record {
     field_1: String,
     field_2: String,
+}
+#[async_trait]
+impl EventHandler for ExplicitSoundHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        // Get all soundeffects loaded up once
+        // so we can search through them all
+        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
+        let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+        for soundeffect_file in soundeffect_files {
+            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
+        }
+
+        loop {
+            let event = rx.recv().await?;
+
+            // This is meant to filter out messages
+            // Right now it only filters Nightbot
+            let msg = match event {
+                Event::UserMessage(msg) => {
+                    // TODO: Add a list here
+                    if msg.user_name == "Nightbot" {
+                        continue;
+                    }
+                    msg
+                }
+                _ => continue,
+            };
+
+            let state =
+                twitch_stream_state::get_twitch_state(&self.pool).await?;
+            
+            // Only continue if we have the implicit_soundeffects enabled
+            if !state.explicit_soundeffects {
+                continue;
+            }
+
+            let mut potential_sound = msg.contents.clone();
+            let first_char = potential_sound.remove(0);
+            if first_char != '!' {
+                continue
+            }
+            let word = potential_sound;
+ 
+            let text_source =
+                obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+            
+            let sanitized_word = word.to_lowercase();
+            let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+
+            if mp3s.contains(&full_name) {
+                let _ = tx.send(Event::TransformOBSTextRequest(
+                    TransformOBSTextRequest {
+                        message: sanitized_word.clone(),
+                        text_source: text_source.to_string(),
+                    },
+                ));
+
+                let file = BufReader::new(
+                    File::open(format!("./MP3s/{}.mp3", sanitized_word))
+                        .unwrap(),);
+                self.sink
+                    .append(Decoder::new(BufReader::new(file)).unwrap());
+
+                self.sink.sleep_until_end();
+
+                let sleep_time = time::Duration::from_millis(100);
+                thread::sleep(sleep_time);
+            }
+
+            // This clears the OBS Text
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: "".to_string(),
+                    text_source: text_source.to_string(),
+                },
+            ));
+        }
+    }
+    
 }
 
 // Looks through raw-text to either play TTS or play soundeffects

@@ -78,6 +78,12 @@ async fn main() -> Result<()> {
     });
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    event_loop.push(handlers::sound_handler::ExplicitSoundHandler {
+        sink,
+        pool: pool.clone(),
+    });
+
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     let pool = get_db_pool().await;
 
     // Uberduck handles voice messages
