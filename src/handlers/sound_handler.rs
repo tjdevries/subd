@@ -190,14 +190,6 @@ impl EventHandler for SoundHandler {
 
                     self.sink.sleep_until_end();
 
-                    // TODO: Look into using these!
-                    // self.sink.volume()
-                    // self.sink.set_volume()
-                    // self.sink.len()
-
-                    // We need this so we can allow to trigger the next word in OBS
-                    // TODO: We should abstract
-                    // and figure out a better way of determine the time
                     let sleep_time = time::Duration::from_millis(100);
                     thread::sleep(sleep_time);
                 }
@@ -225,4 +217,3 @@ fn write_records_to_csv(path: &str, records: &[Record]) -> Result<()> {
 
     Ok(())
 }
-
