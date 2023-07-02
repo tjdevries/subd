@@ -97,8 +97,6 @@ impl EventHandler for UberDuckHandler {
             let stream_character =
                 build_stream_character(&self.pool, &msg.username).await?;
 
-            println!("Stream Character Finished: {:?}", stream_character);
-
             let source = match msg.source {
                 Some(source) => source,
                 None => stream_character.source.clone(),
@@ -147,12 +145,13 @@ impl EventHandler for UberDuckHandler {
                 ));
 
                 let text = response.text().await?;
-                println!("text: Finished: {:?}", text);
+                // println!("text: Finished: {:?}", text);
                 // we need to this to be better
+                
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
                 println!(
-                    "Uberduck: Finished: {:?} | Failed: {:?}",
+                    "\nUberduck: Finished: {:?} | Failed: {:?}",
                     file_resp.finished_at, file_resp.failed_at
                 );
 
@@ -359,6 +358,8 @@ pub async fn build_stream_character(
         match stream_character::get_voice_from_username(pool, username).await {
             Ok(voice) => voice,
             Err(_) => {
+                println!("No Voice Found, Using Default");
+                
                 return Ok(StreamCharacter {
                     username: username.to_string(),
                     voice: default_voice.to_string(),

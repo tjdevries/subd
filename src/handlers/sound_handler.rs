@@ -85,6 +85,8 @@ impl EventHandler for SoundHandler {
                 uberduck::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
             let voice = stream_character.voice.clone();
+            println!("\nvoice from stream_character: {}", voice);
+            
 
             // This is the current state of the stream:
             //    whether you are allowing all text to be read
@@ -97,6 +99,8 @@ impl EventHandler for SoundHandler {
                 ..Default::default()
             };
 
+            println!("\n\tcharacter: {:?}", character);
+
             // This is all about how to respond to messages from various types of users
             if msg.roles.is_twitch_staff() {
                 character.voice =
@@ -107,8 +111,13 @@ impl EventHandler for SoundHandler {
                 character.voice =
                     Some(obs::TWITCH_HELPER_VOICE.to_string());
             } else if msg.roles.is_twitch_mod() {
-                character.voice =
-                    Some(crate::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
+                match character.voice {
+                    Some(_) => { }
+                    None => {
+                        character.voice =
+                            Some(obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
+                    }
+                }
             } else if msg.roles.is_twitch_sub() {
                 character.voice = Some(stream_character.voice.clone());
             } else if !state.sub_only_tts {
@@ -132,7 +141,11 @@ impl EventHandler for SoundHandler {
                     // let csv_path =
                     //     "/home/begin/code/BeginGPT/tmp/voice_character.csv";
                     // write_records_to_csv(&csv_path, &records)?;
+                    //
+                    // At this point it's brock-sampson
+                    println!("\n\tvoice: {}", voice);
 
+                    // The voice here isn't be respected
                     let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
                         voice,
                         message: speech_bubble_text,
