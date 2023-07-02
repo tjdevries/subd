@@ -6,12 +6,39 @@ use subd_types::{Event, UserID, UserMessage, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
 use twitch_api2::{
     helix::subscriptions::GetBroadcasterSubscriptionsRequest,
-    twitch_oauth2::UserToken, HelixClient,
+    twitch_oauth2::UserToken,
+    HelixClient, 
 };
 use twitch_irc::{
     login::StaticLoginCredentials, message::ServerMessage, ClientConfig,
     SecureTCPTransport, TwitchIRCClient,
-};
+}; 
+// use twitch_api2::tmi::{TmiClient, TmiMessage};
+// use twitch_oauth2::{tokens::errors::AppAccessTokenError, AppAccessToken, Scope, TwitchToken};
+
+// #[allow(dead_code)]
+// #[tokio::main]
+// async fn send_message() -> Result<(), Box<dyn std::error::Error>> {
+//     let client_id = ClientId::new("your-client-id");
+//     let client_secret = ClientSecret::new("your-client-id");
+//     
+//     // let client_secret = "your-client-secret";
+//     let client: TmiClient<reqwest::Client> = TmiClient::default();
+//     let token = AppAccessToken::get_app_access_token(&client, client_id, client_secret, Scope::all()).await?;
+//     //
+//     let channel = "beginbot";
+//     let message = "damn son where'd you find that!";
+//
+//     let c = client.get_client();
+//
+//     // c.post()
+//     //
+//     // let tmi_message = TmiMessage::privmsg(channel.into(), message.into());
+//     // client.send_message(&token, tmi_message).await?;
+//
+//     Ok(())
+// }
+
 
 // fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
 //     let twitch_username = subd_types::consts::get_twitch_bot_username();

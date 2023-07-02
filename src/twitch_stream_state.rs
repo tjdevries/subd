@@ -34,11 +34,28 @@ impl twitch_stream_state::Model {
     }
 }
 pub async fn update_implicit_soundeffects(
-    soundeffects: bool,
     pool: &PgPool,
 ) -> Result<()> {
+    let state = get_twitch_state(pool).await?;
+    let soundeffects = !state.implicit_soundeffects;
     let _res = sqlx::query!(
         "UPDATE twitch_stream_state SET implicit_soundeffects = $1",
+        soundeffects
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn update_explicit_soundeffects(
+    pool: &PgPool,
+) -> Result<()> {
+    let state = get_twitch_state(pool).await?;
+    let soundeffects = !state.explicit_soundeffects;
+    
+    let _res = sqlx::query!(
+        "UPDATE twitch_stream_state SET explicit_soundeffects = $1",
         soundeffects
     )
     .execute(pool)

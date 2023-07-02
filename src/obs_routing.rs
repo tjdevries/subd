@@ -1,3 +1,5 @@
+use anyhow::{bail, Result};
+use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -11,20 +13,15 @@ use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
-use crate::bootstrap;
-use anyhow::{bail, Result};
-use obws;
-use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
-// use std::fs::File;
+use obws::requests::scene_items::Scale;
+use obws;
+use std::collections::HashMap;
 use std::fs;
 use std::io::prelude::*;
-// use std::io::Error;
 use std::process::Command;
 use std::thread;
 use std::time;
-// use std::time::Duration;
-use std::collections::HashMap;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
@@ -60,6 +57,10 @@ pub async fn handle_obs_commands(
     //       because they could be different types
 
     match splitmsg[0].as_str() {
+        // ======================== //
+        // === Rapper Functions === //
+        // ======================== //
+        
         "!reload_rapper" => {
             let source = "SpeechBubble";
             let _ = obs_source::set_enabled(
@@ -83,23 +84,34 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Test Area
         // ===========================================
+        
         "!durf" => {
             // Put any code you want to experiment w/ the chat with here
             Ok(())
         }
 
+        // only Begin should be to do these sounds
+        // Maybe Mods
         // ===========================================
         // == Stream State
         // ===========================================
         "!implicit" => {
-            twitch_stream_state::update_implicit_soundeffects(true, &pool)
+            twitch_stream_state::update_implicit_soundeffects(&pool)
                 .await?;
             Ok(())
         }
         "!explicit" => {
-            twitch_stream_state::update_implicit_soundeffects(false, &pool)
+            twitch_stream_state::update_explicit_soundeffects(&pool)
                 .await?;
             Ok(())
+        }
+        // returns the current state of stream
+        "!state" => {
+           let state = twitch_stream_state::get_twitch_state(&pool).await?;
+            // twitch_stream_state::update_implicit_soundeffects(false, &pool)
+            //     .await?;
+            Ok(())
+                
         }
 
         // ===========================================

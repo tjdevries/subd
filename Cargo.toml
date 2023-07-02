@@ -55,6 +55,7 @@ tracing-subscriber.workspace = true
 rand = "0.8.5"
 async-trait.workspace = true
 twitter-v2 = "0.1.8"
+twitch_oauth2.workspace = true
 
 [workspace]
 members = ["crates/*"]
@@ -84,7 +85,8 @@ twitch-irc = { version = "4.0.0", default-features = false, features = [
     "refreshing-token-rustls-native-roots",
     "transport-tcp-rustls-native-roots"
 ] }
-twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest", "pubsub" ]}
+twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwest", "pubsub", "tmi" ]}
+twitch_oauth2 = "*"
 
 [profile.dev.package.sqlx-macros]
 opt-level = 3

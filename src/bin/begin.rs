@@ -1,8 +1,20 @@
-use server::audio;
 use anyhow::Result;
+use server::audio;
 use server::handlers;
 use server::uberduck;
 use subd_db::get_db_pool;
+use twitch_irc::ClientConfig;
+use twitch_irc::SecureTCPTransport;
+use twitch_irc::TwitchIRCClient;
+use twitch_irc::login::StaticLoginCredentials;
+
+fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
+    ClientConfig::new_simple(StaticLoginCredentials::new(
+        twitch_username,
+        Some(subd_types::consts::get_twitch_bot_oauth()),
+    ))
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -38,8 +50,7 @@ async fn main() -> Result<()> {
     // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new(
         pool.clone(),
-        "beginbot".to_string(),
-    )?);
+        "beginbot".to_string(),)?);
 
     // TODO: Update this description to be more exact
     // Saves the message and extracts out some information
@@ -109,10 +120,30 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
-    // let _ = main().await;
-    event_loop.run().await?;
     println!("\n\n\t\tStarting begin.rs!");
     println!("====================================================\n\n");
-
+    
+    let config = get_chat_config();
+    let (_, client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(config);
+    
+    say(&client, "DURF CITY").await?;
+    event_loop.run().await?;
     Ok(())
 }
+
+async fn say<
+    T: twitch_irc::transport::Transport,
+    L: twitch_irc::login::LoginCredentials,
+>(
+    client: &TwitchIRCClient<T, L>,
+    msg: impl Into<String>,
+) -> Result<()> {
+    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
+    let err = client.say(twitch_username.to_string(), msg.into()).await?;
+    println!("say err: {:?}", err);
+    Ok(())
+}
+
