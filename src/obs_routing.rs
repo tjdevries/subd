@@ -223,8 +223,6 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        // HOW DOES IT KNOW THE SCENE?????
-        // THIS AIN'T WORKING???
         // ===========================================
         // == Scaling Sources
         // ===========================================
@@ -243,31 +241,43 @@ pub async fn handle_obs_commands(
                 y: Some(y),
             };
 
-            obs_source::trigger_grow(
-                &scene,
+            let temp_scene = "Primary";
+            let res = obs_source::trigger_grow(
+                &temp_scene,
                 source,
                 &base_scale,
                 x,
                 y,
                 &obs_client,
             )
-            .await
+            .await;
+
+            if let Err(e) = res {
+                let err_msg = format!("Error Scaling {:?}", e);
+                send_message(twitch_client, err_msg).await?;
+            }
+            
+            Ok(())
         }
 
         // ===========================================
         // == Moving Sources
         // ===========================================
         "!move" => {
-            println!("!move {} {}", scene, source);
+            let temp_scene = "Primary";
+            
+            println!("\n!move {} {}", temp_scene, source);
 
             if splitmsg.len() > 3 {
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
-                obs_source::move_source(&scene, source, x, y, &obs_client).await
+               let _ = obs_source::move_source(temp_scene, source, x, y, &obs_client).await;
             } else {
-                Ok(())
+                send_message(twitch_client, "Missing X and Y").await?; 
             }
+
+            Ok(())
         }
 
         // TODO: I'd like one-for every corner

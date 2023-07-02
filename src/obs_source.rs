@@ -23,13 +23,15 @@ pub async fn scale_source(
 ) -> Result<(), anyhow::Error> {
     let id = find_id(scene, source, &obs_client).await?;
 
-    println!("scene: {} | ID: {}", scene, id);
-    // What's the ID???
     let new_scale = Scale {
         x: Some(x),
         y: Some(y),
     };
-    scale(scene, id, new_scale, obs_client).await
+    
+    println!("#scale_source scene: {} | ID: {} | scale: {:?} {:?}", scene, id, new_scale.x, new_scale.y);
+
+    // This is fucking me up
+    Ok(scale(scene, id, new_scale, obs_client).await?)
 }
 
 // Scale for the X & Y of the source in terms of relation to each other,
@@ -39,7 +41,7 @@ pub async fn scale(
     id: i64,
     new_scale: Scale,
     obs_client: &OBSClient,
-) -> Result<()> {
+) -> Result<(), obws::Error> {
     let scene_transform = SceneItemTransform {
         scale: Some(new_scale),
         ..Default::default()
@@ -50,30 +52,45 @@ pub async fn scale(
         item_id: id,
         transform: scene_transform,
     };
-    let result = obs_client.scene_items().set_transform(set_transform).await;
-    match result {
-        Ok(_) => {
-            println!("Successful Scale of Scene Item: {:?}", id);
-        }
-        Err(err) => {
-            println!("Error Scaling Source: {:?}", err);
-        }
-    }
-    Ok(())
+    obs_client.scene_items().set_transform(set_transform).await
+    
+    // match result {
+    //     Ok(_) => {
+    //         println!("Successful Scale of Scene Item: {:?}", id);
+    //     }
+    //     Err(err) => {
+    //         println!("Error Scaling Source: {:?}", err);
+    //     }
+    // }
+    // Ok(())
 }
 
-// TODO: This has problems
 pub async fn trigger_grow(
+    scene: &str,
+    source: &str,
+    _base_scale: &Scale,
+    x: f32,
+    y: f32,
+    obs_client: &OBSClient,
+) -> Result<(), anyhow::Error> {
+    println!("ABOUT TO SCALE SOURCE: {} {}", scene, source);
+
+    // This seems so stupid
+    // but I am also stupid
+    Ok(scale_source(&scene, &source, x, y, &obs_client).await?)
+}
+
+pub async fn old_trigger_grow(
     scene: &str,
     source: &str,
     base_scale: &Scale,
     x: f32,
     y: f32,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     // This has an "all" concept???
-    // This also takes in a scene, BUT has DEFAULT_SCENE and MEME_SCENE
-    // hardcoded into it
+    // This also takes in a scene,
+    // BUT has DEFAULT_SCENE and MEME_SCENE hardcoded into it
     if source == "all" {
         let sources = obs_client.scene_items().list(obs::DEFAULT_SCENE).await?;
         for source in sources {
@@ -96,13 +113,12 @@ pub async fn trigger_grow(
 
             scale(obs::MEME_SCENE, id, new_scale, &obs_client).await?;
         }
+        Ok(())
     } else {
         println!("ABOUT TO SCALE SOURCE: {} {}", scene, source);
-        scale_source(&scene, &source, x, y, &obs_client).await?;
+        scale_source(&scene, &source, x, y, &obs_client).await
     }
-    Ok(())
 }
-
 // ====================================================
 // == Moving Things
 // ====================================================
