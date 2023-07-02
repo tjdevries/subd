@@ -584,6 +584,19 @@ pub async fn handle_obs_commands(
             obs_source::set_enabled(obs::MEME_SCENE, source, true, &obs_client)
                 .await
         }
+        
+        // ===========================================
+        // == HotKeys
+        // ===========================================
+        "!hk" => {
+            let key = splitmsg[1].as_str().to_uppercase();
+            let obs_formatted_key =  format!("OBS_KEY_{}", key);
+            let _ = tx.send(Event::TriggerHotkeyRequest(subd_types::TriggerHotkeyRequest{
+                hotkey: obs_formatted_key,
+            }));
+            Ok(())
+        }
+
 
         // ===========================================
         // == Creating Scenes & Filters
