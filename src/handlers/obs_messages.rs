@@ -6,9 +6,12 @@ use subd_types::Event;
 use obws::Client as OBSClient;
 use async_trait::async_trait;
 
+use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
+
 pub struct OBSMessageHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
+    pub twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
 #[async_trait]
@@ -35,6 +38,7 @@ impl EventHandler for OBSMessageHandler {
             match obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,
+                &self.twitch_client,
                 &self.pool,
                 splitmsg,
                 msg,

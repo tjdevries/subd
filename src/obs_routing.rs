@@ -13,6 +13,7 @@ use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
+use twitch_chat::send_message;
 use obws::Client as OBSClient;
 use obws::requests::scene_items::Scale;
 use obws;
@@ -25,9 +26,13 @@ use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
+use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
+
+
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -108,6 +113,9 @@ pub async fn handle_obs_commands(
         // returns the current state of stream
         "!state" => {
            let state = twitch_stream_state::get_twitch_state(&pool).await?;
+           let msg = format!("Twitch State! {:?}", state);
+           send_message(twitch_client,msg).await?;
+           // send_message(format!("Twitch State! {:?}", state));
             // twitch_stream_state::update_implicit_soundeffects(false, &pool)
             //     .await?;
             Ok(())

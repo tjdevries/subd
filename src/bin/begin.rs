@@ -7,6 +7,8 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 use twitch_irc::login::StaticLoginCredentials;
+use twitch_chat::send_message;
+
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
@@ -63,7 +65,12 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-    //
+    
+    let twitch_config = get_chat_config();
+    let (_, twitch_client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(twitch_config);
     // This really is named wrong
     // this handles more than OBS
     // and it's also earlier in the program
@@ -71,6 +78,7 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::obs_messages::OBSMessageHandler {
         obs_client,
+        twitch_client,
         pool: pool.clone(),
     });
 
@@ -123,27 +131,7 @@ async fn main() -> Result<()> {
     println!("\n\n\t\tStarting begin.rs!");
     println!("====================================================\n\n");
     
-    let config = get_chat_config();
-    let (_, client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(config);
-    
-    say(&client, "DURF CITY").await?;
+    // send_message(&twitch_client, "DURF CITY").await?;
     event_loop.run().await?;
     Ok(())
 }
-
-async fn say<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    client: &TwitchIRCClient<T, L>,
-    msg: impl Into<String>,
-) -> Result<()> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    let err = client.say(twitch_username.to_string(), msg.into()).await?;
-    println!("say err: {:?}", err);
-    Ok(())
-}
-
