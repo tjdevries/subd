@@ -100,7 +100,11 @@ async fn main() -> Result<()> {
     // // OBS Sources are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::source_visibility::SourceVisibilityHandler { obs_client });
+    
     //
+    let obs_client = server::obs::create_obs_client().await?;
+    event_loop.push(handlers::skybox::SkyboxHandler{ obs_client });
+    
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });

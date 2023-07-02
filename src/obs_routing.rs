@@ -222,18 +222,25 @@ pub async fn handle_obs_commands(
 
         // We need to eventually take in style IDs
         "!skybox" => {
+
+            
             let skybox_info = splitmsg
                 .clone()
                 .into_iter()
                 .skip(1)
                 .collect::<Vec<String>>()
                 .join(" ");
-            let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
-            if let Err(e) = write_to_file(file_path, &skybox_info) {
-                eprintln!("Error writing to file: {}", e);
-            }
-
-            println!("Attempting to Generate Skybox! {}", skybox_info);
+            
+                let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest{
+                    msg: skybox_info,
+                }));
+        
+            // let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
+            // if let Err(e) = write_to_file(file_path, &skybox_info) {
+            //     eprintln!("Error writing to file: {}", e);
+            // }
+            //
+            // println!("Attempting to Generate Skybox! {}", skybox_info);
 
             Ok(())
         }

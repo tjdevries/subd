@@ -81,6 +81,11 @@ pub struct SourceVisibilityRequest {
     pub enabled: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkyboxRequest {
+    pub msg: String,
+}
+
 // TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
@@ -92,6 +97,7 @@ pub enum Event {
     TriggerHotkeyRequest(TriggerHotkeyRequest),
     StreamCharacterRequest(StreamCharacterRequest),
     SourceVisibilityRequest(SourceVisibilityRequest),
+    SkyboxRequest(SkyboxRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general

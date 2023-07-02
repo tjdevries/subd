@@ -295,6 +295,7 @@ impl EventHandler for SoundHandler {
     }
 }
 
+#[allow(dead_code)]
 fn write_records_to_csv(path: &str, records: &[Record]) -> Result<()> {
     let mut writer = Writer::from_path(path)?;
 
