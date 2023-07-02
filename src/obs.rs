@@ -18,7 +18,8 @@ pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
 pub const TWITCH_STAFF_OBS_SOURCE: &str = "Randall";
 
 // Voices
-pub const TWITCH_STAFF_VOICE: &str = "half-life-scientist";
+// pub const TWITCH_STAFF_VOICE: &str = "half-life-scientist";
+pub const TWITCH_STAFF_VOICE: &str = "meowth";
 pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
 // pub const TWITCH_HELPER_VOICE: &str = "e40";
 pub const TWITCH_HELPER_VOICE: &str = "c-3po";
