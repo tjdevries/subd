@@ -67,6 +67,7 @@ async fn main() -> Result<()> {
     // Works for Arch Linux
     let (_stream, stream_handle) =
         audio::get_output_stream("pulse").expect("stream handle");
+    
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();

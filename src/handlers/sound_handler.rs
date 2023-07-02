@@ -36,18 +36,6 @@ struct Record {
     field_2: String,
 }
 
-fn write_records_to_csv(path: &str, records: &[Record]) -> Result<()> {
-    let mut writer = Writer::from_path(path)?;
-
-    for record in records {
-        writer.serialize(record)?;
-    }
-
-    writer.flush()?;
-
-    Ok(())
-}
-
 // Looks through raw-text to either play TTS or play soundeffects
 #[async_trait]
 impl EventHandler for SoundHandler {
@@ -56,14 +44,20 @@ impl EventHandler for SoundHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        let paths = fs::read_dir("./MP3s").unwrap();
+
+        // Get all soundeffects loaded up once
+        // so we can search through them all
+        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-        for path in paths {
-            mp3s.insert(path.unwrap().path().display().to_string());
+        for soundeffect_file in soundeffect_files {
+            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
         }
 
         loop {
             let event = rx.recv().await?;
+
+            // This is meant to filter out messages
+            // Right now it only filters Nightbot
             let msg = match event {
                 Event::UserMessage(msg) => {
                     // TODO: Add a list here
@@ -75,53 +69,46 @@ impl EventHandler for SoundHandler {
                 _ => continue,
             };
 
-            // if msg.roles.is_twitch_staff() {
-
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
-            let _speech_bubble_text = uberduck::chop_text(spoken_string);
+            let speech_bubble_text = uberduck::chop_text(spoken_string);
 
-            // Anything less than 3 words we don't use
+            // Anything less than 2 words we don't use
             let split = voice_text.split(" ");
             let vec = split.collect::<Vec<&str>>();
             if vec.len() < 2 {
                 continue;
             };
 
-            // What does this do?
+            // This is how we determing the voice for the user
             let stream_character =
                 uberduck::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
+            let voice = stream_character.voice.clone();
 
+            // This is the current state of the stream:
+            //    whether you are allowing all text to be read
+            //    whether you are allowing soundeffects to happen automatically
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
 
-            let voice = stream_character.voice.clone();
-
-            // voice: stream_character.voice,
             let mut character = Character {
                 voice: Some(voice),
                 ..Default::default()
             };
 
-            // See if I'm none of these!!!!
-            //
-            // This is all about how to respond to messages from various
-            // types of users
+            // This is all about how to respond to messages from various types of users
             if msg.roles.is_twitch_staff() {
                 character.voice =
                     Some(obs::TWITCH_STAFF_OBS_SOURCE.to_string());
                 character.source =
                     Some(obs::TWITCH_STAFF_VOICE.to_string());
             } else if msg.user_name == "beginbotbot" {
-                // TODO: Get better voice
                 character.voice =
                     Some(obs::TWITCH_HELPER_VOICE.to_string());
-                // character.voice = Some("stephen-a-smith".to_string());
-                // Some("stephen-a-smith".to_string())
             } else if msg.roles.is_twitch_mod() {
-                // character.voice =
-                //     Some(server::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
+                character.voice =
+                    Some(crate::obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
             } else if msg.roles.is_twitch_sub() {
                 character.voice = Some(stream_character.voice.clone());
             } else if !state.sub_only_tts {
@@ -129,28 +116,30 @@ impl EventHandler for SoundHandler {
                 // if we are allowing non-subs to speak
                 character.voice = Some(stream_character.voice.clone());
             }
+            
 
             // If the character
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
                 Some(voice) => {
-                    let records = vec![Record {
-                        field_1: voice.clone(),
-                        field_2: voice_text.clone(),
-                    }];
-
+                    
                     // Write records to a CSV file
-                    let csv_path =
-                        "/home/begin/code/BeginGPT/tmp/voice_character.csv";
-                    write_records_to_csv(&csv_path, &records)?;
+                    // let records = vec![Record {
+                    //     field_1: voice.clone(),
+                    //     field_2: voice_text.clone(),
+                    // }];
+                    // TODO: What are you doing Begin!
+                    // let csv_path =
+                    //     "/home/begin/code/BeginGPT/tmp/voice_character.csv";
+                    // write_records_to_csv(&csv_path, &records)?;
 
-                    // let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-                    //     voice,
-                    //     message: speech_bubble_text,
-                    //     voice_text,
-                    //     username: msg.user_name,
-                    //     source: character.source,
-                    // }));
+                    let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
+                        voice,
+                        message: speech_bubble_text,
+                        voice_text,
+                        username: msg.user_name,
+                        source: character.source,
+                    }));
                 }
                 None => {}
             }
@@ -212,3 +201,16 @@ impl EventHandler for SoundHandler {
         }
     }
 }
+
+fn write_records_to_csv(path: &str, records: &[Record]) -> Result<()> {
+    let mut writer = Writer::from_path(path)?;
+
+    for record in records {
+        writer.serialize(record)?;
+    }
+
+    writer.flush()?;
+
+    Ok(())
+}
+
