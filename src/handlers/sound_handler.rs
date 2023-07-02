@@ -157,9 +157,8 @@ impl EventHandler for SoundHandler {
                 None => {}
             }
 
-            // If we have the implicit_soundeffects enabled
-            // we go past this!
-            if state.implicit_soundeffects {
+            // Only continue if we have the implicit_soundeffects enabled
+            if !state.implicit_soundeffects {
                 continue;
             }
 
