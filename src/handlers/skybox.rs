@@ -21,7 +21,6 @@ pub struct Skybox {
     pub name: String,
 }
 
-#[allow(dead_code)]
 pub struct SkyboxHandler {
     pub obs_client: OBSClient,
 }
@@ -42,17 +41,68 @@ impl EventHandler for SkyboxHandler {
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
-            let msg = match event {
+            let request = match event {
                 Event::SkyboxRequest(msg) => msg,
                 _ => continue,
             };
 
 
-            println!("\n\n\tSkyboxHandler: {:?}", msg);
-            // crate::obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client).await?;
+            request_skybox(request.msg).await?;
+
+            // TODO: we will need to trigger the skybox OBS source
+            // to refresh, after we get an updated Skybox
+            // AND generate a fresh HTML page using pannellum
         }
     }
 }
+
+#[allow(dead_code)]
+async fn request_skybox(prompt: String) -> io::Result<String> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    let requests_url = format!("{}/requests?api_key={}", SKYBOX_IMAGINE_URL, skybox_api_key);
+
+    // Do we need to trim start
+    // or should this done before i'ts passed
+    let prompt = prompt.trim_start().to_string();
+
+    // Why???
+    let words: Vec<&str> = prompt.split_whitespace().collect();
+
+    // This returns a static style currently
+    let skybox_style_id = find_style_id(words);
+
+    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
+
+    // return Ok(String::from("this a hack"));
+    
+    let post_body = json!({
+        "prompt": prompt,
+        "generator": "stable-skybox",
+        "skybox_style_id": skybox_style_id,
+    });
+
+    let client = Client::new();
+    let resp = client.post(&requests_url)
+        .json(&post_body)
+        .send()
+        .await
+        .unwrap();
+
+    let body = resp.text().await.unwrap();
+    let bytes = body.as_bytes();
+
+    let t = Utc::now();
+    let response_filepath = format!("/tmp/skybox_{}.json", t);
+
+    let mut file = File::create(response_filepath.clone())?;
+    file.write_all(bytes)?;
+
+    // We need to parse the response
+    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
+    // if our AI generated bg is done
+    Ok(response_filepath)
+}
+
 
 // ============================================================================================
 // ============================================================================================
@@ -145,44 +195,6 @@ pub struct Response {
 fn find_style_id(words: Vec<&str>) -> i32 {
     // What is a good default style ID
     return 1
-}
-
-#[allow(dead_code)]
-async fn request_image(prompt: String) -> io::Result<String> {
-    let skybox_imagine_url = env::var("SKYBOX_IMAGINE_URL").unwrap();
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    let requests_url = format!("{}/requests?api_key={}", skybox_imagine_url, skybox_api_key);
-
-    let prompt = prompt.trim_start().to_string();
-    let words: Vec<&str> = prompt.split_whitespace().collect();
-
-    let skybox_style_id = find_style_id(words); // Assuming find_style_id function exists
-
-    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
-    
-    let post_body = json!({
-        "prompt": prompt,
-        "generator": "stable-skybox",
-        "skybox_style_id": skybox_style_id,
-    });
-
-    let client = Client::new();
-    let resp = client.post(&requests_url)
-        .json(&post_body)
-        .send()
-        .await
-        .unwrap();
-
-    let body = resp.text().await.unwrap();
-    let bytes = body.as_bytes();
-
-    let t = Utc::now();
-    let response_filepath = format!("/tmp/{}.json", t);
-
-    let mut file = File::create(response_filepath.clone())?;
-    file.write_all(bytes)?;
-
-    Ok(response_filepath)
 }
 
 #[allow(dead_code)]
