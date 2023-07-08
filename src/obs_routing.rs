@@ -236,16 +236,13 @@ pub async fn handle_obs_commands(
                 .and_then(|temp_y| temp_y.trim().parse().ok())
                 .unwrap_or(1.0);
 
-            let base_scale = Scale {
-                x: Some(x),
-                y: Some(y),
-            };
-
             let temp_scene = "Primary";
-            let res = obs_source::trigger_grow(
+
+            println!("\n\tkicking off grow!");
+            // This is the real solo use of scale_source
+            let res = obs_source::scale_source(
                 &temp_scene,
                 source,
-                &base_scale,
                 x,
                 y,
                 &obs_client,
@@ -277,6 +274,40 @@ pub async fn handle_obs_commands(
                 send_message(twitch_client, "Missing X and Y").await?; 
             }
 
+            Ok(())
+        }
+        
+        "!gg" => {
+            let x: f32 = splitmsg
+                .get(2)
+                .and_then(|temp_x| temp_x.trim().parse().ok())
+                .unwrap_or(1.0);
+            let y: f32 = splitmsg
+                .get(3)
+                .and_then(|temp_y| temp_y.trim().parse().ok())
+                .unwrap_or(1.0);
+
+            let base_scale = Scale {
+                x: Some(x),
+                y: Some(y),
+            };
+
+            let temp_scene = "Primary";
+            let res = obs_source::old_trigger_grow(
+                &temp_scene,
+                source,
+                &base_scale,
+                x,
+                y,
+                &obs_client,
+            )
+            .await;
+
+            if let Err(e) = res {
+                let err_msg = format!("Error Scaling {:?}", e);
+                send_message(twitch_client, err_msg).await?;
+            }
+            
             Ok(())
         }
 

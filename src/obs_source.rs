@@ -28,7 +28,12 @@ pub async fn scale_source(
         y: Some(y),
     };
     
-    println!("#scale_source scene: {} | ID: {} | scale: {:?} {:?}", scene, id, new_scale.x, new_scale.y);
+    println!("\n\t#scale_source scene: {} | ID: {} | scale: {:?} {:?}",
+        scene,
+        id,
+        new_scale.x,
+        new_scale.y,
+    );
 
     // This is fucking me up
     Ok(scale(scene, id, new_scale, obs_client).await?)
@@ -47,37 +52,13 @@ pub async fn scale(
         ..Default::default()
     };
 
+    // I bet ID is wrong
     let set_transform = SetTransform {
         scene,
-        item_id: id,
+        item_id: dbg!(id),
         transform: scene_transform,
     };
     obs_client.scene_items().set_transform(set_transform).await
-    
-    // match result {
-    //     Ok(_) => {
-    //         println!("Successful Scale of Scene Item: {:?}", id);
-    //     }
-    //     Err(err) => {
-    //         println!("Error Scaling Source: {:?}", err);
-    //     }
-    // }
-    // Ok(())
-}
-
-pub async fn trigger_grow(
-    scene: &str,
-    source: &str,
-    _base_scale: &Scale,
-    x: f32,
-    y: f32,
-    obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
-    println!("ABOUT TO SCALE SOURCE: {} {}", scene, source);
-
-    // This seems so stupid
-    // but I am also stupid
-    Ok(scale_source(&scene, &source, x, y, &obs_client).await?)
 }
 
 pub async fn old_trigger_grow(
