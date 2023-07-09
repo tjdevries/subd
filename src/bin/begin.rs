@@ -2,6 +2,7 @@ use std::net::IpAddr;
 use std::net::Ipv4Addr;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
+use std::time::Duration;
 use std::time::SystemTime;
 
 use anyhow::Result;
@@ -15,6 +16,8 @@ use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_chat::send_message;
+use renet::transport::NetcodeClientTransport;
+
 
 use renet::*;
 
@@ -41,29 +44,29 @@ fn test() {
         user_data: None,
         protocol_id: 0,
     };
-    //
-    // let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
-    //
-    // // Your gameplay loop
-    // loop {
-    //     let delta_time = Duration::from_millis(16);
-    //     // Receive new messages and update client
-    //     client.update(delta_time)?;
-    //     transport.update(delta_time, &mut client).unwrap();
-    //     
-    //     if client.is_connected() {
-    //         // Receive message from server
-    //         while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-    //             // Handle received message
-    //         }
-    //         
-    //         // Send message
-    //         client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
-    //     }
-    //  
-    //     // Send packets to server
-    //     transport.send_packets(&mut client)?;
-    // }
+
+    let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+
+    // Your gameplay loop
+    loop {
+        let delta_time = Duration::from_millis(16);
+        // Receive new messages and update client
+        client.update(delta_time);
+        transport.update(delta_time, &mut client).unwrap();
+        
+        if !client.is_disconnected() {
+            // Receive message from server
+            while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+                // Handle received message
+            }
+            
+            // Send message
+            client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
+        }
+     
+        // Send packets to server
+        transport.send_packets(&mut client);
+    }
 }
 
 //  ===========================================
