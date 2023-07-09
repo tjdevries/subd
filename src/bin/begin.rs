@@ -1,4 +1,11 @@
+use std::net::IpAddr;
+use std::net::Ipv4Addr;
+use std::net::SocketAddr;
+use std::net::UdpSocket;
+use std::time::SystemTime;
+
 use anyhow::Result;
+use renet::transport::ClientAuthentication;
 use server::audio;
 use server::handlers;
 use server::uberduck;
@@ -23,17 +30,17 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
 fn test() {
     let mut client = RenetClient::new(ConnectionConfig::default());
 
-    // // Setup transport layer
-    // const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1), 5000));
-    // let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
-    // let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
-    // let client_id: u64 = 0;
-    // let authentication = ClientAuthentication::Unsecure {
-    //     server_addr: SERVER_ADDR,
-    //     client_id,
-    //     user_data: None,
-    //     protocol_id: 0,
-    // };
+    // Setup transport layer
+    const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5000);
+    let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let client_id: u64 = 0;
+    let authentication = ClientAuthentication::Unsecure {
+        server_addr: SERVER_ADDR,
+        client_id,
+        user_data: None,
+        protocol_id: 0,
+    };
     //
     // let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
     //
