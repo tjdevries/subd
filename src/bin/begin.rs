@@ -9,6 +9,8 @@ use twitch_irc::TwitchIRCClient;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_chat::send_message;
 
+use renet::*;
+
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
@@ -17,6 +19,47 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
         Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
 }
+
+fn test() {
+    let mut client = RenetClient::new(ConnectionConfig::default());
+
+    // // Setup transport layer
+    // const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1), 5000));
+    // let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
+    // let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    // let client_id: u64 = 0;
+    // let authentication = ClientAuthentication::Unsecure {
+    //     server_addr: SERVER_ADDR,
+    //     client_id,
+    //     user_data: None,
+    //     protocol_id: 0,
+    // };
+    //
+    // let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
+    //
+    // // Your gameplay loop
+    // loop {
+    //     let delta_time = Duration::from_millis(16);
+    //     // Receive new messages and update client
+    //     client.update(delta_time)?;
+    //     transport.update(delta_time, &mut client).unwrap();
+    //     
+    //     if client.is_connected() {
+    //         // Receive message from server
+    //         while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+    //             // Handle received message
+    //         }
+    //         
+    //         // Send message
+    //         client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
+    //     }
+    //  
+    //     // Send packets to server
+    //     transport.send_packets(&mut client)?;
+    // }
+}
+
+//  ===========================================
 
 #[tokio::main]
 async fn main() -> Result<()> {

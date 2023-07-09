@@ -32,3 +32,7 @@ watch:
 install-trunk:
 	cargo install --locked trunk
 	cargo install wasm-bindgen-cli
+
+error:
+	cargo rustc --bin begin -- -Awarnings
+
