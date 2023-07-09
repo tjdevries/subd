@@ -130,7 +130,7 @@ pub async fn handle_obs_commands(
                 .await
         }
 
-        "!set_voice" => {
+        "!set_voice" | "!setvoice" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::set_voice(
@@ -644,7 +644,6 @@ pub async fn handle_obs_commands(
 
         // We need to eventually take in style IDs
         "!skybox" => {
-
             
             let skybox_info = splitmsg
                 .clone()

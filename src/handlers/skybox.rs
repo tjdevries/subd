@@ -58,8 +58,14 @@ impl EventHandler for SkyboxHandler {
 
 #[allow(dead_code)]
 async fn request_skybox(prompt: String) -> io::Result<String> {
+
+    // This API Key could be blank
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
     let requests_url = format!("{}/requests?api_key={}", SKYBOX_IMAGINE_URL, skybox_api_key);
+
+    // So this doesn't work right now because we don't a have a working subscription
+    // println!("Skybox API URL: {}", requests_url);
+    // return Ok(requests_url);
 
     // Do we need to trim start
     // or should this done before i'ts passed
@@ -92,7 +98,8 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     let bytes = body.as_bytes();
 
     let t = Utc::now();
-    let response_filepath = format!("/tmp/skybox_{}.json", t);
+    // so I think this path should be relative
+    let response_filepath = format!("./tmp/skybox_{}.json", t);
 
     let mut file = File::create(response_filepath.clone())?;
     file.write_all(bytes)?;
