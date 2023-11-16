@@ -126,8 +126,9 @@ pub async fn handle_obs_commands(
         // == Voices
         // ===========================================
         "!random" => {
-            uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
-                .await
+            Ok(())
+            // uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
+            //     .await
         }
 
         "!set_voice" | "!setvoice" => {

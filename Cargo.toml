@@ -57,6 +57,7 @@ async-trait.workspace = true
 twitter-v2 = "0.1.8"
 twitch_oauth2.workspace = true
 renet = "0.0.12"
+elevenlabs-api = "0.1.1"
 
 [workspace]
 members = ["crates/*"]

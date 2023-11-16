@@ -4,8 +4,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use events::EventHandler;
-use rand::thread_rng;
 use rand::Rng;
+use crate::audio;
 use rodio::*;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -20,10 +20,28 @@ use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
+use elevenlabs_api::{
+  tts::{TtsApi, TtsBody},
+  *,
+};
+use rand::{thread_rng, seq::SliceRandom};
+
+#[derive(Deserialize, Debug)]
+struct ElevenlabsVoice {
+    voice_id: String,
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct VoiceList {
+    voices: Vec<ElevenlabsVoice>,
+}
+
 
 pub struct UberDuckHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
+    pub elevenlabs: Elevenlabs,
 }
 
 pub struct ExpertUberDuckHandler {
@@ -94,6 +112,8 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
+            // Do we want Stream Characters?
+            // Maybe have to wait until we have voices working again 
             let stream_character =
                 build_stream_character(&self.pool, &msg.username).await?;
 
@@ -187,6 +207,7 @@ impl EventHandler for UberDuckHandler {
                             twitch_chat_filename(msg.username, msg.voice);
                         let full_filename = format!("{}.wav", filename);
 
+                        // This is creating and then playing the file
                         // I WANT TO SAVE THIS FILE
                         println!("Trying to Save: {}", full_filename);
                         let local_path = format!(
@@ -206,7 +227,37 @@ impl EventHandler for UberDuckHandler {
                             },
                         ));
 
-                        // Hmm We shouldn't fail here then
+                        // Create the tts body.
+                        let tts_body = TtsBody {
+                          model_id: None,
+                          text: msg.message.clone(),
+                          voice_settings: None,
+                        };
+
+                        // Generate the speech for the text by using the voice with id yoZ06aMxZJJ28mfd3POQ.
+                        let random_id = find_random_voice();
+                        // let tts_result = elevenlabs.tts(&tts_body, "yoZ06aMxZJJ28mfd3POQ");
+                        let tts_result = self.elevenlabs.tts(&tts_body, "");
+                        let bytes = tts_result.unwrap();
+
+                        let audio_file_name = "tts.wav";
+                        std::fs::write(audio_file_name, bytes).unwrap();
+                        println!("\n\n\t\tStarting begin.rs!");
+                        println!("====================================================\n\n");
+
+                        let (_stream, stream_handle) =
+                            audio::get_output_stream("pulse").expect("stream handle");
+                        // Can we make this quieter?
+                        let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                        sink.set_volume(0.5);
+                        let file =
+                            BufReader::new(File::open(audio_file_name).unwrap());
+                        sink.append(
+                            Decoder::new(BufReader::new(file)).unwrap(),
+                        );
+                        sink.sleep_until_end();
+                        // This is using assuming the local path of the downloaded
+                        // uberduck MP3
                         let file =
                             BufReader::new(File::open(local_path).unwrap());
                         self.sink.append(
@@ -377,3 +428,16 @@ pub async fn build_stream_character(
         source: character.to_string(),
     })
 }
+
+fn find_random_voice() -> String {
+    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+    
+    let voice_list: VoiceList = serde_json::from_str(&data).expect("JSON was not well-formatted");
+    
+    let mut rng = thread_rng();
+    let random_voice = voice_list.voices.choose(&mut rng).expect("List of voices is empty");
+
+    println!("Random Voice ID: {}, Name: {}", random_voice.voice_id, random_voice.name);
+    return random_voice.voice_id.clone()
+}
+

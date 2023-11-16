@@ -60,8 +60,16 @@ impl EventHandler for SkyboxHandler {
 async fn request_skybox(prompt: String) -> io::Result<String> {
 
     // This API Key could be blank
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    let requests_url = format!("{}/requests?api_key={}", SKYBOX_IMAGINE_URL, skybox_api_key);
+    // let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    // let skybox_api_key: String = String::from("3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c");
+    let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
+    // // let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
+    // let url = format!("{}/requests/{}?api_key={}", SK, id, skybox_api_key);
+    
+    // println!("Skybox API Key: {}", skybox_api_key);
+    
+    // https://backend.blockadelabs.com/api/v1/skybox
+    let requests_url = format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
 
     // So this doesn't work right now because we don't a have a working subscription
     // println!("Skybox API URL: {}", requests_url);
@@ -83,8 +91,8 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     
     let post_body = json!({
         "prompt": prompt,
-        "generator": "stable-skybox",
-        "skybox_style_id": skybox_style_id,
+        // "generator": "stable-skybox",
+        // "skybox_style_id": skybox_style_id,
     });
 
     let client = Client::new();
@@ -206,10 +214,19 @@ fn find_style_id(words: Vec<&str>) -> i32 {
 
 #[allow(dead_code)]
 async fn request_status(id: &str) -> Result<Response> {
-    let skybox_api_key: String = std::env::var("SKYBOX_API_KEY").unwrap();
+    // let skybox_api_key: String = std::env::var("SKYBOX_API_KEY").unwrap();
+    let skybox_api_key: String = String::from("3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c");
+    // let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
     let url = format!("{}/requests/{}?api_key={}", SKYBOX_IMAGINE_URL, id, skybox_api_key);
 
-    let resp = reqwest::get(&url).await?;
+    println!("URL: {}", url);
+    // x-api-key
+
+    let client = reqwest::Client::new();
+    let resp = client.get(&url)
+        // .header("x-api-key", skybox_api_key)
+        .send()
+        .await?;
     let body = resp.text().await?;
 
     let parsed_response: OuterRequest = serde_json::from_str(&body)?;

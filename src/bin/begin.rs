@@ -4,7 +4,11 @@ use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::time::Duration;
 use std::time::SystemTime;
-
+use std::fs::File;
+use std::io::BufReader;
+use rodio::*;
+use renet::*;
+use std::io::{BufWriter, Write};
 use anyhow::Result;
 use renet::transport::ClientAuthentication;
 use server::audio;
@@ -17,9 +21,37 @@ use twitch_irc::TwitchIRCClient;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_chat::send_message;
 use renet::transport::NetcodeClientTransport;
+use elevenlabs_api::{
+  tts::{TtsApi, TtsBody},
+  *,
+};
+use serde::Deserialize;
+use std::fs;
+use rand::{thread_rng, seq::SliceRandom};
+
+#[derive(Deserialize, Debug)]
+struct Voice {
+    voice_id: String,
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct VoiceList {
+    voices: Vec<Voice>,
+}
 
 
-use renet::*;
+fn find_random_voice() -> String {
+    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+    
+    let voice_list: VoiceList = serde_json::from_str(&data).expect("JSON was not well-formatted");
+    
+    let mut rng = thread_rng();
+    let random_voice = voice_list.voices.choose(&mut rng).expect("List of voices is empty");
+
+    println!("Random Voice ID: {}, Name: {}", random_voice.voice_id, random_voice.name);
+    return random_voice.voice_id.clone()
+}
 
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
@@ -31,10 +63,14 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
 }
 
 fn test() {
+    println!("\n\n\t\t=== Test Time \n\n");
     let mut client = RenetClient::new(ConnectionConfig::default());
 
     // Setup transport layer
     const SERVER_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 5000);
+
+    //
+    // This :0 is contenous
     let socket = UdpSocket::bind("127.0.0.1:0").unwrap();
     let current_time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let client_id: u64 = 0;
@@ -48,25 +84,24 @@ fn test() {
     let mut transport = NetcodeClientTransport::new(current_time, authentication, socket).unwrap();
 
     // Your gameplay loop
-    loop {
-        let delta_time = Duration::from_millis(16);
-        // Receive new messages and update client
-        client.update(delta_time);
-        transport.update(delta_time, &mut client).unwrap();
-        
-        if !client.is_disconnected() {
-            // Receive message from server
-            while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
-                // Handle received message
-            }
-            
-            // Send message
-            client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
+    let delta_time = Duration::from_millis(16);
+    // Receive new messages and update client
+    client.update(delta_time);
+    transport.update(delta_time, &mut client).unwrap();
+    
+    if client.is_disconnected() {
+        // Receive message from server
+        while let Some(message) = client.receive_message(DefaultChannel::ReliableOrdered) {
+            println!("\t\tReceived message: {:?}", message);
+            // Handle received message
         }
-     
-        // Send packets to server
-        transport.send_packets(&mut client);
+        
+        // Send message
+        client.send_message(DefaultChannel::ReliableOrdered, "client text".as_bytes().to_vec());
     }
+ 
+    // Send packets to server
+    transport.send_packets(&mut client);
 }
 
 //  ===========================================
@@ -157,9 +192,12 @@ async fn main() -> Result<()> {
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     let pool = get_db_pool().await;
+    
+    let elevenlabs_auth = Auth::from_env().unwrap();
+    let elevenlabs = Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
 
     // Uberduck handles voice messages
-    event_loop.push(uberduck::UberDuckHandler { pool, sink });
+    event_loop.push(uberduck::UberDuckHandler { pool, sink, elevenlabs });
 
     // // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
@@ -181,10 +219,10 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
-    println!("\n\n\t\tStarting begin.rs!");
-    println!("====================================================\n\n");
+
+
+    test();
     
-    // send_message(&twitch_client, "DURF CITY").await?;
     event_loop.run().await?;
     Ok(())
 }
