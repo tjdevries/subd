@@ -26,6 +26,7 @@ use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
+
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
 
@@ -56,6 +57,10 @@ pub async fn handle_obs_commands(
         Ok(scene) => scene.to_string(),
         Err(_) => obs::MEME_SCENE.to_string(),
     };
+    
+   let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
+
+    // So we should look up voice here
 
     // NOTE: If we want to extract values like filter_setting_name and filter_value
     //       we need to figure a way to look up the defaults per command
@@ -114,7 +119,8 @@ pub async fn handle_obs_commands(
         "!state" => {
            let state = twitch_stream_state::get_twitch_state(&pool).await?;
            let msg = format!("Twitch State! {:?}", state);
-           send_message(twitch_client,msg).await?;
+           send_message(twitch_client, 
+                msg).await?;
            // send_message(format!("Twitch State! {:?}", state));
             // twitch_stream_state::update_implicit_soundeffects(false, &pool)
             //     .await?;
@@ -130,8 +136,16 @@ pub async fn handle_obs_commands(
             // uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
             //     .await
         }
+        
+        "!my_voice" | "!myvoice" | "!my_name" | "!myname" => {
+            // let voice = msg.voice.to_string();
+           let info = format!("{} - {}", msg.user_name, voice);
+           send_message(twitch_client, info).await?;
+            Ok(())
+        }
 
-        "!set_voice" | "!setvoice" => {
+
+        "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::set_voice(

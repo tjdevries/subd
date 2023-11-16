@@ -25,6 +25,8 @@ use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
+use stdio_override::StdoutOverride;
+
 
 #[derive(Deserialize, Debug)]
 struct ElevenlabsVoice {
@@ -155,13 +157,16 @@ impl EventHandler for UberDuckHandler {
             println!(
                 "====================================================\n\n"
             );
-
+            
+            
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
             // Can we make this quieter?
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
             sink.set_volume(0.5);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
+            // Can I 
+            let _override = StdoutOverride::override_file("/dev/null").unwrap();
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
         }
