@@ -37,6 +37,12 @@ struct VoiceList {
     voices: Vec<ElevenlabsVoice>,
 }
 
+pub struct OldUberDuckHandler {
+    pub sink: Sink,
+    pub pool: sqlx::PgPool,
+    pub elevenlabs: Elevenlabs,
+}
+
 
 pub struct UberDuckHandler {
     pub sink: Sink,
@@ -95,6 +101,67 @@ pub fn twitch_chat_filename(username: String, voice: String) -> String {
 
 #[async_trait]
 impl EventHandler for UberDuckHandler {
+    async fn handle(
+        self: Box<Self>,
+        tx: broadcast::Sender<Event>,
+        mut rx: broadcast::Receiver<Event>,
+    ) -> Result<()> {
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UberDuckRequest(msg) => msg,
+                _ => continue,
+            };
+
+            let ch = msg.message.chars().next().unwrap();
+            if ch == '!' {
+                continue;
+            };
+
+            let filename =
+                twitch_chat_filename(msg.username, msg.voice);
+            let full_filename = format!("{}.wav", filename);
+
+            // This is creating and then playing the file
+            // I WANT TO SAVE THIS FILE
+            println!("Trying to Save: {}", full_filename);
+            let local_audio_path = format!(
+                "./TwitchChatTTSRecordings/{}",
+                full_filename
+            );
+
+            // Create the tts body.
+            let tts_body = TtsBody {
+              model_id: None,
+              text: msg.message.clone(),
+              voice_settings: None,
+            };
+
+            let random_id = find_random_voice();
+            let tts_result = self.elevenlabs.tts(&tts_body, random_id);
+            let bytes = tts_result.unwrap();
+
+            std::fs::write(local_audio_path.clone(), bytes).unwrap();
+            println!("\n\n\t\tStarting begin.rs!");
+            println!("====================================================\n\n");
+
+            let (_stream, stream_handle) =
+                audio::get_output_stream("pulse").expect("stream handle");
+            // Can we make this quieter?
+            let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+            sink.set_volume(0.5);
+            let file =
+                BufReader::new(File::open(local_audio_path).unwrap());
+            sink.append(
+                Decoder::new(BufReader::new(file)).unwrap(),
+            );
+            sink.sleep_until_end();
+        }
+    }
+}
+
+#[async_trait]
+impl EventHandler for OldUberDuckHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
