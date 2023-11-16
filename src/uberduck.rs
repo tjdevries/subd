@@ -1,11 +1,16 @@
+use crate::audio;
 use crate::obs;
 use crate::stream_character;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use elevenlabs_api::{
+    tts::{TtsApi, TtsBody},
+    *,
+};
 use events::EventHandler;
 use rand::Rng;
-use crate::audio;
+use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -20,11 +25,6 @@ use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
-use elevenlabs_api::{
-  tts::{TtsApi, TtsBody},
-  *,
-};
-use rand::{thread_rng, seq::SliceRandom};
 
 #[derive(Deserialize, Debug)]
 struct ElevenlabsVoice {
@@ -117,61 +117,52 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
+            // Ok so msg.voice is what we are saving
+            // we have to look up the ID based on the name
             let filename =
-                twitch_chat_filename(msg.username.clone(), msg.voice);
+                twitch_chat_filename(msg.username.clone(), msg.voice.clone());
             let full_filename = format!("{}.wav", filename);
 
             // This is creating and then playing the file
             // I WANT TO SAVE THIS FILE
             println!("Trying to Save: {}", full_filename);
-            let local_audio_path = format!(
-                "./TwitchChatTTSRecordings/{}",
-                full_filename
-            );
+            let local_audio_path =
+                format!("./TwitchChatTTSRecordings/{}", full_filename);
 
             // Create the tts body.
             let tts_body = TtsBody {
-              model_id: None,
-              text: msg.message.clone(),
-              voice_settings: None,
+                model_id: None,
+                text: msg.message.clone(),
+                voice_settings: None,
             };
 
-            let ethan = "g5CIjZEefAph4nQFvHAz";
-            let gigi = "jBpfuIE2acCO8z3wKNLl";
-            let emily = "LcfcDJNUP1GQjkzn1xUU";
-            let random_id = match msg.username.as_str() {
-                "beginbot" => {
-                    String::from(ethan)
-                }
-                "ArtMattDank" => {
-                    String::from(gigi)
-                }
-                "siifr" => {
-                    String::from(emily)
-                }
-                _ => {
-                    find_random_voice()
-                }
+            let voice = msg.voice.as_str();
+
+            let voice_id = find_voice_id_by_name(voice);
+            let random_id = match voice_id {
+                Some(id) => id,
+                None => find_random_voice(),
             };
-            // 
-            // let random_id = find_random_voice();
+            // let ethan = "g5CIjZEefAph4nQFvHAz";
+            // let gigi = "jBpfuIE2acCO8z3wKNLl";
+            // let emily = "LcfcDJNUP1GQjkzn1xUU";
+
             let tts_result = self.elevenlabs.tts(&tts_body, random_id);
             let bytes = tts_result.unwrap();
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
             println!("\n\n\t\tStarting begin.rs!");
-            println!("====================================================\n\n");
+            println!(
+                "====================================================\n\n"
+            );
 
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
             // Can we make this quieter?
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
             sink.set_volume(0.5);
-            let file =
-                BufReader::new(File::open(local_audio_path).unwrap());
-            sink.append(
-                Decoder::new(BufReader::new(file)).unwrap(),
-            );
+            let file = BufReader::new(File::open(local_audio_path).unwrap());
+            sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
         }
     }
@@ -197,7 +188,7 @@ impl EventHandler for OldUberDuckHandler {
             };
 
             // Do we want Stream Characters?
-            // Maybe have to wait until we have voices working again 
+            // Maybe have to wait until we have voices working again
             let stream_character =
                 build_stream_character(&self.pool, &msg.username).await?;
 
@@ -251,7 +242,7 @@ impl EventHandler for OldUberDuckHandler {
                 let text = response.text().await?;
                 // println!("text: Finished: {:?}", text);
                 // we need to this to be better
-                
+
                 let file_resp: UberDuckFileResponse =
                     serde_json::from_str(&text)?;
                 println!(
@@ -313,9 +304,9 @@ impl EventHandler for OldUberDuckHandler {
 
                         // Create the tts body.
                         let tts_body = TtsBody {
-                          model_id: None,
-                          text: msg.message.clone(),
-                          voice_settings: None,
+                            model_id: None,
+                            text: msg.message.clone(),
+                            voice_settings: None,
                         };
 
                         // Generate the speech for the text by using the voice with id yoZ06aMxZJJ28mfd3POQ.
@@ -330,12 +321,15 @@ impl EventHandler for OldUberDuckHandler {
                         println!("====================================================\n\n");
 
                         let (_stream, stream_handle) =
-                            audio::get_output_stream("pulse").expect("stream handle");
+                            audio::get_output_stream("pulse")
+                                .expect("stream handle");
                         // Can we make this quieter?
-                        let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                        let sink =
+                            rodio::Sink::try_new(&stream_handle).unwrap();
                         sink.set_volume(0.5);
-                        let file =
-                            BufReader::new(File::open(audio_file_name).unwrap());
+                        let file = BufReader::new(
+                            File::open(audio_file_name).unwrap(),
+                        );
                         sink.append(
                             Decoder::new(BufReader::new(file)).unwrap(),
                         );
@@ -494,12 +488,12 @@ pub async fn build_stream_character(
             Ok(voice) => voice,
             Err(_) => {
                 println!("No Voice Found, Using Default");
-                
+
                 return Ok(StreamCharacter {
                     username: username.to_string(),
                     voice: default_voice.to_string(),
                     source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
-                })
+                });
             }
         };
 
@@ -515,14 +509,39 @@ pub async fn build_stream_character(
 
 fn find_random_voice() -> String {
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
-    
-    let voice_list: VoiceList = serde_json::from_str(&data).expect("JSON was not well-formatted");
-    
+
+    let voice_list: VoiceList =
+        serde_json::from_str(&data).expect("JSON was not well-formatted");
+
     let mut rng = thread_rng();
-    let random_voice = voice_list.voices.choose(&mut rng).expect("List of voices is empty");
+    let random_voice = voice_list
+        .voices
+        .choose(&mut rng)
+        .expect("List of voices is empty");
 
-    println!("Random Voice ID: {}, Name: {}", random_voice.voice_id, random_voice.name);
-    return random_voice.voice_id.clone()
-
+    println!(
+        "Random Voice ID: {}, Name: {}",
+        random_voice.voice_id, random_voice.name
+    );
+    return random_voice.voice_id.clone();
 }
 
+fn find_voice_id_by_name(name: &str) -> Option<String> {
+    // Read JSON file (replace 'path_to_file.json' with your file's path)
+    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+
+    // Deserialize JSON to VoiceList
+    let voice_list: VoiceList =
+        serde_json::from_str(&data).expect("JSON was not well-formatted");
+
+    // Convert the input name to lowercase
+    let name_lowercase = name.to_lowercase();
+
+    // Iterate through voices and find the matching voice_id
+    for voice in voice_list.voices {
+        if voice.name.to_lowercase() == name_lowercase {
+            return Some(voice.voice_id);
+        }
+    }
+    None
+}
