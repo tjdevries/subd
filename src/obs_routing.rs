@@ -660,6 +660,9 @@ pub async fn handle_obs_commands(
         // We need to eventually take in style IDs
         "!skybox" => {
             
+            // So this is the skybox command
+            // 
+            println!("Trying Skybox");
             let skybox_info = splitmsg
                 .clone()
                 .into_iter()

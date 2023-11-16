@@ -220,7 +220,6 @@ async fn main() -> Result<()> {
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
 
-
     test();
     
     event_loop.run().await?;
