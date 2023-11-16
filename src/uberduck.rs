@@ -43,7 +43,6 @@ pub struct OldUberDuckHandler {
     pub elevenlabs: Elevenlabs,
 }
 
-
 pub struct UberDuckHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
@@ -119,7 +118,7 @@ impl EventHandler for UberDuckHandler {
             };
 
             let filename =
-                twitch_chat_filename(msg.username, msg.voice);
+                twitch_chat_filename(msg.username.clone(), msg.voice);
             let full_filename = format!("{}.wav", filename);
 
             // This is creating and then playing the file
@@ -137,7 +136,25 @@ impl EventHandler for UberDuckHandler {
               voice_settings: None,
             };
 
-            let random_id = find_random_voice();
+            let ethan = "g5CIjZEefAph4nQFvHAz";
+            let gigi = "jBpfuIE2acCO8z3wKNLl";
+            let emily = "LcfcDJNUP1GQjkzn1xUU";
+            let random_id = match msg.username.as_str() {
+                "beginbot" => {
+                    String::from(ethan)
+                }
+                "ArtMattDank" => {
+                    String::from(gigi)
+                }
+                "siifr" => {
+                    String::from(emily)
+                }
+                _ => {
+                    find_random_voice()
+                }
+            };
+            // 
+            // let random_id = find_random_voice();
             let tts_result = self.elevenlabs.tts(&tts_body, random_id);
             let bytes = tts_result.unwrap();
 
@@ -506,5 +523,6 @@ fn find_random_voice() -> String {
 
     println!("Random Voice ID: {}, Name: {}", random_voice.voice_id, random_voice.name);
     return random_voice.voice_id.clone()
+
 }
 
