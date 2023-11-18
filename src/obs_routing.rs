@@ -862,20 +862,6 @@ pub async fn handle_obs_commands(
         // ===========================================
 
         "!talk" => {
-            
-            // let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
-            
-            // let sanitized_word = word.to_lowercase();
-            // let full_name = format!("./MP3s/{}.mp3", sanitized_word);
-            //
-            // if mp3s.contains(&full_name) {
-            //     let _ = tx.send(Event::TransformOBSTextRequest(
-            //         TransformOBSTextRequest {
-            //             message: sanitized_word.clone(),
-            //             text_source: text_source.to_string(),
-            //         },
-            //     ));
-                
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: "Hello".to_string(),

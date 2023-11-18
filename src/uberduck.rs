@@ -139,17 +139,19 @@ impl EventHandler for UberDuckHandler {
             };
 
             let voice = msg.voice.as_str();
+            let mut is_random = false;
 
-            let voice_id = find_voice_id_by_name(voice);
-            let random_id = match voice_id {
-                Some(id) => id,
-                None => find_random_voice(),
-            };
-            // let ethan = "g5CIjZEefAph4nQFvHAz";
-            // let gigi = "jBpfuIE2acCO8z3wKNLl";
-            // let emily = "LcfcDJNUP1GQjkzn1xUU";
-
-            let tts_result = self.elevenlabs.tts(&tts_body, random_id);
+            let voice_data = find_voice_id_by_name(voice);
+            let (voice_id, voice_name) = match voice_data {
+            Some((id, name)) => {
+                (id, name)
+            },
+            None => {
+                is_random = true;
+                find_random_voice()
+            },
+        };
+            let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
             let bytes = tts_result.unwrap();
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
@@ -165,6 +167,14 @@ impl EventHandler for UberDuckHandler {
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
             
+            // let onscreen_msg = format!("{} | random: {} | {} - {}", is_random, voice_name, msg.message.clone());
+            let onscreen_msg = format!("{} | random: {} | {}", msg.username, is_random, voice_name);
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: onscreen_msg,
+                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
+                },
+            ));
             // Can we make this quieter?
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
             // sink.set_volume(0.7);
@@ -520,8 +530,7 @@ pub async fn build_stream_character(
         source: character.to_string(),
     })
 }
-
-fn find_random_voice() -> String {
+fn find_random_voice() -> (String, String) {
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
     let voice_list: VoiceList =
@@ -533,14 +542,29 @@ fn find_random_voice() -> String {
         .choose(&mut rng)
         .expect("List of voices is empty");
 
-    println!(
-        "Random Voice ID: {}, Name: {}",
-        random_voice.voice_id, random_voice.name
-    );
-    return random_voice.voice_id.clone();
+    // Return both the voice ID and name
+    (random_voice.voice_id.clone(), random_voice.name.clone())
 }
+// fn find_random_voice() -> String {
+//     let data = fs::read_to_string("voices.json").expect("Unable to read file");
+//
+//     let voice_list: VoiceList =
+//         serde_json::from_str(&data).expect("JSON was not well-formatted");
+//
+//     let mut rng = thread_rng();
+//     let random_voice = voice_list
+//         .voices
+//         .choose(&mut rng)
+//         .expect("List of voices is empty");
+//
+//     println!(
+//         "Random Voice ID: {}, Name: {}",
+//         random_voice.voice_id, random_voice.name
+//     );
+//     return random_voice.voice_id.clone();
+// }
 
-fn find_voice_id_by_name(name: &str) -> Option<String> {
+fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // Read JSON file (replace 'path_to_file.json' with your file's path)
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
@@ -554,7 +578,7 @@ fn find_voice_id_by_name(name: &str) -> Option<String> {
     // Iterate through voices and find the matching voice_id
     for voice in voice_list.voices {
         if voice.name.to_lowercase() == name_lowercase {
-            return Some(voice.voice_id);
+            return Some((voice.voice_id, voice.name));
         }
     }
     None
