@@ -188,6 +188,12 @@ impl EventHandler for UberDuckHandler {
             
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
+            let _ = tx.send(Event::TransformOBSTextRequest(
+                TransformOBSTextRequest {
+                    message: "".to_string(),
+                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
+                },
+            ));
         }
     }
 }
