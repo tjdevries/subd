@@ -235,7 +235,8 @@ pub async fn update_and_trigger_text_move_filter(
         settings: new_settings,
         overlay: None,
     };
-
+    
+    println!("Setting new settings for Filter Name: {}", filter_name);
     obs_client.filters().set_settings(new_settings).await?;
 
     // This fixes the problem
@@ -244,6 +245,7 @@ pub async fn update_and_trigger_text_move_filter(
 
     thread::sleep(ten_millis);
 
+    println!("Filter Name: {}", filter_name);
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,

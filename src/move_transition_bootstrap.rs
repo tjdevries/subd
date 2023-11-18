@@ -7,6 +7,8 @@ const MOVE_SOURCE_FILTER_KIND: &str = "move_source_filter";
 const MOVE_VALUE_FILTER_KIND: &str = "move_value_filter";
 
 pub async fn create_soundboard_text(obs_client: &OBSClient) -> Result<()> {
+
+    // It's on this Characters scene
     let scene = obs::CHARACTERS_SCENE;
 
     // let font_flags = obws::common::FontFlags{ }

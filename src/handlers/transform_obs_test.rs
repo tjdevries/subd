@@ -23,7 +23,14 @@ impl EventHandler for TransformOBSTextHandler {
                 _ => continue,
             };
 
+            // Attempting to Transform! Soundboard-Text TransformSoundboard-Text
+            // Attempting to Transform! Soundboard-Text TransformSoundboard-Text Hello
+
             let filter_name = format!("Transform{}", msg.text_source);
+            println!("Attempting to Transform! {} {} {}", &msg.text_source, &filter_name, &msg.message);
+            
+            // We are calling the update and move text filter
+            // we should see output
             let _ = crate::move_transition::update_and_trigger_text_move_filter(
                 &msg.text_source,
                 &filter_name,
