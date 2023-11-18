@@ -1,6 +1,7 @@
 use crate::audio;
 use crate::obs;
 use crate::stream_character;
+use crate::redirect;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -25,10 +26,6 @@ use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
-
-use libc;
-use std::os::unix::io::{FromRawFd, AsRawFd, RawFd};
-use std::io;
 
 
 #[derive(Deserialize, Debug)]
@@ -162,8 +159,8 @@ impl EventHandler for UberDuckHandler {
             );
 
             // We are supressing a whole bunch of alsa message
-            let backup2 = redirect_stdout().expect("Failed to redirect stdout");
-            let backup = redirect_stderr().expect("Failed to redirect stderr");
+            let backup2 = redirect::redirect_stdout().expect("Failed to redirect stdout");
+            let backup = redirect::redirect_stderr().expect("Failed to redirect stderr");
             
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
@@ -176,8 +173,8 @@ impl EventHandler for UberDuckHandler {
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
             
-            restore_stderr(backup);
-            restore_stdout(backup2);
+            redirect::restore_stderr(backup);
+            redirect::restore_stdout(backup2);
             
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
@@ -561,69 +558,4 @@ fn find_voice_id_by_name(name: &str) -> Option<String> {
         }
     }
     None
-}
-
-// Getting a little Wild
-fn redirect_stderr() -> io::Result<File> {
-    unsafe {
-        let stderr_fd = libc::STDERR_FILENO;
-        let null_fd = libc::open(b"/dev/null\0".as_ptr() as *const _, libc::O_WRONLY);
-
-        if null_fd == -1 {
-            return Err(io::Error::last_os_error());
-        }
-
-        // Backup the original stderr file descriptor
-        let backup_fd = libc::dup(stderr_fd);
-        if backup_fd == -1 {
-            libc::close(null_fd);
-            return Err(io::Error::last_os_error());
-        }
-
-        // Redirect stderr to /dev/null
-        libc::dup2(null_fd, stderr_fd);
-        libc::close(null_fd);
-
-        // Return the backup file descriptor as a File so it can be restored later
-        Ok(File::from_raw_fd(backup_fd))
-    }
-}
-
-fn restore_stderr(backup: File) {
-    unsafe {
-        let stderr_fd = libc::STDERR_FILENO;
-        libc::dup2(backup.as_raw_fd(), stderr_fd);
-    }
-}
-
-fn redirect_stdout() -> io::Result<File> {
-    unsafe {
-        let stdout_fd = libc::STDOUT_FILENO;
-        let null_fd = libc::open(b"/dev/null\0".as_ptr() as *const _, libc::O_WRONLY);
-
-        if null_fd == -1 {
-            return Err(io::Error::last_os_error());
-        }
-
-        // Backup the original stdout file descriptor
-        let backup_fd = libc::dup(stdout_fd);
-        if backup_fd == -1 {
-            libc::close(null_fd);
-            return Err(io::Error::last_os_error());
-        }
-
-        // Redirect stdout to /dev/null
-        libc::dup2(null_fd, stdout_fd);
-        libc::close(null_fd);
-
-        // Return the backup file descriptor as a File
-        Ok(File::from_raw_fd(backup_fd))
-    }
-}
-
-fn restore_stdout(backup: File) {
-    unsafe {
-        let stdout_fd = libc::STDOUT_FILENO;
-        libc::dup2(backup.as_raw_fd(), stdout_fd);
-    }
 }

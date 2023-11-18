@@ -11,6 +11,7 @@ pub mod obs_routing;
 pub mod obs_scenes;
 pub mod obs_source;
 pub mod raffle;
+pub mod redirect;
 pub mod sdf_effects;
 pub mod stream_character;
 pub mod stream_fx;
