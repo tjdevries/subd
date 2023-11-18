@@ -144,13 +144,14 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-
-        // how would we globally override?
         // could be BEGIN only 
         //
         // !global_voice Ethan
-
         "!no_global_voice" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
             Ok(())
         }
         

@@ -2,6 +2,7 @@ use crate::audio;
 use crate::obs;
 use crate::stream_character;
 use crate::redirect;
+use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -119,6 +120,22 @@ impl EventHandler for UberDuckHandler {
                 continue;
             };
 
+            let pool_clone = self.pool.clone();
+
+            let twitch_state = async {
+                twitch_stream_state::get_twitch_state(&pool_clone).await
+            };
+
+            let global_voice = match twitch_state.await {
+                Ok(state) => {
+                    state.global_voice
+                },
+                Err(err) => {
+                    eprintln!("Error fetching twitch_stream_state: {:?}", err);
+                    false
+                }
+            };
+
             // Ok so msg.voice is what we are saving
             // we have to look up the ID based on the name
             let filename =
@@ -155,10 +172,6 @@ impl EventHandler for UberDuckHandler {
             let bytes = tts_result.unwrap();
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
-            println!("\n\n\t\tStarting begin.rs!");
-            println!(
-                "====================================================\n\n"
-            );
 
             // We are supressing a whole bunch of alsa message
             let backup2 = redirect::redirect_stdout().expect("Failed to redirect stdout");
@@ -168,21 +181,19 @@ impl EventHandler for UberDuckHandler {
                 audio::get_output_stream("pulse").expect("stream handle");
             
             // let onscreen_msg = format!("{} | random: {} | {} - {}", is_random, voice_name, msg.message.clone());
-            let onscreen_msg = format!("{} | random: {} | {}", msg.username, is_random, voice_name);
+            let onscreen_msg = format!("{} | global: {} | random: {} | {}", msg.username, global_voice, is_random, voice_name);
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
                     text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
                 },
             ));
-            // Can we make this quieter?
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
             // sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
-            
             redirect::restore_stderr(backup);
             redirect::restore_stdout(backup2);
             
