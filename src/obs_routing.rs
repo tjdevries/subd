@@ -663,6 +663,7 @@ pub async fn handle_obs_commands(
             // So this is the skybox command
             // 
             println!("Trying Skybox");
+            
             let skybox_info = splitmsg
                 .clone()
                 .into_iter()

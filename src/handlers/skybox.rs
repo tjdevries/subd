@@ -47,6 +47,7 @@ impl EventHandler for SkyboxHandler {
             };
 
 
+            println!("Attempting to Skybox");
             request_skybox(request.msg).await?;
 
             // TODO: we will need to trigger the skybox OBS source
@@ -58,17 +59,7 @@ impl EventHandler for SkyboxHandler {
 
 #[allow(dead_code)]
 async fn request_skybox(prompt: String) -> io::Result<String> {
-    
-    // let skybox_api_key = match env::var_os("SKYBOX_API_KEY") {
-    //         Some(v) => v.into_string().unwrap(),
-    //         None => panic!("$SKYBOX_API_KEY is not set")
-    // };
-    // This API Key could be blank
-    // let skybox_api_key: String = String::from("3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c");
-    // // let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
-    
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    // TODO: update this to not pass the API KEY through the request
     // https://backend.blockadelabs.com/api/v1/skybox
     let requests_url = format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
 

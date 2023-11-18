@@ -25,7 +25,6 @@ use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::UberDuckRequest;
 use tokio::sync::broadcast;
-use stdio_override::StdoutOverride;
 
 
 #[derive(Deserialize, Debug)]
@@ -158,17 +157,20 @@ impl EventHandler for UberDuckHandler {
                 "====================================================\n\n"
             );
             
-            
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
+            
             // Can we make this quieter?
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-            sink.set_volume(0.5);
+            sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
-            // Can I 
-            let _override = StdoutOverride::override_file("/dev/null").unwrap();
+            
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
+            
+            
+            let ten_millis = time::Duration::from_millis(1000);
+            thread::sleep(ten_millis);
         }
     }
 }
@@ -331,7 +333,7 @@ impl EventHandler for OldUberDuckHandler {
                         // Can we make this quieter?
                         let sink =
                             rodio::Sink::try_new(&stream_handle).unwrap();
-                        sink.set_volume(0.5);
+                        sink.set_volume(0.9);
                         let file = BufReader::new(
                             File::open(audio_file_name).unwrap(),
                         );
