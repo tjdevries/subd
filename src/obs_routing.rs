@@ -145,6 +145,36 @@ pub async fn handle_obs_commands(
         }
 
 
+        // how would we globally override?
+        // could be BEGIN only 
+        //
+        // !global_voice Ethan
+
+        "!no_global_voice" => {
+            Ok(())
+        }
+        
+        // TODO: improve this 
+        "!global_voice" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
+            let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
+
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            
+            // This should write to somewhere in the DB, that tracks global voices
+            uberduck::set_voice(
+                voice.to_string(),
+                msg.user_name.to_string(),
+                pool,
+            )
+            .await
+        }
+
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
