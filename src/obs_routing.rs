@@ -25,10 +25,26 @@ use std::thread;
 use std::time;
 use subd_types::{Event, UserMessage, TransformOBSTextRequest};
 use tokio::sync::broadcast;
-
+use reqwest;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::env;
+use std::fs::File;
+use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
+#[derive(Serialize, Deserialize, Debug)]
+struct ImageResponse {
+    created: i64,  // Assuming 'created' is a Unix timestamp
+    data: Vec<ImageData>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ImageData {
+    url: String,
+    // You can add more fields if your objects have more data
+}
 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
@@ -186,6 +202,13 @@ pub async fn handle_obs_commands(
             )
             .await
         }
+
+        "!dalle" => {
+            println!("Dalle Time!");
+            dalle_time().await;
+            Ok(())
+        }
+        
 
         "!voice" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
@@ -1039,3 +1062,48 @@ pub async fn trigger_obs_move_filter_and_websocket(
 //     .await;
 //     Ok(())
 // }
+
+async fn dalle_time() -> Result<(), reqwest::Error> {
+    println!("Looking for API KEY");
+    let api_key = env::var("OPENAI_API_KEY").unwrap(); // Read API key from environment variable
+    println!("We got API KEY");
+    let prompt = "a futuristic city skyline at sunset";
+
+    let truncated_prompt = prompt.chars().take(80).collect::<String>(); // Truncate prompt to 80 chars
+    let client = reqwest::Client::new();
+
+    // TODO: Update these
+    let response = client
+        .post("https://api.openai.com/v1/images/generations")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "prompt": "a drawing of a happy corgi puppy sitting and facing forward, studio light, longshot",
+            "n": 1,
+            "size": "1024x1024"
+        }))
+        .send()
+        .await?;
+    
+    let text = response.text().await?;
+
+    let image_response: Result<ImageResponse, _> = serde_json::from_str(&text);
+
+    match image_response {
+        Ok(response) => {
+            for (index, image_data) in response.data.iter().enumerate() {
+                println!("Image URL: {}", image_data.url.clone());
+                let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
+                let mut file = File::create(format!("{}-{}.png", truncated_prompt, index)).unwrap();
+                file.write_all(&image_data).unwrap();
+                
+            }
+        },
+        Err(e) => {
+            eprintln!("Error deserializing response: {}", e);
+        }
+    }
+    
+    Ok(())
+} 
+
