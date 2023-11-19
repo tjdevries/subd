@@ -34,7 +34,7 @@ use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
-const SOURCES: [&str; 4] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music"];
+const SOURCES: [&str; 5] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music", "Romcom-BG-Music"];
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -163,6 +163,34 @@ pub async fn handle_obs_commands(
             
             // Disable Global Voice Mode
             twitch_stream_state::turn_off_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        "!romcom" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "Romcom-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "fin".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
         }
