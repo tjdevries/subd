@@ -160,8 +160,6 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        // could be BEGIN only 
-        //
         // !global_voice Ethan
         "!no_global_voice" => {
             if msg.user_name != "beginbot"  {
