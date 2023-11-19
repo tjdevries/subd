@@ -136,6 +136,14 @@ pub async fn move_source(
 // == Hide/Show Actions
 // ====================================================
 
+pub async fn hide_source(
+    scene: &str,
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<(), anyhow::Error> {
+    set_enabled(scene, source, false, obs_client).await
+}
+
 pub async fn show_source(
     scene: &str,
     source: &str,

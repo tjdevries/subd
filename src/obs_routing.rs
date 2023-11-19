@@ -147,6 +147,82 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Voices
         // ===========================================
+
+        "!nothing" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            let scene = "BackgroundMusic";
+            
+            let source = "Hospital-BG-Music";
+            let _ = obs_source::hide_source(scene, source, obs_client).await;
+            
+            let source = "Dramatic-BG-Music";
+            let _ = obs_source::hide_source(scene, source, obs_client).await;
+            
+            // Disable Global Voice Mode
+            twitch_stream_state::turn_off_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        "!dramatic" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            // Hide others First
+            let scene = "BackgroundMusic";
+            let source = "Hospital-BG-Music";
+            let _ = obs_source::hide_source(&scene, &source, &obs_client).await;
+            
+            let scene = "BackgroundMusic";
+            let source = "Dramatic-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "ethan".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+
+
+        "!hospital" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            // Hide others First
+            let scene = "BackgroundMusic";
+            let source = "Dramatic-BG-Music";
+            let _ = obs_source::hide_source(&scene, &source, &obs_client).await;
+            
+            let source = "Hospital-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "bella".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
         "!random" => {
             Ok(())
             // uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
@@ -184,7 +260,6 @@ pub async fn handle_obs_commands(
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             
-            // Why are we resaving a voice, we just use the beginbot voice!
             // This should write to somewhere in the DB, that tracks global voices
             // uberduck::set_voice(
             //     voice.to_string(),
@@ -1067,9 +1142,7 @@ pub async fn trigger_obs_move_filter_and_websocket(
 // }
 
 async fn dalle_time() -> Result<(), reqwest::Error> {
-    println!("Looking for API KEY");
     let api_key = env::var("OPENAI_API_KEY").unwrap(); // Read API key from environment variable
-    println!("We got API KEY");
     let prompt = "a futuristic city skyline at sunset";
 
     let truncated_prompt = prompt.chars().take(80).collect::<String>(); // Truncate prompt to 80 chars
@@ -1109,4 +1182,5 @@ async fn dalle_time() -> Result<(), reqwest::Error> {
     
     Ok(())
 } 
+
 
