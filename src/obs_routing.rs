@@ -34,6 +34,8 @@ use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
+const SOURCES: [&str; 4] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music"];
+
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
     created: i64,  // Assuming 'created' is a Unix timestamp
@@ -152,17 +154,43 @@ pub async fn handle_obs_commands(
             if msg.user_name != "beginbot"  {
                 return Ok(())
             }
-            
+
             let scene = "BackgroundMusic";
             
-            let source = "Hospital-BG-Music";
-            let _ = obs_source::hide_source(scene, source, obs_client).await;
-            
-            let source = "Dramatic-BG-Music";
-            let _ = obs_source::hide_source(scene, source, obs_client).await;
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
             
             // Disable Global Voice Mode
             twitch_stream_state::turn_off_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        "!yoga" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "Yoga-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "thomas".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
         }
@@ -172,15 +200,15 @@ pub async fn handle_obs_commands(
                 return Ok(())
             }
             
-            // Hide others First
             let scene = "BackgroundMusic";
-            let source = "Hospital-BG-Music";
-            let _ = obs_source::hide_source(&scene, &source, &obs_client).await;
             
-            let scene = "BackgroundMusic";
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
             let source = "Dramatic-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
-
+            
             // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "ethan".to_string(),
@@ -196,6 +224,34 @@ pub async fn handle_obs_commands(
         }
 
 
+        "!ken" => {
+            if msg.user_name != "beginbot"  {
+                return Ok(())
+            }
+            
+            // Hide others First
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "KenBurns-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+            
+            let _ = uberduck::set_voice(
+                "james".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+
         "!hospital" => {
             if msg.user_name != "beginbot"  {
                 return Ok(())
@@ -203,12 +259,14 @@ pub async fn handle_obs_commands(
             
             // Hide others First
             let scene = "BackgroundMusic";
-            let source = "Dramatic-BG-Music";
-            let _ = obs_source::hide_source(&scene, &source, &obs_client).await;
             
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+
             let source = "Hospital-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
-
+            
             // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "bella".to_string(),
