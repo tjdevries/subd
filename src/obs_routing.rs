@@ -27,16 +27,30 @@ use subd_types::{Event, UserMessage, TransformOBSTextRequest};
 use tokio::sync::broadcast;
 use reqwest;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::env;
 use std::fs::File;
 use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
-const ALLOWED_USERS: [&str; 4] = ["beginbot", "zanuss", "ArtMattDank", "carlvandergeest"];
+// This should probably be moved to another file
+const ALLOWED_USERS: [&str; 4] = [
+    "beginbot",
+    "zanuss",
+    "ArtMattDank",
+    "carlvandergeest",
+];
 
-const SOURCES: [&str; 7] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music", "Romcom-BG-Music", "Sigma-BG-Music", "News-1-BG-Music"];
+// We need these to be a map instead
+const SOURCES: [&str; 7] = [
+    "Yoga-BG-Music",
+    "KenBurns-BG-Music",
+    "Hospital-BG-Music",
+    "Dramatic-BG-Music",
+    "Romcom-BG-Music",
+    "Sigma-BG-Music",
+    "News-1-BG-Music",
+];
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -59,6 +73,12 @@ pub async fn handle_obs_commands(
     msg: UserMessage,
 ) -> Result<()> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
+
+    let is_mod = msg.roles.is_twitch_mod();
+    let is_vip = msg.roles.is_twitch_vip();
+    println!("WE GOT A MOD!: {}", is_mod);
+    println!("WE GOT A VIP!: {}", is_vip);
+    // msg.roles
 
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
@@ -186,7 +206,7 @@ pub async fn handle_obs_commands(
 
             // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
-                "ethan".to_string(),
+                "james".to_string(),
                 "beginbot".to_string(),
                 pool,
             )
@@ -200,13 +220,9 @@ pub async fn handle_obs_commands(
         
         
         "!sigma" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
-            
             
             let scene = "BackgroundMusic";
             
@@ -217,7 +233,6 @@ pub async fn handle_obs_commands(
             let source = "Sigma-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
 
-            // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "ethan".to_string(),
                 "beginbot".to_string(),
@@ -232,14 +247,10 @@ pub async fn handle_obs_commands(
         }
         
         "!romcom" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
 
-            
             let scene = "BackgroundMusic";
             
             for source in SOURCES.iter() {
@@ -264,12 +275,14 @@ pub async fn handle_obs_commands(
         }
         
         "!yoga" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+            // This is the best way
+            if !is_mod && !is_vip {
                 return Ok(());
             }
+
+            // if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+            //     return Ok(());
+            // }
             
             let scene = "BackgroundMusic";
             
@@ -280,7 +293,6 @@ pub async fn handle_obs_commands(
             let source = "Yoga-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
 
-            // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "thomas".to_string(),
                 "beginbot".to_string(),
@@ -288,16 +300,12 @@ pub async fn handle_obs_commands(
             )
             .await;
             
-            // Enable Global Voice Mode
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
         }
         
         "!dramatic" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
@@ -311,7 +319,6 @@ pub async fn handle_obs_commands(
             let source = "Dramatic-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
             
-            // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "ethan".to_string(),
                 "beginbot".to_string(),
@@ -319,7 +326,6 @@ pub async fn handle_obs_commands(
             )
             .await;
             
-            // Enable Global Voice Mode
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
@@ -327,15 +333,10 @@ pub async fn handle_obs_commands(
 
 
         "!ken" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
             
-            
-            // Hide others First
             let scene = "BackgroundMusic";
             
             for source in SOURCES.iter() {
@@ -351,23 +352,17 @@ pub async fn handle_obs_commands(
                 pool,
             )
             .await;
-            
-            // Enable Global Voice Mode
+
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
         }
 
         "!hospital" => {
-            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
-            //     return Ok(())
-            // }
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
             
-            
-            // Hide others First
             let scene = "BackgroundMusic";
             
             for source in SOURCES.iter() {
@@ -377,7 +372,6 @@ pub async fn handle_obs_commands(
             let source = "Hospital-BG-Music";
             let _ = obs_source::show_source(scene, source, obs_client).await;
             
-            // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
                 "bella".to_string(),
                 "beginbot".to_string(),
@@ -385,7 +379,6 @@ pub async fn handle_obs_commands(
             )
             .await;
             
-            // Enable Global Voice Mode
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             Ok(())
@@ -1311,17 +1304,18 @@ pub async fn trigger_obs_move_filter_and_websocket(
 // }
 
 
-// This needs take in prompt
 async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
-    let prompt = "a futuristic city skyline at sunset";
 
-    let truncated_prompt = prompt.chars().take(80).collect::<String>(); // Truncate prompt to 80 chars
+    // TODO: This is for saving to the file
+    // which we aren't doing yet
+    let truncated_prompt = contents.chars().take(80).collect::<String>();
     let client = reqwest::Client::new();
 
     // let size = "1792x1024";
     // let other_size = "1024x1792";
     
+    // Not sure 
     // TODO: Update these
     let response = client
         .post("https://api.openai.com/v1/images/generations")
@@ -1340,8 +1334,6 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     
     let text = response.text().await?;
 
-    println!("Test Time! {}", text);
-
     let image_response: Result<ImageResponse, _> = serde_json::from_str(&text);
 
     match image_response {
@@ -1350,6 +1342,10 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
                 
                 // let filename = format!("{}-{}.png", truncated_prompt, index);
                 
+                // We should be using the prompt here
+                // but then we have to update to saved file
+                // we could also just save it twice.
+                // One for Archive purposes
                 let filename = format!("./tmp/dalle-{}.png", index+1);
                 println!("Image URL: {} | ", image_data.url.clone());
                 let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
