@@ -197,7 +197,7 @@ async fn main() -> Result<()> {
     let elevenlabs = Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
 
     // Uberduck handles voice messages
-    event_loop.push(uberduck::UberDuckHandler { pool, sink, elevenlabs });
+    event_loop.push(uberduck::ElevenLabsHandler { pool, sink, elevenlabs });
 
     // // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;

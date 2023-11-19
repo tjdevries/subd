@@ -46,7 +46,7 @@ pub struct OldUberDuckHandler {
     pub elevenlabs: Elevenlabs,
 }
 
-pub struct UberDuckHandler {
+pub struct ElevenLabsHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
     pub elevenlabs: Elevenlabs,
@@ -102,7 +102,7 @@ pub fn twitch_chat_filename(username: String, voice: String) -> String {
 }
 
 #[async_trait]
-impl EventHandler for UberDuckHandler {
+impl EventHandler for ElevenLabsHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -126,7 +126,7 @@ impl EventHandler for UberDuckHandler {
                 twitch_stream_state::get_twitch_state(&pool_clone).await
             };
 
-            let global_voice = match twitch_state.await {
+            let is_global_voice_enabled = match twitch_state.await {
                 Ok(state) => {
                     state.global_voice
                 },
@@ -135,39 +135,52 @@ impl EventHandler for UberDuckHandler {
                     false
                 }
             };
+            
+                
+            let voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
+            // This needs to be Beginbot's voice
+            let voice_data = find_voice_id_by_name(&voice);
+            let (global_voice_id, global_voice) = match voice_data {
+                Some((id, name)) => {
+                    (id, name)
+                },
+                None => {
+                    ("".to_string(), "".to_string())
+                },
+            };
 
-            // Ok so msg.voice is what we are saving
-            // we have to look up the ID based on the name
+            let final_voice = if is_global_voice_enabled  {
+                println!("Global Voice is enabled: {}", global_voice);
+                global_voice
+            } else {
+                msg.voice.clone()
+            };
+
             let filename =
-                twitch_chat_filename(msg.username.clone(), msg.voice.clone());
+                twitch_chat_filename(msg.username.clone(), final_voice.clone());
             let full_filename = format!("{}.wav", filename);
 
-            // This is creating and then playing the file
-            // I WANT TO SAVE THIS FILE
-            println!("Trying to Save: {}", full_filename);
             let local_audio_path =
                 format!("./TwitchChatTTSRecordings/{}", full_filename);
 
-            // Create the tts body.
             let tts_body = TtsBody {
                 model_id: None,
                 text: msg.message.clone(),
                 voice_settings: None,
             };
 
-            let voice = msg.voice.as_str();
             let mut is_random = false;
 
-            let voice_data = find_voice_id_by_name(voice);
+            let voice_data = find_voice_id_by_name(&final_voice);
             let (voice_id, voice_name) = match voice_data {
-            Some((id, name)) => {
-                (id, name)
-            },
-            None => {
-                is_random = true;
-                find_random_voice()
-            },
-        };
+                Some((id, name)) => {
+                    (id, name)
+                },
+                None => {
+                    is_random = true;
+                    find_random_voice()
+                },
+            };
             let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
             let bytes = tts_result.unwrap();
 
@@ -181,7 +194,7 @@ impl EventHandler for UberDuckHandler {
                 audio::get_output_stream("pulse").expect("stream handle");
             
             // let onscreen_msg = format!("{} | random: {} | {} - {}", is_random, voice_name, msg.message.clone());
-            let onscreen_msg = format!("{} | global: {} | random: {} | {}", msg.username, global_voice, is_random, voice_name);
+            let onscreen_msg = format!("{} | global: {} | random: {} | {}", msg.username, is_global_voice_enabled, is_random, voice_name);
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
