@@ -1329,7 +1329,7 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&serde_json::json!({
             "prompt": contents,
-            "n": 1,
+            "n": 4,
             // "size": size,
             // "size": "1080x1080",
             // "size": "1792x1024",
@@ -1350,7 +1350,7 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
                 
                 // let filename = format!("{}-{}.png", truncated_prompt, index);
                 
-                let filename = "./tmp/dalle.png";
+                let filename = format!("./tmp/dalle-{}.png", index+1);
                 println!("Image URL: {} | ", image_data.url.clone());
                 let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
                 
