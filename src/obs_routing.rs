@@ -34,7 +34,9 @@ use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
-const SOURCES: [&str; 5] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music", "Romcom-BG-Music"];
+const ALLOWED_USERS: [&str; 4] = ["beginbot", "zanuss", "ArtMattDank", "carlvandergeest"];
+
+const SOURCES: [&str; 7] = ["Yoga-BG-Music", "KenBurns-BG-Music", "Hospital-BG-Music", "Dramatic-BG-Music", "Romcom-BG-Music", "Sigma-BG-Music", "News-1-BG-Music"];
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -151,10 +153,10 @@ pub async fn handle_obs_commands(
         // ===========================================
 
         "!nothing" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
-
+            
             let scene = "BackgroundMusic";
             
             for source in SOURCES.iter() {
@@ -167,10 +169,76 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
-        "!romcom" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+        "!news" => {
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
+            
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "News-1-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "james".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        
+        "!sigma" => {
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
+            }
+            
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "Sigma-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "ethan".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        "!romcom" => {
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
+            }
+
             
             let scene = "BackgroundMusic";
             
@@ -196,8 +264,11 @@ pub async fn handle_obs_commands(
         }
         
         "!yoga" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
             
             let scene = "BackgroundMusic";
@@ -224,8 +295,11 @@ pub async fn handle_obs_commands(
         }
         
         "!dramatic" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
             
             let scene = "BackgroundMusic";
@@ -253,9 +327,13 @@ pub async fn handle_obs_commands(
 
 
         "!ken" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
+            
             
             // Hide others First
             let scene = "BackgroundMusic";
@@ -281,9 +359,13 @@ pub async fn handle_obs_commands(
         }
 
         "!hospital" => {
-            if msg.user_name != "beginbot"  {
-                return Ok(())
+            // if !msg.roles.is_twitch_mod() || msg.user_name != "beginbot"   {
+            //     return Ok(())
+            // }
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
             }
+            
             
             // Hide others First
             let scene = "BackgroundMusic";
@@ -1227,8 +1309,10 @@ pub async fn trigger_obs_move_filter_and_websocket(
 //     Ok(())
 // }
 
+
+// This needs take in prompt
 async fn dalle_time() -> Result<(), reqwest::Error> {
-    let api_key = env::var("OPENAI_API_KEY").unwrap(); // Read API key from environment variable
+    let api_key = env::var("OPENAI_API_KEY").unwrap();
     let prompt = "a futuristic city skyline at sunset";
 
     let truncated_prompt = prompt.chars().take(80).collect::<String>(); // Truncate prompt to 80 chars
