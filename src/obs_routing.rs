@@ -186,7 +186,7 @@ pub async fn handle_obs_commands(
 
             // Set beginbot to the best Hospital Voices
             let _ = uberduck::set_voice(
-                "james".to_string(),
+                "ethan".to_string(),
                 "beginbot".to_string(),
                 pool,
             )
@@ -450,8 +450,9 @@ pub async fn handle_obs_commands(
         }
 
         "!dalle" => {
+            // how do we read in the message to pass to DAlle
             println!("Dalle Time!");
-            dalle_time().await;
+            dalle_time(msg.contents).await;
             Ok(())
         }
         
@@ -1311,38 +1312,53 @@ pub async fn trigger_obs_move_filter_and_websocket(
 
 
 // This needs take in prompt
-async fn dalle_time() -> Result<(), reqwest::Error> {
+async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
     let prompt = "a futuristic city skyline at sunset";
 
     let truncated_prompt = prompt.chars().take(80).collect::<String>(); // Truncate prompt to 80 chars
     let client = reqwest::Client::new();
 
+    // let size = "1792x1024";
+    // let other_size = "1024x1792";
+    
     // TODO: Update these
     let response = client
         .post("https://api.openai.com/v1/images/generations")
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&serde_json::json!({
-            "prompt": "a drawing of a happy corgi puppy sitting and facing forward, studio light, longshot",
+            "prompt": contents,
             "n": 1,
-            "size": "1024x1024"
+            // "size": size,
+            // "size": "1080x1080",
+            // "size": "1792x1024",
+            "size": "1024x1024",
         }))
         .send()
         .await?;
     
     let text = response.text().await?;
 
+    println!("Test Time! {}", text);
+
     let image_response: Result<ImageResponse, _> = serde_json::from_str(&text);
 
     match image_response {
         Ok(response) => {
             for (index, image_data) in response.data.iter().enumerate() {
-                println!("Image URL: {}", image_data.url.clone());
+                
+                // let filename = format!("{}-{}.png", truncated_prompt, index);
+                
+                let filename = "./tmp/dalle.png";
+                println!("Image URL: {} | ", image_data.url.clone());
                 let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
-                let mut file = File::create(format!("{}-{}.png", truncated_prompt, index)).unwrap();
+                
+                let mut file = File::create(filename).unwrap();
                 file.write_all(&image_data).unwrap();
                 
+
+                // Can we hide and show the Dalle-Gen-1
             }
         },
         Err(e) => {
