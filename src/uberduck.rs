@@ -137,6 +137,8 @@ impl EventHandler for ElevenLabsHandler {
             };
             
                 
+            
+            // 
             let voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
             // This needs to be Beginbot's voice
             let voice_data = find_voice_id_by_name(&voice);

@@ -36,11 +36,22 @@ impl twitch_stream_state::Model {
     }
 }
 
+pub async fn turn_off_global_voice(
+    pool: &PgPool,
+) -> Result<()> {
+    let _res = sqlx::query!(
+        "UPDATE twitch_stream_state SET global_voice = $1",
+        false
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn turn_on_global_voice(
     pool: &PgPool,
 ) -> Result<()> {
-    let state = get_twitch_state(pool).await?;
-    
     let _res = sqlx::query!(
         "UPDATE twitch_stream_state SET global_voice = $1",
         true

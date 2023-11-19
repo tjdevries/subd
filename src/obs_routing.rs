@@ -166,6 +166,8 @@ pub async fn handle_obs_commands(
                 return Ok(())
             }
             
+            twitch_stream_state::turn_off_global_voice(&pool)
+                .await?;
             Ok(())
         }
         
@@ -178,16 +180,19 @@ pub async fn handle_obs_commands(
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
 
+            println!("Turning on Global Voice");
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             
+            // Why are we resaving a voice, we just use the beginbot voice!
             // This should write to somewhere in the DB, that tracks global voices
-            uberduck::set_voice(
-                voice.to_string(),
-                msg.user_name.to_string(),
-                pool,
-            )
-            .await
+            // uberduck::set_voice(
+            //     voice.to_string(),
+            //     msg.user_name.to_string(),
+            //     pool,
+            // )
+            // .await
+            Ok(())
         }
 
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
