@@ -462,7 +462,7 @@ pub async fn set_voice(
 ) -> Result<()> {
     let model = stream_character::user_stream_character_information::Model {
         username: username.clone(),
-        voice: voice.to_string(),
+        voice: voice.to_string().to_lowercase(),
         obs_character: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
         random: false,
     };
