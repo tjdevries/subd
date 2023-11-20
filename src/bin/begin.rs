@@ -122,11 +122,12 @@ struct MyData {
     // field2: i32,
 }
 
+// {"subscription":{"id":"ddfd7140-1590-1dda-ca56-61aac70f9be1","status":"enabled","type":"channel.follow","version":"1","condition":{"broadcaster_user_id":"10483564"},"transport":{"method":"webhook","callback":"null"},"created_at":"2023-11-20T22:57:37.179519123Z","cost":0},"event":{"user_id":"25578051","user_login":"testFromUser","user_name":"testFromUser","broadcaster_user_id":"10483564","broadcaster_user_login":"10483564","broadcaster_user_name":"testBroadcaster","followed_at":"2023-11-20T22:57:37.179519123Z"}}
 #[derive(Serialize, Deserialize, Debug)]
 struct EventSubRoot {
     subscription: Subscription,
-    // event: Event,
-    challenge: String,
+    event: Option<Event>,
+    challenge: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -425,8 +426,19 @@ async fn main() -> Result<()> {
     .map(|simple_map: EventSubRoot| {
         // Why are we failing in here?
         // It's probably because of differnet shapes of data?
+
         println!("simple_map = {:?}", simple_map);
-        warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
+        let challenge = match simple_map.challenge {
+            Some(challenge) => {
+                    challenge
+            }
+            _ =>  {
+                    "".to_string()
+            }
+            // return warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
+        };
+        return warp::reply::with_status(challenge, warp::http::StatusCode::OK)
+        // warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
     });
     
     let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
