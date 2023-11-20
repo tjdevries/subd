@@ -31,6 +31,7 @@ use std::fs;
 use rand::{thread_rng, seq::SliceRandom};
 use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json};
 use std::convert::Infallible;
+use std::collections::HashMap;
 
 #[derive(Deserialize, Debug)]
 struct Voice {
@@ -110,6 +111,7 @@ fn test() {
 // =====================================================================
 // 
 
+// {"subscription":{"id":"bd747c26-73ab-7557-db35-6c227d58f0a5","status":"enabled","type":"channel.subscribe","version":"1","condition":{"broadcaster_user_id":"34493369"},"transport":{"method":"webhook","callback":"null"},"created_at":"2023-11-20T06:27:11.465026932Z","cost":0},"event":{"user_id":"52495161","user_login":"testFromUser","user_name":"testFromUser","broadcaster_user_id":"34493369","broadcaster_user_login":"testBroadcaster","broadcaster_user_name":"testBroadcaster","tier":"1000","is_gift":false}}
 #[derive(Deserialize, Serialize)]
 struct MyData {
     // TODO: Upate this shit
@@ -117,54 +119,72 @@ struct MyData {
     // field2: i32,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Root {
+    subscription: Subscription,
+    event: Event,
+}
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Subscription {
+    id: String,
+    status: String,
+    #[serde(rename = "type")]
+    type_field: String,
+    version: String,
+    condition: HashMap<String, String>,
+    transport: Transport,
+    created_at: String,
+    cost: i32,
+}
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Transport {
+    method: String,
+    callback: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Event {
+    user_id: String,
+    user_login: String,
+    user_name: String,
+    broadcaster_user_id: String,
+    broadcaster_user_login: String,
+    broadcaster_user_name: String,
+    tier: Option<String>,
+    is_gift: Option<bool>,
+}
+
+// ✗ Server Said: Request body deserialize error: missing field `tier` at line 1 column 540
 
 async fn get_request() -> Result<impl Reply, Rejection> {
     println!("BACK AGAIN!!!");
     Ok(json(&"GET response"))
 }
 
-async fn post_request(body: MyData) -> Result<impl Reply, Rejection> {
-    println!("BACK POST AGAIN!!!");
-    // let response = format!("Received: field1 = {}, field2 = {}", body.field1, body.field2);
-    // let response = format!("Received: field1 = {}, field2 = {}", body.field1, body.field2);
+async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
+    println!("Received body: {:?}", body);
+
+    // So we just hit this!!!!!!
+    println!("BACK POST AGAIN!!!: {:?}", body);
+    println!("Type Field {:?} | User: {}", body.subscription.type_field, body.event.user_name);
+
+    
+    match body.subscription.type_field.as_str() {
+        "channel.cheer" => {
+            println!("WER ARE FUDDCKING CHERERINGKV");
+        },
+        _ => {
+            println!("WOOO ABOUT TO DIE!!");
+            // todo!();
+        }
+        
+    }
+    
     Ok(reply::with_status(json(&"".to_string()), StatusCode::OK))
-    // Ok(reply::with_status(json(&response), StatusCode::OK))
 }
 
-
-
-
-
-
-
-
-
-
-
-
-// FAKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKk
-// async fn get_request() -> Result<impl warp::Reply, warp::Rejection> {
-//     // Ok(warp::reply::json(&"GET response"))
-//     Ok(Reply::json(&"GET response"))
-// }
-//
-// async fn post_request(body: MyData) -> Result<impl warp::Reply, warp::Rejection> {
-//     // ... logic for handling POST request ...
-//     // Ok(warp::reply::json(&"POST response"))
-//     // You can create a response based on the processing
-//     // let response = json!({
-//     //     "status": "success",
-//     //     "message": "Data received successfully"
-//     // });
-//     let response = Value::Object([
-//         ("status", Value::String("success".to_string())),
-//         ("message", Value::String("Data received successfully".to_string())),
-//     ].iter().cloned().collect());
-//     Ok(warp::reply::with_status(warp::reply::json(&response), StatusCode::OK))
-// }
-//  ===========================================
 
 #[tokio::main]
 async fn main() -> Result<()> {
