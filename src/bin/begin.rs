@@ -25,9 +25,12 @@ use elevenlabs_api::{
   tts::{TtsApi, TtsBody},
   *,
 };
-use serde::Deserialize;
+use serde_json::json;
+use serde::{Deserialize,Serialize};
 use std::fs;
 use rand::{thread_rng, seq::SliceRandom};
+use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json};
+use std::convert::Infallible;
 
 #[derive(Deserialize, Debug)]
 struct Voice {
@@ -104,6 +107,63 @@ fn test() {
     transport.send_packets(&mut client);
 }
 
+// =====================================================================
+// 
+
+#[derive(Deserialize, Serialize)]
+struct MyData {
+    // TODO: Upate this shit
+    // field1: String,
+    // field2: i32,
+}
+
+
+
+
+async fn get_request() -> Result<impl Reply, Rejection> {
+    println!("BACK AGAIN!!!");
+    Ok(json(&"GET response"))
+}
+
+async fn post_request(body: MyData) -> Result<impl Reply, Rejection> {
+    println!("BACK POST AGAIN!!!");
+    // let response = format!("Received: field1 = {}, field2 = {}", body.field1, body.field2);
+    // let response = format!("Received: field1 = {}, field2 = {}", body.field1, body.field2);
+    Ok(reply::with_status(json(&"".to_string()), StatusCode::OK))
+    // Ok(reply::with_status(json(&response), StatusCode::OK))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+// FAKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKk
+// async fn get_request() -> Result<impl warp::Reply, warp::Rejection> {
+//     // Ok(warp::reply::json(&"GET response"))
+//     Ok(Reply::json(&"GET response"))
+// }
+//
+// async fn post_request(body: MyData) -> Result<impl warp::Reply, warp::Rejection> {
+//     // ... logic for handling POST request ...
+//     // Ok(warp::reply::json(&"POST response"))
+//     // You can create a response based on the processing
+//     // let response = json!({
+//     //     "status": "success",
+//     //     "message": "Data received successfully"
+//     // });
+//     let response = Value::Object([
+//         ("status", Value::String("success".to_string())),
+//         ("message", Value::String("Data received successfully".to_string())),
+//     ].iter().cloned().collect());
+//     Ok(warp::reply::with_status(warp::reply::json(&response), StatusCode::OK))
+// }
 //  ===========================================
 
 #[tokio::main]
@@ -220,8 +280,40 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
-    test();
+    // =======================================================================
+    // let routes = warp::any()
+    //     .map(|| "Hello, World!");
+    
+    let get_route = warp::get()
+        .and(warp::path("eventsub"))
+        .and_then(get_request);
+
+    let post_route = warp::post()
+        .and(warp::path("eventsub"))
+        .and(warp::body::json())
+        .and_then(post_request);
+
+    let warp_routes = get_route.or(post_route);
+    // let warp_routes = warp::any().map(|| "Hello");
+
+    // Run the Warp server in a separate async task
+    tokio::spawn(async move {
+        warp::serve(warp_routes).run(([0, 0, 0, 0], 8080)).await;
+    });
+
+    // =======================================================================
+
+    // test();
     
     event_loop.run().await?;
     Ok(())
+}
+
+async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
+    if err.is_not_found() {
+        Ok(reply::with_status("NOT FOUND", StatusCode::NOT_FOUND))
+    } else {
+        // log error
+        Ok(reply::with_status("INTERNAL SERVER ERROR", StatusCode::INTERNAL_SERVER_ERROR))
+    }
 }

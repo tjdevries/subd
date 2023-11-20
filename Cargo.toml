@@ -64,6 +64,7 @@ elevenlabs-api = { path = "../elevenlabs-api" }
 libc = "0.2.150"
 futures-util = "0.3.29"
 actix = "0.13.1"
+warp = "0.3.6"
 
 [workspace]
 members = ["crates/*"]
