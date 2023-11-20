@@ -29,11 +29,11 @@ use serde_json::json;
 use serde::{Deserialize,Serialize};
 use std::fs;
 use rand::{thread_rng, seq::SliceRandom};
-use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json};
+use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json, Buf};
 use std::convert::Infallible;
 use std::collections::HashMap;
 use obws::Client as OBSClient;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 
 #[derive(Deserialize, Debug)]
@@ -123,9 +123,10 @@ struct MyData {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Root {
+struct EventSubRoot {
     subscription: Subscription,
-    event: Event,
+    // event: Event,
+    challenge: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -165,38 +166,73 @@ async fn get_request() -> Result<impl Reply, Rejection> {
     println!("BACK AGAIN!!!");
     Ok(json(&"GET response"))
 }
+// Define a struct that can be serialized to JSON
+#[derive(Serialize, Deserialize)]
+struct EventSubResponse{
+    message: String,
+    // Add other fields as needed
+}
 
- // Arc<obws::Client>
-// How do we get this 
-// async fn post_request(body: Root, obs_client: OBSClient>) -> Result<impl Reply, Rejection> {
-async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
+// async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
+// async fn post_request(body: Root) -> Result<warp::Reply> {
 
-    println!("Received body: {:?}", body);
-
-    // So we just hit this!!!!!!
-    println!("BACK POST AGAIN!!!: {:?}", body);
-    println!("Type Field {:?} | User: {}", body.subscription.type_field, body.event.user_name);
-
+async fn post_request(words: String) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+    println!("We hit post_request");
+    Ok(Box::new("world"))
+    // return Ok(reply::with_status(json(&"".to_string()), StatusCode::OK));
     
-    match body.subscription.type_field.as_str() {
-        "channel.cheer" => {
-            println!("WER ARE FUDDCKING CHERERINGKV");
-            // crate::obs_source::set_enabled(
-            //     "Primary",
-            //     "Dalle-Gen-1",
-            //     true,
-            //     &obs_client,
-            // ).await;
-            // How can we trigger something
-        },
-        _ => {
-            println!("WOOO ABOUT TO DIE!!");
-            // todo!();
-        }
-        
-    }
-    
-    Ok(reply::with_status(json(&"".to_string()), StatusCode::OK))
+
+    // // We should be getting messages here w/ headers as well
+    // // Twitch-Eventsub-Message-Type: webhook_callback_verification
+    //     
+    // // Create an instance of MyData and set the message field
+    // let my_data = EventSubResponse {
+    //     message: "Hello, JSON!".to_string(),
+    //     // Set other fields if needed
+    // };
+    //
+    // // Serialize the MyData struct to a JSON string
+    // let json_string = serde_json::to_string(&my_data).unwrap();
+    //
+    // // Create a JSON reply with the serialized JSON string and a status code
+    // let json_reply = reply::with_status(json(&json_string), StatusCode::OK);   println!("In Post Request");
+    //
+    // let challenge = body.get("challenge").unwrap_or_default();
+    // // Respond with the challenge as text/plain
+    // return warp::reply::with_header(challenge, warp::http::header::CONTENT_TYPE, "text/plain");
+    //     
+    // // return Ok(reply::with_status(json(&"".to_string()), StatusCode::OK));
+    // 
+    // // Is this ok?
+    // let obs_client = server::obs::create_obs_client().await.unwrap();
+    // println!("Received body: {:?}", body);
+    //
+    // // So we just hit this!!!!!!
+    // println!("BACK POST AGAIN!!!: {:?}", body);
+    // println!("Type Field {:?} | User: {}", body.subscription.type_field, body.event.user_name);
+    //
+    // // let obs_client_inner = obs_client.lock().unwrap();
+    // 
+    // match body.subscription.type_field.as_str() {
+    //     "channel.cheer" => {
+    //         println!("WER ARE FUDDCKING CHERERINGKV");
+    //         
+    //         server::obs_source::set_enabled(
+    //             "Primary",
+    //             "Dalle-Gen-1",
+    //             true,
+    //             &obs_client,
+    //         ).await;
+    //         
+    //     },
+    //     _ => {
+    //         println!("WOOO ABOUT TO DIE!!");
+    //         // todo!();
+    //     }
+    //     
+    // }
+    // 
+    // Ok(reply::with_status(json(&"".to_string()), StatusCode::OK))
 }
 
 
@@ -315,49 +351,121 @@ async fn main() -> Result<()> {
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
 
     // =======================================================================
-    // let routes = warp::any()
-    //     .map(|| "Hello, World!");
     
     let get_route = warp::get()
         .and(warp::path("eventsub"))
         .and_then(get_request);
     
-    // So we have to look at his one function
-    // or we can pass it in!
-    let obs_client = server::obs::create_obs_client().await?;
+    // let verification_route = warp::path!("eventsub")
+    //     .and(warp::header::exact_ignore_case("Twitch-Eventsub-Message-Type", "webhook_callback_verification"))
+    //     .and(warp::body::bytes())
+    //     .map(|body: Bytes| {
+    //         let body_bytes = body.to_vec();
+    //
+    //         let challenge = String::from_utf8_lossy(&body_bytes);
+    //
+    //         // Respond with the challenge as text/plain
+    //         warp::reply::with_header(
+    //             challenge,
+    //             warp::http::header::CONTENT_TYPE,
+    //             "text/plain",
+    //         )
+    //     });
+    
+    // let obs_client = Arc::new(Mutex::new(OBSClient::connect("localhost", 4444, Some("")).await.unwrap()));
+    // let obs_client_filter = warp::any().map(move || obs_client.clone());
+
+    // Match when we get `accept: */*` exactly.
+    // let accept_challenges = warp::header::exact("Twitch-Eventsub-Message-Type", "webhook_callback_verification");
+    
+    //
+    // let routes = host
+    //     .and(accept_stars)
+    //     .map(|addr| format!("accepting stars on {}", addr));
+    
+     // warp::path::param()
+    // we need the headers to matched
     let post_route = warp::post()
         .and(warp::path("eventsub"))
-        .and(warp::body::json())
-        //.and(warp::any().map(move || &obs_client))
+        .and(warp::body::form())
         .and_then(post_request);
-        // .and(warp::any().map(move || obs_client))
-
-    // let post_route = warp::post()
-    //     .and(warp::path("eventsub"))
-    //     .and(warp::body::json())
-    //     .and_then(post_request, &obs_client);
-    //
-    // let post_route = warp::post()
-    //     .and(warp::path("eventsub"))
-    //     .and(warp::body::json())
-    //     .and(warp::any().map(move || obs_client))
-    //     .and_then(post_request);
+        // .and(accept_challenges)
+        // .and(obs_client_filter)
     
-    let warp_routes = get_route.or(post_route);
-    // let warp_routes = warp::any().map(|| "Hello");
 
-    // Run the Warp server in a separate async task
-    tokio::spawn(async move {
-        warp::serve(warp_routes).run(([0, 0, 0, 0], 8080)).await;
+    
+      // let verification_route = warp::path!("webhook")
+      //   .and(warp::header::exact_ignore_case("Twitch-Eventsub-Message-Type", "webhook_callback_verification"))
+      //   .and(warp::body::bytes())
+      //   .map(handle_verification);
+    
+    // let warp_routes = get_route.or(post_route);
+    // let routes = warp::post()
+    //     .and(warp::path("webhook"))
+    //     .and(warp::body::bytes())
+    //     .map(|body: warp::hyper::body::Bytes| {
+    //         warp::reply::with_status(body, warp::http::StatusCode::OK)
+    //     });
+    
+    // =======================================================================
+
+    
+// bytes = b"{\"challenge\":\"942c9a68-e9c5-a654-3cd7-5d3144c3caea\",\"subscription\":{\"id\":\"556226ed-f217-f293-f63f-2209dc48333f\",\"status\":\"webhook_callback_verification_pending\",\"type\":\"channel.cheer\",\"version\":\"1\",\"condition\":{\"broadcaster_user_id\":\"33608266\"},\"transport\":{\"method\":\"webhook\",\"callback\":\"https://7b15-47-151-148-79.ngrok-free.app/eventsub\"},\"created_at\":\"2023-11-20T22:16:36.029649097Z\",\"cost\":0}}"
+    
+    let route = warp::body::content_length_limit(1024 * 32)
+    .and(warp::body::bytes())
+    .map(|bytes: warp::hyper::body::Bytes| {
+        println!("bytes = {:?}", bytes);
+        warp::reply::with_status("", warp::http::StatusCode::OK)
+            // This needs to reply is all
     });
+    
+    let route2 = warp::body::content_length_limit(1024 * 32)
+    .and(warp::body::json())
+    .map(|simple_map: EventSubRoot| {
+        println!("simple_map = {:?}", simple_map);
+        warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
+    });
+    
+    let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
+    
+    // let routes = route.or(hello);
+
+    warp::serve(route2).run(([0, 0, 0, 0], 8080)).await;
+    
+    // Run the Warp server in a separate async task
+    // tokio::spawn(async move {
+    //     warp::serve(hello).run(([0, 0, 0, 0], 8080)).await;
+    // });
 
     // =======================================================================
 
-    // test();
-    
     event_loop.run().await?;
     Ok(())
 }
+
+// async fn handle_verification(body: Bytes) -> Result<impl warp::Reply, warp::Rejection> {
+//     // Convert the bytes to a string
+//     let challenge = String::from_utf8_lossy(&body);
+//
+//     // Respond with the challenge as text/plain
+//     Ok(warp::reply::with_header(
+//         challenge,
+//         warp::http::header::CONTENT_TYPE,
+//         "text/plain",
+//     ))
+// }
+
+// async fn handle_verification(body: warp::hyper::body::Bytes) -> impl warp::Reply {
+//     // Convert the bytes to a string
+//     let body_bytes = body.to_vec();
+//
+//     // Convert the bytes to a string
+//     let challenge = String::from_utf8_lossy(&body_bytes);
+//     // Respond with the challenge as text/plain
+//     warp::reply::with_header(challenge, warp::http::header::CONTENT_TYPE, "text/plain")
+// }
+
 
 async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
     if err.is_not_found() {
