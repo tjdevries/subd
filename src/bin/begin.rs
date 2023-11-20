@@ -163,7 +163,7 @@ async fn get_request() -> Result<impl Reply, Rejection> {
     Ok(json(&"GET response"))
 }
 
-async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
+async fn post_request(body: Root, obs_client: &OBSClient) -> Result<impl Reply, Rejection> {
     println!("Received body: {:?}", body);
 
     // So we just hit this!!!!!!
@@ -174,6 +174,13 @@ async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
     match body.subscription.type_field.as_str() {
         "channel.cheer" => {
             println!("WER ARE FUDDCKING CHERERINGKV");
+            crate::obs_source::set_enabled(
+                "Primary",
+                "Dalle-Gen-1",
+                true,
+                &obs_client,
+            )
+            // How can we trigger something
         },
         _ => {
             println!("WOOO ABOUT TO DIE!!");
@@ -311,7 +318,7 @@ async fn main() -> Result<()> {
     let post_route = warp::post()
         .and(warp::path("eventsub"))
         .and(warp::body::json())
-        .and_then(post_request);
+        .and_then(post_request, &obs_client);
 
     let warp_routes = get_route.or(post_route);
     // let warp_routes = warp::any().map(|| "Hello");
