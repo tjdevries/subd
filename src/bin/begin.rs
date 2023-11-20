@@ -159,6 +159,7 @@ async fn main() -> Result<()> {
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(twitch_config);
+    
     // This really is named wrong
     // this handles more than OBS
     // and it's also earlier in the program
@@ -218,7 +219,6 @@ async fn main() -> Result<()> {
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
-
 
     test();
     

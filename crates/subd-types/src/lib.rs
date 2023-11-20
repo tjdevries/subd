@@ -86,7 +86,6 @@ pub struct SkyboxRequest {
     pub msg: String,
 }
 
-// TODO: Make UberDuckEvent
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
