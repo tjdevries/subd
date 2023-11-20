@@ -32,6 +32,9 @@ use rand::{thread_rng, seq::SliceRandom};
 use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json};
 use std::convert::Infallible;
 use std::collections::HashMap;
+use obws::Client as OBSClient;
+use std::sync::Arc;
+
 
 #[derive(Deserialize, Debug)]
 struct Voice {
@@ -163,7 +166,10 @@ async fn get_request() -> Result<impl Reply, Rejection> {
     Ok(json(&"GET response"))
 }
 
-async fn post_request(body: Root, obs_client: &OBSClient) -> Result<impl Reply, Rejection> {
+// How do we get this 
+// async fn post_request(body: Root, obs_client: Arc<OBSClient>) -> Result<impl Reply, Rejection> {
+async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
+
     println!("Received body: {:?}", body);
 
     // So we just hit this!!!!!!
@@ -174,13 +180,23 @@ async fn post_request(body: Root, obs_client: &OBSClient) -> Result<impl Reply, 
     match body.subscription.type_field.as_str() {
         "channel.cheer" => {
             println!("WER ARE FUDDCKING CHERERINGKV");
-            crate::obs_source::set_enabled(
-                "Primary",
-                "Dalle-Gen-1",
-                true,
-                &obs_client,
-            )
+            // crate::obs_source::set_enabled(
+            //     "Primary",
+            //     "Dalle-Gen-1",
+            //     true,
+            //     &obs_client,
+            // ).await;
             // How can we trigger something
+            // 
+            //
+            // THIS IS PURE TEST
+            // crate::obs_source::set_enabled(
+            //     "Primary"
+            //     &msg.source,
+            //     msg.enabled,
+            //     &self.obs_client,
+            // )
+            // .await;
         },
         _ => {
             println!("WOOO ABOUT TO DIE!!");
@@ -314,12 +330,27 @@ async fn main() -> Result<()> {
     let get_route = warp::get()
         .and(warp::path("eventsub"))
         .and_then(get_request);
-
+    
+    // So we have to look at his one function
+    // or we can pass it in!
+    let obs_client = server::obs::create_obs_client().await?;
     let post_route = warp::post()
         .and(warp::path("eventsub"))
         .and(warp::body::json())
-        .and_then(post_request, &obs_client);
+        .and_then(post_request);
+        // .and(warp::any().map(move || obs_client))
 
+    // let post_route = warp::post()
+    //     .and(warp::path("eventsub"))
+    //     .and(warp::body::json())
+    //     .and_then(post_request, &obs_client);
+    //
+    // let post_route = warp::post()
+    //     .and(warp::path("eventsub"))
+    //     .and(warp::body::json())
+    //     .and(warp::any().map(move || obs_client))
+    //     .and_then(post_request);
+    
     let warp_routes = get_route.or(post_route);
     // let warp_routes = warp::any().map(|| "Hello");
 
