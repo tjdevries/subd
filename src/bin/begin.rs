@@ -420,9 +420,11 @@ async fn main() -> Result<()> {
             // This needs to reply is all
     });
     
-    let route2 = warp::body::content_length_limit(1024 * 32)
+    let route2 = warp::body::content_length_limit(1024 * 1282)
     .and(warp::body::json())
     .map(|simple_map: EventSubRoot| {
+        // Why are we failing in here?
+        // It's probably because of differnet shapes of data?
         println!("simple_map = {:?}", simple_map);
         warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
     });
