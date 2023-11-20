@@ -166,8 +166,9 @@ async fn get_request() -> Result<impl Reply, Rejection> {
     Ok(json(&"GET response"))
 }
 
+ // Arc<obws::Client>
 // How do we get this 
-// async fn post_request(body: Root, obs_client: Arc<OBSClient>) -> Result<impl Reply, Rejection> {
+// async fn post_request(body: Root, obs_client: OBSClient>) -> Result<impl Reply, Rejection> {
 async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
 
     println!("Received body: {:?}", body);
@@ -187,16 +188,6 @@ async fn post_request(body: Root) -> Result<impl Reply, Rejection> {
             //     &obs_client,
             // ).await;
             // How can we trigger something
-            // 
-            //
-            // THIS IS PURE TEST
-            // crate::obs_source::set_enabled(
-            //     "Primary"
-            //     &msg.source,
-            //     msg.enabled,
-            //     &self.obs_client,
-            // )
-            // .await;
         },
         _ => {
             println!("WOOO ABOUT TO DIE!!");
@@ -337,6 +328,7 @@ async fn main() -> Result<()> {
     let post_route = warp::post()
         .and(warp::path("eventsub"))
         .and(warp::body::json())
+        //.and(warp::any().map(move || &obs_client))
         .and_then(post_request);
         // .and(warp::any().map(move || obs_client))
 
