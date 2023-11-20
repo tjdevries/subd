@@ -26,7 +26,10 @@ impl EventHandler for OBSMessageHandler {
     ) -> Result<()> {
         
         println!("Trying to run handl twitch notifications");
-        twitch_notifications::handle_twitch_notifications(tx.clone()).await;
+        // twitch_notifications::handle_twitch_notifications(tx.clone()).await;
+        // this will block??????
+        twitch_notifications::kickoff_webhook();
+        
         println!("After handl twitch notifications");
         
         loop {
