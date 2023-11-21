@@ -13,6 +13,7 @@ use crate::stream_character;
 use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
+use crate::music_scenes;
 use twitch_chat::send_message;
 use obws::Client as OBSClient;
 use obws::requests::scene_items::Scale;
@@ -32,31 +33,6 @@ use std::fs::File;
 use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
-
-const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
-        ("!yoga", NewVoiceScene{ voice: "Thomas", music: "Yoga-BG-Music" }),
-        ("!drama", NewVoiceScene{ voice: "Ethan", music: "Dramatic-BG-Music" }),
-        ("!greed", NewVoiceScene{ voice: "Michael", music: "Greed-BG-Music" }),
-        ("!ken", NewVoiceScene{ voice: "James", music: "KenBurns-BG-Music" }),
-        ("!hospital", NewVoiceScene{ voice: "Bella", music: "Hospital-BG-Music" }),
-        ("!sigma", NewVoiceScene{ voice: "Ethan", music: "Sigma-BG-Music" }),
-        ("!news", NewVoiceScene{ voice: "Ethan", music: "News-1-BG-Music" }),
-        ("!sexy", NewVoiceScene{ voice: "Charlotte", music: "Sexy-2-BG-Music" }),
-        ("!romcom", NewVoiceScene{ voice: "Fin", music: "Romcom-BG-Music" }),
-        ("!chef", NewVoiceScene{ voice: "Giovanni", music: "Chef-BG-Music" }),
-];
-
-struct NewVoiceScene {
-    voice: &'static str,
-    music: &'static str,
-    // scene: String,
-}
-
-struct VoiceScene {
-    voice: String,
-    music: String
-    // scene: String,
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -180,7 +156,7 @@ pub async fn handle_obs_commands(
                 return Ok(());
             }
             
-            let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
+            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
                 .map(|(_, scene)| scene.music)
                 .collect();
             for source in music_list.iter() {
@@ -948,17 +924,15 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        // ===================================================================
-
         _ => Ok(()),
     };
 
-    let exists = VOICE_TO_MUSIC.iter().any(|&(cmd, _)| cmd == command);
+    let exists = music_scenes::VOICE_TO_MUSIC.iter().any(|&(cmd, _)| cmd == command);
     if exists {
         if !is_mod && !is_vip {
             return Ok(());
         }
-        let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
+        let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
             .map(|(_, scene)| scene.music)
             .collect();
         for source in music_list.iter() {
@@ -967,7 +941,7 @@ pub async fn handle_obs_commands(
 
         let mut scene_details = None;
         
-        for &(cmd, ref scene) in VOICE_TO_MUSIC.iter() {
+        for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
             if cmd == command {
                 scene_details = Some(scene);
                 break;

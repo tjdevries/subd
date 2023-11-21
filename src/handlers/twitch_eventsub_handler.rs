@@ -11,6 +11,7 @@ use async_trait::async_trait;
 use std::net::SocketAddr;
 use crate::obs;
 use crate::obs_source;
+use crate::music_scenes;
 use crate::obs_scenes;
 use serde::{Deserialize,Serialize};
 use std::collections::HashMap;
@@ -144,7 +145,8 @@ async fn post_request(
                             Some(reward) => {
                                     println!("REWARD TITLE: {}", reward.title);
 
-                                    match reward.title.as_ref() {
+                                    let command = reward.title.as_ref();
+                                    match command {
                                         "gallery" => {
                                             let _ = obs_scenes::change_scene(&c, "4 Piece").await;
                                         },
@@ -154,12 +156,21 @@ async fn post_request(
                                             
                                         // I should be reading this from a Map, like the one in
                                         // obs_routing.rs
-                                        "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy" | "chef"  => {
-                                            let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
-                                            // let _ = send_message(&twitch_client, "!ken").await;
-                                        },
+                                        // "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy" | "chef"  => {
+                                        //     let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
+                                        //     // let _ = send_message(&twitch_client, "!ken").await;
+                                        // },
+                                                
                                         _ => {
-                                                println!("Couldn't find reward in options")
+                                            for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
+                                                println!("CMD: {}", reward.title);
+                                                
+                                                let cmd_no_bang = &cmd[1..];
+
+                                                if cmd_no_bang == reward.title {
+                                                    let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
+                                                }
+                                            }
                                         }
                                     };
                             }
