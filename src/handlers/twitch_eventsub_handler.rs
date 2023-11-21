@@ -135,26 +135,33 @@ async fn post_request(
             let c = obs_client;
             match eventsub_body.subscription.type_field.as_str() {
                 "channel.follow" => {
-                    println!("follow");
+                    println!("follow time");
                 },
                 "channel.channel_points_custom_reward_redemption.add" => {
-                    println!("POINTS");
-                    println!("\n\tRedemption = {:?}", eventsub_body);
-
                     match eventsub_body.event {
                     Some(event) => {
                         match event.reward {
                             Some(reward) => {
                                     println!("REWARD TITLE: {}", reward.title);
-                                    if reward.title == "gallery" {
-                                        // Change to the gallery
-                                        let _ = obs_scenes::change_scene(&c, "4 Piece").await;
-                                    }
-                                    if reward.title == "Primary" {
-                                        // Change to the gallery
-                                        let _ = obs_scenes::change_scene(&c, "Primary").await;
-                                    }
-                                
+
+                                    match reward.title.as_ref() {
+                                        "gallery" => {
+                                            let _ = obs_scenes::change_scene(&c, "4 Piece").await;
+                                        },
+                                        "code" => {
+                                            let _ = obs_scenes::change_scene(&c, "Primary").await;
+                                        },
+                                            
+                                        // I should be reading this from a Map, like the one in
+                                        // obs_routing.rs
+                                        "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy"  => {
+                                            let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
+                                            // let _ = send_message(&twitch_client, "!ken").await;
+                                        },
+                                        _ => {
+                                                println!("Couldn't find reward in options")
+                                        }
+                                    };
                             }
                             None => {println!("No reward found!")}
                         }
@@ -165,6 +172,7 @@ async fn post_request(
                 },
                 _ => println!("nothing"),
             };
+            
            // let _ = send_message(&twitch_client, "I assure we are quite operational.").await;
            //  
            // let _ = obs_source::set_enabled(

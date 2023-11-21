@@ -42,7 +42,7 @@ const ALLOWED_USERS: [&str; 4] = [
 ];
 
 // We need these to be a map instead
-const SOURCES: [&str; 7] = [
+const SOURCES: [&str; 9] = [
     "Yoga-BG-Music",
     "KenBurns-BG-Music",
     "Hospital-BG-Music",
@@ -50,6 +50,8 @@ const SOURCES: [&str; 7] = [
     "Romcom-BG-Music",
     "Sigma-BG-Music",
     "News-1-BG-Music",
+    "Greed-BG-Music",
+    "Sexy-BG-Music",
 ];
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -189,6 +191,66 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
+        "!sexy" => {
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
+            }
+            
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "Sexy-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "Charlotte".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        
+        "!greed" => {
+            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+                return Ok(());
+            }
+            
+            
+            let scene = "BackgroundMusic";
+            
+            for source in SOURCES.iter() {
+                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            }
+            
+            let source = "Greed-BG-Music";
+            let _ = obs_source::show_source(scene, source, obs_client).await;
+
+            // Set beginbot to the best Hospital Voices
+            let _ = uberduck::set_voice(
+                "valentino".to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+            
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+            Ok(())
+        }
+        
+        
         "!news" => {
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
@@ -308,7 +370,7 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
-        "!dramatic" => {
+        "!dramatic" | "!drama" => {
             if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
                 return Ok(());
             }
