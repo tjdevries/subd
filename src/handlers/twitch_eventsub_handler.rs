@@ -11,6 +11,7 @@ use async_trait::async_trait;
 use std::net::SocketAddr;
 use crate::obs;
 use crate::obs_source;
+use crate::obs_scenes;
 use serde::{Deserialize,Serialize};
 use std::collections::HashMap;
 use axum::{
@@ -26,7 +27,6 @@ pub struct TwitchEventSubHandler {
     pub twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
-// {"subscription":{"id":"ddfd7140-1590-1dda-ca56-61aac70f9be1","status":"enabled","type":"channel.follow","version":"1","condition":{"broadcaster_user_id":"10483564"},"transport":{"method":"webhook","callback":"null"},"created_at":"2023-11-20T22:57:37.179519123Z","cost":0},"event":{"user_id":"25578051","user_login":"testFromUser","user_name":"testFromUser","broadcaster_user_id":"10483564","broadcaster_user_login":"10483564","broadcaster_user_name":"testBroadcaster","followed_at":"2023-11-20T22:57:37.179519123Z"}}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventSubRoot {
     pub subscription: Subscription,
@@ -41,11 +41,30 @@ pub struct Subscription {
     #[serde(rename = "type")]
     type_field: String,
     version: String,
-    condition: HashMap<String, String>,
+    condition: Condition,
+    // condition: HashMap<String, String>,
     transport: Transport,
     created_at: String,
     cost: i32,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Condition{
+    broadcaster_user_id: String,
+    reward_id: String,
+}
+    // "reward": {
+    //         "id": "92af127c-7326-4483-a52b-b0da0be61c01",
+    //         "title": "title",
+    //         "cost": 100,
+    //         "prompt": "reward prompt"
+    //     },
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Reward {
+    title: String,
+}
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Transport {
@@ -61,8 +80,10 @@ pub struct SubEvent {
     broadcaster_user_id: String,
     broadcaster_user_login: String,
     broadcaster_user_name: String,
+    title: Option<String>,
     tier: Option<String>,
     is_gift: Option<bool>,
+    reward: Option<Reward>,
 }
 
 #[async_trait]
@@ -105,30 +126,61 @@ async fn post_request(
     
     let challenge = match eventsub_body.challenge {
         Some(challenge) => {
+                println!("We got a challenge!");
                 // This is required for EventSub's to work!
                 // If we don't Twitch's challenge, you don't events
                 challenge
         }
         _ =>  {
-
             let c = obs_client;
+            match eventsub_body.subscription.type_field.as_str() {
+                "channel.follow" => {
+                    println!("follow");
+                },
+                "channel.channel_points_custom_reward_redemption.add" => {
+                    println!("POINTS");
+                    println!("\n\tRedemption = {:?}", eventsub_body);
 
-           let _ = send_message(&twitch_client, "I assure we are quite operational.").await;
-            
-            let _ = obs_source::set_enabled(
-                "Primary",
-                "Dalle-Gen-1",
-                true,
-                &c,
-            ).await;
-            
-            let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
-                    message: "woah there budy".to_string(),
-                    voice_text: "waoh there buddy".to_string(),
-                    voice: "Ethan".to_string(),
-                    username: "beginbot".to_string(),
-                    source: None,
-            }));
+                    match eventsub_body.event {
+                    Some(event) => {
+                        match event.reward {
+                            Some(reward) => {
+                                    println!("REWARD TITLE: {}", reward.title);
+                                    if reward.title == "gallery" {
+                                        // Change to the gallery
+                                        let _ = obs_scenes::change_scene(&c, "4 Piece").await;
+                                    }
+                                    if reward.title == "Primary" {
+                                        // Change to the gallery
+                                        let _ = obs_scenes::change_scene(&c, "Primary").await;
+                                    }
+                                
+                            }
+                            None => {println!("No reward found!")}
+                        }
+                        }
+                        None => {println!("No event found!")}
+                    }
+                    
+                },
+                _ => println!("nothing"),
+            };
+           // let _ = send_message(&twitch_client, "I assure we are quite operational.").await;
+           //  
+           // let _ = obs_source::set_enabled(
+           //      "Primary",
+           //      "Dalle-Gen-1",
+           //      true,
+           //      &c,
+           //  ).await;
+           //  
+           // let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
+           //          message: "woah there budy".to_string(),
+           //          voice_text: "waoh there buddy".to_string(),
+           //          voice: "Ethan".to_string(),
+           //          username: "beginbot".to_string(),
+           //          source: None,
+           //  }));
             
 
             "".to_string()
