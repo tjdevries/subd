@@ -45,7 +45,6 @@ struct ImageResponse {
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageData {
     url: String,
-    // You can add more fields if your objects have more data
 }
 
 pub async fn handle_obs_commands(
@@ -110,8 +109,8 @@ pub async fn handle_obs_commands(
                 source,
                 true,
                 &obs_client,
-            )
-            .await;
+        )
+        .await;
             Ok(())
         }
         // ===========================================
@@ -158,31 +157,87 @@ pub async fn handle_obs_commands(
             let ab_url = format!("https://generator.artblocks.io/0x99a9b7c1116f9ceeb1652de04d5969cce509b069/{}", ab_id);
 
             let browser_settings = obws::requests::custom::source_settings::BrowserSource{
-            url: ab_url.as_ref(),
+                url: ab_url.as_ref(),
                 ..Default::default()
             };
-
             let set_settings = obws::requests::inputs::SetSettings{
                 settings: &browser_settings,
                 input: "AB-Browser",
                 overlay: Some(true),
             };
-            
             let _ = obs_client.inputs().set_settings(set_settings).await;
             
-            // let _ = obs_source::print_source_info_true("AB-Browser", "Primary", &obs_client).await;
             Ok(())
             
         }
+        
+        "!chimera" => {
+            let lower_bound = 233000000;
+            let upper_bound = 233000986;
+            let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
+        
+        "!watercolor" => {
+            let lower_bound = 59000000;
+            let upper_bound = 59000599;
+            let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
+        "!pig" => {
+            let lower_bound = 129000000;
+            let upper_bound = 129001023;
+            let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
 
+        "!run" => {
+            let lower_bound = 138000000;
+            let upper_bound = 138000999;
+            let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
+        
+        "!vortex" => {
+            let lower_bound = 225000000;
+            let upper_bound = 225000999;
+            let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
+
+        "!memories" => {
+            let lower_bound = 428000000;
+            let upper_bound = 428000449;
+            let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
         "!steviep" => {
             let lower_bound = 457000000;
             let upper_bound = 457000776;
-            let random_number = random_in_range(lower_bound, upper_bound);
-            println!("Random number: {}", random_number);
-            // we need to call the AB command
+            let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
+            let _ = updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
             Ok(())
         } 
+
+        // // 428000240
+        // "!steviep" => {
+        //     let lower_bound = 457000000;
+        //     let upper_bound = 457000776;
+        //     let _ = updates_ab_browser(&obs_client, lower_bound, upper_bound).await;
+        //     Ok(())
+        // } 
 
         // ===========================================
         // == Voices
@@ -1042,30 +1097,6 @@ pub async fn trigger_scene(
         ("bar".to_string(), "2449796".to_string()),
     ]);
 
-    // const pannellumMoveFunctions = {
-    //   'office1': {
-    //     'func': office,
-    //     'id': "2443168",
-    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/skybox_sterile_office_environment_amazon_hq_style__a8185e0b9204af34__2443168_a8185e0b9204af34__.jpg?ver=1",
-    //   },
-    //   'office': {
-    //     'func': office,
-    //     'id': "2443168",
-    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/skybox_sterile_office_environment_amazon_hq_style__a8185e0b9204af34__2443168_a8185e0b9204af34__.jpg?ver=1",
-    //   },
-    //   'bar':  {
-    //     'func': bar,
-    //     'id': "2449796",
-    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/cocktail_bar__b65346d0a00befc9__2449796_b65346d0a00befc9__2449796.jpg?ver=1",
-    //   },
-    //   'bar1': {
-    //     'func': bar1,
-    //     'id': "2451051",
-    //     'url': "https://blockade-platform-production.s3.amazonaws.com/images/imagine/dirty_dingy_bar_biker_dudes_sticky_floors__b5373f30090673cf__2451051_b.jpg?ver=1",
-    //   }
-    // };
-
-    // let skybox_path = "";
 
     let skybox_path = if skybox_id == "" {
         let new_skybox_id = &skybox_id_map[filter_name.clone()];
@@ -1097,11 +1128,6 @@ pub async fn trigger_scene(
         }
     }
 
-    // let mut owned_string: String = "hello ".to_owned();
-    // let borrowed_string: &str = "world";
-    // owned_string.push_str(borrowed_string);
-    // println!("{}", owned_string);
-
     return Ok(());
 }
 
@@ -1127,37 +1153,6 @@ pub async fn trigger_obs_move_filter_and_websocket(
     }
     return Ok(());
 }
-
-// "!bar" => {
-//     _ = trigger_obs_move_filter_and_websocket(
-//         &obs_client,
-//         "BeginBar2",
-//         "bar",
-//     )
-//     .await;
-//     Ok(())
-// }
-
-// "!lunch" => {
-//     _ = trigger_obs_move_filter_and_websocket(
-//         &obs_client,
-//         "BeginOffice2",
-//         "lunch",
-//     )
-//     .await;
-//     Ok(())
-// }
-
-// "!office" => {
-//     _ = trigger_obs_move_filter_and_websocket(
-//         &obs_client,
-//         "BeginOffice1",
-//         "office",
-//     )
-//     .await;
-//     Ok(())
-// }
-
 
 async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
@@ -1224,4 +1219,28 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
 fn random_in_range(lower: i64, upper: i64) -> i64 {
     let mut rng = rand::thread_rng();
     rng.gen_range(lower..=upper)
+}
+
+
+pub async fn updates_ab_browser(obs_client: &OBSClient, contract: String, lower_bound: i64, upper_bound: i64) -> Result<()> {
+    // let lower_bound = 457000000;
+    // let upper_bound = 457000776;
+    
+    let random_number = random_in_range(lower_bound, upper_bound);
+    println!("Random number: {}", random_number);
+    let ab_id = random_number.to_string();
+    let ab_url = format!("https://generator.artblocks.io/{}/{}", contract, ab_id);
+    // let ab_url = format!("https://generator.artblocks.io/0x99a9b7c1116f9ceeb1652de04d5969cce509b069/{}", ab_id);
+    let browser_settings = obws::requests::custom::source_settings::BrowserSource{
+        url: ab_url.as_ref(),
+        ..Default::default()
+    };
+    let set_settings = obws::requests::inputs::SetSettings{
+        settings: &browser_settings,
+        input: "AB-Browser",
+        overlay: Some(true),
+    };
+    let _ = obs_client.inputs().set_settings(set_settings).await;
+    // we need to call the AB command
+    Ok(())
 }
