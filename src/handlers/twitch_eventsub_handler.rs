@@ -154,7 +154,7 @@ async fn post_request(
                                             
                                         // I should be reading this from a Map, like the one in
                                         // obs_routing.rs
-                                        "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy"  => {
+                                        "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy" | "chef"  => {
                                             let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
                                             // let _ = send_message(&twitch_client, "!ken").await;
                                         },

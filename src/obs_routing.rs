@@ -33,26 +33,30 @@ use std::io::Write;
 
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
-// This should probably be moved to another file
-const ALLOWED_USERS: [&str; 4] = [
-    "beginbot",
-    "zanuss",
-    "ArtMattDank",
-    "carlvandergeest",
+const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
+        ("!yoga", NewVoiceScene{ voice: "Thomas", music: "Yoga-BG-Music" }),
+        ("!drama", NewVoiceScene{ voice: "Ethan", music: "Dramatic-BG-Music" }),
+        ("!greed", NewVoiceScene{ voice: "Michael", music: "Greed-BG-Music" }),
+        ("!ken", NewVoiceScene{ voice: "James", music: "KenBurns-BG-Music" }),
+        ("!hospital", NewVoiceScene{ voice: "Bella", music: "Hospital-BG-Music" }),
+        ("!sigma", NewVoiceScene{ voice: "Ethan", music: "Sigma-BG-Music" }),
+        ("!news", NewVoiceScene{ voice: "Ethan", music: "News-1-BG-Music" }),
+        ("!sexy", NewVoiceScene{ voice: "Charlotte", music: "Sexy-2-BG-Music" }),
+        ("!romcom", NewVoiceScene{ voice: "Fin", music: "Romcom-BG-Music" }),
+        ("!chef", NewVoiceScene{ voice: "Giovanni", music: "Chef-BG-Music" }),
 ];
 
-// We need these to be a map instead
-const SOURCES: [&str; 9] = [
-    "Yoga-BG-Music",
-    "KenBurns-BG-Music",
-    "Hospital-BG-Music",
-    "Dramatic-BG-Music",
-    "Romcom-BG-Music",
-    "Sigma-BG-Music",
-    "News-1-BG-Music",
-    "Greed-BG-Music",
-    "Sexy-BG-Music",
-];
+struct NewVoiceScene {
+    voice: &'static str,
+    music: &'static str,
+    // scene: String,
+}
+
+struct VoiceScene {
+    voice: String,
+    music: String
+    // scene: String,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -78,10 +82,9 @@ pub async fn handle_obs_commands(
 
     let is_mod = msg.roles.is_twitch_mod();
     let is_vip = msg.roles.is_twitch_vip();
-    println!("WE GOT A MOD!: {}", is_mod);
-    println!("WE GOT A VIP!: {}", is_vip);
-    // msg.roles
+    let background_scene = "BackgroundMusic";
 
+    let background_music = "BackgroundMusic";
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
     // defaults used by many commands
@@ -175,14 +178,15 @@ pub async fn handle_obs_commands(
         // ===========================================
 
         "!nothing" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
+            if !is_mod && !is_vip {
                 return Ok(());
             }
             
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
+                .map(|(_, scene)| scene.music)
+                .collect();
+            for source in music_list.iter() {
+                let _ = obs_source::hide_source(background_music, source, obs_client).await;
             }
             
             // Disable Global Voice Mode
@@ -191,261 +195,48 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
-        "!sexy" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Sexy-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            // Set beginbot to the best Hospital Voices
-            let _ = uberduck::set_voice(
-                "Charlotte".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        
-        "!greed" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Greed-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            // Set beginbot to the best Hospital Voices
-            let _ = uberduck::set_voice(
-                "valentino".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        
-        "!news" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "News-1-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            // Set beginbot to the best Hospital Voices
-            let _ = uberduck::set_voice(
-                "james".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        
-        "!sigma" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Sigma-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            let _ = uberduck::set_voice(
-                "ethan".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        "!romcom" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Romcom-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            // Set beginbot to the best Hospital Voices
-            let _ = uberduck::set_voice(
-                "fin".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        "!yoga" => {
-            // This is the best way
+        // Can in a match statement have a "dynamic" list of keys to match
+        // This will be a huge list of commands
+        "!yoga" | "!drama" | "!greed" | "!ken" | "!hospital" | "!sigma" | "!news" | "!sexy" | "!romcom" | "!chef" => {
             if !is_mod && !is_vip {
-                println!("You're not allowed to do Yoga!");
                 return Ok(());
             }
-
-            println!("Yoga Time!");
-
-            // if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-            //     return Ok(());
-            // }
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Yoga-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-
-            let _ = uberduck::set_voice(
-                "thomas".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-        
-        "!dramatic" | "!drama" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "Dramatic-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-            
-            let _ = uberduck::set_voice(
-                "ethan".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-            
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-
-
-        "!ken" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
-            }
-            
-            let source = "KenBurns-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
-            
-            let _ = uberduck::set_voice(
-                "james".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
-
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
-            Ok(())
-        }
-
-        "!hospital" => {
-            if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
-                return Ok(());
-            }
-            
-            let scene = "BackgroundMusic";
-            
-            for source in SOURCES.iter() {
-                let _ = obs_source::hide_source(scene, source, obs_client).await;
+            let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
+                .map(|(_, scene)| scene.music)
+                .collect();
+            for source in music_list.iter() {
+                let _ = obs_source::hide_source(background_music, source, obs_client).await;
             }
 
-            let source = "Hospital-BG-Music";
-            let _ = obs_source::show_source(scene, source, obs_client).await;
+	    let mut scene_details = None;
             
-            let _ = uberduck::set_voice(
-                "bella".to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
+            let command = splitmsg[0].as_str();
+            for &(cmd, ref scene) in VOICE_TO_MUSIC.iter() {
+		if cmd == command {
+		    scene_details = Some(scene);
+		    break;
+		}
+	    }
+
+	    if let Some(details) = scene_details {
+                // Turn on the Music for the scene
+            	let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
+
+                // Set the Voice for Begin, which is the source of the global voice
+                let _ = uberduck::set_voice(
+                    details.voice.to_string(),
+                    "beginbot".to_string(),
+                    pool,
+                )
+                .await;
             
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
+                // Enable Global Voice Mode
+                twitch_stream_state::turn_on_global_voice(&pool)
+                    .await?;
+	    } else {
+		println!("Could not find voice info for command.");
+	    }
+            
             Ok(())
         }
         
