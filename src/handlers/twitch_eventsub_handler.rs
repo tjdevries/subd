@@ -106,13 +106,13 @@ impl EventHandler for TwitchEventSubHandler {
         //
         // }
         
-        // let clonable_obs_client = Arc::new(Mutex::new(self.obs_client));
         let clonable_obs_client = Arc::new(self.obs_client);
 
         // Define the route
         let app = Router::new()
             .route("/eventsub", post(post_request))
-            .layer(Extension(clonable_obs_client));
+            .layer(Extension(clonable_obs_client))
+            .layer(Extension(tx));
 
         // Run the Axum server in a separate async task
         tokio::spawn(async move {
@@ -127,6 +127,7 @@ impl EventHandler for TwitchEventSubHandler {
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(obs_client): Extension<Arc<OBSClient>>,
+    Extension(tx): Extension<broadcast::Sender<Event>>,
 ) -> impl IntoResponse {
 
     println!("simple_map = {:?}", eventsub_body);
@@ -139,23 +140,22 @@ async fn post_request(
         }
         _ =>  {
 
-
             let c = obs_client;
 
-            // if let Extension(obs_client) = obs_client {
-            //     obs_
-            //     
-            // } else {
-            //     
-            // }
-
-            // let c = obs_client.clone();
-            obs_source::set_enabled(
+            let _ = obs_source::set_enabled(
                 "Primary",
                 "Dalle-Gen-1",
                 true,
                 &c,
             ).await;
+            
+            let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
+                    message: "woah there budy".to_string(),
+                    voice_text: "waoh there buddy".to_string(),
+                    voice: "Ethan".to_string(),
+                    username: "beginbot".to_string(),
+                    source: None,
+            }));
             
 
             "".to_string()
