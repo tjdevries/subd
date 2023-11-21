@@ -7,13 +7,19 @@ use tokio::sync::broadcast;
 use subd_types::Event;
 use obws::Client as OBSClient;
 use async_trait::async_trait;
+use std::net::SocketAddr;
 
 use crate::obs;
 use crate::obs_source;
 use serde::{Deserialize,Serialize};
 use std::collections::HashMap;
-use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json, Buf};
-
+// use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json, Buf};
+use axum::{
+    routing::{get, post},
+    Router, Server, Extension, Json,
+    http::StatusCode,
+    response::IntoResponse,
+};
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -78,31 +84,51 @@ impl EventHandler for TwitchEventSubHandler {
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         
-        let clonable_obs_client = Arc::new(Mutex::new(self.obs_client));
+        // let clonable_obs_client = Arc::new(Mutex::new(self.obs_client));
+        // 
+        // // How do I pass more things to Warp?
+        // let route = warp::body::content_length_limit(1024 * 1282)
+        //     .and(warp::body::json())
+        //     .and_then(post_request);
+        // 
+        // // Run the Warp server in a separate async task
+        // tokio::spawn(async move {
+        //     warp::serve(route).run(([0, 0, 0, 0], 8080)).await;
+        // });
+        //
+        // loop {
+        //     let event = rx.recv().await?;
+        //     // TODO: Update this fren
+        //     let msg = match event {
+        //         Event::StreamCharacterRequest(msg) => msg,
+        //         _ => continue,
+        //     };
+        //
+        // }
         
-        // How do I pass more things to Warp?
-        let route = warp::body::content_length_limit(1024 * 1282)
-            .and(warp::body::json())
-            .and_then(post_request);
-        
-        // Run the Warp server in a separate async task
+        // let clonable_obs_client = Arc::new(Mutex::new(self.obs_client));
+        let clonable_obs_client = Arc::new(self.obs_client);
+
+        // Define the route
+        let app = Router::new()
+            .route("/eventsub", post(post_request))
+            .layer(Extension(clonable_obs_client));
+
+        // Run the Axum server in a separate async task
         tokio::spawn(async move {
-            warp::serve(route).run(([0, 0, 0, 0], 8080)).await;
+            let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+            Server::bind(&addr).serve(app.into_make_service()).await.unwrap();
         });
 
-        loop {
-            let event = rx.recv().await?;
-            // TODO: Update this fren
-            let msg = match event {
-                Event::StreamCharacterRequest(msg) => msg,
-                _ => continue,
-            };
-
-        }
+        Ok(())
     }
 }
 
-async fn post_request(eventsub_body: EventSubRoot) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+async fn post_request(
+    Json(eventsub_body): Json<EventSubRoot>,
+    Extension(obs_client): Extension<Arc<OBSClient>>,
+) -> impl IntoResponse {
+
     println!("simple_map = {:?}", eventsub_body);
     
     let challenge = match eventsub_body.challenge {
@@ -113,28 +139,65 @@ async fn post_request(eventsub_body: EventSubRoot) -> Result<Box<dyn warp::Reply
         }
         _ =>  {
 
-            // let obs_client = obs::create_obs_client().await.unwrap();
-            // obs_source::set_enabled(
-            //     "Primary",
-            //     "Dalle-Gen-1",
-            //     true,
-            //     &self.obs_client,
-            // ).await;
+
+            let c = obs_client;
+
+            // if let Extension(obs_client) = obs_client {
+            //     obs_
+            //     
+            // } else {
+            //     
+            // }
+
+            // let c = obs_client.clone();
+            obs_source::set_enabled(
+                "Primary",
+                "Dalle-Gen-1",
+                true,
+                &c,
+            ).await;
             
-            // let _ = self.tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
-            //         message: "woah there budy".to_string(),
-            //         voice_text: "waoh there buddy".to_string(),
-            //         voice: "Ethan".to_string(),
-            //         username: "beginbot".to_string(),
-            //         source: None,
-            // }));
+
             "".to_string()
         }
     };
-    
-    return Ok(Box::new(reply::with_status(challenge, StatusCode::OK)));
+
+    (StatusCode::OK, challenge)
 }
 
+// async fn post_request2(eventsub_body: EventSubRoot) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
+//     println!("simple_map = {:?}", eventsub_body);
+//     
+//     let challenge = match eventsub_body.challenge {
+//         Some(challenge) => {
+//                 // This is required for EventSub's to work!
+//                 // If we don't Twitch's challenge, you don't events
+//                 challenge
+//         }
+//         _ =>  {
+//
+//             // let obs_client = obs::create_obs_client().await.unwrap();
+//             // obs_source::set_enabled(
+//             //     "Primary",
+//             //     "Dalle-Gen-1",
+//             //     true,
+//             //     &self.obs_client,
+//             // ).await;
+//             
+//             // let _ = self.tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
+//             //         message: "woah there budy".to_string(),
+//             //         voice_text: "waoh there buddy".to_string(),
+//             //         voice: "Ethan".to_string(),
+//             //         username: "beginbot".to_string(),
+//             //         source: None,
+//             // }));
+//             "".to_string()
+//         }
+//     };
+//     
+//     return Ok(Box::new(reply::with_status(challenge, StatusCode::OK)));
+// }
+//
 
 // #[async_trait]
 // impl HandleTwitchEventSub for TwitchEventSubHandler {
