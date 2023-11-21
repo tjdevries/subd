@@ -277,8 +277,11 @@ pub async fn handle_obs_commands(
         "!yoga" => {
             // This is the best way
             if !is_mod && !is_vip {
+                println!("You're not allowed to do Yoga!");
                 return Ok(());
             }
+
+            println!("Yoga Time!");
 
             // if !ALLOWED_USERS.contains(&msg.user_name.as_str()) {
             //     return Ok(());

@@ -51,8 +51,6 @@ pub struct UberDuckRequest {
     pub voice: String,
 
     pub source: Option<String>,
-    // HERE I CAN CHANGE THINGS!!!!
-    //
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
