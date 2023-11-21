@@ -196,6 +196,18 @@ async fn set_enabled_on_all_sources(
 // == Debug Info
 // ====================================================
 
+pub async fn print_source_info_true(
+    source: &str,
+    scene: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let id = find_id(scene, source, &obs_client).await?;
+    let settings = obs_client.scene_items().transform(scene, id).await?;
+
+    println!("Source Settings: {:?}", settings);
+    Ok(())
+}
+
 pub async fn print_source_info(
     source: &str,
     scene: &str,
