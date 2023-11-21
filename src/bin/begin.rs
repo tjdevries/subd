@@ -227,102 +227,18 @@ async fn main() -> Result<()> {
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
-    
 
-    // This will also need to be able to access the DB, play sounds, talk to Twitch Chat
-    // // OBS Stream Characters are controlled here
+    // Twitch EventSub Events
+    let twitch_config = get_chat_config();
+    let (_, twitch_client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(twitch_config);
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler { obs_client });
+    event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler { obs_client,  twitch_client });
     
-    // =======================================================================
-    
-    // EVENT SUB EXPERIMENTS
-    // let route2 = warp::body::content_length_limit(1024 * 1282)
-    // .and(warp::body::json())
-    // .map(|simple_map: EventSubRoot| {
-    //     // Why are we failing in here?
-    //     // It's probably because of differnet shapes of data?
-    //
-    //     // server::obs_source::set_enabled(
-    //     //     "Primary",
-    //     //     "Dalle-Gen-1",
-    //     //     true,
-    //     //     &obs_client,
-    //     // ).await;
-    //         
-    //     println!("simple_map = {:?}", simple_map);
-    //     let challenge = match simple_map.challenge {
-    //         Some(challenge) => {
-    //                 challenge
-    //         }
-    //         _ =>  {
-    //                 // Here we need our own OBS Client
-    //                 // and postgres pool
-    //                 // So we just have to pass this object around!
-    //                 // So now we want to handle this message!
-    //                 "".to_string()
-    //         }
-    //         // return warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
-    //     };
-    //     return warp::reply::with_status(challenge, warp::http::StatusCode::OK)
-    //     // warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
-    // });
-    // 
-    // 
-    // let route3 = warp::body::content_length_limit(1024 * 1282)
-    // .and(warp::body::json()).and_then(post_request);
-    // 
-    // // Run the Warp server in a separate async task
-    // tokio::spawn(async move {
-    //     warp::serve(route3).run(([0, 0, 0, 0], 8080)).await;
-    // });
-
     // =======================================================================
 
     event_loop.run().await?;
     Ok(())
 }
-
-pub async fn test() -> Result<()> {
-    Ok(())
-}
-
-// How would I get a tx in here!
-async fn post_request(simple_map: EventSubRoot) -> Result<Box<dyn warp::Reply>, warp::Rejection> {
-    // println!("We hit post_request");
-    // Ok(Box::new("world"))
-    // return Ok(reply::with_status(json(&"".to_string()), StatusCode::OK));
-    println!("simple_map = {:?}", simple_map);
-    let challenge = match simple_map.challenge {
-        Some(challenge) => {
-                challenge
-        }
-        _ =>  {
-                let obs_client = server::obs::create_obs_client().await.unwrap();
-                server::obs_source::set_enabled(
-                    "Primary",
-                    "Dalle-Gen-1",
-                    true,
-                    &obs_client,
-                ).await;
-            
-            // let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
-            //         message: "woah there budy".to_string(),
-            //         voice_text: "waoh there buddy".to_string(),
-            //         username: "beginbot".to_string(),
-            // voice: "Ethan".to_string(),
-            //         source: None,
-            //     }));
-                // Here we need our own OBS Client
-                // and postgres pool
-                // So we just have to pass this object around!
-                // So now we want to handle this message!
-                "".to_string()
-        }
-        // return warp::reply::with_status(simple_map.challenge, warp::http::StatusCode::OK)
-    };
-    
-    // return warp::reply::with_status(challenge, warp::http::StatusCode::OK)
-    return Ok(Box::new(reply::with_status(challenge, StatusCode::OK)));
-}
-
