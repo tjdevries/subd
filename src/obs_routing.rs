@@ -84,7 +84,6 @@ pub async fn handle_obs_commands(
     let is_vip = msg.roles.is_twitch_vip();
     let background_scene = "BackgroundMusic";
 
-    let background_music = "BackgroundMusic";
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
     // defaults used by many commands
@@ -105,13 +104,12 @@ pub async fn handle_obs_commands(
     
    let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
 
-    // So we should look up voice here
-
     // NOTE: If we want to extract values like filter_setting_name and filter_value
     //       we need to figure a way to look up the defaults per command
     //       because they could be different types
 
-    match splitmsg[0].as_str() {
+    let command = splitmsg[0].as_str();
+    match command {
         // ======================== //
         // === Rapper Functions === //
         // ======================== //
@@ -186,57 +184,12 @@ pub async fn handle_obs_commands(
                 .map(|(_, scene)| scene.music)
                 .collect();
             for source in music_list.iter() {
-                let _ = obs_source::hide_source(background_music, source, obs_client).await;
+                let _ = obs_source::hide_source(background_scene, source, obs_client).await;
             }
             
             // Disable Global Voice Mode
             twitch_stream_state::turn_off_global_voice(&pool)
                 .await?;
-            Ok(())
-        }
-        
-        // Can in a match statement have a "dynamic" list of keys to match
-        // This will be a huge list of commands
-        "!yoga" | "!drama" | "!greed" | "!ken" | "!hospital" | "!sigma" | "!news" | "!sexy" | "!romcom" | "!chef" => {
-            if !is_mod && !is_vip {
-                return Ok(());
-            }
-            let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
-                .map(|(_, scene)| scene.music)
-                .collect();
-            for source in music_list.iter() {
-                let _ = obs_source::hide_source(background_music, source, obs_client).await;
-            }
-
-	    let mut scene_details = None;
-            
-            let command = splitmsg[0].as_str();
-            for &(cmd, ref scene) in VOICE_TO_MUSIC.iter() {
-		if cmd == command {
-		    scene_details = Some(scene);
-		    break;
-		}
-	    }
-
-	    if let Some(details) = scene_details {
-                // Turn on the Music for the scene
-            	let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
-
-                // Set the Voice for Begin, which is the source of the global voice
-                let _ = uberduck::set_voice(
-                    details.voice.to_string(),
-                    "beginbot".to_string(),
-                    pool,
-                )
-                .await;
-            
-                // Enable Global Voice Mode
-                twitch_stream_state::turn_on_global_voice(&pool)
-                    .await?;
-	    } else {
-		println!("Could not find voice info for command.");
-	    }
-            
             Ok(())
         }
         
@@ -270,20 +223,10 @@ pub async fn handle_obs_commands(
                 return Ok(())
             }
             
-            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
-            let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-
             println!("Turning on Global Voice");
             twitch_stream_state::turn_on_global_voice(&pool)
                 .await?;
             
-            // This should write to somewhere in the DB, that tracks global voices
-            // uberduck::set_voice(
-            //     voice.to_string(),
-            //     msg.user_name.to_string(),
-            //     pool,
-            // )
-            // .await
             Ok(())
         }
 
@@ -299,9 +242,9 @@ pub async fn handle_obs_commands(
         }
 
         "!dalle" => {
-            // how do we read in the message to pass to DAlle
+            let prompt = splitmsg.iter().skip(1).map(AsRef::as_ref).collect::<Vec<&str>>().join(" ");
             println!("Dalle Time!");
-            dalle_time(msg.contents).await;
+            let _ = dalle_time(prompt).await;
             Ok(())
         }
         
@@ -1008,7 +951,50 @@ pub async fn handle_obs_commands(
         // ===================================================================
 
         _ => Ok(()),
+    };
+
+    let exists = VOICE_TO_MUSIC.iter().any(|&(cmd, _)| cmd == command);
+    if exists {
+        if !is_mod && !is_vip {
+            return Ok(());
+        }
+        let music_list: Vec<&str> = VOICE_TO_MUSIC.iter()
+            .map(|(_, scene)| scene.music)
+            .collect();
+        for source in music_list.iter() {
+            let _ = obs_source::hide_source(background_scene, source, obs_client).await;
+        }
+
+        let mut scene_details = None;
+        
+        for &(cmd, ref scene) in VOICE_TO_MUSIC.iter() {
+            if cmd == command {
+                scene_details = Some(scene);
+                break;
+            }
+        }
+
+        if let Some(details) = scene_details {
+            // Turn on the Music for the scene
+            let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
+
+            // Set the Voice for Begin, which is the source of the global voice
+            let _ = uberduck::set_voice(
+                details.voice.to_string(),
+                "beginbot".to_string(),
+                pool,
+            )
+            .await;
+        
+            // Enable Global Voice Mode
+            twitch_stream_state::turn_on_global_voice(&pool)
+                .await?;
+        } else {
+            println!("Could not find voice info for command.");
+        }
     }
+    Ok(())
+    // Just put it here!!!!
 }
 
 fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
