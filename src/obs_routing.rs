@@ -88,7 +88,7 @@ pub async fn handle_obs_commands(
 
     println!("Splitmsg: {} | {}", splitmsg[0], msg.user_name);
     let command = splitmsg[0].as_str();
-    match command {
+    let _ =  match command {
         // ======================== //
         // === Rapper Functions === //
         // ======================== //

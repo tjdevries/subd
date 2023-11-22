@@ -227,6 +227,7 @@ async fn main() -> Result<()> {
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
+    
 
     // Twitch EventSub Events
     let twitch_config = get_chat_config();

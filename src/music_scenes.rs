@@ -16,5 +16,7 @@ pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
         ("!sexy", NewVoiceScene{ voice: "Charlotte", music: "Sexy-2-BG-Music" }),
         ("!romcom", NewVoiceScene{ voice: "Fin", music: "Romcom-BG-Music" }),
         ("!chef", NewVoiceScene{ voice: "Giovanni", music: "Chef-BG-Music" }),
+        ("!carti", NewVoiceScene{ voice: "Random", music: "Carti-BG-Music" }),
+        ("!nerd", NewVoiceScene{ voice: "Fin", music: "Nerd-BG-Music" }),
 ];
 
