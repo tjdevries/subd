@@ -692,6 +692,19 @@ pub async fn handle_obs_commands(
         "!source" => {
             obs_source::print_source_info(source, &scene, &obs_client).await
         }
+        
+        "!filter" => {
+            let filter_details =
+                match obs_client.filters().get(&source, &"Move_3D-Transform-Orthographic").await {
+                    Ok(val) => Ok(val),
+                    Err(err) => Err(err),
+                }?;
+
+            println!("------------------------");
+            println!("\n\tMove Transition Settings: {:?}", filter_details);
+            println!("------------------------");
+            Ok(())
+        }
 
         // This doesn't seem like it would just be info
         // ...but it is!

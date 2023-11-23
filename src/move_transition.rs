@@ -310,7 +310,9 @@ pub async fn update_and_trigger_move_value_filter(
             Err(err) => Err(err),
         }?;
 
-    println!("\n\tOld Filter Details: {:?}", filter_details);
+    println!("------------------------");
+    println!("\n\tOld Move Transition Settings: {:?}", filter_details);
+    println!("------------------------");
     // Parse the settings into a MoveSingleValueSetting struct
     let mut new_settings = match serde_json::from_value::<MoveSingleValueSetting>(
         filter_details.settings,
@@ -324,21 +326,28 @@ pub async fn update_and_trigger_move_value_filter(
         }
     };
 
-    // Update the settings based on what is passed into the function
-    new_settings.source = Some(source.to_string());
+    println!("Target Filter Name: {}", target_filter_name);
     new_settings.filter = target_filter_name.to_string();
+    
+    // Update the settings based on what is passed into the function
+    // new_settings.source = Some(source.to_string());
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
-    new_settings.duration = Some(duration);
-    new_settings.value_type = value_type;
+    // new_settings.duration = Some(duration);
+    // new_settings.value_type = value_type;
+    //
+    // // This is a pure Begin Theory
+    // new_settings.move_value_type = Some(value_type);
 
-    println!("\n\tNew Filter Details: {:?}", new_settings);
+    println!("------------------------");
+    println!("\n\n\tFinal Move Transition Settings: {:?}", new_settings);
+    println!("------------------------");
     
     // Create a SetSettings struct & use it to update the OBS settings
     // TODO: Should this moved into the update_move_source_filters function?
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
-        filter: &target_filter_name,
+        filter: &filter_name,
         settings: new_settings,
         overlay: None,
     };
