@@ -220,9 +220,7 @@ pub async fn handle_obs_commands(
             };
 
             // dbg!(&new_settings);
-                    
-            let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+            let move_transition_filter_name = format!("Move_{}", filter_name);
             
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
@@ -353,7 +351,7 @@ pub async fn handle_obs_commands(
         }
         
         
-        "!vortex" => {
+        "!vortex" | "!v" => {
             let lower_bound = 225000000;
             let upper_bound = 225000999;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
@@ -362,7 +360,7 @@ pub async fn handle_obs_commands(
         }
         
 
-        "!memories" => {
+        "!memories" | "!m" => {
             let lower_bound = 428000000;
             let upper_bound = 428000449;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
@@ -370,7 +368,7 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
-        "!steviep" | "!dopamine" => {
+        "!steviep" | "!dopamine" | "!d" => {
             let lower_bound = 457000000;
             let upper_bound = 457000776;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
