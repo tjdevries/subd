@@ -1174,16 +1174,48 @@ pub async fn handle_obs_commands(
             let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
             if command == "!sigma" {
                 println!("We are in Chad mode!");
-                let filter_name = "3D Transform";
-                let filter_enabled = obws::requests::filters::SetEnabled {
-                    // TODO: Find the const
-                    source: "begin",
-                    filter: &filter_name,
-                    enabled: true,
-                };
-                obs_client.filters().set_enabled(filter_enabled).await?;
-                // Trigger
             }
+            
+            let source = "begin";
+            let filter_name = "3D-Transform";
+            
+            let filter_setting_name = "Rotation.X";
+            let filter_value = 45.0;
+            let duration = 4000;
+            
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                "Perspective",
+                duration,
+                obs_client,
+            ).await;
+            
+            let filter_setting_name = "Scale.X";
+            let filter_value = 250.0;
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                "Orthographic",
+                duration,
+                obs_client,
+            ).await;
+            
+            // let filter_setting_name = "Scale.Y";
+            // let filter_value = 250.0;
+            // let _ = move_transition_effects::trigger_move_value_3d_transform(
+            //     source,
+            //     filter_name,
+            //     filter_setting_name,
+            //     filter_value,
+            //     "Orthographic",
+            //     duration,
+            //     obs_client,
+            // ).await;
 
             // Set the Voice for Begin, which is the source of the global voice
             let _ = uberduck::set_voice(
