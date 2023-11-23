@@ -197,9 +197,14 @@ pub async fn handle_obs_commands(
                 rotation_x: Some(50.0),
                 field_of_view: Some(108.0),
 
-                // If a previous Move_transition set this and you don't reset it, you're gonna hate
-                // you life
+                // If a previous Move_transition set this and you don't reset it, you're gonna hate you life
                 position_y: Some(0.0),
+                duration: Some(300),
+                shear_x: Some(0.0),
+                shear_y: Some(0.0),
+                position_x: Some(0.0),
+                rotation_y: Some(0.0),
+                rotation_z: Some(0.0),
                 ..Default::default()
             };
 
