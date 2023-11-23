@@ -145,6 +145,26 @@ pub async fn handle_obs_commands(
             Ok(())
 
         }
+        
+        "!nerd2" => {
+            println!("Nerd TIME!");
+ 
+            let source = "begin";
+            let filter_name = "3D-Transform-Perspective";
+            let duration = 5000;
+            let filter_setting_name = "Rotation.X";
+            let filter_value = -45.0;
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                "Perspective",
+                duration,
+                obs_client,
+            ).await;
+            Ok(())
+        }
 
         "!nerd" => {
             println!("Nerd TIME!");
@@ -171,20 +191,8 @@ pub async fn handle_obs_commands(
 
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
-            let duration = 5000;
-            let filter_setting_name = "Rotation.X";
-            let filter_value = 45.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Perspective",
-                duration,
-                obs_client,
-            ).await;
+            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 3000, &obs_client).await;
             Ok(())
-            //
         }
 
         // ======================== //
@@ -693,14 +701,17 @@ pub async fn handle_obs_commands(
         }
         
         "!filter" => {
+            
+            let default_filter_name  = "Move-3D-Transform-Orthographic".to_string();
+            let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
-                match obs_client.filters().get(&source, &"Move_3D-Transform-Orthographic").await {
+                match obs_client.filters().get("begin",source).await {
                     Ok(val) => Ok(val),
                     Err(err) => Err(err),
                 }?;
 
             println!("------------------------");
-            println!("\n\tMove Transition Settings: {:?}", filter_details);
+            println!("\n\tFilter ettings: {:?}", filter_details);
             println!("------------------------");
             Ok(())
         }
@@ -1173,45 +1184,8 @@ pub async fn handle_obs_commands(
             }
             
             let source = "begin";
-            let filter_name = "3D-Transform";
-            
-            let filter_setting_name = "Rotation.X";
-            let filter_value = 45.0;
-            let duration = 4000;
-            
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Perspective",
-                duration,
-                obs_client,
-            ).await;
-            
-            let filter_setting_name = "Scale.X";
-            let filter_value = 250.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Orthographic",
-                duration,
-                obs_client,
-            ).await;
-            
-            // let filter_setting_name = "Scale.Y";
-            // let filter_value = 250.0;
-            // let _ = move_transition_effects::trigger_move_value_3d_transform(
-            //     source,
-            //     filter_name,
-            //     filter_setting_name,
-            //     filter_value,
-            //     "Orthographic",
-            //     duration,
-            //     obs_client,
-            // ).await;
+            let filter_name = "3D-Transform-Perspective";
+            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 3000, &obs_client).await;
 
             // Set the Voice for Begin, which is the source of the global voice
             let _ = uberduck::set_voice(

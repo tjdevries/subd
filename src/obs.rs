@@ -57,6 +57,7 @@ pub const SDF_EFFECTS_INTERNAL_FILTER_NAME: &str =
     "streamfx-filter-sdf-effects";
 
 pub const SINGLE_SETTING_VALUE_TYPE: u32 = 0;
+pub const MULTIPLE_SETTING_VALUE_TYPE: u32 = 1;
 
 pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
