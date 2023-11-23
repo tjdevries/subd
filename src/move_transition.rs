@@ -298,6 +298,7 @@ pub async fn update_and_trigger_move_value_filter(
     filter_name: &str,
     filter_setting_name: &str,
     filter_value: f32,
+    target_filter_name: &str,
     duration: u32,
     value_type: u32,
     obs_client: &OBSClient,
@@ -323,11 +324,9 @@ pub async fn update_and_trigger_move_value_filter(
         }
     };
 
-    let target_filter = "3D-Transform".to_string();
-
     // Update the settings based on what is passed into the function
     new_settings.source = Some(source.to_string());
-    new_settings.filter = target_filter;
+    new_settings.filter = target_filter_name.to_string();
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
     new_settings.duration = Some(duration);
@@ -339,7 +338,7 @@ pub async fn update_and_trigger_move_value_filter(
     // TODO: Should this moved into the update_move_source_filters function?
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
-        filter: &filter_name,
+        filter: &target_filter_name,
         settings: new_settings,
         overlay: None,
     };

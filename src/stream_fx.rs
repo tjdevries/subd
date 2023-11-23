@@ -268,11 +268,13 @@ pub async fn trigger_ortho(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
+    // TODO: fix this
     _ = move_transition::update_and_trigger_move_value_filter(
         source,
         &move_transition_filter_name,
         filter_setting_name,
         filter_value,
+        "",
         duration,
         obs::SINGLE_SETTING_VALUE_TYPE,
         &obs_client,

@@ -124,17 +124,20 @@ pub async fn scale(
 // =======================================================================================
 
 pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
+    // TODO: fix
     _ = move_transition::update_and_trigger_move_value_filter(
         source,
         "Move_Blur",
         "Filter.Blur.Size",
         100.0,
+        "",
         5000,
         2,
         &obs_client,
     )
     .await;
 
+    // TODO: fix
     // These should be abstracted
     // What are these doing here like this?
     let filter_name = "Move_Source";
@@ -146,6 +149,7 @@ pub async fn staff(source: &str, obs_client: &OBSClient) -> Result<()> {
         filter_name,
         filter_setting_name,
         filter_value,
+        "",
         duration,
         2,
         &obs_client,

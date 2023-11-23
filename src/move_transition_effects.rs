@@ -70,11 +70,13 @@ pub async fn spin(
         _ => "Rotation.Z",
     };
 
+    // TODO: fix
     match move_transition::update_and_trigger_move_value_filter(
         source,
         obs::THE_3D_TRANSFORM_FILTER_NAME,
         setting_name,
         filter_value,
+        "",
         duration,
         2, // not sure if this is the right value | THIS NEEDS TO BE ABSTRACTED
         &obs_client,
@@ -137,11 +139,13 @@ pub async fn trigger_3d(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
+    // TODO: Fix
     move_transition::update_and_trigger_move_value_filter(
         source,
         "Move_Stream_FX", // TODO Abstract this
         filter_setting_name,
         filter_value,
+        "kjA,,jkjkk",
         duration,
         obs::SINGLE_SETTING_VALUE_TYPE,
         &obs_client,
@@ -157,27 +161,30 @@ pub async fn trigger_3d(
 // Example: OG filter: 3D-Transform
 //          Move Filter Move_3D-Transform
 //
-pub async fn trigger_ortho(
+pub async fn trigger_move_value_3d_transform(
     source: &str,
     filter_name: &str,
     filter_setting_name: &str,
     filter_value: f32,
+    camera_mode: &str,
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
     
-    let move_transition_filter_name = format!("Move_{}", filter_name);
+    // let camera_types = vec!["Orthographic", "Perspective", "CornerPin"];
+    // let camera_mode_index_raw = camera_types.iter().position(|&r| r == camera_mode).unwrap();
+    // let camera_mode_index = camera_mode_index_raw.try_into().unwrap();
 
-    let filter_details = obs_client.filters().get(&source, &filter_name).await;
+    let three_d_transform_filter_name = format!("{}-{}", filter_name, camera_mode);
+    let filter_settings = obs_client.filters().get(&source, &three_d_transform_filter_name).await;
 
-    let filt: SourceFilter = match filter_details {
+    let filt: SourceFilter = match filter_settings {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
-
-    println!("\nOG Filter Details: {:?}", filt);
-
-    let mut new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
+    println!("\nOG 3D Transform Filter Settings: {:?}", filt);
+    
+    let new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
         filt.settings,
     ) {
         Ok(val) => val,
@@ -188,23 +195,23 @@ pub async fn trigger_ortho(
             }
         }
     };
+    println!("\nNew 3D Transform Filter Settings: {:?}", new_settings);
+    
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    obs_client.filters().set_settings(new_settings).await?;
 
-    // This is updating the camera mode of 
-    // new_settings.camera_mode = Some(2);
-    // println!("\nNew Settings: {:?}", new_settings);
-    // let new_settings = obws::requests::filters::SetSettings {
-    //     source: &source,
-    //     filter: filter_name,
-    //     settings: new_settings,
-    //     overlay: None,
-    // };
-    // obs_client.filters().set_settings(new_settings).await?;
-
+    let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
     _ = move_transition::update_and_trigger_move_value_filter(
         source,
         &move_transition_filter_name,
         filter_setting_name,
         filter_value,
+        &three_d_transform_filter_name,
         duration,
         obs::SINGLE_SETTING_VALUE_TYPE,
         &obs_client,

@@ -89,9 +89,30 @@ pub async fn handle_obs_commands(
     println!("Splitmsg: {} | {}", splitmsg[0], msg.user_name);
     let command = splitmsg[0].as_str();
     let _ =  match command {
+
         // =================== //
         // === Experiments === //
         // =================== //
+        "!wide" => {
+            println!("Wide TIME!");
+            
+            let source = "begin";
+            let filter_name = "3D-Transform";
+            let duration = 5000;
+            let filter_setting_name = "Scale.X";
+            let filter_value = 300.0;
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                "Orthographic",
+                duration,
+                obs_client,
+            ).await;
+            Ok(())
+        }
+        
         "!normal" => {
             println!("Normal TIME!");
             
@@ -100,16 +121,30 @@ pub async fn handle_obs_commands(
             let duration = 5000;
             let filter_setting_name = "Rotation.X";
             let filter_value = 0.0;
-            // let _ = stream_fx::trigger_ortho(
-            let _ = move_transition_effects::trigger_ortho(
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
                 source,
                 filter_name,
                 filter_setting_name,
                 filter_value,
+                "Perspective",
                 duration,
                 obs_client,
             ).await;
+            
+            let filter_setting_name = "Scale.X";
+            let filter_value = 100.0;
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
+            source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                "Orthographic",
+                duration,
+                obs_client,
+            ).await;
+            
             Ok(())
+            
         }
         
         "!nerd" => {
@@ -120,19 +155,18 @@ pub async fn handle_obs_commands(
             let duration = 5000;
             let filter_setting_name = "Rotation.X";
             let filter_value = -45.0;
-            // let _ = stream_fx::trigger_ortho(
-            let _ = move_transition_effects::trigger_ortho(
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
                 source,
                 filter_name,
                 filter_setting_name,
                 filter_value,
+                "Perspective",
                 duration,
                 obs_client,
             ).await;
             Ok(())
         }
-        // 2 types of move value filters
-        // change a single setting, and then change all
+        
         "!chad" => {
             println!("CHAD TIME!");
             
@@ -141,12 +175,12 @@ pub async fn handle_obs_commands(
             let duration = 5000;
             let filter_setting_name = "Rotation.X";
             let filter_value = 45.0;
-            // let _ = stream_fx::trigger_ortho(
-            let _ = move_transition_effects::trigger_ortho(
+            let _ = move_transition_effects::trigger_move_value_3d_transform(
                 source,
                 filter_name,
                 filter_setting_name,
                 filter_value,
+                "Perspective",
                 duration,
                 obs_client,
             ).await;
@@ -426,16 +460,19 @@ pub async fn handle_obs_commands(
             // Starting to Scroll: begin speed_x
             println!("Starting to Scroll: {} {}", source, filter_setting_name);
 
-            move_transition::update_and_trigger_move_value_filter(
-                source,
-                obs::MOVE_SCROLL_FILTER_NAME,
-                &filter_setting_name,
-                filter_value,
-                duration,
-                2,
-                &obs_client,
-            )
-            .await
+            // TODO: Fix
+            // move_transition::update_and_trigger_move_value_filter(
+            //     source,
+            //     obs::MOVE_SCROLL_FILTER_NAME,
+            //     &filter_setting_name,
+            //     filter_value,
+            //     "",
+            //     duration,
+            //     2,
+            //     &obs_client,
+            // )
+            // .await
+            Ok(())
         }
 
         // ===========================================
@@ -446,30 +483,34 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
 
-            move_transition::update_and_trigger_move_value_filter(
-                source,
-                obs::MOVE_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                filter_value,
-                duration,
-                0,
-                &obs_client,
-            )
-            .await
+            Ok(())
+            // move_transition::update_and_trigger_move_value_filter(
+            //     source,
+            //     obs::MOVE_BLUR_FILTER_NAME,
+            //     "Filter.Blur.Size",
+            //     filter_value,
+            //     "",
+            //     duration,
+            //     0,
+            //     &obs_client,
+            // )
+            // .await
         }
 
         // TODO: Update these values to be variables so we know what they do
         "!noblur" | "!unblur" => {
-            move_transition::update_and_trigger_move_value_filter(
-                source,
-                obs::DEFAULT_BLUR_FILTER_NAME,
-                "Filter.Blur.Size",
-                0.0,
-                5000,
-                2,
-                &obs_client,
-            )
-            .await
+            Ok(())
+            // move_transition::update_and_trigger_move_value_filter(
+            //     source,
+            //     obs::DEFAULT_BLUR_FILTER_NAME,
+            //     "Filter.Blur.Size",
+            //     0.0,
+            //     5000,
+            //     "",
+            //     2,
+            //     &obs_client,
+            // )
+            // .await
         }
 
         // ===========================================
