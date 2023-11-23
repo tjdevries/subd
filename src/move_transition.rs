@@ -286,6 +286,13 @@ pub async fn move_with_move_source(
 // == MOVE SOURCE ====================================================================
 // ===================================================================================
 
+//
+//         Old Filter Details: "Move_3D-Transform"
+//
+//         New Filter Details:
+//         MoveSingleValueSetting { source: None, filter: "Blur", duration: Some(3000), move_value_type: None, setting_float: 45.0, setting_float_max: 0.0, setting_float_min: 0.0, setting_name: "Rotation.X", value_type: 0, filter_blur_size: None, glow_inner: None, glow_outer: None, shadow_outer: None, shadow_inner: None, outline: None }
+// Filter Name: TransformSoundboard-Text
+
 pub async fn update_and_trigger_move_value_filter(
     source: &str,
     filter_name: &str,
@@ -302,6 +309,7 @@ pub async fn update_and_trigger_move_value_filter(
             Err(err) => Err(err),
         }?;
 
+    println!("\n\tOld Filter Details: {:?}", filter_details);
     // Parse the settings into a MoveSingleValueSetting struct
     let mut new_settings = match serde_json::from_value::<MoveSingleValueSetting>(
         filter_details.settings,
@@ -315,12 +323,18 @@ pub async fn update_and_trigger_move_value_filter(
         }
     };
 
+    let target_filter = "3D-Transform".to_string();
+
     // Update the settings based on what is passed into the function
+    new_settings.source = Some(source.to_string());
+    new_settings.filter = target_filter;
     new_settings.setting_name = String::from(filter_setting_name);
     new_settings.setting_float = filter_value;
     new_settings.duration = Some(duration);
     new_settings.value_type = value_type;
 
+    println!("\n\tNew Filter Details: {:?}", new_settings);
+    
     // Create a SetSettings struct & use it to update the OBS settings
     // TODO: Should this moved into the update_move_source_filters function?
     let new_settings = obws::requests::filters::SetSettings {

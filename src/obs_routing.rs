@@ -89,6 +89,71 @@ pub async fn handle_obs_commands(
     println!("Splitmsg: {} | {}", splitmsg[0], msg.user_name);
     let command = splitmsg[0].as_str();
     let _ =  match command {
+        // =================== //
+        // === Experiments === //
+        // =================== //
+        "!normal" => {
+            println!("Normal TIME!");
+            
+            let source = "begin";
+            let filter_name = "3D-Transform";
+            let duration = 5000;
+            let filter_setting_name = "Rotation.X";
+            let filter_value = 0.0;
+            // let _ = stream_fx::trigger_ortho(
+            let _ = move_transition_effects::trigger_ortho(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                duration,
+                obs_client,
+            ).await;
+            Ok(())
+        }
+        
+        "!nerd" => {
+            println!("Nerd TIME!");
+            
+            let source = "begin";
+            let filter_name = "3D-Transform";
+            let duration = 5000;
+            let filter_setting_name = "Rotation.X";
+            let filter_value = -45.0;
+            // let _ = stream_fx::trigger_ortho(
+            let _ = move_transition_effects::trigger_ortho(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                duration,
+                obs_client,
+            ).await;
+            Ok(())
+        }
+        // 2 types of move value filters
+        // change a single setting, and then change all
+        "!chad" => {
+            println!("CHAD TIME!");
+            
+            let source = "begin";
+            let filter_name = "3D-Transform";
+            let duration = 5000;
+            let filter_setting_name = "Rotation.X";
+            let filter_value = 45.0;
+            // let _ = stream_fx::trigger_ortho(
+            let _ = move_transition_effects::trigger_ortho(
+                source,
+                filter_name,
+                filter_setting_name,
+                filter_value,
+                duration,
+                obs_client,
+            ).await;
+            Ok(())
+        //
+        }
+        
         // ======================== //
         // === Rapper Functions === //
         // ======================== //
@@ -223,7 +288,7 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
-        "!steviep" => {
+        "!steviep" | "!dopamine" => {
             let lower_bound = 457000000;
             let upper_bound = 457000776;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
@@ -255,6 +320,14 @@ pub async fn handle_obs_commands(
                 let _ = obs_source::hide_source(background_scene, source, obs_client).await;
             }
             
+            let filter_name = "3D Transform";
+            let filter_enabled = obws::requests::filters::SetEnabled {
+                // TODO: Find the const
+                source: "begin",
+                filter: &filter_name,
+                enabled: false,
+            };
+            obs_client.filters().set_enabled(filter_enabled).await?;
             // Disable Global Voice Mode
             twitch_stream_state::turn_off_global_voice(&pool)
                 .await?;
@@ -1045,6 +1118,18 @@ pub async fn handle_obs_commands(
         if let Some(details) = scene_details {
             // Turn on the Music for the scene
             let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
+            if command == "!sigma" {
+                println!("We are in Chad mode!");
+                let filter_name = "3D Transform";
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    // TODO: Find the const
+                    source: "begin",
+                    filter: &filter_name,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+                // Trigger
+            }
 
             // Set the Voice for Begin, which is the source of the global voice
             let _ = uberduck::set_voice(
