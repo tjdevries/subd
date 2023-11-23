@@ -206,6 +206,7 @@ pub async fn handle_obs_commands(
                 scale_y: Some(200.0),
                 rotation_x: Some(50.0),
                 field_of_view: Some(108.0),
+                move_value_type: 1,
 
                 // If a previous Move_transition set this and you don't reset it, you're gonna hate you life
                 position_y: Some(0.0),
@@ -218,7 +219,7 @@ pub async fn handle_obs_commands(
                 ..Default::default()
             };
 
-            dbg!(&new_settings);
+            // dbg!(&new_settings);
                     
             let three_d_transform_filter_name = filter_name;
             let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
