@@ -181,8 +181,18 @@ pub async fn handle_obs_commands(
                 ..Default::default()
             };
 
-            dbg!(&new_settings);
-            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 300, new_settings, &obs_client).await;
+            let three_d_transform_filter_name = filter_name;
+            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+            
+            _ = move_transition::update_and_trigger_move_values_filter(
+                source,
+                &move_transition_filter_name,
+                duration,
+                new_settings,
+                &obs_client,
+            )
+            .await;
+
             Ok(())
         }
 
@@ -209,7 +219,19 @@ pub async fn handle_obs_commands(
             };
 
             dbg!(&new_settings);
-            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 300, new_settings, &obs_client).await;
+                    
+            let three_d_transform_filter_name = filter_name;
+            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+            
+            _ = move_transition::update_and_trigger_move_values_filter(
+                source,
+                &move_transition_filter_name,
+                duration,
+                new_settings,
+                &obs_client,
+            )
+            .await;
+
             Ok(())
         }
 
@@ -1218,7 +1240,18 @@ pub async fn handle_obs_commands(
             };
 
             dbg!(&new_settings);
-            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 3000, new_settings, &obs_client).await;
+            let three_d_transform_filter_name = filter_name;
+            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+            
+            _ = move_transition::update_and_trigger_move_values_filter(
+                source,
+                &move_transition_filter_name,
+                duration,
+                new_settings,
+                &obs_client,
+            )
+            .await;
+
 
             // Set the Voice for Begin, which is the source of the global voice
             let _ = uberduck::set_voice(

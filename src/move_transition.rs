@@ -400,14 +400,72 @@ pub async fn update_and_trigger_move_values_filter(
 ) -> Result<()> {
     new_settings.move_value_type = 1;
     new_settings.duration = Some(duration);
+    
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: &filter_name,
         settings: new_settings,
         overlay: None,
     };
-    obs_client.filters().set_settings(new_settings).await?;
+    
+    let l_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-l").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let l_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-;",
+        settings: l_filter_settings,
+        overlay: None,
+    };
+    
+    let k_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-k").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let k_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-l",
+        settings: k_filter_settings,
+        overlay: None,
+    };
 
+    let j_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-j").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let j_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-k",
+        settings: j_filter_settings,
+        overlay: None,
+    };
+    
+    // Putting Current Transform to J!
+    let original_filter_settings =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let og_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-j",
+        settings: original_filter_settings,
+        overlay: None,
+    };
+
+    
+    obs_client.filters().set_settings(l_settings).await?;
+    obs_client.filters().set_settings(k_settings).await?;
+    obs_client.filters().set_settings(j_settings).await?;
+    obs_client.filters().set_settings(og_settings).await?;
+    
+    
+    obs_client.filters().set_settings(new_settings).await?;
+    
     // Pause so the settings can take effect before triggering the filter
     // TODO: Extract out into variable
     thread::sleep(Duration::from_millis(400));

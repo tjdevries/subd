@@ -221,29 +221,3 @@ pub async fn trigger_move_value_3d_transform(
     .await;
     Ok(())
 }
-
-pub async fn trigger_move_multiple_values_3d_transform(
-    source: &str,
-    filter_name: &str,
-    duration: u32,
-    settings: move_transition::MoveMultipleValuesSetting,
-    obs_client: &OBSClient,
-    
-) -> Result<()> {
-
-    let three_d_transform_filter_name = filter_name;
-    
-    let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
-    
-    println!("MOVE {}", move_transition_filter_name);
-    _ = move_transition::update_and_trigger_move_values_filter(
-        source,
-        &move_transition_filter_name,
-        duration,
-        settings,
-        &obs_client,
-    )
-    .await;
-
-    Ok(())
-}
