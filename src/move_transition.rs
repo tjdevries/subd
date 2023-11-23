@@ -78,6 +78,9 @@ pub struct MoveMultipleValuesSetting {
     // #[serde(default="multiple_settings_value_type_default")]
     pub value_type: u32,
 
+    #[serde(rename = "Camera.FieldOfView")]
+    pub field_of_view: Option<f32>,
+
     // This is ortho
     #[serde(rename = "Scale.X")]
     pub scale_x: Option<f32>,

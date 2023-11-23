@@ -146,7 +146,7 @@ pub async fn handle_obs_commands(
 
         }
         
-        "!nerd2" => {
+        "!nerd3" => {
             println!("Nerd TIME!");
  
             let source = "begin";
@@ -171,18 +171,18 @@ pub async fn handle_obs_commands(
  
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
-            let duration = 5000;
-            let filter_setting_name = "Rotation.X";
-            let filter_value = -45.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Perspective",
-                duration,
-                obs_client,
-            ).await;
+            
+            let new_settings = move_transition::MoveMultipleValuesSetting{
+                filter: Some(filter_name.to_string()),
+                scale_x: Some(125.3),
+                scale_y: Some(140.6),
+                position_y: Some(40.0),
+                rotation_x: Some(-51.4),
+                ..Default::default()
+            };
+
+            dbg!(&new_settings);
+            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 300, new_settings, &obs_client).await;
             Ok(())
         }
 
@@ -194,12 +194,17 @@ pub async fn handle_obs_commands(
                 filter: Some(filter_name.to_string()),
                 scale_x: Some(217.0),
                 scale_y: Some(200.0),
-                position_x: Some(-50.0),
+                rotation_x: Some(50.0),
+                field_of_view: Some(108.0),
+
+                // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                // you life
+                position_y: Some(0.0),
                 ..Default::default()
             };
 
             dbg!(&new_settings);
-            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 3000, new_settings, &obs_client).await;
+            let _ = move_transition_effects::trigger_move_multiple_values_3d_transform(source, filter_name, 300, new_settings, &obs_client).await;
             Ok(())
         }
 
@@ -1198,7 +1203,12 @@ pub async fn handle_obs_commands(
                 filter: Some(filter_name.to_string()),
                 scale_x: Some(217.0),
                 scale_y: Some(200.0),
-                position_x: Some(-50.0),
+                rotation_x: Some(50.0),
+                field_of_view: Some(108.0),
+
+                // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                // you life
+                position_y: Some(0.0),
                 ..Default::default()
             };
 

@@ -195,8 +195,7 @@ impl EventHandler for ElevenLabsHandler {
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
             
-            // let onscreen_msg = format!("{} | random: {} | {} - {}", is_random, voice_name, msg.message.clone());
-            let onscreen_msg = format!("{} | global: {} | random: {} | {}", msg.username, is_global_voice_enabled, is_random, voice_name);
+            let onscreen_msg = format!("{} | g: {} | r: {} | {}", msg.username, is_global_voice_enabled, is_random, voice_name);
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
@@ -220,6 +219,7 @@ impl EventHandler for ElevenLabsHandler {
                     text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
                 },
             ));
+            let ten_millis = time::Duration::from_millis(1000);
         }
     }
 }
