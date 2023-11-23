@@ -6,6 +6,7 @@ use std::fs;
 use std::thread;
 use std::time;
 use std::time::Duration;
+use serde_json::Value;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
@@ -391,6 +392,10 @@ pub async fn update_and_trigger_move_value_filter(
     Ok(())
 }
 
+fn parse_into_move_multiple_values_setting(settings: &serde_json::Value) -> Result<MoveMultipleValuesSetting, serde_json::Error> {
+    serde_json::from_value(settings.clone())
+}
+
 pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
@@ -401,70 +406,109 @@ pub async fn update_and_trigger_move_values_filter(
     new_settings.move_value_type = 1;
     new_settings.duration = Some(duration);
     
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
-        settings: new_settings,
-        overlay: None,
-    };
-    
-    let l_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-l").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let l_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-;",
-        settings: l_filter_settings,
-        overlay: None,
-    };
-    
-    let k_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-k").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let k_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-l",
-        settings: k_filter_settings,
-        overlay: None,
-    };
-
-    let j_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-j").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let j_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-k",
-        settings: j_filter_settings,
-        overlay: None,
-    };
-    
     // Putting Current Transform to J!
-    let original_filter_settings =
+    let og_filter_settings =
         match obs_client.filters().get(&source, &filter_name).await {
             Ok(val) => Ok(val),
             Err(err) => Err(err),
         }?;
+
+    let mut move_multiple_values_setting = parse_into_move_multiple_values_setting(&og_filter_settings.settings)?;
+    move_multiple_values_setting.scale_x = Some(200.0);
+    
+    // println!(" ======= OG =========");
+    // println!("Source: {}", source);
+    // println!("J Filter Name: {}", filter_name);
+    // dbg!(&og_filter_settings.settings);
+    // println!(" ======= OG =========");
+    // // og_filter_settings.dbg!
+    // let new_og_settings = MoveMultipleValuesSetting{
+    //     filter: todo!(),
+    //     move_value_type: todo!(),
+    //     duration: todo!(),
+    //     value_type: todo!(),
+    //     field_of_view: todo!(),
+    //     scale_x: todo!(),
+    //     scale_y: todo!(),
+    //     shear_x: todo!(),
+    //     shear_y: todo!(),
+    //     position_x: todo!(),
+    //     position_y: todo!(),
+    //     rotation_x: todo!(),
+    //     rotation_y: todo!(),
+    //     rotation_z: todo!(),
+    // };
+
     let og_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: "Perspective-Cache-j",
-        settings: original_filter_settings,
+        settings: move_multiple_values_setting,
         overlay: None,
     };
+    
+    let _ = obs_client.filters().set_settings(og_settings).await;
+    
+    // ================================================================
+    // 
+    // let new_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: &filter_name,
+    //     settings: new_settings,
+    //     overlay: None,
+    // };
+    
+    // let l_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-l").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // println!("--------------------");
+    // dbg!(&l_filter_settings);
+    // println!("--------------------");
+    // let l_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-;",
+    //     settings: l_filter_settings,
+    //     overlay: None,
+    // };
+    // 
+    // let k_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-k").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // let k_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-l",
+    //     settings: k_filter_settings,
+    //     overlay: None,
+    // };
+    //
+    // let j_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-j").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // let j_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-k",
+    //     settings: j_filter_settings,
+    //     overlay: None,
+    // };
 
+     // ===================================
+    // I JUST WANT TO UPDATGE THIS FILTER!!!!!!
     
-    obs_client.filters().set_settings(l_settings).await?;
-    obs_client.filters().set_settings(k_settings).await?;
-    obs_client.filters().set_settings(j_settings).await?;
-    obs_client.filters().set_settings(og_settings).await?;
+    // These are not hte correct type
+    // We need to find multi output sections
     
     
-    obs_client.filters().set_settings(new_settings).await?;
+    // obs_client.filters().set_settings(l_settings).await?;
+    // obs_client.filters().set_settings(k_settings).await?;
+    // obs_client.filters().set_settings(j_settings).await?;
+    
+    
+    // obs_client.filters().set_settings(og_settings).await?;
     
     // Pause so the settings can take effect before triggering the filter
     // TODO: Extract out into variable
