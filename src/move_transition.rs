@@ -54,13 +54,29 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
+
+// impl Default for MoveMultipleValuesSetting {
+//     fn default() -> Self {
+//         MoveMultipleValuesSetting {
+//             move_value_type: 1
+//         }
+//     }
+// }
+//
+// fn multiple_settings_value_type_default() -> u32 { 1 }
+
 // we create Json of What we want
 // we then convert to a MoveMultipleStruct
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MoveMultipleValuesSetting {
     pub filter: Option<String>,
-    pub move_value_type: Option<u32>,
-    pub value_type: Option<u32>,
+    
+    // #[serde(default="multiple_settings_value_type_default")]
+    pub move_value_type: u32,
+    
+    // What is the difference
+    // #[serde(default="multiple_settings_value_type_default")]
+    pub value_type: u32,
 
     // This is ortho
     #[serde(rename = "Scale.X")]
@@ -97,7 +113,7 @@ pub struct MoveSingleValueSetting {
     pub filter: String,
     #[serde(rename = "duration")]
     pub duration: Option<u32>,
-    #[serde(rename = "move_value_type")]
+    // #[serde(rename = "move_value_type", default=Some(0))]
     pub move_value_type: Option<u32>,
 
     #[serde(rename = "setting_float")]
@@ -373,9 +389,10 @@ pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
     _duration: u32,
-    new_settings: MoveMultipleValuesSetting,
+    mut new_settings: MoveMultipleValuesSetting,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    new_settings.move_value_type = 1;
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: &filter_name,

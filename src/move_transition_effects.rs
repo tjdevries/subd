@@ -226,29 +226,12 @@ pub async fn trigger_move_multiple_values_3d_transform(
     source: &str,
     filter_name: &str,
     duration: u32,
+    settings: move_transition::MoveMultipleValuesSetting,
     obs_client: &OBSClient,
+    
 ) -> Result<()> {
 
     let three_d_transform_filter_name = filter_name;
-    // let filter_settings = obs_client.filters().get(&source, &three_d_transform_filter_name).await;
-
-    let new_settings = move_transition::MoveMultipleValuesSetting{
-        filter: Some(filter_name.to_string()),
-        move_value_type: Some(1),
-
-        // THIS SHOULDB E THE CONSTANT
-        value_type: Some(1),
-        scale_x: Some(217.0),
-        scale_y: Some(200.0),
-        position_x: Some(-50.0),
-        // shear_x: Some(0.0),
-        // shear_y: Some(0.0),
-        // position_y: Some(0.0),
-        // rotation_x: Some(0.0),
-        // rotation_y: Some(0.0),
-        // rotation_z: Some(0.0),
-        ..Default::default()
-    };
     
     let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
     
@@ -257,7 +240,7 @@ pub async fn trigger_move_multiple_values_3d_transform(
         source,
         &move_transition_filter_name,
         duration,
-        new_settings,
+        settings,
         &obs_client,
     )
     .await;
