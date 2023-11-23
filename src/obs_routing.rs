@@ -95,9 +95,9 @@ pub async fn handle_obs_commands(
         // =================== //
         "!wide" => {
             println!("Wide TIME!");
-            
+
             let source = "begin";
-            let filter_name = "3D-Transform";
+            let filter_name = "3D-Transform-Orthographic";
             let duration = 5000;
             let filter_setting_name = "Scale.X";
             let filter_value = 300.0;
@@ -112,46 +112,45 @@ pub async fn handle_obs_commands(
             ).await;
             Ok(())
         }
-        
+
         "!normal" => {
             println!("Normal TIME!");
+
+            // We need ways of duplicated settings
+            let filter_name = "Default_3D-Transform-Perspective";
+            let filter_enabled = obws::requests::filters::SetEnabled {
+                // TODO: Find the const
+                source: "begin",
+                filter: &filter_name,
+                enabled: true,
+            };
+            obs_client.filters().set_enabled(filter_enabled).await?;
             
-            let source = "begin";
-            let filter_name = "3D-Transform";
-            let duration = 5000;
-            let filter_setting_name = "Rotation.X";
-            let filter_value = 0.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Perspective",
-                duration,
-                obs_client,
-            ).await;
+            let filter_name = "Default_3D-Transform-Orthographic";
+            let filter_enabled = obws::requests::filters::SetEnabled {
+                source: "begin",
+                filter: &filter_name,
+                enabled: true,
+            };
+            obs_client.filters().set_enabled(filter_enabled).await?;
             
-            let filter_setting_name = "Scale.X";
-            let filter_value = 100.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-            source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                "Orthographic",
-                duration,
-                obs_client,
-            ).await;
-            
+            let filter_name = "Default_3D-Transform-CornerPin";
+            let filter_enabled = obws::requests::filters::SetEnabled {
+                source: "begin",
+                filter: &filter_name,
+                enabled: true,
+            };
+            obs_client.filters().set_enabled(filter_enabled).await?;
+
             Ok(())
-            
+
         }
-        
+
         "!nerd" => {
             println!("Nerd TIME!");
-            
+ 
             let source = "begin";
-            let filter_name = "3D-Transform";
+            let filter_name = "3D-Transform-Perspective";
             let duration = 5000;
             let filter_setting_name = "Rotation.X";
             let filter_value = -45.0;
@@ -166,12 +165,12 @@ pub async fn handle_obs_commands(
             ).await;
             Ok(())
         }
-        
+
         "!chad" => {
             println!("CHAD TIME!");
-            
+
             let source = "begin";
-            let filter_name = "3D-Transform";
+            let filter_name = "3D-Transform-Perspective";
             let duration = 5000;
             let filter_setting_name = "Rotation.X";
             let filter_value = 45.0;
@@ -185,13 +184,13 @@ pub async fn handle_obs_commands(
                 obs_client,
             ).await;
             Ok(())
-        //
+            //
         }
-        
+
         // ======================== //
         // === Rapper Functions === //
         // ======================== //
-        
+
         "!reload_rapper" => {
             let source = "SpeechBubble";
             let _ = obs_source::set_enabled(
@@ -747,9 +746,6 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        "!def_ortho" => {
-            stream_fx::default_ortho(source, duration, &obs_client).await
-        }
         "!ortho" => {
             if splitmsg.len() < 3 {
                 return Ok(());

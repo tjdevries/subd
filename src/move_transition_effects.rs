@@ -175,7 +175,8 @@ pub async fn trigger_move_value_3d_transform(
     // let camera_mode_index_raw = camera_types.iter().position(|&r| r == camera_mode).unwrap();
     // let camera_mode_index = camera_mode_index_raw.try_into().unwrap();
 
-    let three_d_transform_filter_name = format!("{}-{}", filter_name, camera_mode);
+    let three_d_transform_filter_name = filter_name;
+    // let three_d_transform_filter_name = format!("{}-{}", filter_name, camera_mode);
     let filter_settings = obs_client.filters().get(&source, &three_d_transform_filter_name).await;
 
     let filt: SourceFilter = match filter_settings {
@@ -206,6 +207,7 @@ pub async fn trigger_move_value_3d_transform(
     obs_client.filters().set_settings(new_settings).await?;
 
     let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+    println!("MOVE {}", move_transition_filter_name);
     _ = move_transition::update_and_trigger_move_value_filter(
         source,
         &move_transition_filter_name,

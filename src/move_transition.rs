@@ -160,27 +160,27 @@ pub struct MoveTextFilter {
 // == Defaults ==========================================================
 // ======================================================================
 
-pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
-    let filter = String::from("3D_Orthographic");
-    MoveMultipleValuesSetting {
-        filter: Some(filter),
-        move_value_type: Some(1),
-        value_type: Some(0),
-        position_x: Some(0.0),
-        position_y: Some(0.0),
-        rotation_x: Some(0.0),
-        rotation_y: Some(0.0),
-        rotation_z: Some(0.0),
-        scale_x: Some(100.0),
-        scale_y: Some(100.0),
-        shear_x: Some(0.0),
-        shear_y: Some(0.0),
-    }
-}
+// pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
+//     let filter = String::from("3D-Transform-Orthographic");
+//     MoveMultipleValuesSetting {
+//         filter: Some(filter),
+//         move_value_type: Some(1),
+//         value_type: Some(0),
+//         position_x: Some(0.0),
+//         position_y: Some(0.0),
+//         rotation_x: Some(0.0),
+//         rotation_y: Some(0.0),
+//         rotation_z: Some(0.0),
+//         scale_x: Some(100.0),
+//         scale_y: Some(100.0),
+//         shear_x: Some(0.0),
+//         shear_y: Some(0.0),
+//     }
+// }
 
-pub fn default_perspective_settings() {}
+// pub fn default_perspective_settings() {}
 
-pub fn default_corner_pin_settings() {}
+// pub fn default_corner_pin_settings() {}
 
 // =======================================================================
 // == Utilities ==========================================================
@@ -236,7 +236,7 @@ pub async fn update_and_trigger_text_move_filter(
         overlay: None,
     };
     
-    println!("Setting new settings for Filter Name: {}", filter_name);
+    // println!("Setting new settings for Filter Name: {}", filter_name);
     obs_client.filters().set_settings(new_settings).await?;
 
     // This fixes the problem
@@ -245,7 +245,7 @@ pub async fn update_and_trigger_text_move_filter(
 
     thread::sleep(ten_millis);
 
-    println!("Filter Name: {}", filter_name);
+    // println!("Filter Name: {}", filter_name);
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,

@@ -1,5 +1,6 @@
 use crate::move_transition;
 use crate::obs;
+use std::sync::Arc;
 use anyhow::Result;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
@@ -43,7 +44,7 @@ pub struct StreamFXCornerPin {
 impl Default for StreamFXCornerPin {
     fn default() -> Self {
         StreamFXCornerPin {
-            camera_mode: Some(0),
+            camera_mode: Some(2),
             commit: "2099sdd9".to_string(),
             version: 1,
             bottom_left_x: None,
@@ -98,10 +99,10 @@ pub struct StreamFXPerspective {
 impl Default for StreamFXPerspective {
     fn default() -> Self {
         StreamFXPerspective {
-            camera_mode: Some(0),
+            camera_mode: Some(1),
             commit: "2099sdd9".to_string(),
             version: 1,
-            field_of_view: None,
+            field_of_view: Some(90.0),
             scale_x: Some(100.),
             scale_y: Some(100.),
             shear_x: Some(100.),
@@ -214,23 +215,56 @@ impl Default for StreamFXSettings {
     }
 }
 
-pub async fn default_ortho(
+async fn set_default_settings<T: Default + Serialize>(source: &str, filter_name: &str, obs_client: &OBSClient) -> Result<()> {
+    let default_settings = T::default();
+    let new_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings:  default_settings,
+        overlay: None,
+    };
+    let _ = obs_client.filters().set_settings(new_settings).await;
+    Ok(())
+}
+
+pub async fn default_perspective(
     source: &str,
     _duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let new_settings = move_transition::default_orthographic_settings();
-
-    let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "3D_Orthographic",
-        settings: new_settings,
-        overlay: None,
-    };
-    obs_client.filters().set_settings(new_settings).await?;
-
+    let filter_name = "3D-Transform-Perspective";
+    // let _ = set_default_settings::<StreamFXCornerPin>(source, filter_name, obs_client).await;
+    // let _ = set_default_settings::<StreamFXOrthographic>(source, filter_name, obs_client).await;
+    let _ = set_default_settings::<StreamFXPerspective>(source, filter_name, obs_client).await;
     Ok(())
 }
+
+pub async fn default_corner_pin(
+    source: &str,
+    _duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = "3D-Transform-CornerPin";
+    // let _ = set_default_settings::<StreamFXOrthographic>(source, filter_name, obs_client).await;
+    // let _ = set_default_settings::<StreamFXPerspective>(source, filter_name, obs_client).await;
+    let _ = set_default_settings::<StreamFXCornerPin>(source, filter_name, obs_client).await;
+    Ok(())
+}
+
+
+pub async fn default_orthographic(
+    source: &str,
+    _duration: u32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = "3D-Transform-Orthographic";
+    // let _ = set_default_settings::<StreamFXPerspective>(source, filter_name, obs_client).await;
+    // let _ = set_default_settings::<StreamFXCornerPin>(source, filter_name, obs_client).await;
+    let _ = set_default_settings::<StreamFXOrthographic>(source, filter_name, obs_client).await;
+    Ok(())
+}
+//
+
 
 pub async fn trigger_ortho(
     source: &str,
