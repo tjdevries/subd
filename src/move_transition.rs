@@ -74,6 +74,9 @@ pub struct MoveMultipleValuesSetting {
     // #[serde(default="multiple_settings_value_type_default")]
     pub move_value_type: u32,
     
+    #[serde(rename = "duration")]
+    pub duration: Option<u32>,
+    
     // What is the difference
     // #[serde(default="multiple_settings_value_type_default")]
     pub value_type: u32,
@@ -391,11 +394,12 @@ pub async fn update_and_trigger_move_value_filter(
 pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
-    _duration: u32,
+    duration: u32,
     mut new_settings: MoveMultipleValuesSetting,
     obs_client: &OBSClient,
 ) -> Result<()> {
     new_settings.move_value_type = 1;
+    new_settings.duration = Some(duration);
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: &filter_name,
