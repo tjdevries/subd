@@ -1,16 +1,4 @@
-use std::net::IpAddr;
-use std::net::Ipv4Addr;
-use std::net::SocketAddr;
-use std::net::UdpSocket;
-use std::time::Duration;
-use std::time::SystemTime;
-use std::fs::File;
-use std::io::BufReader;
-use rodio::*;
-use renet::*;
-use std::io::{BufWriter, Write};
 use anyhow::Result;
-use renet::transport::ClientAuthentication;
 use server::audio;
 use server::handlers;
 use server::uberduck;
@@ -19,48 +7,9 @@ use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_chat::send_message;
-use renet::transport::NetcodeClientTransport;
-use elevenlabs_api::{
-  tts::{TtsApi, TtsBody},
-  *,
-};
-use serde_json::json;
+use elevenlabs_api::{Elevenlabs, Auth};
 use serde::{Deserialize,Serialize};
-use std::fs;
-use rand::{thread_rng, seq::SliceRandom};
-use warp::{http::StatusCode, Filter, Rejection, Reply, reply, reply::json, Buf};
-use std::convert::Infallible;
 use std::collections::HashMap;
-use obws::Client as OBSClient;
-use std::sync::{Arc, Mutex};
-use subd_types::UberDuckRequest;
-use subd_types::Event;
-
-
-#[derive(Deserialize, Debug)]
-struct Voice {
-    voice_id: String,
-    name: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct VoiceList {
-    voices: Vec<Voice>,
-}
-
-
-fn find_random_voice() -> String {
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
-    
-    let voice_list: VoiceList = serde_json::from_str(&data).expect("JSON was not well-formatted");
-    
-    let mut rng = thread_rng();
-    let random_voice = voice_list.voices.choose(&mut rng).expect("List of voices is empty");
-
-    println!("Random Voice ID: {}, Name: {}", random_voice.voice_id, random_voice.name);
-    return random_voice.voice_id.clone()
-}
 
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
@@ -71,10 +20,6 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     ))
 }
 
-// =====================================================================
-
-
-// {"subscription":{"id":"ddfd7140-1590-1dda-ca56-61aac70f9be1","status":"enabled","type":"channel.follow","version":"1","condition":{"broadcaster_user_id":"10483564"},"transport":{"method":"webhook","callback":"null"},"created_at":"2023-11-20T22:57:37.179519123Z","cost":0},"event":{"user_id":"25578051","user_login":"testFromUser","user_name":"testFromUser","broadcaster_user_id":"10483564","broadcaster_user_login":"10483564","broadcaster_user_name":"testBroadcaster","followed_at":"2023-11-20T22:57:37.179519123Z"}}
 #[derive(Serialize, Deserialize, Debug)]
 struct EventSubRoot {
     subscription: Subscription,

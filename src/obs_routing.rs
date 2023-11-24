@@ -21,7 +21,6 @@ use obws::requests::scene_items::Scale;
 use obws;
 use std::collections::HashMap;
 use std::fs;
-use std::io::prelude::*;
 use std::process::Command;
 use std::thread;
 use std::time;
@@ -521,7 +520,7 @@ pub async fn handle_obs_commands(
         // == Blur
         // ===========================================
         "!blur" => {
-            let filter_value = splitmsg
+            let _filter_value = splitmsg
                 .get(2)
                 .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
 
@@ -1360,7 +1359,7 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
 
     // TODO: This is for saving to the file
     // which we aren't doing yet
-    let truncated_prompt = contents.chars().take(80).collect::<String>();
+    let _truncated_prompt = contents.chars().take(80).collect::<String>();
     let client = reqwest::Client::new();
 
     // let size = "1792x1024";
@@ -1415,27 +1414,3 @@ async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     
     Ok(())
 } 
-
-
-// pub async fn updates_ab_browser(obs_client: &OBSClient, contract: String, lower_bound: i64, upper_bound: i64) -> Result<()> {
-//     // let lower_bound = 457000000;
-//     // let upper_bound = 457000776;
-//     
-//     let random_number = random_in_range(lower_bound, upper_bound);
-//     println!("Random number: {}", random_number);
-//     let ab_id = random_number.to_string();
-//     let ab_url = format!("https://generator.artblocks.io/{}/{}", contract, ab_id);
-//     // let ab_url = format!("https://generator.artblocks.io/0x99a9b7c1116f9ceeb1652de04d5969cce509b069/{}", ab_id);
-//     let browser_settings = obws::requests::custom::source_settings::BrowserSource{
-//         url: ab_url.as_ref(),
-//         ..Default::default()
-//     };
-//     let set_settings = obws::requests::inputs::SetSettings{
-//         settings: &browser_settings,
-//         input: "AB-Browser",
-//         overlay: Some(true),
-//     };
-//     let _ = obs_client.inputs().set_settings(set_settings).await;
-//     // we need to call the AB command
-//     Ok(())
-// }

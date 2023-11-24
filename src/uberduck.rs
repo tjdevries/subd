@@ -142,7 +142,7 @@ impl EventHandler for ElevenLabsHandler {
             let voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
             // This needs to be Beginbot's voice
             let voice_data = find_voice_id_by_name(&voice);
-            let (global_voice_id, global_voice) = match voice_data {
+            let (_global_voice_id, global_voice) = match voice_data {
                 Some((id, name)) => {
                     (id, name)
                 },
@@ -219,7 +219,7 @@ impl EventHandler for ElevenLabsHandler {
                     text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
                 },
             ));
-            let ten_millis = time::Duration::from_millis(1000);
+            thread::sleep(ten_millis);
         }
     }
 }
@@ -365,9 +365,7 @@ impl EventHandler for OldUberDuckHandler {
                             voice_settings: None,
                         };
 
-                        // Generate the speech for the text by using the voice with id yoZ06aMxZJJ28mfd3POQ.
-                        let random_id = find_random_voice();
-                        // let tts_result = elevenlabs.tts(&tts_body, "yoZ06aMxZJJ28mfd3POQ");
+                        let _random_id = find_random_voice();
                         let tts_result = self.elevenlabs.tts(&tts_body, "");
                         let bytes = tts_result.unwrap();
 

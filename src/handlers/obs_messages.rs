@@ -1,14 +1,10 @@
 use crate::obs_routing;
-
-// use crate::twitch_notifications;
 use anyhow::Result;
 use events::EventHandler;
 use tokio::sync::broadcast;
 use subd_types::Event;
 use obws::Client as OBSClient;
 use async_trait::async_trait;
-use twitch_notifications;
-
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
 pub struct OBSMessageHandler {
@@ -25,13 +21,6 @@ impl EventHandler for OBSMessageHandler {
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         
-        println!("Trying to run handl twitch notifications");
-        // twitch_notifications::handle_twitch_notifications(tx.clone()).await;
-        // this will block??????
-        twitch_notifications::kickoff_webhook();
-        
-        println!("After handl twitch notifications");
-        
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -45,7 +34,6 @@ impl EventHandler for OBSMessageHandler {
                 .collect::<Vec<String>>();
 
             // THEORY: We don't know if this is an explicit OBS message at this stage
-            // println!("\n{:?}", msg);
             match obs_routing::handle_obs_commands(
                 &tx,
                 &self.obs_client,

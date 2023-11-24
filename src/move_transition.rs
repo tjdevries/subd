@@ -349,11 +349,6 @@ pub async fn update_and_trigger_move_value_filter(
     Ok(())
 }
 
-fn parse_into_move_multiple_values_setting(settings: &serde_json::Value) -> Result<MoveMultipleValuesSetting, serde_json::Error> {
-    serde_json::from_value(settings.clone())
-}
-
-// THIS HAS FUCKED IT UP
 pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
