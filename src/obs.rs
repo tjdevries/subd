@@ -4,6 +4,9 @@ use obws::Client as OBSClient;
 
 // TODO: We need to audit the name all of these
 
+// Dynamic Default Filters
+pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
+
 // Scenes
 pub const CHARACTERS_SCENE: &str = "Characters";
 pub const DEFAULT_SCENE: &str = "Primary";
@@ -30,8 +33,7 @@ pub const TWITCH_DEFAULT_VOICE: &str = "neo";
 // Dynamic Source
 pub const SOUNDBOARD_TEXT_SOURCE_NAME: &str = "Soundboard-Text";
 
-// Dynamic Default Filters
-pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
+// Dynamic Default Filters pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 pub const DEFAULT_SCROLL_FILTER_NAME: &str = "Default_Scroll";
 pub const DEFAULT_SDF_EFFECTS_FILTER_NAME: &str = "Default_SDF_Effects";
 pub const DEFAULT_BLUR_FILTER_NAME: &str = "Default_Blur";

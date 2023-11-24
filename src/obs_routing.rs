@@ -12,6 +12,7 @@ use crate::obs_source;
 use crate::sdf_effects;
 use crate::stream_character;
 use crate::twitch_stream_state;
+use crate::skybox;
 use crate::uberduck;
 use crate::music_scenes;
 use crate::art_blocks;
@@ -19,15 +20,11 @@ use twitch_chat::send_message;
 use obws::Client as OBSClient;
 use obws::requests::scene_items::Scale;
 use obws;
-use std::collections::HashMap;
-use std::fs;
 use std::process::Command;
 use std::thread;
 use std::time;
 use subd_types::{Event, UserMessage, TransformOBSTextRequest};
 use tokio::sync::broadcast;
-use std::io::Write;
-
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
 pub async fn handle_obs_commands(
@@ -806,7 +803,7 @@ pub async fn handle_obs_commands(
             let skybox_id: &str = splitmsg.get(1).unwrap_or(&default_skybox_id);
             let file_path =
                 "/home/begin/code/BeginGPT/tmp/current/previous.txt";
-            if let Err(e) = write_to_file(file_path, &skybox_id) {
+            if let Err(e) = skybox::write_to_file(file_path, &skybox_id) {
                 eprintln!("Error writing to file: {}", e);
             }
 
@@ -834,67 +831,6 @@ pub async fn handle_obs_commands(
             }
             Ok(())
         }
-        // One is the name of an OBS Filter
-        // One is the name of a custom websocket message
-        "!bar1" => {
-            _ = trigger_obs_move_filter_and_websocket(
-                &obs_client,
-                "BeginBar1",
-                "bar1",
-            )
-            .await;
-            Ok(())
-        }
-
-        // Examples:
-        //           !goto OBS_POSITION OPTIONAL_SKYBOX_ID
-        //           !goto bar1
-        //           !goto bar1 2451596
-        //
-        //           We save bar1 (which is a set of coordinates for the pannellum)
-        "!goto" => {
-            let default_skybox_scene = String::from("office");
-            let skybox_scene: &str =
-                splitmsg.get(1).unwrap_or(&default_skybox_scene);
-
-            let default_skybox_id = String::from("");
-            let skybox_id: &str = splitmsg.get(2).unwrap_or(&default_skybox_id);
-
-            println!("Triggering Scene: {} {}", skybox_scene, skybox_id);
-            // we need to look up if a file exists
-            _ = trigger_scene(&obs_client, &skybox_scene, skybox_id).await;
-            Ok(())
-        }
-
-        "!bar" => {
-            _ = trigger_obs_move_filter_and_websocket(
-                &obs_client,
-                "BeginBar2",
-                "bar",
-            )
-            .await;
-            Ok(())
-        }
-
-        "!lunch" => {
-            _ = trigger_obs_move_filter_and_websocket(
-                &obs_client,
-                "BeginOffice2",
-                "lunch",
-            )
-            .await;
-            Ok(())
-        }
-
-        "!office" => {
-            _ = trigger_obs_move_filter_and_websocket(
-                &obs_client,
-                "BeginOffice1",
-                "office",
-            )
-            .await;
-            Ok(())
-        }
 
         "!duet" => {
             // let prompt = splitmsg
@@ -913,9 +849,6 @@ pub async fn handle_obs_commands(
 
         // We need to eventually take in style IDs
         "!skybox" => {
-            
-            // So this is the skybox command
-            // 
             println!("Trying Skybox");
             
             let skybox_info = splitmsg
@@ -947,7 +880,7 @@ pub async fn handle_obs_commands(
                 .collect::<Vec<String>>()
                 .join(" ");
             let file_path = "/home/begin/code/BeginGPT/tmp/current/remix.txt";
-            if let Err(e) = write_to_file(file_path, &remix_info) {
+            if let Err(e) = skybox::write_to_file(file_path, &remix_info) {
                 eprintln!("Error writing to file: {}", e);
             }
 
@@ -1014,54 +947,6 @@ pub async fn handle_obs_commands(
 
             // This
             // TODO: Extract out into function
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                "skybox",
-                false,
-                &obs_client,
-            )
-            .await;
-            let ten_millis = time::Duration::from_millis(300);
-            thread::sleep(ten_millis);
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                "skybox",
-                true,
-                &obs_client,
-            )
-            .await;
-            Ok(())
-        }
-
-        "!old_skybox" => {
-            println!("Running Skybox for {}", msg.user_name);
-
-            let content = msg.contents;
-            let file_path = "/home/begin/code/BeginGPT/tmp/user_skybox.txt";
-            if let Err(e) = write_to_file(file_path, &content) {
-                eprintln!("Error writing to file: {}", e);
-            }
-
-            let go_executable_path =
-                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
-            let argument_prompt_file = "-prompt_file";
-            let prompt_file_path = file_path;
-
-            // how do we direct standard out
-            let output = Command::new(go_executable_path)
-                .arg(argument_prompt_file)
-                .arg(prompt_file_path)
-                .output()
-                .expect("Failed to execute Go program.");
-
-            if output.status.success() {
-                let result = String::from_utf8_lossy(&output.stdout);
-                println!("Output: {}", result);
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                eprintln!("Error: {}", error);
-            }
-
             let _ = obs_source::set_enabled(
                 obs::DEFAULT_SCENE,
                 "skybox",
@@ -1187,94 +1072,4 @@ pub async fn handle_obs_commands(
         }
     }
     Ok(())
-    // Just put it here!!!!
-}
-
-fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
-    let mut file = fs::File::create(file_path)?;
-    file.write_all(content.as_bytes())?;
-    Ok(())
-}
-
-// OBS_filter_name
-// skybox_id
-pub async fn trigger_scene(
-    obs_client: &OBSClient,
-    filter_name: &str,
-    skybox_id: &str,
-) -> Result<()> {
-    let scene = "Primary";
-    // TODO: make this dynamic
-    // let content = "lunch";
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: scene,
-        filter: &filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-    let file_path = "/home/begin/code/BeginGPT/tmp/current/move.txt";
-
-    let skybox_id_map = HashMap::from([
-        ("office".to_string(), "2443168".to_string()),
-        ("office1".to_string(), "2443168".to_lowercase()),
-        ("bar1".to_string(), "2451051".to_string()),
-        ("bar".to_string(), "2449796".to_string()),
-    ]);
-
-
-    let skybox_path = if skybox_id == "" {
-        let new_skybox_id = &skybox_id_map[filter_name.clone()];
-        format!(
-            "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
-            new_skybox_id
-        )
-    } else {
-        format!(
-            "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
-            skybox_id
-        )
-    };
-
-    // This URL is rare
-    // unless you look up ID based on
-    println!("Checking for Archive: {}", skybox_path);
-    let skybox_url_exists = std::path::Path::new(&skybox_path).exists();
-
-    if skybox_url_exists {
-        let url = fs::read_to_string(skybox_path).expect("Can read file");
-        let new_skybox_command = format!("{} {}", &filter_name, url);
-        if let Err(e) = write_to_file(file_path, &new_skybox_command) {
-            eprintln!("Error writing to file: {}", e);
-        }
-    } else {
-        if let Err(e) = write_to_file(file_path, &filter_name) {
-            eprintln!("Error writing to file: {}", e);
-        }
-    }
-
-    return Ok(());
-}
-
-pub async fn trigger_obs_move_filter_and_websocket(
-    obs_client: &OBSClient,
-    filter_name: &str,
-    content: &str,
-) -> Result<()> {
-    let scene = "Primary";
-    // TODO: make this dynamic
-    // let content = "lunch";
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: scene,
-        filter: &filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-    let file_path = "/home/begin/code/BeginGPT/tmp/current/move.txt";
-
-    if let Err(e) = write_to_file(file_path, &content) {
-        eprintln!("Error writing to file: {}", e);
-    }
-    return Ok(());
 }
