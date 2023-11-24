@@ -88,11 +88,10 @@ impl EventHandler for TwitchEventSubHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
+        _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         
         let clonable_obs_client = Arc::new(self.obs_client);
-
 
         // Define the route
         let app = Router::new()
@@ -114,7 +113,7 @@ impl EventHandler for TwitchEventSubHandler {
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(obs_client): Extension<Arc<OBSClient>>,
-    Extension(tx): Extension<broadcast::Sender<Event>>,
+    Extension(_tx): Extension<broadcast::Sender<Event>>,
     Extension(twitch_client): Extension<TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>>,
 ) -> impl IntoResponse {
 
@@ -138,8 +137,6 @@ async fn post_request(
                     Some(event) => {
                         match event.reward {
                             Some(reward) => {
-                                    println!("REWARD TITLE: {}", reward.title);
-
                                     let command = reward.title.as_ref();
                                     match command {
                                         "gallery" => {
@@ -149,16 +146,9 @@ async fn post_request(
                                             let _ = obs_scenes::change_scene(&c, "Primary").await;
                                         },
                                             
-                                        // I should be reading this from a Map, like the one in
-                                        // obs_routing.rs
-                                        // "ken" | "drama" | "yoga" | "news" | "romcom" | "sigma" | "hospital" | "greed" | "sexy" | "chef"  => {
-                                        //     let _ = send_message(&twitch_client, format!("!{}", reward.title)).await;
-                                        //     // let _ = send_message(&twitch_client, "!ken").await;
-                                        // },
-                                                
                                         _ => {
                                             for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
-                                                println!("CMD: {}", reward.title);
+                                                println!("Reward Title {} - Music: {:?}", reward.title, scene.music);
                                                 
                                                 let cmd_no_bang = &cmd[1..];
 
@@ -178,23 +168,6 @@ async fn post_request(
                 },
                 _ => println!("nothing"),
             };
-            
-           // let _ = send_message(&twitch_client, "I assure we are quite operational.").await;
-           //  
-           // let _ = obs_source::set_enabled(
-           //      "Primary",
-           //      "Dalle-Gen-1",
-           //      true,
-           //      &c,
-           //  ).await;
-           //  
-           // let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
-           //          message: "woah there budy".to_string(),
-           //          voice_text: "waoh there buddy".to_string(),
-           //          voice: "Ethan".to_string(),
-           //          username: "beginbot".to_string(),
-           //          source: None,
-           //  }));
             
 
             "".to_string()
