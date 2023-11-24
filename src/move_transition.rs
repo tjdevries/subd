@@ -396,6 +396,7 @@ fn parse_into_move_multiple_values_setting(settings: &serde_json::Value) -> Resu
     serde_json::from_value(settings.clone())
 }
 
+// THIS HAS FUCKED IT UP
 pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
@@ -404,69 +405,16 @@ pub async fn update_and_trigger_move_values_filter(
     obs_client: &OBSClient,
 ) -> Result<()> {
     new_settings.move_value_type = 1;
+    // new_settings.value_type = 1;
     new_settings.duration = Some(duration);
-
-    // WE NEED TO READ IN THE 4 Previous States
-    let og_filter_settings =
-        match obs_client.filters().get(&source, &filter_name).await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let l_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-l").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let k_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-k").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let j_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-j").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-
-    // =============================================================
-
-    // This is some hack shit
-    let mut move_multiple_values_setting = parse_into_move_multiple_values_setting(&og_filter_settings.settings)?;
-    // move_multiple_values_setting.scale_x = Some(200.0);
-
-    let l_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-;",
-        settings: l_filter_settings,
-        overlay: None,
-    };
-    let k_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-l",
-        settings: k_filter_settings,
-        overlay: None,
-    };
-    let j_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-k",
-        settings: j_filter_settings,
-        overlay: None,
-    };
-    let og_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: "Perspective-Cache-j",
-        settings: move_multiple_values_setting,
-        overlay: None,
-    };
     
-    // ================================================================
-    
-    let _ = obs_client.filters().set_settings(og_settings).await;
-    let _ = obs_client.filters().set_settings(j_settings).await;
-    let _ = obs_client.filters().set_settings(k_settings).await;
-    let _ = obs_client.filters().set_settings(l_settings).await;
-    
-    // Trigger the filter
+    let settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    let _ = obs_client.filters().set_settings(settings).await;
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,
@@ -476,6 +424,67 @@ pub async fn update_and_trigger_move_values_filter(
     
     thread::sleep(Duration::from_millis(400));
 
+
+    // // WE NEED TO READ IN THE 4 Previous States
+    // let og_filter_settings =
+    //     match obs_client.filters().get(&source, &filter_name).await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // let l_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-l").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // let k_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-k").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+    // let j_filter_settings =
+    //     match obs_client.filters().get(&source, "Perspective-Cache-j").await {
+    //         Ok(val) => Ok(val),
+    //         Err(err) => Err(err),
+    //     }?;
+
+    // =============================================================
+
+    // // This is some hack shit
+    // let move_multiple_values_setting = parse_into_move_multiple_values_setting(&og_filter_settings.settings)?;
+    // // move_multiple_values_setting.scale_x = Some(200.0);
+    //
+    // let l_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-;",
+    //     settings: l_filter_settings,
+    //     overlay: None,
+    // };
+    // let k_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-l",
+    //     settings: k_filter_settings,
+    //     overlay: None,
+    // };
+    // let j_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-k",
+    //     settings: j_filter_settings,
+    //     overlay: None,
+    // };
+    // let og_settings = obws::requests::filters::SetSettings {
+    //     source: &source,
+    //     filter: "Perspective-Cache-j",
+    //     settings: move_multiple_values_setting,
+    //     overlay: None,
+    // };
+    // 
+    // ================================================================
+    
+    // let _ = obs_client.filters().set_settings(j_settings).await;
+    // let _ = obs_client.filters().set_settings(k_settings).await;
+    // let _ = obs_client.filters().set_settings(l_settings).await;
+    
+    // Trigger the filter
     Ok(())
 }
 
@@ -567,6 +576,5 @@ pub async fn fetch_source_settings(
         }),
         transform_text: Some(transform_text.to_string()),
     };
-
-    Ok(new_settings)
+    return Ok(new_settings);
 }
