@@ -311,13 +311,6 @@ pub async fn move_with_move_source(
 // == MOVE SOURCE ====================================================================
 // ===================================================================================
 
-//
-//         Old Filter Details: "Move_3D-Transform"
-//
-//         New Filter Details:
-//         MoveSingleValueSetting { source: None, filter: "Blur", duration: Some(3000), move_value_type: None, setting_float: 45.0, setting_float_max: 0.0, setting_float_min: 0.0, setting_name: "Rotation.X", value_type: 0, filter_blur_size: None, glow_inner: None, glow_outer: None, shadow_outer: None, shadow_inner: None, outline: None }
-// Filter Name: TransformSoundboard-Text
-
 pub async fn update_and_trigger_move_value_filter(
     source: &str,
     filter_name: &str,
@@ -405,9 +398,32 @@ pub async fn update_and_trigger_move_values_filter(
     obs_client: &OBSClient,
 ) -> Result<()> {
     new_settings.move_value_type = 1;
-    // new_settings.value_type = 1;
+    new_settings.value_type = 1;
     new_settings.duration = Some(duration);
     
+    // First we get all the values from the current Move filters
+    let og_filter_settings =
+        match obs_client.filters().get(&source, &filter_name).await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let j_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-j").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let k_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-k").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+    let l_filter_settings =
+        match obs_client.filters().get(&source, "Perspective-Cache-l").await {
+            Ok(val) => Ok(val),
+            Err(err) => Err(err),
+        }?;
+
+    // We then update all the Move filters
     let settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: filter_name,
@@ -415,6 +431,40 @@ pub async fn update_and_trigger_move_values_filter(
         overlay: None,
     };
     let _ = obs_client.filters().set_settings(settings).await;
+    
+    let new_last_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-;",
+        settings: l_filter_settings.settings,
+        overlay: None,
+    };
+    let new_l_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-l",
+        settings: k_filter_settings.settings,
+        overlay: None,
+    };
+    let new_k_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-k",
+        settings: j_filter_settings.settings,
+        overlay: None,
+    };
+    let new_j_settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: "Perspective-Cache-j",
+        settings: og_filter_settings.settings,
+        overlay: None,
+    };
+    
+    
+    let _ = obs_client.filters().set_settings(new_last_settings).await;
+    let _ = obs_client.filters().set_settings(new_l_settings).await;
+    let _ = obs_client.filters().set_settings(new_k_settings).await;
+    let _ = obs_client.filters().set_settings(new_j_settings).await;
+
+    
+    // Trigger the main move filter filter
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
         filter: filter_name,
@@ -423,66 +473,6 @@ pub async fn update_and_trigger_move_values_filter(
     obs_client.filters().set_enabled(filter_enabled).await?;
     
     thread::sleep(Duration::from_millis(400));
-
-
-    // // WE NEED TO READ IN THE 4 Previous States
-    // let og_filter_settings =
-    //     match obs_client.filters().get(&source, &filter_name).await {
-    //         Ok(val) => Ok(val),
-    //         Err(err) => Err(err),
-    //     }?;
-    // let l_filter_settings =
-    //     match obs_client.filters().get(&source, "Perspective-Cache-l").await {
-    //         Ok(val) => Ok(val),
-    //         Err(err) => Err(err),
-    //     }?;
-    // let k_filter_settings =
-    //     match obs_client.filters().get(&source, "Perspective-Cache-k").await {
-    //         Ok(val) => Ok(val),
-    //         Err(err) => Err(err),
-    //     }?;
-    // let j_filter_settings =
-    //     match obs_client.filters().get(&source, "Perspective-Cache-j").await {
-    //         Ok(val) => Ok(val),
-    //         Err(err) => Err(err),
-    //     }?;
-
-    // =============================================================
-
-    // // This is some hack shit
-    // let move_multiple_values_setting = parse_into_move_multiple_values_setting(&og_filter_settings.settings)?;
-    // // move_multiple_values_setting.scale_x = Some(200.0);
-    //
-    // let l_settings = obws::requests::filters::SetSettings {
-    //     source: &source,
-    //     filter: "Perspective-Cache-;",
-    //     settings: l_filter_settings,
-    //     overlay: None,
-    // };
-    // let k_settings = obws::requests::filters::SetSettings {
-    //     source: &source,
-    //     filter: "Perspective-Cache-l",
-    //     settings: k_filter_settings,
-    //     overlay: None,
-    // };
-    // let j_settings = obws::requests::filters::SetSettings {
-    //     source: &source,
-    //     filter: "Perspective-Cache-k",
-    //     settings: j_filter_settings,
-    //     overlay: None,
-    // };
-    // let og_settings = obws::requests::filters::SetSettings {
-    //     source: &source,
-    //     filter: "Perspective-Cache-j",
-    //     settings: move_multiple_values_setting,
-    //     overlay: None,
-    // };
-    // 
-    // ================================================================
-    
-    // let _ = obs_client.filters().set_settings(j_settings).await;
-    // let _ = obs_client.filters().set_settings(k_settings).await;
-    // let _ = obs_client.filters().set_settings(l_settings).await;
     
     // Trigger the filter
     Ok(())

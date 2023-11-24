@@ -172,12 +172,17 @@ pub async fn handle_obs_commands(
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
             
+            // See the settings aren't correct
+            // We need to convert from the settings of the filter
             let new_settings = move_transition::MoveMultipleValuesSetting{
                 filter: Some(filter_name.to_string()),
                 scale_x: Some(125.3),
                 scale_y: Some(140.6),
                 position_y: Some(40.0),
                 rotation_x: Some(-51.4),
+
+                // Added this to test
+                field_of_view: Some(90.0),
                 ..Default::default()
             };
 
@@ -1220,36 +1225,35 @@ pub async fn handle_obs_commands(
             let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
             if command == "!sigma" {
                 println!("We are in Chad mode!");
+                let source = "begin";
+                let filter_name = "3D-Transform-Perspective";
+                
+                let new_settings = move_transition::MoveMultipleValuesSetting{
+                    filter: Some(filter_name.to_string()),
+                    scale_x: Some(217.0),
+                    scale_y: Some(200.0),
+                    rotation_x: Some(50.0),
+                    field_of_view: Some(108.0),
+
+                    // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                    // you life
+                    position_y: Some(0.0),
+                    ..Default::default()
+                };
+
+                dbg!(&new_settings);
+                let three_d_transform_filter_name = filter_name;
+                let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+                
+                _ = move_transition::update_and_trigger_move_values_filter(
+                    source,
+                    &move_transition_filter_name,
+                    duration,
+                    new_settings,
+                    &obs_client,
+                )
+                .await;
             }
-            
-            let source = "begin";
-            let filter_name = "3D-Transform-Perspective";
-            
-            let new_settings = move_transition::MoveMultipleValuesSetting{
-                filter: Some(filter_name.to_string()),
-                scale_x: Some(217.0),
-                scale_y: Some(200.0),
-                rotation_x: Some(50.0),
-                field_of_view: Some(108.0),
-
-                // If a previous Move_transition set this and you don't reset it, you're gonna hate
-                // you life
-                position_y: Some(0.0),
-                ..Default::default()
-            };
-
-            dbg!(&new_settings);
-            let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
-            
-            _ = move_transition::update_and_trigger_move_values_filter(
-                source,
-                &move_transition_filter_name,
-                duration,
-                new_settings,
-                &obs_client,
-            )
-            .await;
 
 
             // Set the Voice for Begin, which is the source of the global voice
