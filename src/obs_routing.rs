@@ -106,7 +106,6 @@ pub async fn handle_obs_commands(
                 filter_name,
                 filter_setting_name,
                 filter_value,
-                "Orthographic",
                 duration,
                 obs_client,
             ).await;
@@ -146,6 +145,8 @@ pub async fn handle_obs_commands(
 
         }
         
+        // This is a demonstration of updating a single Setting
+        // We need to make sure it works going back forth for updating multi-effects
         "!nerd3" => {
             println!("Nerd TIME!");
  
@@ -159,7 +160,6 @@ pub async fn handle_obs_commands(
                 filter_name,
                 filter_setting_name,
                 filter_value,
-                "Perspective",
                 duration,
                 obs_client,
             ).await;

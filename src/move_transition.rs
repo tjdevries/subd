@@ -6,7 +6,7 @@ use std::fs;
 use std::thread;
 use std::time;
 use std::time::Duration;
-use serde_json::Value;
+
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
@@ -55,16 +55,6 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
-
-// impl Default for MoveMultipleValuesSetting {
-//     fn default() -> Self {
-//         MoveMultipleValuesSetting {
-//             move_value_type: 1
-//         }
-//     }
-// }
-//
-// fn multiple_settings_value_type_default() -> u32 { 1 }
 
 // we create Json of What we want
 // we then convert to a MoveMultipleStruct

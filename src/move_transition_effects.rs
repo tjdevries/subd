@@ -17,10 +17,7 @@ pub async fn top_right(
     let new_settings =
         move_transition::custom_filter_settings(base_settings, 1662.0, 13.0);
     let filter_name = format!("Move_{}", scene_item);
-    // let filter_name = format!("Move_Source_{}", scene_item);
-    println!("filter_name: {}", filter_name);
 
-    // So what's the problem???
     move_transition::move_with_move_source(
         scene,
         &filter_name,
@@ -41,9 +38,7 @@ pub async fn bottom_right(
 
     let new_settings =
         move_transition::custom_filter_settings(settings, 12.0, 878.0);
-    // let filter_name = format!("Move_Source_{}", scene_item);
     let filter_name = format!("Move_{}", scene_item);
-    println!("filter_name: {}", filter_name);
     move_transition::move_with_move_source(
         scene,
         &filter_name,
@@ -53,8 +48,9 @@ pub async fn bottom_right(
     .await
 }
 
+// ===========================================================
+
 // SPIN
-//
 pub async fn spin(
     source: &str,
     filter_setting_name: &str,
@@ -166,17 +162,11 @@ pub async fn trigger_move_value_3d_transform(
     filter_name: &str,
     filter_setting_name: &str,
     filter_value: f32,
-    camera_mode: &str,
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    
-    // let camera_types = vec!["Orthographic", "Perspective", "CornerPin"];
-    // let camera_mode_index_raw = camera_types.iter().position(|&r| r == camera_mode).unwrap();
-    // let camera_mode_index = camera_mode_index_raw.try_into().unwrap();
 
     let three_d_transform_filter_name = filter_name;
-    // let three_d_transform_filter_name = format!("{}-{}", filter_name, camera_mode);
     let filter_settings = obs_client.filters().get(&source, &three_d_transform_filter_name).await;
 
     let filt: SourceFilter = match filter_settings {
@@ -185,7 +175,7 @@ pub async fn trigger_move_value_3d_transform(
     };
     println!("\nOG 3D Transform Filter Settings: {:?}", filt);
     
-    let mut new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
+    let new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
         filt.settings,
     ) {
         Ok(val) => val,
