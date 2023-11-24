@@ -1,6 +1,5 @@
 use crate::move_transition;
 use crate::obs;
-use std::sync::Arc;
 use anyhow::Result;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
