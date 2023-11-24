@@ -10,7 +10,6 @@ use crate::obs_scenes;
 use crate::obs_source;
 use crate::sdf_effects;
 use crate::stream_character;
-use crate::stream_fx;
 use crate::twitch_stream_state;
 use crate::uberduck;
 use crate::music_scenes;
@@ -783,66 +782,6 @@ pub async fn handle_obs_commands(
 
             move_transition_effects::spin(
                 source,
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!ortho" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            // TODO: This should be done with unwrap
-            // What is the default???
-            let filter_setting_name = &splitmsg[2];
-
-            stream_fx::trigger_ortho(
-                source,
-                "3D_Orthographic",
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!perp" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            // TODO: This should be done with unwrap
-            // What is the default???
-            let filter_setting_name = &splitmsg[2];
-
-            stream_fx::trigger_ortho(
-                source,
-                "3D_Perspective",
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!corner" => {
-            if splitmsg.len() < 3 {
-                return Ok(());
-            };
-
-            // TODO: This should be done with unwrap
-            // What is the default???
-            let filter_setting_name = &splitmsg[2];
-
-            stream_fx::trigger_ortho(
-                source,
-                "3D_CornerPin",
                 filter_setting_name,
                 filter_value,
                 duration,
