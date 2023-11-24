@@ -2,6 +2,7 @@ pub mod audio;
 pub mod bootstrap;
 pub mod commands;
 pub mod move_transition;
+pub mod dalle;
 pub mod move_transition_bootstrap;
 pub mod move_transition_effects;
 pub mod obs;
