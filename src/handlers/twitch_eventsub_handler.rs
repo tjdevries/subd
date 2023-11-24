@@ -1,6 +1,4 @@
 use anyhow::Result;
-use std::sync::Mutex;
-use std::sync::MutexGuard;
 use twitch_chat::send_message;
 use std::sync::Arc;
 use events::EventHandler;
@@ -9,18 +7,15 @@ use subd_types::Event;
 use obws::Client as OBSClient;
 use async_trait::async_trait;
 use std::net::SocketAddr;
-use crate::obs;
-use crate::obs_source;
 use crate::music_scenes;
 use crate::obs_scenes;
 use serde::{Deserialize,Serialize};
-use std::collections::HashMap;
 use axum::{
-    routing::{get, post},
     Router, Server, Extension, Json,
     http::StatusCode,
     response::IntoResponse,
 };
+use axum::routing::post;
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
 pub struct TwitchEventSubHandler {

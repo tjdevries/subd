@@ -171,32 +171,6 @@ pub struct MoveTextFilter {
     pub move_value_type: Option<u32>,
 }
 
-// ======================================================================
-// == Defaults ==========================================================
-// ======================================================================
-
-// pub fn default_orthographic_settings() -> MoveMultipleValuesSetting {
-//     let filter = String::from("3D-Transform-Orthographic");
-//     MoveMultipleValuesSetting {
-//         filter: Some(filter),
-//         move_value_type: Some(1),
-//         value_type: Some(0),
-//         position_x: Some(0.0),
-//         position_y: Some(0.0),
-//         rotation_x: Some(0.0),
-//         rotation_y: Some(0.0),
-//         rotation_z: Some(0.0),
-//         scale_x: Some(100.0),
-//         scale_y: Some(100.0),
-//         shear_x: Some(0.0),
-//         shear_y: Some(0.0),
-//     }
-// }
-
-// pub fn default_perspective_settings() {}
-
-// pub fn default_corner_pin_settings() {}
-
 // =======================================================================
 // == Utilities ==========================================================
 // =======================================================================

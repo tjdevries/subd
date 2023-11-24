@@ -22,3 +22,4 @@ pub mod user_messages;
 pub mod users;
 pub mod music_scenes;
 pub mod handlers;
+pub mod art_blocks;
