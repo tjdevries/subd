@@ -25,7 +25,7 @@ use subd_types::Event;
 use subd_types::SourceVisibilityRequest;
 use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
-use subd_types::UberDuckRequest;
+use subd_types::ElevenLabsRequest;
 use tokio::sync::broadcast;
 
 
@@ -111,7 +111,8 @@ impl EventHandler for ElevenLabsHandler {
         loop {
             let event = rx.recv().await?;
             let msg = match event {
-                Event::UberDuckRequest(msg) => msg,
+                // TODO: rename UberDuckRequest to ElevenLabsRequest
+                Event::ElevenLabsRequest(msg) => msg,
                 _ => continue,
             };
 
@@ -136,11 +137,7 @@ impl EventHandler for ElevenLabsHandler {
                 }
             };
             
-                
-            
-            // 
             let voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
-            // This needs to be Beginbot's voice
             let voice_data = find_voice_id_by_name(&voice);
             let (_global_voice_id, global_voice) = match voice_data {
                 Some((id, name)) => {
@@ -189,7 +186,6 @@ impl EventHandler for ElevenLabsHandler {
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
 
             // We are supressing a whole bunch of alsa message
-            let backup2 = redirect::redirect_stdout().expect("Failed to redirect stdout");
             let backup = redirect::redirect_stderr().expect("Failed to redirect stderr");
             
             let (_stream, stream_handle) =
@@ -211,7 +207,6 @@ impl EventHandler for ElevenLabsHandler {
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
             redirect::restore_stderr(backup);
-            redirect::restore_stdout(backup2);
             
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
@@ -236,7 +231,7 @@ impl EventHandler for OldUberDuckHandler {
         loop {
             let event = rx.recv().await?;
             let msg = match event {
-                Event::UberDuckRequest(msg) => msg,
+                Event::ElevenLabsRequest(msg) => msg,
                 _ => continue,
             };
 
@@ -491,7 +486,7 @@ pub async fn talk_in_voice(
 
     let voice_text = spoken_string.clone();
     println!("We trying for the voice: {} - {}", voice, voice_text);
-    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+    let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
         voice: voice.to_string(),
         message: seal_text,
         voice_text,
@@ -523,7 +518,7 @@ pub async fn use_random_voice(
         text_source: "Soundboard-Text".to_string(),
     }));
 
-    let _ = tx.send(Event::UberDuckRequest(UberDuckRequest {
+    let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
         voice: random_voice.name.clone(),
         message: speech_bubble_text,
         voice_text,

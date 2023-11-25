@@ -235,7 +235,7 @@ impl EventHandler for SoundHandler {
                     println!("\n\tvoice: {}", voice);
 
                     // The voice here isn't be respected
-                    let _ = tx.send(Event::UberDuckRequest(subd_types::UberDuckRequest {
+                    let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
                         voice,
                         message: speech_bubble_text,
                         voice_text,

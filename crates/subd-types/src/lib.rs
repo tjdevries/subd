@@ -42,9 +42,7 @@ pub struct UserMessage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UberDuckRequest {
-    // Maybe Make this Optional
-    // pub voice: String,
+pub struct ElevenLabsRequest {
     pub voice_text: String,
     pub message: String,
     pub username: String,
@@ -89,12 +87,12 @@ pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
 
-    UberDuckRequest(UberDuckRequest),
+    ElevenLabsRequest(ElevenLabsRequest),
     TransformOBSTextRequest(TransformOBSTextRequest),
-    TriggerHotkeyRequest(TriggerHotkeyRequest),
     StreamCharacterRequest(StreamCharacterRequest),
     SourceVisibilityRequest(SourceVisibilityRequest),
     SkyboxRequest(SkyboxRequest),
+    TriggerHotkeyRequest(TriggerHotkeyRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general
