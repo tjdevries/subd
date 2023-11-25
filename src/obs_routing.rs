@@ -755,9 +755,6 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
         // ===============================================================================================
 
-        // Perspective
-        // Corner Pin
-        // Orthographic
         "!spin" | "!spinx" | "spiny" => {
             let default_filter_setting_name = String::from("z");
             let filter_setting_name =
@@ -813,7 +810,6 @@ pub async fn handle_obs_commands(
 
         // This needs to take an ID
         "!styles" => {
-            // HELLO
             let go_executable_path =
                 "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
             let styles_flag = "-styles";
@@ -829,21 +825,6 @@ pub async fn handle_obs_commands(
                 let error = String::from_utf8_lossy(&output.stderr);
                 eprintln!("Error: {}", error);
             }
-            Ok(())
-        }
-
-        "!duet" => {
-            // let prompt = splitmsg
-            //     .clone()
-            //     .into_iter()
-            //     .skip(1)
-            //     .collect::<Vec<String>>()
-            //     .join(" ");
-
-            // We need to use the "duet primer"
-            //
-            // we need to save in /tmp/current/duet.txt
-            // I need to pass this prompt to chatgpt4
             Ok(())
         }
 
@@ -888,81 +869,6 @@ pub async fn handle_obs_commands(
 
             // OK NOw
             // Just save this
-            Ok(())
-        }
-
-        // !remix REMIX_ID STYLE_ID "WRITE YOUR PROMPT HERE"
-        "!old_remix" => {
-            println!("Running Skybox Remix for {}", msg.user_name);
-
-            let go_executable_path =
-                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
-
-            let default_remix_id = "2295844".to_string();
-            let default_prompt = "danker".to_string();
-
-            let remix_flag = "-remix";
-            let remix_id_flag = "-remix_id";
-            let prompt_flag = "-prompt";
-            let style_flag = "-style";
-
-            // How can I check if the "2" argument is a number
-            let remix_id: &str = splitmsg.get(1).unwrap_or(&default_remix_id);
-
-            let style_id_str: &str = splitmsg.get(2).unwrap_or(&default_prompt);
-            let style_id_int: Result<i32, _> = style_id_str.parse();
-
-            let style_id = match style_id_int {
-                Ok(id) => id,
-                Err(_) => 0,
-            };
-
-            let prompt_skip = if style_id == 0 { 2 } else { 3 };
-            let prompt = splitmsg
-                .clone()
-                .into_iter()
-                .skip(prompt_skip)
-                .collect::<Vec<String>>()
-                .join(" ");
-
-            // ./bin/GoBeginGPT -remix -remix_id=2295844 -style=20 -prompt="Office covered in Dank Weed"
-            let output = Command::new(go_executable_path)
-                .arg(remix_flag)
-                .arg(remix_id_flag)
-                .arg(remix_id)
-                .arg(style_flag)
-                .arg(style_id_str.clone())
-                .arg(prompt_flag)
-                .arg(prompt)
-                .output()
-                .expect("Failed to execute Go program.");
-
-            if output.status.success() {
-                let result = String::from_utf8_lossy(&output.stdout);
-                println!("Output: {}", result);
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                eprintln!("Error: {}", error);
-            }
-
-            // This
-            // TODO: Extract out into function
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                "skybox",
-                false,
-                &obs_client,
-            )
-            .await;
-            let ten_millis = time::Duration::from_millis(300);
-            thread::sleep(ten_millis);
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                "skybox",
-                true,
-                &obs_client,
-            )
-            .await;
             Ok(())
         }
 

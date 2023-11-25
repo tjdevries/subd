@@ -203,7 +203,9 @@ impl EventHandler for ElevenLabsHandler {
                 },
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-            // sink.set_volume(0.7);
+
+            // TODO: Make this  updatable from the Database
+            sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
@@ -380,7 +382,7 @@ impl EventHandler for OldUberDuckHandler {
                         // Can we make this quieter?
                         let sink =
                             rodio::Sink::try_new(&stream_handle).unwrap();
-                        sink.set_volume(0.9);
+                        // sink.set_volume(0.9);
                         let file = BufReader::new(
                             File::open(audio_file_name).unwrap(),
                         );
