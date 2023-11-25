@@ -57,14 +57,16 @@ pub async fn dalle_time(contents: String, username: String) -> Result<(), reqwes
                 println!("Image URL: {} | ", image_data.url.clone());
                 let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
                 
+                // Features to Save:
                 // username
                 // resolution
                 // prompt
                 // timestamp
                 // let username = "default";
                 
+                // Is there a subsecond
                 let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-                let unique_identifier = format!("{}_{}", timestamp, username);
+                let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
                 println!("Contents: {}", contents);
                 let archive_file = format!("./archive/{}.png", unique_identifier);
                 let mut file = File::create(archive_file).unwrap();
