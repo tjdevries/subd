@@ -3,6 +3,7 @@ use reqwest;
 use std::env;
 use std::fs::File;
 use std::io::Write;
+use std::fs::OpenOptions;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
@@ -50,6 +51,12 @@ pub async fn dalle_time(contents: String, username: String) -> Result<(), reqwes
 
     let image_response: Result<ImageResponse, _> = serde_json::from_str(&text);
 
+    let mut csv_file = OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true) // This will create the file if it doesn't exist
+        .open("output.csv")
+        .unwrap();
     match image_response {
         Ok(response) => {
             for (index, image_data) in response.data.iter().enumerate() {
@@ -72,7 +79,6 @@ pub async fn dalle_time(contents: String, username: String) -> Result<(), reqwes
                 let mut file = File::create(archive_file).unwrap();
                 file.write_all(&image_data).unwrap();
                 
-                let mut csv_file = File::create("output.csv").unwrap();
                 writeln!(csv_file, "{},{}", unique_identifier, contents).unwrap();
 
                 
