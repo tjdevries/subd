@@ -153,19 +153,19 @@ async fn main() -> Result<()> {
     // Uberduck handles voice messages
     event_loop.push(uberduck::ElevenLabsHandler { pool, sink, elevenlabs });
 
-    // // OBS Hotkeys are controlled here
+    // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::trigger_obs_hotkey::TriggerHotkeyHandler { obs_client });
-    //
-    // // OBS Text is controlled here
+
+    // OBS Text is controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::transform_obs_test::TransformOBSTextHandler { obs_client });
-    //
-    // // OBS Sources are controlled here
+
+    // OBS Sources are controlled here
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::source_visibility::SourceVisibilityHandler { obs_client });
     
-    //
+    // Skyboxes
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::skybox::SkyboxHandler{ obs_client });
     
@@ -173,6 +173,12 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
     
+    let twitch_config = get_chat_config();
+    let (_, twitch_client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(twitch_config);
+    event_loop.push(handlers::chatgpt_response_handler::ChatGPTResponse { twitch_client });
 
     // Twitch EventSub Events
     let twitch_config = get_chat_config();
