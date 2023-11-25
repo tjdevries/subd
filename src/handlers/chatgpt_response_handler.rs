@@ -1,20 +1,17 @@
 use anyhow::Result;
 use std::thread;
 use std::time;
-use std::time::Duration;
 use async_trait::async_trait;
 use events::EventHandler;
 use subd_types::Event;
-use subd_types::ElevenLabsRequest;
-
-use twitch_chat::send_message;
-
-use std::time::SystemTime;
 use tokio::fs;
-use tokio::io::AsyncReadExt;
-
 use tokio::sync::broadcast;
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
+use tokio::io::AsyncReadExt;
+// use std::time::Duration;
+// use twitch_chat::send_message;
+// use subd_types::ElevenLabsRequest;
+// use std::time::SystemTime;
 
 pub struct ChatGPTResponse {
     pub twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -34,7 +31,6 @@ impl EventHandler for ChatGPTResponse {
         loop {
             let metadata = fs::metadata(response_file).await.unwrap();
             let current_modified = metadata.modified().unwrap();
-            println!("Current Modified: {:?}", current_modified);
             
             if current_modified > last_modified {
                 let mut file = fs::File::open(response_file).await.unwrap();
