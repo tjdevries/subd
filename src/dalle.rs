@@ -3,6 +3,7 @@ use reqwest;
 use std::env;
 use std::fs::File;
 use std::io::Write;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,10 +18,10 @@ struct ImageData {
 }
 
 
-pub async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
+pub async fn dalle_time(contents: String, username: String) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
 
-    // TODO: This is for saving to the file
+// TODO: This is for saving to the file
     // which we aren't doing yet
     let _truncated_prompt = contents.chars().take(80).collect::<String>();
     let client = reqwest::Client::new();
@@ -52,22 +53,30 @@ pub async fn dalle_time(contents: String) -> Result<(), reqwest::Error> {
     match image_response {
         Ok(response) => {
             for (index, image_data) in response.data.iter().enumerate() {
-                
-                // let filename = format!("{}-{}.png", truncated_prompt, index);
-                
-                // We should be using the prompt here
-                // but then we have to update to saved file
-                // we could also just save it twice.
-                // One for Archive purposes
-                let filename = format!("./tmp/dalle-{}.png", index+1);
+
                 println!("Image URL: {} | ", image_data.url.clone());
                 let image_data = reqwest::get(image_data.url.clone()).await?.bytes().await?.to_vec();
                 
-                let mut file = File::create(filename).unwrap();
+                // username
+                // resolution
+                // prompt
+                // timestamp
+                // let username = "default";
+                
+                let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+                let unique_identifier = format!("{}_{}", timestamp, username);
+                println!("Contents: {}", contents);
+                let archive_file = format!("./archive/{}.png", unique_identifier);
+                let mut file = File::create(archive_file).unwrap();
                 file.write_all(&image_data).unwrap();
                 
+                let mut csv_file = File::create("output.csv").unwrap();
+                writeln!(csv_file, "{},{}", unique_identifier, contents).unwrap();
 
-                // Can we hide and show the Dalle-Gen-1
+                
+                let filename = format!("./tmp/dalle-{}.png", index+1);
+                let mut file = File::create(filename).unwrap();
+                file.write_all(&image_data).unwrap();
             }
         },
         Err(e) => {

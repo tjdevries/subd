@@ -442,7 +442,7 @@ pub async fn handle_obs_commands(
         "!dalle" => {
             let prompt = splitmsg.iter().skip(1).map(AsRef::as_ref).collect::<Vec<&str>>().join(" ");
             println!("Dalle Time!");
-            let _ = dalle::dalle_time(prompt).await;
+            let _ = dalle::dalle_time(prompt, msg.user_name).await;
             Ok(())
         }
         
