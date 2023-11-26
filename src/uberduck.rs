@@ -264,7 +264,7 @@ impl EventHandler for ElevenLabsHandler {
             // Maybe I should try to reverb here
             // local_audio_path
             // TODO: Make this  updatable from the Database
-            sink.set_volume(0.7);
+            sink.set_volume(0.9);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
