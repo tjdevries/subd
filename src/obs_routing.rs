@@ -1,5 +1,9 @@
 use anyhow::{bail, Result};
 use crate::bootstrap;
+use std::fs;
+use std::path::Path;
+use rand::Rng;
+use rand::seq::SliceRandom;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -904,11 +908,15 @@ pub async fn handle_obs_commands(
         _ => Ok(()),
     };
 
+    // TODO: Check for a playlist
     let exists = music_scenes::VOICE_TO_MUSIC.iter().any(|&(cmd, _)| cmd == command);
     if exists {
         if !is_mod && !is_vip {
             return Ok(());
         }
+        
+
+        // Hide all Background Music Sources
         let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
             .map(|(_, scene)| scene.music)
             .collect();
@@ -917,7 +925,6 @@ pub async fn handle_obs_commands(
         }
 
         let mut scene_details = None;
-        
         for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
             if cmd == command {
                 scene_details = Some(scene);
@@ -926,6 +933,56 @@ pub async fn handle_obs_commands(
         }
 
         if let Some(details) = scene_details {
+            match details.playlist_folder {
+                Some(playlist_folder) => {
+                    match get_random_mp3_file_name(playlist_folder) {
+                        Some(music_filename) => {
+                            // Now we just need to update the Ffmpeg Source
+                            // Now I have to use this model
+                            let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
+                            
+                            let path = Path::new(&music_filename);
+                            let media_source = obws::requests::custom::source_settings::FfmpegSource{
+                                is_local_file: true,
+                                local_file: path,
+                                looping: true,
+                                restart_on_activate: true,
+                                close_when_inactive: true,
+                                clear_on_media_end: false,
+                                speed_percent: 100,
+                                color_range,
+
+                                // Non-Local settings
+                                buffering_mb: 1,
+                                seekable: false,
+                                input: "",
+                                input_format: "",
+                                reconnect_delay_sec: 1,
+                                // ..Default::default()
+                            };
+                            let set_settings = obws::requests::inputs::SetSettings{
+                                settings: &media_source,
+                                input: details.music,
+                                overlay: Some(true),
+                            };
+                            let _ = obs_client.inputs().set_settings(set_settings).await;
+                        }
+                        None => {
+                            println!("Could not find a random mp3 file in the playlist folder");
+                        }
+                    }
+                } 
+                None => {}
+            };
+            
+
+
+
+            
+            // If we have a playlist that isn't None, then we need to first get a RANDOM
+            // mp3 from the playlist folder
+            //
+            // then we update the OBS source w/ the new Media
             // Turn on the Music for the scene
             let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
             if command == "!sigma" {
@@ -977,4 +1034,27 @@ pub async fn handle_obs_commands(
         }
     }
     Ok(())
+}
+
+fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
+    let full_path = format!("/home/begin/stream/Stream/BackgroundMusic/{}", folder_path);
+    let paths = fs::read_dir(full_path).ok()?;
+
+    let mp3_files: Vec<_> = paths
+        .filter_map(Result::ok)
+        .filter(|dir_entry| {
+            dir_entry.path().extension().and_then(|ext| ext.to_str()) == Some("mp3")
+        })
+        .collect();
+
+    if mp3_files.is_empty() {
+        return None;
+    }
+
+    let mut rng = rand::thread_rng();
+    let selected_file = mp3_files.choose(&mut rng).unwrap();
+
+    let new_music = selected_file.file_name().to_str().map(String::from).unwrap();
+    let full_path = format!("/home/begin/stream/Stream/BackgroundMusic/{}/{}", folder_path, new_music);
+    Some(full_path)
 }

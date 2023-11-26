@@ -1,4 +1,5 @@
 use crate::audio;
+use std::process::Command;
 use crate::obs;
 use crate::stream_character;
 use crate::redirect;
@@ -158,9 +159,10 @@ impl EventHandler for ElevenLabsHandler {
             let filename =
                 twitch_chat_filename(msg.username.clone(), final_voice.clone());
             let full_filename = format!("{}.wav", filename);
+            let mut local_audio_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/{}", full_filename);
+            // let mut local_audio_path =
+                // format!("./TwitchChatTTSRecordings/{}", full_filename);
 
-            let local_audio_path =
-                format!("./TwitchChatTTSRecordings/{}", full_filename);
 
             let tts_body = TtsBody {
                 model_id: None,
@@ -184,6 +186,55 @@ impl EventHandler for ElevenLabsHandler {
             let bytes = tts_result.unwrap();
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
+            
+            if final_voice == "satan" {
+                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
+                let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
+                let super_final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename);
+
+                let ffmpeg_status = Command::new("ffmpeg")
+                    .args(&["-i", &local_audio_path, &reverb_path])
+                    .status()
+                    .expect("Failed to execute ffmpeg");
+
+                if ffmpeg_status.success() {
+                    Command::new("sox")
+                        .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+                        .status()
+                        .expect("Failed to execute sox");
+                }
+                
+                if ffmpeg_status.success() {
+                    Command::new("sox")
+                        .args(&["-t", "wav", &final_output_path, &super_final_output_path, "pitch", "-500"])
+                        .status()
+                        .expect("Failed to execute sox");
+                }
+                
+                local_audio_path = super_final_output_path;
+            }
+            
+            if final_voice == "god" {
+                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
+                let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
+
+                let ffmpeg_status = Command::new("ffmpeg")
+                    .args(&["-i", &local_audio_path, &reverb_path])
+                    .status()
+                    .expect("Failed to execute ffmpeg");
+
+                if ffmpeg_status.success() {
+                    Command::new("sox")
+                        .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+                        .status()
+                        .expect("Failed to execute sox");
+                }
+                
+                local_audio_path = final_output_path;
+            }
+
+
+            // =====================================================
 
             // We are supressing a whole bunch of alsa message
             let backup = redirect::redirect_stderr().expect("Failed to redirect stderr");
@@ -200,6 +251,11 @@ impl EventHandler for ElevenLabsHandler {
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
+            // Is it a music scene we want to reverb?
+            // or is it a voice we want to reverb???
+            // 
+            // Maybe I should try to reverb here
+            // local_audio_path
             // TODO: Make this  updatable from the Database
             sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());

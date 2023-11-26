@@ -1,5 +1,9 @@
 ## Tonight's Menu of Commands
 
+### New Command
+
+!set_voice atten
+
 ### Background Changes
 
 !vortex
