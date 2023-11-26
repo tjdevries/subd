@@ -163,7 +163,6 @@ impl EventHandler for ElevenLabsHandler {
             // let mut local_audio_path =
                 // format!("./TwitchChatTTSRecordings/{}", full_filename);
 
-
             let tts_body = TtsBody {
                 model_id: None,
                 text: msg.message.clone(),
@@ -188,35 +187,36 @@ impl EventHandler for ElevenLabsHandler {
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
             
             if final_voice == "satan" {
-                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
-                let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
-                let super_final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename);
+                let pre_reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
+                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
+                let pitch_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename);
 
                 let ffmpeg_status = Command::new("ffmpeg")
-                    .args(&["-i", &local_audio_path, &reverb_path])
+                    .args(&["-i", &local_audio_path, &pre_reverb_path])
                     .status()
                     .expect("Failed to execute ffmpeg");
 
                 if ffmpeg_status.success() {
                     Command::new("sox")
-                        .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+                        .args(&["-t", "wav", &pre_reverb_path, &reverb_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
                         .status()
                         .expect("Failed to execute sox");
                 }
                 
                 if ffmpeg_status.success() {
                     Command::new("sox")
-                        .args(&["-t", "wav", &final_output_path, &super_final_output_path, "pitch", "-500"])
+                        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", "-500"])
                         .status()
                         .expect("Failed to execute sox");
                 }
                 
-                local_audio_path = super_final_output_path;
+                local_audio_path = pitch_path;
             }
             
             if final_voice == "god" {
                 let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
                 let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
+                let chorus_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_chorus.wav", filename);
 
                 let ffmpeg_status = Command::new("ffmpeg")
                     .args(&["-i", &local_audio_path, &reverb_path])
@@ -229,8 +229,15 @@ impl EventHandler for ElevenLabsHandler {
                         .status()
                         .expect("Failed to execute sox");
                 }
-                
                 local_audio_path = final_output_path;
+                
+                // if ffmpeg_status.success() {
+                //     Command::new("sox")
+                //         .args(&["-t", "wav", &final_output_path, &chorus_path, "chorus", "0.5", "0.9", "50", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s" ])
+                //         .status()
+                //         .expect("Failed to execute sox");
+                // }
+                // local_audio_path = chorus_path;
             }
 
 
