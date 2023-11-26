@@ -205,7 +205,7 @@ impl EventHandler for ElevenLabsHandler {
                 
                 if ffmpeg_status.success() {
                     Command::new("sox")
-                        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", "-500"])
+                        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", "-350"])
                         .status()
                         .expect("Failed to execute sox");
                 }
