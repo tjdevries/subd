@@ -66,13 +66,29 @@ pub async fn spin(
         _ => "Rotation.Z",
     };
 
+    // let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+    // println!("MOVE {}", move_transition_filter_name);
+    // _ = move_transition::update_and_trigger_move_value_filter(
+    //     source,
+    //     &move_transition_filter_name,
+    //     filter_setting_name,
+    //     filter_value,
+    //     &three_d_transform_filter_name,
+    //     duration,
+    //     obs::SINGLE_SETTING_VALUE_TYPE,
+    //     &obs_client,
+    // )
+    // .await;
     // TODO: fix
+    
+    let move_filtername = format!("Move_{}", obs::THE_3D_TRANSFORM_FILTER_NAME);
+    
     match move_transition::update_and_trigger_move_value_filter(
         source,
-        obs::THE_3D_TRANSFORM_FILTER_NAME,
+        &move_filtername,
         setting_name,
         filter_value,
-        "",
+        obs::THE_3D_TRANSFORM_FILTER_NAME,
         duration,
         2, // not sure if this is the right value | THIS NEEDS TO BE ABSTRACTED
         &obs_client,

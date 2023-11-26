@@ -759,18 +759,50 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
 
         "!spin" | "!spinx" | "spiny" => {
-            let default_filter_setting_name = String::from("z");
-            let filter_setting_name =
-                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
+            // let default_filter_setting_name = String::from("z");
+            // let filter_setting_name =
+            //     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
+            //
+            // println!("!spin time {} - {}", source, filter_setting_name);
+            // move_transition_effects::spin(
+            //     source,
+            //     filter_setting_name,
+            //     filter_value,
+            //     duration,
+            //     &obs_client,
+            // )
+            // .await
+            
+            let source = "begin";
+            let filter_name = "3D-Transform-Perspective";
+            
+            let new_settings = move_transition::MoveMultipleValuesSetting{
+                // filter: Some(filter_name.to_string()),
+                // scale_x: Some(217.0),
+                // scale_y: Some(200.0),
+                rotation_z: Some(500000.0),
+                field_of_view: Some(108.0),
+                //
+                // // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                // // you life
+                // position_y: Some(0.0),
+                ..Default::default()
+            };
 
-            move_transition_effects::spin(
+            let duration = 30000;
+            dbg!(&new_settings);
+            let three_d_transform_filter_name = filter_name;
+            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+            
+            _ = move_transition::update_and_trigger_move_values_filter(
                 source,
-                filter_setting_name,
-                filter_value,
+                &move_transition_filter_name,
                 duration,
+                new_settings,
                 &obs_client,
             )
-            .await
+            .await;
+            Ok(())
         }
 
         // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION

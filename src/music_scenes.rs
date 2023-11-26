@@ -7,7 +7,11 @@ pub struct NewVoiceScene {
 
 pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
         // ("!yoga", NewVoiceScene{ voice: "Thomas", music: "Yoga-BG-Music", playlist_folder: Some("Yoga")}),
+        ("!evil", NewVoiceScene{ voice: "satan", music: "Evil-BG-Music", playlist_folder: Some("Evil")}),
+        ("!good", NewVoiceScene{ voice: "god", music: "Yoga-BG-Music", playlist_folder: Some("Yoga")}),
+        ("!devito", NewVoiceScene{ voice: "devito", music: "IASIP-BG-Music", playlist_folder: Some("IASIP")}),
         ("!yoga", NewVoiceScene{ voice: "god", music: "Yoga-BG-Music", playlist_folder: Some("Yoga")}),
+        ("!wes", NewVoiceScene{ voice: "jeff", music: "Wes-BG-Music", playlist_folder: Some("Wes")}),
         ("!drama", NewVoiceScene{ voice: "Ethan", music: "Dramatic-BG-Music", playlist_folder: Some("Drama")}),
         ("!greed", NewVoiceScene{ voice: "Michael", music: "Greed-BG-Music", playlist_folder: None }),
         ("!ken", NewVoiceScene{ voice: "James", music: "KenBurns-BG-Music", playlist_folder: Some("KenBurns")}),

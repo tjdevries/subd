@@ -45,7 +45,7 @@ pub const MOVE_OUTLINE_FILTER_NAME: &str = "Move_Outline";
 pub const MOVE_STREAM_FX_FILTER_NAME: &str = "Move_Stream_FX";
 
 // Dynamic Filters but Default Filters
-pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D Transform";
+pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D-Transform";
 pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
 pub const BLUR_FILTER_NAME: &str = "Blur";
 pub const SCROLL_FILTER_NAME: &str = "Scroll";
