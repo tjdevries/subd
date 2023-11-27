@@ -156,7 +156,7 @@ impl EventHandler for ElevenLabsHandler {
                 let reverb_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
                 let pitch_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename.clone());
                 change_pitch(reverb_path, pitch_path.clone(), "-350".to_string()).unwrap();
-                local_audio_path  = pitch_path
+                local_audio_path = pitch_path
             }
             
             // What is the difference
@@ -181,7 +181,8 @@ impl EventHandler for ElevenLabsHandler {
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-            sink.set_volume(1.0);
+            // sink.set_volume(1.0);
+            sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());

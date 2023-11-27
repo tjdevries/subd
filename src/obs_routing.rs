@@ -97,6 +97,13 @@ struct VoiceRoot {
     voices: Vec<Voice>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct VoiceClone {
+    name: String,
+    description: String,
+    labels: HashMap<String, String>,
+    files: Vec<String>, // Vec of file paths
+}
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
@@ -1188,8 +1195,6 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-
-
         _ => Ok(()),
     };
 
@@ -1201,14 +1206,6 @@ pub async fn handle_obs_commands(
         }
         
 
-        // Hide all Background Music Sources
-        let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
-            .map(|(_, scene)| scene.music)
-            .collect();
-        for source in music_list.iter() {
-            let _ = obs_source::hide_source(background_scene, source, obs_client).await;
-        }
-
         let mut scene_details = None;
         for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
             if cmd == command {
@@ -1217,11 +1214,30 @@ pub async fn handle_obs_commands(
             }
         }
 
+        let mut set_global_voice = true;
+
         if let Some(details) = scene_details {
             match details.playlist_folder {
                 Some(playlist_folder) => {
                     match get_random_mp3_file_name(playlist_folder) {
                         Some(music_filename) => {
+
+                            let items = obs_client.scene_items().list(background_scene).await?;
+                            for item in items {
+                                let enabled = obs_client.scene_items().enabled(background_scene, item.id).await.unwrap();
+
+                                // println!("Enabled: {}", enabled);
+                                // println!("Item: {:?}", item);
+
+                                if enabled && item.source_name == details.music {
+                                    println!("We are just changing the music!");
+                                    
+                                    let _ = obs_source::hide_source(background_scene, details.music, obs_client).await;
+                                    set_global_voice = false;
+                                }
+                            }
+
+                            // BackgroundMusic scene
                             // Now we just need to update the Ffmpeg Source
                             // Now I have to use this model
                             let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
@@ -1260,16 +1276,26 @@ pub async fn handle_obs_commands(
                 None => {}
             };
             
+            // Hide all Background Music Sources
+            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
+                .map(|(_, scene)| scene.music)
+                .collect();
+            for source in music_list.iter() {
+                let _ = obs_source::hide_source(background_scene, source, obs_client).await;
+            }
 
-
-
+            // I think we need a gap, to allow the pervious media source update to finish
+            let ten_millis = time::Duration::from_millis(300);
+            thread::sleep(ten_millis);
             
+            // Do
+            let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
             // If we have a playlist that isn't None, then we need to first get a RANDOM
             // mp3 from the playlist folder
             //
             // then we update the OBS source w/ the new Media
             // Turn on the Music for the scene
-            let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
+            
             if command == "!sigma" {
                 println!("We are in Chad mode!");
                 let source = "begin";
@@ -1302,7 +1328,6 @@ pub async fn handle_obs_commands(
                 .await;
             }
 
-
             // Set the Voice for Begin, which is the source of the global voice
             let _ = uberduck::set_voice(
                 details.voice.to_string(),
@@ -1312,8 +1337,10 @@ pub async fn handle_obs_commands(
             .await;
         
             // Enable Global Voice Mode
-            twitch_stream_state::turn_on_global_voice(&pool)
-                .await?;
+            if set_global_voice {
+                twitch_stream_state::turn_on_global_voice(&pool)
+                    .await?;
+            }
         } else {
             println!("Could not find voice info for command.");
         }
@@ -1344,17 +1371,6 @@ fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
     Some(full_path)
 }
 
-fn convert_vec_string_to_cow(vec: Vec<String>) -> Vec<Cow<'static, str>> {
-    vec.into_iter().map(|s| Cow::Owned(s)).collect()
-}
-
-#[derive(Serialize, Deserialize)]
-struct VoiceClone {
-    name: String,
-    description: String,
-    labels: HashMap<String, String>,
-    files: Vec<String>, // Vec of file paths
-}
 async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<String, Error> {
     let api_key = env::var("ELEVENLABS_API_KEY").expect("Expected ELEVENLABS_API_KEY in .env");
     let client = Client::new();
