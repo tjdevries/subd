@@ -499,12 +499,9 @@ pub async fn handle_obs_commands(
         }
 
         // !clone name URL URL URL
-        // !clone is 0?
         "!clone" => {
             dotenv().ok();
             let api_key = env::var("ELEVENLABS_API_KEY").expect("Expected ELEVENLABS_API_KEY in .env");
-                //     .bearer_auth(api_key)
-
             if msg.user_name != "beginbot"  {
                 return Ok(())
             }
@@ -543,9 +540,6 @@ pub async fn handle_obs_commands(
                         .args(&["-i", &cloned_mp3, "-f", "segment", "-segment_time", "50", "-c", "copy", &split_file_name])
                         .status()
                         .expect("Failed to execute ffmpeg");
-                    
-                    // We need another command to split everything
-                    // clone_sample_urls_files.push(cloned_mp3);
                 }
                 
                 let soundeffect_files = fs::read_dir(split_mp3_folder).unwrap();
@@ -553,10 +547,6 @@ pub async fn handle_obs_commands(
                 for split_file in soundeffect_files {
                     mp3s.insert(split_file.unwrap().path().display().to_string());
                 }
-
-                
-                // This is the actual cloning
-                // return Ok(());
 
                 let vec: Vec<String> = mp3s.into_iter().collect();
                 let voice_clone = VoiceClone {
@@ -573,10 +563,8 @@ pub async fn handle_obs_commands(
                 // We want the ID to not be escapae
                 let voice_id = result.unwrap();
                 println!("Result: {:?}", voice_id);
-                // println!("Result: {:?}", result.unwrap());
                 
-
-                // TIME TO SAVE THE JSONS 
+                // We save the JSON
                 let filename = format!("/home/begin/code/subd/voices.json");
                 let mut file = fs::File::open(filename.clone()).unwrap();
                 let mut data = String::new();
@@ -600,111 +588,19 @@ pub async fn handle_obs_commands(
                 let mut file = fs::File::create(filename)?;
                 file.write_all(modified_json.as_bytes())?;
                 
-                // =======================================================================
-                
-                // let json_string = serde_json::to_string(&clone_sample_urls_files).expect("Failed to serialize");
-                // let form = multipart::Form::new()
-                //     .text("files", json_string)
-                //     .text("description", "a cloned voice".to_string())
-                //     .text("name", name.to_string());
-                
-                // for (index, string) in clone_sample_urls_files.into_iter().enumerate() {
-                //     // You can use the index to create a unique field name for each string
-                //     let field_name = format!("string{}", index);
-                //     form = form.text(field_name, string);
-                // }
-                // let files = clone_sample_urls_files.into_iter().map(|s| Cow::Owned(s)).collect();
-                // let files = convert_vec_string_to_cow(clone_sample_urls_files);
-                
-                // let files = clone_sample_urls_files.clone();
-                // let client = Client::new();
-                // let response = client.post("https://api.elevenlabs.io/v1/voices/add")
-                //     .multipart(form)
+                let client = Client::new();
+                // If I update the voices.json, it will work
+                // let audio_response = client.post("https://api.elevenlabs.io/generate")
+                //     .bearer_auth(&api_key)
+                //     .json(&json!({
+                //         "text": "Hi! I'm a cloned voice!",
+                //         "voice": cloned_voice  , // Assuming voice contains the necessary identifier
+                //     }))
                 //     .send()
-                //     .await?;
-                
-                // let response = client.post("https://api.elevenlabs.io/v1/voices/add")
-                //     .multipart(form)
-                //     .send()
-                //     .await?;
-
-                // Parse the response as JSON
-                // let response_json = response.json::<serde_json::Value>().await?;
-                // println!("{:?}", response_json); 
-                  
-                // We need to pull in the name and mp3 after downloading it
-                // let client = reqwest::Client::new();
-                // let voice_clone_request = CloneVoiceRequest {
-                //     name: name.to_string(),
-                //     description: "A cloned voice".to_string(),
-                //     files: clone_sample_urls_files,
-                // };
-                // 
-                // // JSON: {"name":"kim","description":"A cloned voice","files":["/home/begin/code/subd/tmp/cloned/kim-0.wav"]}
-                // println!("\tJSON: {}", serde_json::to_string(&voice_clone_request).unwrap());
-                //
-                // let cloned_voice = client.post("https://api.elevenlabs.io/v1/voices/add")
-                //     .bearer_auth(api_key)
-                //     .json(&voice_clone_request)
-                //     .send()
-                //     .await?;
-                    // .json::<VoiceResponse>()
-                    // .await?;
-
-                // [src/obs_routing.rs:541] &cloned_voice.text().await? =
-                //                     "{\"detail\":[{\"loc\":[\"body\",\"name\"],\"msg\":\"field
-                //                         required\",\"type\":\"value_error.missing\"}]}"
-
-                // dbg!(&cloned_voice.status());
-                // dbg!(&cloned_voice.text().await?);
-
-                // let voice_id = cloned_voice.voice_id;
-                // println!("--------------------");
-                // println!("~~~ VOICE ID - {}", voice_id);
-                // println!("--------------------");
-
-
-
-
-
-                
+                //     .await
+                //     .expect("Failed to send request");
             }
-            
 
-            
-
-            // If I update the voices.json, it will work
-            // let audio_response = client.post("https://api.elevenlabs.io/generate")
-            //     .bearer_auth(&api_key)
-            //     .json(&json!({
-            //         "text": "Hi! I'm a cloned voice!",
-            //         "voice": cloned_voice  , // Assuming voice contains the necessary identifier
-            //     }))
-            //     .send()
-            //     .await
-            //     .expect("Failed to send request");
-
-            // Parse the JSON body of the response
-            // match cloned_voice {
-            //     Ok(parsed_response) => {
-            //
-            //         // WE NEED TO SAVE THIS!!!!!!!!!!!!!!
-            //         println!("Voice ID: {}", parsed_response.voice_id);
-            //
-            //         //AND MAKE SURE THIS IS CORRECT
-            //         println!("Name: {}", parsed_response.name);
-            //
-            //         
-            //         println!("Category: {}", parsed_response.category);
-            //         println!("Description: {}", parsed_response.description);
-            //         println!("Labels: {:?}", parsed_response.labels);
-            //         println!("Samples: {:?}", parsed_response.samples);
-            //         println!("Design: {:?}", parsed_response.design);
-            //         println!("Preview URL: {:?}", parsed_response.preview_url);
-            //         println!("Settings: {:?}", parsed_response.settings);
-            //     },
-            //     Err(e) => eprintln!("Failed to parse response: {}", e),
-            // }
             Ok(())
         }
 
@@ -1382,18 +1278,6 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
     let client = Client::new();
     let url = format!("{}/voices/add", api_base_url_v1);
 
-    // Serialize `voice_clone` fields into JSON
-    // let json_part = Part::text(
-    //     json!({
-    //         "name": voice_clone.name,
-    //         "description": voice_clone.description,
-    //         "labels": voice_clone.labels
-    //     }).to_string()
-    // ).mime_str("application/json")?;
-
-    // // Create the multipart form
-    // let mut form = Form::new().part("json_data", json_part);
-    
     let mut form = Form::new()
         .text("name", voice_clone.name)
         .text("description", voice_clone.description)
@@ -1418,17 +1302,10 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
         .await?;
 
     let status = response.status();
-    //  Clone the response body
-    // let body = response.bytes().await?;
-    // let text = String::from_utf8_lossy(&body);
-    // println!("Response: {:?}", text);   // We need to output 
-    
     if status.is_success() {
         let voice_id: String = response.json::<serde_json::Value>().await?.get("voice_id").unwrap().as_str().unwrap().to_string();
         Ok(voice_id)
     } else {
         Err(response.error_for_status().unwrap_err())
     }
-    
-    // Ok("".to_string())
 }

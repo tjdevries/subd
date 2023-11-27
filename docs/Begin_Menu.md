@@ -2,7 +2,7 @@
 
 ### New Commands!
 
-!clone NAME URL URL URL
+!clone NAME_OF_VOICE URL URL URL
 
 ### Background Changes
 

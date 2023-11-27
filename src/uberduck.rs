@@ -214,6 +214,7 @@ impl EventHandler for ElevenLabsHandler {
             }
             
             if final_voice == "god" {
+                // add_reverb(filename, fullfilename);
                 let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
                 let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
                 let chorus_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_chorus.wav", filename);
@@ -653,6 +654,28 @@ fn find_random_voice() -> (String, String) {
 //     );
 //     return random_voice.voice_id.clone();
 // }
+
+
+
+fn add_reverb(filename: String, full_filename: String, local_audio_path: String) -> Result<String> {
+    let base_path = "/home/begin/code/subd/TwitchChatTTSRecordings/Reverb";
+    let final_output_path = format!("{}/{}_reverb.wav", base_path, filename);
+    let reverb_path = format!("{}/{}", full_filename, base_path);
+    let _chorus_path = format!("{}/{}_chorus.wav", filename, base_path);
+
+    let ffmpeg_status = Command::new("ffmpeg")
+        .args(&["-i", &local_audio_path, &reverb_path])
+        .status()
+        .expect("Failed to execute ffmpeg");
+
+    if ffmpeg_status.success() {
+        Command::new("sox")
+            .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+            .status()
+            .expect("Failed to execute sox");
+    }
+    Ok(final_output_path)
+}
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // Read JSON file (replace 'path_to_file.json' with your file's path)
