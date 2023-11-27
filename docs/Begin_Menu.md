@@ -1,8 +1,8 @@
 ## Tonight's Menu of Commands
 
-### New Command
+### New Commands!
 
-!set_voice atten
+!clone NAME URL URL URL
 
 ### Background Changes
 
