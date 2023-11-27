@@ -46,8 +46,9 @@ pub struct ElevenLabsRequest {
     pub voice_text: String,
     pub message: String,
     pub username: String,
-    pub voice: String,
+    pub voice: Option<String>,
 
+    pub reverb: bool,
     pub source: Option<String>,
 }
 

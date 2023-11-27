@@ -691,6 +691,26 @@ pub async fn handle_obs_commands(
 
             Ok(())
         }
+        
+        "!reverb" => {
+            let contents = &splitmsg[1..].join(" ");
+            
+            let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
+                source: Some("begin".to_string()),
+
+                // What is the message voice_text?
+                message: contents.to_string(),
+                username: msg.user_name.to_string(),
+
+                reverb: true,
+
+                // This isn't used
+                voice_text: "".to_string(),
+                voice: None,
+            }));
+            
+            Ok(())
+        }
 
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();

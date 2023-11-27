@@ -44,9 +44,11 @@ impl EventHandler for ChatGPTResponse {
                     voice_text,
                     message: contents,
                     username: "beginbot".to_string(),
+                    voice: None,
+                    reverb: false,
 
                     // This isn't being respected
-                    voice: "ethan".to_string(),
+                    // voice: Some("ethan".to_string(),)
                 }));
 
                 println!("New Current Modified: {:?}", current_modified);

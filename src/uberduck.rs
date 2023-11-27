@@ -16,7 +16,6 @@ use rand::Rng;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
 use serde::{Deserialize, Serialize};
-use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
@@ -48,7 +47,7 @@ pub struct ElevenLabsHandler {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StreamCharacter {
     // text_source: String,
-    pub voice: String,
+    pub voice: Option<String>,
     pub source: String,
     pub username: String,
 }
@@ -82,6 +81,7 @@ impl EventHandler for ElevenLabsHandler {
                 _ => continue,
             };
 
+            // We check the message to see 
             let ch = msg.message.chars().next().unwrap();
             if ch == '!' || ch == '@' {
                 continue;
@@ -103,8 +103,15 @@ impl EventHandler for ElevenLabsHandler {
                 }
             };
             
-            let voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
-            let voice_data = find_voice_id_by_name(&voice);
+            let voice_string = match msg.voice {
+                Some(voice) => voice,
+                None =>{
+                    stream_character::get_voice_from_username(&self.pool, "beginbot").await.unwrap()
+                }
+            };
+            
+            // stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
+            let voice_data = find_voice_id_by_name(&voice_string);
             let (_global_voice_id, global_voice) = match voice_data {
                 Some((id, name)) => {
                     (id, name)
@@ -118,7 +125,7 @@ impl EventHandler for ElevenLabsHandler {
                 println!("Global Voice is enabled: {}", global_voice);
                 global_voice
             } else {
-                msg.voice.clone()
+                voice_string
             };
 
             // /wo extension
@@ -155,6 +162,10 @@ impl EventHandler for ElevenLabsHandler {
             let bytes = tts_result.unwrap();
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
+            
+            if msg.reverb {
+                local_audio_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
+            }
             
             if final_voice == "satan" {
                 let reverb_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
@@ -264,11 +275,12 @@ pub async fn talk_in_voice(
     let voice_text = spoken_string.clone();
     println!("We trying for the voice: {} - {}", voice, voice_text);
     let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
-        voice: voice.to_string(),
+        voice: Some(voice.to_string()),
         message: seal_text,
         voice_text,
         username,
         source: None,
+        reverb: false,
     }));
     Ok(())
 }
@@ -296,11 +308,12 @@ pub async fn use_random_voice(
     }));
 
     let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
-        voice: random_voice.name.clone(),
+        voice: Some(random_voice.name.clone()),
         message: speech_bubble_text,
         voice_text,
         username,
         source: None,
+        reverb: false,
     }));
     Ok(())
 }
@@ -319,7 +332,7 @@ pub async fn build_stream_character(
 
                 return Ok(StreamCharacter {
                     username: username.to_string(),
-                    voice: default_voice.to_string(),
+                    voice: Some(default_voice.to_string()),
                     source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
                 });
             }
@@ -330,7 +343,7 @@ pub async fn build_stream_character(
 
     Ok(StreamCharacter {
         username: username.to_string(),
-        voice: voice.to_string(),
+        voice: Some(voice.to_string()),
         source: character.to_string(),
     })
 }

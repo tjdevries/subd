@@ -173,10 +173,12 @@ impl EventHandler for SoundHandler {
             let stream_character =
                 uberduck::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
-            let voice = stream_character.voice.clone();
-            println!("\nvoice from stream_character: {}", voice);
-            
 
+            let voice = match stream_character.voice {
+                Some(voice) => voice,
+                None => obs::TWITCH_MOD_DEFAULT_VOICE.to_string(),
+            };
+            
             // This is the current state of the stream:
             //    whether you are allowing all text to be read
             //    whether you are allowing soundeffects to happen automatically
@@ -184,7 +186,7 @@ impl EventHandler for SoundHandler {
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
 
             let mut character = Character {
-                voice: Some(voice),
+                voice: Some(voice.clone()),
                 ..Default::default()
             };
 
@@ -208,11 +210,11 @@ impl EventHandler for SoundHandler {
                     }
                 }
             } else if msg.roles.is_twitch_sub() {
-                character.voice = Some(stream_character.voice.clone());
+                character.voice = Some(voice);
             } else if !state.sub_only_tts {
                 // This is what everyone get's to speak with
                 // if we are allowing non-subs to speak
-                character.voice = Some(stream_character.voice.clone());
+                character.voice = Some(voice);
             }
             
 
@@ -236,11 +238,12 @@ impl EventHandler for SoundHandler {
 
                     // The voice here isn't be respected
                     let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
-                        voice,
+                        voice: Some(voice),
                         message: speech_bubble_text,
                         voice_text,
                         username: msg.user_name,
                         source: character.source,
+                        reverb: false,
                     }));
                 }
                 None => {}
