@@ -83,7 +83,7 @@ impl EventHandler for ElevenLabsHandler {
             };
 
             let ch = msg.message.chars().next().unwrap();
-            if ch == '!' {
+            if ch == '!' || ch == '@' {
                 continue;
             };
 
@@ -390,8 +390,10 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
 }
 
 fn sanitize_chat_message(raw_msg: String) -> String {
+    // Let's replace any word longer than 50 characters
     raw_msg.split_whitespace()
         .map(|word| if word.contains("http") {"U.R.L".to_string()} else { word.to_string() })
+        .map(|word| if word.len() > 50 { "long word".to_string() } else { word.to_string() })
         .collect::<Vec<String>>()
         .join(" ")
 }
