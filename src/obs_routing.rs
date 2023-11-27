@@ -497,6 +497,85 @@ pub async fn handle_obs_commands(
             
             Ok(())
         }
+        
+        
+        // !clone_no_dl name
+        "!clone_no_dl" => {
+            if msg.user_name != "beginbot" && msg.user_name != "beginbotbot" {
+                return Ok(())
+            }
+            
+            if splitmsg.len() == 2 {
+                 println!("We are going for it");
+                
+                let name = &splitmsg[1];
+                
+                let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+                
+                let split_mp3_folder = format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
+                let soundeffect_files = fs::read_dir(split_mp3_folder).unwrap();
+                for split_file in soundeffect_files {
+                    mp3s.insert(split_file.unwrap().path().display().to_string());
+                }
+                
+                let vec: Vec<String> = mp3s.into_iter().collect();
+                let voice_clone = VoiceClone {
+                    name: name.to_string(),
+                    description: "a cloned voice".to_string(),
+                    files: vec,
+                    labels: HashMap::new(),
+                };
+                    
+                println!("About to from_clone");
+                
+                let api_base_url_v1 = "https://api.elevenlabs.io/v1";
+                let result = from_clone(voice_clone, api_base_url_v1).await;
+                println!("Result: {:?}", result);
+                
+                // We want the ID to not be escapae
+                let voice_id = result.unwrap();
+                println!("Result: {:?}", voice_id);
+                
+                // We save the JSON
+                let filename = format!("/home/begin/code/subd/voices.json");
+                let mut file = fs::File::open(filename.clone()).unwrap();
+                let mut data = String::new();
+                file.read_to_string(&mut data)?;
+
+                let mut root: VoiceRoot = serde_json::from_str(&data)?;
+
+                let new_voice = Voice {
+                    voice_id,
+                    name: name.to_string(),
+                    // Initialize other fields as needed...
+                };
+
+                // Add the new entry to the 'voices' vector
+                root.voices.push(new_voice);
+
+                // Serialize the modified object back to a JSON string
+                let modified_json = serde_json::to_string_pretty(&root)?;
+
+                // Write the modified JSON back to the file
+                let mut file = fs::File::create(filename)?;
+                file.write_all(modified_json.as_bytes())?;
+                
+                // let client = Client::new();
+                // If I update the voices.json, it will work
+                // let audio_response = client.post("https://api.elevenlabs.io/generate")
+                //     .bearer_auth(&api_key)
+                //     .json(&json!({
+                //         "text": "Hi! I'm a cloned voice!",
+                //         "voice": cloned_voice  , // Assuming voice contains the necessary identifier
+                //     }))
+                //     .send()
+                //     .await
+                //     .expect("Failed to send request");
+            }
+
+            Ok(())
+        }
+
 
         // !clone name URL URL URL
         "!clone" => {
@@ -588,7 +667,7 @@ pub async fn handle_obs_commands(
                 let mut file = fs::File::create(filename)?;
                 file.write_all(modified_json.as_bytes())?;
                 
-                let client = Client::new();
+                // let client = Client::new();
                 // If I update the voices.json, it will work
                 // let audio_response = client.post("https://api.elevenlabs.io/generate")
                 //     .bearer_auth(&api_key)
@@ -1275,6 +1354,7 @@ struct VoiceClone {
     files: Vec<String>, // Vec of file paths
 }
 async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<String, Error> {
+    let api_key = env::var("ELEVENLABS_API_KEY").expect("Expected ELEVENLABS_API_KEY in .env");
     let client = Client::new();
     let url = format!("{}/voices/add", api_base_url_v1);
 
@@ -1292,8 +1372,6 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
         let part = Part::bytes(contents).file_name(file_path).mime_str("audio/mpeg")?;
         form = form.part("files", part);
     }
-
-    let api_key = env::var("ELEVENLABS_API_KEY").expect("Expected ELEVENLABS_API_KEY in .env");
 
     let response = client.post(url)
         .header("xi-api-key", api_key)

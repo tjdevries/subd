@@ -20,11 +20,8 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::{BufWriter, Write};
 use std::{thread, time};
 use subd_types::Event;
-use subd_types::SourceVisibilityRequest;
-use subd_types::StreamCharacterRequest;
 use subd_types::TransformOBSTextRequest;
 use subd_types::ElevenLabsRequest;
 use tokio::sync::broadcast;
@@ -41,42 +38,10 @@ struct VoiceList {
     voices: Vec<ElevenlabsVoice>,
 }
 
-pub struct OldUberDuckHandler {
-    pub sink: Sink,
-    pub pool: sqlx::PgPool,
-    pub elevenlabs: Elevenlabs,
-}
-
 pub struct ElevenLabsHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
     pub elevenlabs: Elevenlabs,
-}
-
-pub struct ExpertUberDuckHandler {
-    pub sink: Sink,
-    pub pool: sqlx::PgPool,
-}
-
-// If we parse the full list this is all we'll use
-#[derive(Serialize, Deserialize, Debug)]
-struct UberDuckVoice {
-    category: String,
-    display_name: String,
-    name: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct UberDuckVoiceResponse {
-    uuid: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct UberDuckFileResponse {
-    path: Option<String>,
-    started_at: Option<String>,
-    failed_at: Option<String>,
-    finished_at: Option<String>,
 }
 
 // Should they be optional???
@@ -156,12 +121,13 @@ impl EventHandler for ElevenLabsHandler {
                 msg.voice.clone()
             };
 
+            // /wo extension
             let filename =
                 twitch_chat_filename(msg.username.clone(), final_voice.clone());
+
+            // w/ Extension
             let full_filename = format!("{}.wav", filename);
             let mut local_audio_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/{}", full_filename);
-            // let mut local_audio_path =
-                // format!("./TwitchChatTTSRecordings/{}", full_filename);
 
             let tts_body = TtsBody {
                 model_id: None,
@@ -187,60 +153,16 @@ impl EventHandler for ElevenLabsHandler {
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
             
             if final_voice == "satan" {
-                let pre_reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
-                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
-                let pitch_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename);
-
-                let ffmpeg_status = Command::new("ffmpeg")
-                    .args(&["-i", &local_audio_path, &pre_reverb_path])
-                    .status()
-                    .expect("Failed to execute ffmpeg");
-
-                if ffmpeg_status.success() {
-                    Command::new("sox")
-                        .args(&["-t", "wav", &pre_reverb_path, &reverb_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
-                        .status()
-                        .expect("Failed to execute sox");
-                }
-                
-                if ffmpeg_status.success() {
-                    Command::new("sox")
-                        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", "-350"])
-                        .status()
-                        .expect("Failed to execute sox");
-                }
-                
-                local_audio_path = pitch_path;
+                let reverb_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
+                let pitch_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename.clone());
+                change_pitch(reverb_path, pitch_path.clone(), "-350".to_string()).unwrap();
+                local_audio_path  = pitch_path
             }
             
+            // What is the difference
             if final_voice == "god" {
-                // add_reverb(filename, fullfilename);
-                let reverb_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
-                let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
-                let chorus_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_chorus.wav", filename);
-
-                let ffmpeg_status = Command::new("ffmpeg")
-                    .args(&["-i", &local_audio_path, &reverb_path])
-                    .status()
-                    .expect("Failed to execute ffmpeg");
-
-                if ffmpeg_status.success() {
-                    Command::new("sox")
-                        .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
-                        .status()
-                        .expect("Failed to execute sox");
-                }
-                local_audio_path = final_output_path;
-                
-                // if ffmpeg_status.success() {
-                //     Command::new("sox")
-                //         .args(&["-t", "wav", &final_output_path, &chorus_path, "chorus", "0.5", "0.9", "50", "0.4", "0.25", "2", "-t", "60", "0.32", "0.4", "2.3", "-t", "40", "0.3", "0.3", "1.3", "-s" ])
-                //         .status()
-                //         .expect("Failed to execute sox");
-                // }
-                // local_audio_path = chorus_path;
+                local_audio_path = add_reverb(filename, full_filename, local_audio_path).unwrap();
             }
-
 
             // =====================================================
 
@@ -259,19 +181,15 @@ impl EventHandler for ElevenLabsHandler {
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-            // Is it a music scene we want to reverb?
-            // or is it a voice we want to reverb???
-            // 
-            // Maybe I should try to reverb here
-            // local_audio_path
-            // TODO: Make this  updatable from the Database
-            sink.set_volume(0.9);
+            sink.set_volume(1.0);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
+            
             redirect::restore_stderr(backup);
             
+            // This playsthe text
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
             let _ = tx.send(Event::TransformOBSTextRequest(
@@ -281,206 +199,6 @@ impl EventHandler for ElevenLabsHandler {
                 },
             ));
             thread::sleep(ten_millis);
-        }
-    }
-}
-
-#[async_trait]
-impl EventHandler for OldUberDuckHandler {
-    async fn handle(
-        self: Box<Self>,
-        tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
-    ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::ElevenLabsRequest(msg) => msg,
-                _ => continue,
-            };
-
-            let ch = msg.message.chars().next().unwrap();
-            if ch == '!' {
-                continue;
-            };
-
-            // Do we want Stream Characters?
-            // Maybe have to wait until we have voices working again
-            let stream_character =
-                build_stream_character(&self.pool, &msg.username).await?;
-
-            let source = match msg.source {
-                Some(source) => source,
-                None => stream_character.source.clone(),
-            };
-
-            let (username, secret) = uberduck_creds();
-
-            let client = reqwest::Client::new();
-            let res = client
-                .post("https://api.uberduck.ai/speak")
-                .basic_auth(username.clone(), Some(secret.clone()))
-                .json(&[
-                    ("speech", msg.voice_text),
-                    ("voice", msg.voice.clone()),
-                ])
-                .send()
-                .await?
-                .json::<UberDuckVoiceResponse>()
-                .await?;
-
-            let uuid = match res.uuid {
-                Some(x) => x,
-                None => continue,
-            };
-
-            loop {
-                let url = format!(
-                    "https://api.uberduck.ai/speak-status?uuid={}",
-                    &uuid
-                );
-
-                let (username, secret) = uberduck_creds();
-                let response = client
-                    .get(url)
-                    .basic_auth(username, Some(secret))
-                    .send()
-                    .await?;
-
-                // Show Loading Duck
-                let _ = tx.send(Event::SourceVisibilityRequest(
-                    SourceVisibilityRequest {
-                        scene: obs::CHARACTERS_SCENE.to_string(),
-                        source: obs::UBERDUCK_LOADING_SOURCE.to_string(),
-                        enabled: true,
-                    },
-                ));
-
-                let text = response.text().await?;
-                // println!("text: Finished: {:?}", text);
-                // we need to this to be better
-
-                let file_resp: UberDuckFileResponse =
-                    serde_json::from_str(&text)?;
-                println!(
-                    "\nUberduck: Finished: {:?} | Failed: {:?}",
-                    file_resp.finished_at, file_resp.failed_at
-                );
-
-                match file_resp.failed_at {
-                    Some(_) => {
-                        // TODO: Figure out Who needs to see this error
-                        println!("Failed to get Uberduck speech");
-                        break;
-                    }
-                    _ => {}
-                };
-
-                match file_resp.path {
-                    Some(new_url) => {
-                        let _ = tx.send(Event::SourceVisibilityRequest(
-                            SourceVisibilityRequest {
-                                scene: obs::CHARACTERS_SCENE.to_string(),
-                                source: obs::UBERDUCK_LOADING_SOURCE
-                                    .to_string(),
-                                enabled: false,
-                            },
-                        ));
-
-                        let text_source = format!("{}-text", source.clone());
-                        let _ = tx.send(Event::TransformOBSTextRequest(
-                            TransformOBSTextRequest {
-                                message: msg.message.clone(),
-                                text_source,
-                            },
-                        ));
-
-                        let filename =
-                            twitch_chat_filename(msg.username, msg.voice);
-                        let full_filename = format!("{}.wav", filename);
-
-                        // This is creating and then playing the file
-                        // I WANT TO SAVE THIS FILE
-                        println!("Trying to Save: {}", full_filename);
-                        let local_path = format!(
-                            "./TwitchChatTTSRecordings/{}",
-                            full_filename
-                        );
-                        let response = client.get(new_url).send().await?;
-                        let file = File::create(local_path.clone())?;
-                        let mut writer = BufWriter::new(file);
-                        writer.write_all(&response.bytes().await?)?;
-                        println!("Downloaded File From Uberduck, Playing Soon: {:?}!", local_path);
-
-                        let _ = tx.send(Event::StreamCharacterRequest(
-                            StreamCharacterRequest {
-                                source: source.clone(),
-                                enabled: true,
-                            },
-                        ));
-
-                        // Create the tts body.
-                        let tts_body = TtsBody {
-                            model_id: None,
-                            text: msg.message.clone(),
-                            voice_settings: None,
-                        };
-
-                        let _random_id = find_random_voice();
-                        let tts_result = self.elevenlabs.tts(&tts_body, "");
-                        let bytes = tts_result.unwrap();
-
-                        let audio_file_name = "tts.wav";
-                        std::fs::write(audio_file_name, bytes).unwrap();
-                        println!("\n\n\t\tStarting begin.rs!");
-                        println!("====================================================\n\n");
-
-                        let (_stream, stream_handle) =
-                            audio::get_output_stream("pulse")
-                                .expect("stream handle");
-                        // Can we make this quieter?
-                        let sink =
-                            rodio::Sink::try_new(&stream_handle).unwrap();
-                        // sink.set_volume(0.9);
-                        let file = BufReader::new(
-                            File::open(audio_file_name).unwrap(),
-                        );
-                        sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
-                        sink.sleep_until_end();
-                        // This is using assuming the local path of the downloaded
-                        // uberduck MP3
-                        let file =
-                            BufReader::new(File::open(local_path).unwrap());
-                        self.sink.append(
-                            Decoder::new(BufReader::new(file)).unwrap(),
-                        );
-                        self.sink.sleep_until_end();
-
-                        // THIS IS HIDING THE PERSON AFTER
-                        // We might want to wait a little longer, then hide
-                        // we could also kick off a hide event
-                        let ten_millis = time::Duration::from_millis(1000);
-
-                        thread::sleep(ten_millis);
-
-                        let source = source.clone();
-                        let _ = tx.send(Event::StreamCharacterRequest(
-                            StreamCharacterRequest {
-                                source,
-                                enabled: false,
-                            },
-                        ));
-                        break;
-                    }
-                    None => {
-                        // Wait 1 second before seeing if the file is ready.
-                        let ten_millis = time::Duration::from_millis(1000);
-                        thread::sleep(ten_millis);
-                    }
-                }
-            }
         }
     }
 }
@@ -500,16 +218,6 @@ pub fn chop_text(starting_text: String) -> String {
 
     seal_text
 }
-
-fn uberduck_creds() -> (String, String) {
-    let username = env::var("UBER_DUCK_KEY")
-        .expect("Failed to read UBER_DUCK_KEY environment variable");
-    let secret = env::var("UBER_DUCK_SECRET")
-        .expect("Failed to read UBER_DUCK_SECRET environment variable");
-    (username, secret)
-}
-
-// ======================================
 
 fn find_obs_character(_voice: &str) -> &str {
     let default_character = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
@@ -621,61 +329,40 @@ pub async fn build_stream_character(
         source: character.to_string(),
     })
 }
-fn find_random_voice() -> (String, String) {
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
-    let voice_list: VoiceList =
-        serde_json::from_str(&data).expect("JSON was not well-formatted");
+// ============= //
+// Audio Effects //
+// ============= //
 
-    let mut rng = thread_rng();
-    let random_voice = voice_list
-        .voices
-        .choose(&mut rng)
-        .expect("List of voices is empty");
-
-    // Return both the voice ID and name
-    (random_voice.voice_id.clone(), random_voice.name.clone())
+fn change_pitch(reverb_path: String, pitch_path: String, pitch: String) -> Result<String> {
+    Command::new("sox")
+        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", &pitch])
+        .status()
+        .expect("Failed to execute sox");
+    Ok(pitch_path)
 }
-// fn find_random_voice() -> String {
-//     let data = fs::read_to_string("voices.json").expect("Unable to read file");
-//
-//     let voice_list: VoiceList =
-//         serde_json::from_str(&data).expect("JSON was not well-formatted");
-//
-//     let mut rng = thread_rng();
-//     let random_voice = voice_list
-//         .voices
-//         .choose(&mut rng)
-//         .expect("List of voices is empty");
-//
-//     println!(
-//         "Random Voice ID: {}, Name: {}",
-//         random_voice.voice_id, random_voice.name
-//     );
-//     return random_voice.voice_id.clone();
-// }
 
-
-
-fn add_reverb(filename: String, full_filename: String, local_audio_path: String) -> Result<String> {
-    let base_path = "/home/begin/code/subd/TwitchChatTTSRecordings/Reverb";
-    let final_output_path = format!("{}/{}_reverb.wav", base_path, filename);
-    let reverb_path = format!("{}/{}", full_filename, base_path);
-    let _chorus_path = format!("{}/{}_chorus.wav", filename, base_path);
-
+fn add_reverb(filename: String, full_filename: String, mut local_audio_path: String) -> Result<String> {
+    let pre_reverb_file = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(&["-i", &local_audio_path, &reverb_path])
+        .args(&["-i", &local_audio_path, &pre_reverb_file])
         .status()
         .expect("Failed to execute ffmpeg");
 
+    let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
     if ffmpeg_status.success() {
         Command::new("sox")
-            .args(&["-t", "wav", &reverb_path, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+            .args(&["-t", "wav", &pre_reverb_file, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
             .status()
             .expect("Failed to execute sox");
     }
-    Ok(final_output_path)
+    local_audio_path = final_output_path;
+    Ok(local_audio_path)
 }
+
+// ================= //
+// Finding Functions //
+// ================= //
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // Read JSON file (replace 'path_to_file.json' with your file's path)
@@ -695,4 +382,20 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
         }
     }
     None
+}
+
+fn find_random_voice() -> (String, String) {
+    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+
+    let voice_list: VoiceList =
+        serde_json::from_str(&data).expect("JSON was not well-formatted");
+
+    let mut rng = thread_rng();
+    let random_voice = voice_list
+        .voices
+        .choose(&mut rng)
+        .expect("List of voices is empty");
+
+    // Return both the voice ID and name
+    (random_voice.voice_id.clone(), random_voice.name.clone())
 }
