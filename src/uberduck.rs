@@ -129,9 +129,13 @@ impl EventHandler for ElevenLabsHandler {
             let full_filename = format!("{}.wav", filename);
             let mut local_audio_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/{}", full_filename);
 
+            // We need to sanitize the message of links
+            // text: msg.message.clone(),
+            let chat_message = sanitize_chat_message(msg.message.clone());
+
             let tts_body = TtsBody {
                 model_id: None,
-                text: msg.message.clone(),
+                text: chat_message,
                 voice_settings: None,
             };
 
@@ -383,6 +387,13 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
         }
     }
     None
+}
+
+fn sanitize_chat_message(raw_msg: String) -> String {
+    raw_msg.split_whitespace()
+        .map(|word| if word.contains("http") {"U.R.L".to_string()} else { word.to_string() })
+        .collect::<Vec<String>>()
+        .join(" ")
 }
 
 fn find_random_voice() -> (String, String) {
