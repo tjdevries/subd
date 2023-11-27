@@ -2,6 +2,8 @@
 
 ### New Commands!
 
+
+ADMIN ONLY
 !clone NAME_OF_VOICE URL URL URL
 
 ### Background Changes

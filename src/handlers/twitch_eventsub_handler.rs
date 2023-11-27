@@ -117,7 +117,7 @@ async fn post_request(
     Extension(twitch_client): Extension<TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>>,
 ) -> impl IntoResponse {
 
-    println!("simple_map = {:?}", eventsub_body);
+    println!("\t~~ Eventsub Body: {:?}", eventsub_body);
     
     let challenge = match eventsub_body.challenge {
         Some(challenge) => {
@@ -129,9 +129,22 @@ async fn post_request(
         _ =>  {
             let c = obs_client;
             match eventsub_body.subscription.type_field.as_str() {
+                // What if we checked for Polls here!
                 "channel.follow" => {
                     println!("follow time");
                 },
+                    
+                // I don't know if the eventsub_body will match
+                "channel.poll.begin" => {
+                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                },
+                "channel.poll.progress" => {
+                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                },
+                "channel.poll.end" => {
+                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+                },
+                
                 "channel.channel_points_custom_reward_redemption.add" => {
                     match eventsub_body.event {
                     Some(event) => {
