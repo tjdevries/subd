@@ -129,6 +129,8 @@ pub async fn handle_obs_commands(
         Err(_) => obs::MEME_SCENE.to_string(),
     };
     
+    let not_beginbot = msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
+    
    // This fails, and we stop
    // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
 
@@ -476,7 +478,7 @@ pub async fn handle_obs_commands(
 
         // !global_voice Ethan
         "!no_global_voice" => {
-            if msg.user_name != "beginbot"  {
+            if not_beginbot {
                 return Ok(())
             }
             
@@ -487,7 +489,7 @@ pub async fn handle_obs_commands(
         
         // TODO: improve this 
         "!global_voice" => {
-            if msg.user_name != "beginbot"  {
+            if not_beginbot {
                 return Ok(())
             }
             
@@ -501,7 +503,7 @@ pub async fn handle_obs_commands(
         
         // !clone_no_dl name
         "!clone_no_dl" => {
-            if msg.user_name != "beginbot" && msg.user_name != "beginbotbot" {
+            if not_beginbot {
                 return Ok(())
             }
             
@@ -581,7 +583,7 @@ pub async fn handle_obs_commands(
         "!clone" => {
             dotenv().ok();
             let api_key = env::var("ELEVENLABS_API_KEY").expect("Expected ELEVENLABS_API_KEY in .env");
-            if msg.user_name != "beginbot"  {
+            if not_beginbot {
                 return Ok(())
             }
             
