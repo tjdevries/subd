@@ -524,6 +524,8 @@ pub async fn handle_obs_commands(
                 let split_mp3_folder = format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
                 let soundeffect_files = fs::read_dir(split_mp3_folder).unwrap();
                 for split_file in soundeffect_files {
+
+                // we can filter by 
                     mp3s.insert(split_file.unwrap().path().display().to_string());
                 }
                 
@@ -700,34 +702,21 @@ pub async fn handle_obs_commands(
             
             let transform_settings = &splitmsg.get(1).unwrap();
             let contents = &splitmsg[2..].join(" ");
-
-            // transforms.
-
-            // transform_settings.split("/")
-
-        let transform_settings = &splitmsg.get(1).unwrap();
-        let contents = &splitmsg[2..].join(" ");
-            // If I had a string that had the format: "PITCH/STRECH/REVERB"
-            // the PITCH would be from -1000 to 1000 the STRECH would be 0.1 to 10
-            // and the REVERB was true or false or t or f
-            // how would you ensure you had three environemnt vars populated like below
-            // let pitch = 0;
-            // let stretch = 1;
-            // let reverb = false;
-            // and if we only pass pitch, stretch and reverb are 1 and false
-
+            let word_count = &splitmsg[2..].len();
             
-            let pitch = 0;
-            let stretch = 1;
-            let reverb = false;
+            let (pitch, stretch, reverb) = parse_transform_settings(
+                transform_settings, *word_count); let pitch = format!("{}", pitch);
+            let stretch = format!("{}", stretch);
+            println!("{} {} {}", pitch, stretch, reverb);
             
             let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
                 source: Some("begin".to_string()),
-
                 message: contents.to_string(),
                 username: msg.user_name.to_string(),
-
-                // stretch: Some(stretch.to_string()),
+                pitch: Some(pitch),
+                stretch: Some(stretch),
+                reverb,
+                
                 ..Default::default()
             }));
             Ok(())
@@ -1496,7 +1485,7 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
 }
 
 
-fn parse_transform_settings(transform_settings: &str) -> (i32, f32, bool) {
+fn parse_transform_settings(transform_settings: &str, word_count: usize) -> (i32, f32, bool) {
     let mut pitch: i32 = 0; // Default value
     let mut stretch: f32 = 1.0; // Default value
     let mut reverb: bool = false; // Default value
@@ -1511,9 +1500,10 @@ fn parse_transform_settings(transform_settings: &str) -> (i32, f32, bool) {
         }
     }
 
+    let stretch_limit = if word_count > 2 { 3.0 } else { 10.0 };
     if settings.len() > 1 {
         if let Ok(parsed_stretch) = settings[1].parse::<f32>() {
-            if parsed_stretch >= 0.1 && parsed_stretch <= 10.0 {
+            if parsed_stretch >= 0.1 && parsed_stretch <= stretch_limit  {
                 stretch = parsed_stretch;
             }
         }
