@@ -243,8 +243,7 @@ impl EventHandler for SoundHandler {
                         voice_text,
                         username: msg.user_name,
                         source: character.source,
-                        reverb: false,
-                        pitch: None,
+                        ..Default::default()
                     }));
                 }
                 None => {}

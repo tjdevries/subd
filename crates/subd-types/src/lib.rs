@@ -41,7 +41,7 @@ pub struct UserMessage {
     pub contents: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ElevenLabsRequest {
     pub voice_text: String,
     pub message: String,
@@ -52,6 +52,8 @@ pub struct ElevenLabsRequest {
 
     // I know it's not actually a string, but we aren't doing any math on it
     pub pitch: Option<String>,
+    pub stretch: Option<String>,
+    
     pub source: Option<String>,
 }
 

@@ -179,6 +179,14 @@ impl EventHandler for ElevenLabsHandler {
             // We save the TTS recording directly into TwitchChatTTSRecordings folder
             // We typically play it from there as well, but don't necessaryily need to.
 
+            match msg.stretch {
+                Some(stretch) => {
+                    local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                    local_audio_path = stretch_audio(local_audio_path, stretch).unwrap();
+                },
+                None => {}
+            }
+            
             match msg.pitch {
                 Some(pitch) => {
                     local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
@@ -299,9 +307,7 @@ pub async fn talk_in_voice(
         message: seal_text,
         voice_text,
         username,
-        source: None,
-        reverb: false,
-        pitch: None,
+        ..Default::default()
     }));
     Ok(())
 }
@@ -333,9 +339,7 @@ pub async fn use_random_voice(
         message: speech_bubble_text,
         voice_text,
         username,
-        source: None,
-        reverb: false,
-        pitch: None,
+        ..Default::default()
     }));
     Ok(())
 }
@@ -388,9 +392,6 @@ fn add_postfix_to_filepath(filepath: String, postfix: String) -> String {
 
 fn normalize_tts_file(local_audio_path: String) -> Result<String> {
     let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
-
-    println!("Audio Dest Path: {}", audio_dest_path);
-
     let ffmpeg_status = Command::new("ffmpeg")
         .args(&["-i", &local_audio_path, &audio_dest_path])
         .status()
@@ -400,19 +401,23 @@ fn normalize_tts_file(local_audio_path: String) -> Result<String> {
         Ok(audio_dest_path)
     } else {
         println!("Failed to normalize audio");
-        // Figure out Error
-        // error!("Failed
         Ok(local_audio_path)
     }
 }
 
 
+fn stretch_audio(local_audio_path: String, stretch: String) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_stretch".to_string());
+    Command::new("sox")
+        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "stretch", &stretch])
+        .status()
+        .expect("Failed to execute sox");
+    Ok(audio_dest_path)
+}
+
 fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
     let postfix = format!("{}_{}", "_pitch".to_string(), pitch);
     let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), postfix);
-    
-    println!("Pitch Audio Dest Path: {}", audio_dest_path);
-    
     Command::new("sox")
         .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "pitch", &pitch])
         .status()

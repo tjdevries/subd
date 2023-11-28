@@ -691,6 +691,22 @@ pub async fn handle_obs_commands(
 
             Ok(())
         }
+
+        "!stretch" => {
+            let stretch = &splitmsg.get(1).unwrap();
+            let contents = &splitmsg[2..].join(" ");
+            
+            let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
+                source: Some("begin".to_string()),
+
+                message: contents.to_string(),
+                username: msg.user_name.to_string(),
+
+                stretch: Some(stretch.to_string()),
+                ..Default::default()
+            }));
+            Ok(())
+        }
         
         "!pitch" => {
             let pitch = &splitmsg.get(1).unwrap();
@@ -698,17 +714,12 @@ pub async fn handle_obs_commands(
             
             let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
                 source: Some("begin".to_string()),
-
                 // What is the message voice_text?
                 message: contents.to_string(),
                 username: msg.user_name.to_string(),
-
-                reverb: false,
                 pitch: Some(pitch.to_string()),
 
-                // This isn't used
-                voice_text: "".to_string(),
-                voice: None,
+                ..Default::default()
             }));
             
             Ok(())
@@ -719,17 +730,10 @@ pub async fn handle_obs_commands(
             
             let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
                 source: Some("begin".to_string()),
-
-                // What is the message voice_text?
                 message: contents.to_string(),
                 username: msg.user_name.to_string(),
-
                 reverb: true,
-                pitch: None,
-
-                // This isn't used
-                voice_text: "".to_string(),
-                voice: None,
+                ..Default::default()
             }));
             
             Ok(())
