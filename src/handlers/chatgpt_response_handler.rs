@@ -46,6 +46,7 @@ impl EventHandler for ChatGPTResponse {
                     username: "beginbot".to_string(),
                     voice: None,
                     reverb: false,
+                    pitch: None,
 
                     // This isn't being respected
                     // voice: Some("ethan".to_string(),)

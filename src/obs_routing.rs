@@ -692,6 +692,28 @@ pub async fn handle_obs_commands(
             Ok(())
         }
         
+        "!pitch" => {
+            let pitch = &splitmsg.get(1).unwrap();
+            let contents = &splitmsg[2..].join(" ");
+            
+            let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
+                source: Some("begin".to_string()),
+
+                // What is the message voice_text?
+                message: contents.to_string(),
+                username: msg.user_name.to_string(),
+
+                reverb: false,
+                pitch: Some(pitch.to_string()),
+
+                // This isn't used
+                voice_text: "".to_string(),
+                voice: None,
+            }));
+            
+            Ok(())
+        }
+        
         "!reverb" => {
             let contents = &splitmsg[1..].join(" ");
             
@@ -703,6 +725,7 @@ pub async fn handle_obs_commands(
                 username: msg.user_name.to_string(),
 
                 reverb: true,
+                pitch: None,
 
                 // This isn't used
                 voice_text: "".to_string(),
@@ -1263,6 +1286,7 @@ pub async fn handle_obs_commands(
                             let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
                             
                             let path = Path::new(&music_filename);
+                                
                             let media_source = obws::requests::custom::source_settings::FfmpegSource{
                                 is_local_file: true,
                                 local_file: path,

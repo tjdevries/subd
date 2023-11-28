@@ -49,6 +49,9 @@ pub struct ElevenLabsRequest {
     pub voice: Option<String>,
 
     pub reverb: bool,
+
+    // I know it's not actually a string, but we aren't doing any math on it
+    pub pitch: Option<String>,
     pub source: Option<String>,
 }
 

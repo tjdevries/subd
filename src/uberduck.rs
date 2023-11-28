@@ -81,8 +81,14 @@ impl EventHandler for ElevenLabsHandler {
                 _ => continue,
             };
 
-            // We check the message to see 
-            let ch = msg.message.chars().next().unwrap();
+            let ch = match msg.message.chars().next() {
+                Some(ch) =>  ch,
+                None => {
+                    continue;
+                }
+                            
+            };
+            
             if ch == '!' || ch == '@' {
                 continue;
             };
@@ -132,10 +138,6 @@ impl EventHandler for ElevenLabsHandler {
             let filename =
                 twitch_chat_filename(msg.username.clone(), final_voice.clone());
 
-            // w/ Extension
-            let full_filename = format!("{}.wav", filename);
-            let mut local_audio_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/{}", full_filename);
-
             // We need to sanitize the message of links
             // text: msg.message.clone(),
             let chat_message = sanitize_chat_message(msg.message.clone());
@@ -161,22 +163,40 @@ impl EventHandler for ElevenLabsHandler {
             let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
             let bytes = tts_result.unwrap();
 
+            // w/ Extension
+            let full_filename = format!("{}.wav", filename);
+            let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
+            let mut local_audio_path = format!("{}/{}", tts_folder, full_filename);
+
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
+
             
             if msg.reverb {
-                local_audio_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
+                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
+            }
+
+            // We save the TTS recording directly into TwitchChatTTSRecordings folder
+            // We typically play it from there as well, but don't necessaryily need to.
+
+            match msg.pitch {
+                Some(pitch) => {
+                    local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                    local_audio_path = change_pitch(local_audio_path, pitch).unwrap();
+                },
+                None => {}
             }
             
             if final_voice == "satan" {
-                let reverb_path = add_reverb(filename.clone(), full_filename.clone(), local_audio_path).unwrap();
-                let pitch_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb_pitch.wav", filename.clone());
-                change_pitch(reverb_path, pitch_path.clone(), "-350".to_string()).unwrap();
-                local_audio_path = pitch_path
+                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
+                local_audio_path = change_pitch(local_audio_path, "-350".to_string()).unwrap();
             }
             
             // What is the difference
             if final_voice == "god" {
-                local_audio_path = add_reverb(filename, full_filename, local_audio_path).unwrap();
+                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path = add_reverb(local_audio_path).unwrap();
             }
 
             // =====================================================
@@ -281,6 +301,7 @@ pub async fn talk_in_voice(
         username,
         source: None,
         reverb: false,
+        pitch: None,
     }));
     Ok(())
 }
@@ -314,6 +335,7 @@ pub async fn use_random_voice(
         username,
         source: None,
         reverb: false,
+        pitch: None,
     }));
     Ok(())
 }
@@ -352,30 +374,61 @@ pub async fn build_stream_character(
 // Audio Effects //
 // ============= //
 
-fn change_pitch(reverb_path: String, pitch_path: String, pitch: String) -> Result<String> {
-    Command::new("sox")
-        .args(&["-t", "wav", &reverb_path, &pitch_path, "pitch", &pitch])
-        .status()
-        .expect("Failed to execute sox");
-    Ok(pitch_path)
+fn add_postfix_to_filepath(filepath: String, postfix: String) -> String {
+    match filepath.rfind('.') {
+        Some(index) => {
+            let path = filepath[..index].to_string();
+            let filename = filepath[index..].to_string();
+            format!("{}{}{}", path, postfix, filename)
+        }
+        None => filepath,
+    }
 }
 
-fn add_reverb(filename: String, full_filename: String, mut local_audio_path: String) -> Result<String> {
-    let pre_reverb_file = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}", full_filename);
+
+fn normalize_tts_file(local_audio_path: String) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
+
+    println!("Audio Dest Path: {}", audio_dest_path);
+
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(&["-i", &local_audio_path, &pre_reverb_file])
+        .args(&["-i", &local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 
-    let final_output_path = format!("/home/begin/code/subd/TwitchChatTTSRecordings/Reverb/{}_reverb.wav", filename);
     if ffmpeg_status.success() {
-        Command::new("sox")
-            .args(&["-t", "wav", &pre_reverb_file, &final_output_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
-            .status()
-            .expect("Failed to execute sox");
+        Ok(audio_dest_path)
+    } else {
+        println!("Failed to normalize audio");
+        // Figure out Error
+        // error!("Failed
+        Ok(local_audio_path)
     }
-    local_audio_path = final_output_path;
-    Ok(local_audio_path)
+}
+
+
+fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
+    let postfix = format!("{}_{}", "_pitch".to_string(), pitch);
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), postfix);
+    
+    println!("Pitch Audio Dest Path: {}", audio_dest_path);
+    
+    Command::new("sox")
+        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "pitch", &pitch])
+        .status()
+        .expect("Failed to execute sox");
+    
+    Ok(audio_dest_path)
+}
+
+
+fn add_reverb(local_audio_path: String) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_reverb".to_string());
+    Command::new("sox")
+        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+        .status()
+        .expect("Failed to execute sox");
+    Ok(audio_dest_path)
 }
 
 // ================= //

@@ -244,6 +244,7 @@ impl EventHandler for SoundHandler {
                         username: msg.user_name,
                         source: character.source,
                         reverb: false,
+                        pitch: None,
                     }));
                 }
                 None => {}
