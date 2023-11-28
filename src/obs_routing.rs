@@ -692,6 +692,35 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
+    // !transform PITCH/STRETCH/REVERB
+    "!transform" => {
+            if splitmsg.len() < 2 {
+                return Ok(())
+            }
+            
+            let transform_settings = &splitmsg.get(1).unwrap();
+            let contents = &splitmsg[2..].join(" ");
+
+            // transforms.
+
+            // transform_settings.split("/")
+
+            let reverb = false;
+            let stretch = 1;
+            let pitch = 0;
+            
+            let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
+                source: Some("begin".to_string()),
+
+                message: contents.to_string(),
+                username: msg.user_name.to_string(),
+
+                // stretch: Some(stretch.to_string()),
+                ..Default::default()
+            }));
+            Ok(())
+        }
+        
         "!stretch" => {
             let stretch = &splitmsg.get(1).unwrap();
             let contents = &splitmsg[2..].join(" ");

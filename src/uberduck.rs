@@ -88,7 +88,6 @@ impl EventHandler for ElevenLabsHandler {
                 }
                             
             };
-            
             if ch == '!' || ch == '@' {
                 continue;
             };
@@ -108,46 +107,31 @@ impl EventHandler for ElevenLabsHandler {
                     false
                 }
             };
+            let global_voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await.unwrap();
             
-            let voice_string = match msg.voice {
+            // Do we want explicit voice's passed to override global?
+            // That means all !reverb !pitch etc. commands
+            // If we passed in an explict voice use that
+            let voice_name = match msg.voice {
                 Some(voice) => voice,
                 None =>{
-                    stream_character::get_voice_from_username(&self.pool, "beginbot").await.unwrap()
+                    global_voice.clone()
                 }
             };
             
-            // stream_character::get_voice_from_username(&self.pool, "beginbot").await?;
-            let voice_data = find_voice_id_by_name(&voice_string);
-            let (_global_voice_id, global_voice) = match voice_data {
-                Some((id, name)) => {
-                    (id, name)
-                },
-                None => {
-                    ("".to_string(), "".to_string())
-                },
-            };
-
             let final_voice = if is_global_voice_enabled  {
-                println!("Global Voice is enabled: {}", global_voice);
                 global_voice
             } else {
-                voice_string
+                voice_name
             };
 
-            // /wo extension
             let filename =
                 twitch_chat_filename(msg.username.clone(), final_voice.clone());
 
-            // We need to sanitize the message of links
-            // text: msg.message.clone(),
             let chat_message = sanitize_chat_message(msg.message.clone());
 
-            let tts_body = TtsBody {
-                model_id: None,
-                text: chat_message,
-                voice_settings: None,
-            };
-
+            // We keep track if we choose a random name for the user,
+            // so we can inform them on screen
             let mut is_random = false;
 
             let voice_data = find_voice_id_by_name(&final_voice);
@@ -160,6 +144,13 @@ impl EventHandler for ElevenLabsHandler {
                     find_random_voice()
                 },
             };
+            
+            // The voice here in the TTS body is final
+            let tts_body = TtsBody {
+                model_id: None,
+                text: chat_message,
+                voice_settings: None,
+            };
             let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
             let bytes = tts_result.unwrap();
 
@@ -169,15 +160,11 @@ impl EventHandler for ElevenLabsHandler {
             let mut local_audio_path = format!("{}/{}", tts_folder, full_filename);
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
-
             
             if msg.reverb {
                 local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
                 local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
             }
-
-            // We save the TTS recording directly into TwitchChatTTSRecordings folder
-            // We typically play it from there as well, but don't necessaryily need to.
 
             match msg.stretch {
                 Some(stretch) => {
@@ -197,8 +184,8 @@ impl EventHandler for ElevenLabsHandler {
             
             if final_voice == "satan" {
                 local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
                 local_audio_path = change_pitch(local_audio_path, "-350".to_string()).unwrap();
+                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
             }
             
             // What is the difference
@@ -224,8 +211,8 @@ impl EventHandler for ElevenLabsHandler {
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-            // sink.set_volume(1.0);
-            sink.set_volume(0.7);
+            sink.set_volume(1.0);
+            // sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
@@ -441,17 +428,14 @@ fn add_reverb(local_audio_path: String) -> Result<String> {
 // ================= //
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
-    // Read JSON file (replace 'path_to_file.json' with your file's path)
+    // We should replace this with an API call
+    // or call it every once-in-a-while and "cache"
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
-
-    // Deserialize JSON to VoiceList
     let voice_list: VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
-    // Convert the input name to lowercase
     let name_lowercase = name.to_lowercase();
 
-    // Iterate through voices and find the matching voice_id
     for voice in voice_list.voices {
         if voice.name.to_lowercase() == name_lowercase {
             return Some((voice.voice_id, voice.name));
