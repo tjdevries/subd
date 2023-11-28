@@ -705,9 +705,21 @@ pub async fn handle_obs_commands(
 
             // transform_settings.split("/")
 
-            let reverb = false;
-            let stretch = 1;
+        let transform_settings = &splitmsg.get(1).unwrap();
+        let contents = &splitmsg[2..].join(" ");
+            // If I had a string that had the format: "PITCH/STRECH/REVERB"
+            // the PITCH would be from -1000 to 1000 the STRECH would be 0.1 to 10
+            // and the REVERB was true or false or t or f
+            // how would you ensure you had three environemnt vars populated like below
+            // let pitch = 0;
+            // let stretch = 1;
+            // let reverb = false;
+            // and if we only pass pitch, stretch and reverb are 1 and false
+
+            
             let pitch = 0;
+            let stretch = 1;
+            let reverb = false;
             
             let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
                 source: Some("begin".to_string()),
@@ -1481,4 +1493,35 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
     } else {
         Err(response.error_for_status().unwrap_err())
     }
+}
+
+
+fn parse_transform_settings(transform_settings: &str) -> (i32, f32, bool) {
+    let mut pitch: i32 = 0; // Default value
+    let mut stretch: f32 = 1.0; // Default value
+    let mut reverb: bool = false; // Default value
+
+    let settings: Vec<&str> = transform_settings.split('/').collect();
+
+    if settings.len() > 0 {
+        if let Ok(parsed_pitch) = settings[0].parse::<i32>() {
+            if parsed_pitch >= -1000 && parsed_pitch <= 1000 {
+                pitch = parsed_pitch;
+            }
+        }
+    }
+
+    if settings.len() > 1 {
+        if let Ok(parsed_stretch) = settings[1].parse::<f32>() {
+            if parsed_stretch >= 0.1 && parsed_stretch <= 10.0 {
+                stretch = parsed_stretch;
+            }
+        }
+    }
+
+    if settings.len() > 2 {
+        reverb = matches!(settings[2].to_lowercase().as_str(), "true" | "t");
+    }
+
+    (pitch, stretch, reverb)
 }
