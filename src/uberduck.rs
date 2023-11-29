@@ -211,8 +211,8 @@ impl EventHandler for ElevenLabsHandler {
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-            sink.set_volume(1.3);
-            // sink.set_volume(0.7);
+            // sink.set_volume(1.3);
+            sink.set_volume(0.7);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
             
             sink.append(Decoder::new(BufReader::new(file)).unwrap());

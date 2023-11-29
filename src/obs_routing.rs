@@ -380,6 +380,22 @@ pub async fn handle_obs_commands(
             
         }
         
+        "!dca" | "!heart" => {
+            let lower_bound = 1;
+            let upper_bound = 1000;
+            let contract = "0x77d4b54e91822e9799ab0900876d6b1cda752706";
+            let _ = art_blocks::updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
+        "!axo" | "!jiwa" => {
+            let lower_bound = 480000000;
+            let upper_bound = 480000399;
+            let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
+            let _ = art_blocks::updates_ab_browser(&obs_client, contract.to_string(), lower_bound, upper_bound).await;
+            Ok(())
+        }
+        
         "!chimera" => {
             let lower_bound = 233000000;
             let upper_bound = 233000986;
@@ -693,6 +709,39 @@ pub async fn handle_obs_commands(
 
             Ok(())
         }
+
+    // play file.xxx echos 0.8 0.7 700.0 0.25 700.0 0.3
+    // The sample will be bounced twice in asymmetric echos:
+    // play file.xxx echos 0.8 0.7 700.0 0.25 900.0 0.3
+    // The sample will sound as if played in a garage:
+    // play file.xxx echos 0.8 0.7 40.0 0.25 63.0 0.3
+    "!echo" => {
+            if splitmsg.len() < 2 {
+                return Ok(())
+            }
+            
+            let transform_settings = &splitmsg.get(1).unwrap();
+            let contents = &splitmsg[2..].join(" ");
+            let word_count = &splitmsg[2..].len();
+            
+            let (pitch, stretch, reverb) = parse_transform_settings(
+                transform_settings, *word_count); let pitch = format!("{}", pitch);
+            let stretch = format!("{}", stretch);
+            println!("{} {} {}", pitch, stretch, reverb);
+            
+            let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest{
+                source: Some("begin".to_string()),
+                message: contents.to_string(),
+                username: msg.user_name.to_string(),
+                pitch: Some(pitch),
+                stretch: Some(stretch),
+                reverb,
+                
+                ..Default::default()
+            }));
+            Ok(())
+    }
+        
 
     // !transform PITCH/STRETCH/REVERB
     "!transform" => {
@@ -1486,9 +1535,9 @@ async fn from_clone(voice_clone: VoiceClone, api_base_url_v1: &str) -> Result<St
 
 
 fn parse_transform_settings(transform_settings: &str, word_count: usize) -> (i32, f32, bool) {
-    let mut pitch: i32 = 0; // Default value
-    let mut stretch: f32 = 1.0; // Default value
-    let mut reverb: bool = false; // Default value
+    let mut pitch: i32 = 0;
+    let mut stretch: f32 = 1.0;
+    let mut reverb: bool = false;
 
     let settings: Vec<&str> = transform_settings.split('/').collect();
 
