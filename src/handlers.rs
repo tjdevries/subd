@@ -7,3 +7,4 @@ pub mod source_visibility;
 pub mod skybox;
 pub mod twitch_eventsub_handler;
 pub mod chatgpt_response_handler;
+pub mod stream_background;

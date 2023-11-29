@@ -104,6 +104,7 @@ impl EventHandler for ExplicitSoundHandler {
                 let file = BufReader::new(
                     File::open(format!("./MP3s/{}.mp3", sanitized_word))
                         .unwrap(),);
+                self.sink.set_volume(0.5);
                 self.sink
                     .append(Decoder::new(BufReader::new(file)).unwrap());
 

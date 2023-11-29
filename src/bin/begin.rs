@@ -189,6 +189,8 @@ async fn main() -> Result<()> {
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler { obs_client,  twitch_client });
     
+    let obs_client = server::obs::create_obs_client().await?;
+    event_loop.push(handlers::stream_background::StreamBackgroundHandler { obs_client });
     // =======================================================================
 
     event_loop.run().await?;
