@@ -151,7 +151,7 @@ async fn main() -> Result<()> {
     let elevenlabs = Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
 
     // Uberduck handles voice messages
-    event_loop.push(uberduck::ElevenLabsHandler { pool, sink, elevenlabs });
+    event_loop.push(uberduck::ElevenLabsHandler { pool: pool.clone(), sink, elevenlabs });
 
     // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
@@ -191,6 +191,9 @@ async fn main() -> Result<()> {
     
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::stream_background::StreamBackgroundHandler { obs_client });
+    
+    let obs_client = server::obs::create_obs_client().await?;
+    event_loop.push(handlers::voices_handler::VoicesHandler{ pool: pool.clone(), obs_client });
     // =======================================================================
 
     event_loop.run().await?;

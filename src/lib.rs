@@ -26,3 +26,4 @@ pub mod uberduck;
 pub mod user_messages;
 pub mod users;
 pub mod stream_background_routing;
+pub mod voices_routing;

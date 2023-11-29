@@ -1,22 +1,18 @@
-use crate::obs_routing;
-
-use anyhow::Result;
-use events::EventHandler;
-use tokio::sync::broadcast;
-use subd_types::Event;
 use obws::Client as OBSClient;
+use anyhow::Result;
+use subd_types::Event;
 use async_trait::async_trait;
+use crate::voices_routing;
+use tokio::sync::broadcast;
+use events::EventHandler;
 
-use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
-
-pub struct OBSMessageHandler {
+pub struct VoicesHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
-    pub twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
 #[async_trait]
-impl EventHandler for OBSMessageHandler {
+impl EventHandler for VoicesHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -35,11 +31,9 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // THEORY: We don't know if this is an explicit OBS message at this stage
-            match obs_routing::handle_obs_commands(
+            match voices_routing::handle_voices_commands(
                 &tx,
                 &self.obs_client,
-                &self.twitch_client,
                 &self.pool,
                 splitmsg,
                 msg,
@@ -55,4 +49,3 @@ impl EventHandler for OBSMessageHandler {
         }
     }
 }
-
