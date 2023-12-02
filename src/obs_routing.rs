@@ -581,25 +581,24 @@ pub async fn handle_obs_commands(
         // 
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
-            let default_spin_amount = 1080.0;
             let default_duration = 9001;
             let default_easing_type = "ease-in".to_string();
             let default_easing_function = "cubic".to_string();
-            
             let easing_functions = easing_function_match();
             let easing_types = easing_match();
+            let duration: u32 = splitmsg
+                .get(2)
+                .map_or(default_duration, |x| x.trim().parse().unwrap_or(3000));
             let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
             let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
             let easing_function_index = &easing_functions[easing_function.as_str()];
             let easing_type_index = &easing_types[easing_type.as_str()];
             
+            let default_spin_amount = 1080.0;
             let spin_amount: f32 = splitmsg
                 .get(1)
                 .map_or(default_spin_amount, |x| x.trim().parse().unwrap_or(default_spin_amount));
 
-            let duration: u32 = splitmsg
-                .get(2)
-                .map_or(default_duration, |x| x.trim().parse().unwrap_or(3000));
             
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
