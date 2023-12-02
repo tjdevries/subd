@@ -574,6 +574,11 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
         // ===============================================================================================
 
+
+        // Examples:
+        //           !spin 1080 18000 ease-in-and-out cubic
+        //
+        // 
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
             let default_spin_amount = 1080.0;
@@ -604,6 +609,10 @@ pub async fn handle_obs_commands(
                 // scale_x: Some(217.0),
                 // scale_y: Some(200.0),
                 rotation_z: Some(spin_amount),
+                
+                easing_function: Some(*easing_function_index),
+                easing_type: Some(*easing_type_index),
+            
                 // field_of_view: Some(108.0),
                 //
                 // // If a previous Move_transition set this and you don't reset it, you're gonna hate
@@ -782,10 +791,10 @@ pub fn easing_function_match() -> HashMap<&'static str, i32> {
  
 pub fn easing_match() -> HashMap<&'static str, i32> {
     HashMap::from([
-        ("nothing", 1),
-        ("ease-in", 2),
-        ("ease-out", 3),
-        ("ease-in-and-out", 4),
+        ("nothing", 0),
+        ("ease-in", 1),
+        ("ease-out", 2),
+        ("ease-in-and-out", 3),
     ])
 }
  

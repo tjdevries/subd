@@ -96,8 +96,10 @@ pub struct MoveMultipleValuesSetting {
     pub rotation_z: Option<f32>,
 
     // "easing_function_match": Number(10), "easing_match": Number(2),
-    pub easing_function_match: Option<u32>,
-    pub easing_match: Option<u32>,
+    #[serde(rename = "easing_function_match")]
+    pub easing_function: Option<i32>,
+    #[serde(rename = "easing_match")]
+    pub easing_type: Option<i32>,
 }
 
 // THESE EXTRA VALUES ARE BULLSHIT!!!
