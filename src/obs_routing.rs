@@ -36,9 +36,11 @@ pub async fn handle_obs_commands(
 ) -> Result<()> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
 
-    let is_mod = msg.roles.is_twitch_mod();
-    let is_vip = msg.roles.is_twitch_vip();
-    let background_scene = "BackgroundMusic";
+    let _is_mod = msg.roles.is_twitch_mod();
+    let _is_vip = msg.roles.is_twitch_vip();
+    let _background_scene = "BackgroundMusic";
+    let _not_beginbot =
+        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
@@ -57,9 +59,6 @@ pub async fn handle_obs_commands(
         Ok(scene) => scene.to_string(),
         Err(_) => obs::MEME_SCENE.to_string(),
     };
-
-    let not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     // This fails, and we stop
     // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;

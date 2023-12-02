@@ -9,6 +9,8 @@ use axum::{
 use events::EventHandler;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use subd_types::Event;
@@ -17,9 +19,6 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use std::fs::File;
-use std::io::Write;
-use std::process::Command;
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -52,7 +51,6 @@ pub struct Subscription {
 struct Condition {
     broadcaster_user_id: String,
     reward_id: String,
-
     // Will this crash shit
     // user_input: Option<String>,
 }
@@ -136,11 +134,11 @@ async fn post_request(
             // If we don't Twitch's challenge, you don't events
             return (StatusCode::OK, challenge);
         }
-        _ => { }
+        _ => {}
     }
-    
+
     let c = obs_client;
-    
+
     match eventsub_body.subscription.type_field.as_str() {
         // What if we checked for Polls here!
         "channel.follow" => {
@@ -160,58 +158,54 @@ async fn post_request(
 
         "channel.channel_points_custom_reward_redemption.add" => {
             match eventsub_body.event {
-                Some(event) => {
-                    match event.reward {
-                        Some(reward) => {
-                            let command = reward.title.as_ref();
-                            match command {
-                                "Ask Begin Jones a Question" => {
-                                    let user_input = event.user_input.unwrap();
-                                    let _ = handle_ask_begin_jones(user_input, voice_dir).await;
-                                }
-                                
-                                "gallery" => {
-                                    let _ = obs_scenes::change_scene(
-                                        &c, "4 Piece",
-                                    )
+                Some(event) => match event.reward {
+                    Some(reward) => {
+                        let command = reward.title.as_ref();
+                        match command {
+                            "Ask Begin Jones a Question" => {
+                                let user_input = event.user_input.unwrap();
+                                let _ = handle_ask_begin_jones(
+                                    user_input, voice_dir,
+                                )
+                                .await;
+                            }
+
+                            "gallery" => {
+                                let _ = obs_scenes::change_scene(&c, "4 Piece")
                                     .await;
-                                }
-                                
-                                "code" => {
-                                    let _ = obs_scenes::change_scene(
-                                        &c, "Primary",
-                                    )
+                            }
+
+                            "code" => {
+                                let _ = obs_scenes::change_scene(&c, "Primary")
                                     .await;
-                                }
+                            }
 
-                                _ => {
-                                    for &(cmd, ref scene) in
-                                        music_scenes::VOICE_TO_MUSIC
-                                            .iter()
-                                    {
-                                        println!("Reward Title {} - Music: {:?}", reward.title, scene.music);
+                            _ => {
+                                for &(cmd, ref scene) in
+                                    music_scenes::VOICE_TO_MUSIC.iter()
+                                {
+                                    println!(
+                                        "Reward Title {} - Music: {:?}",
+                                        reward.title, scene.music
+                                    );
 
-                                        let cmd_no_bang = &cmd[1..];
+                                    let cmd_no_bang = &cmd[1..];
 
-                                        if cmd_no_bang == reward.title {
-                                            let _ = send_message(
-                                                &twitch_client,
-                                                format!(
-                                                    "!{}",
-                                                    reward.title
-                                                ),
-                                            )
-                                            .await;
-                                        }
+                                    if cmd_no_bang == reward.title {
+                                        let _ = send_message(
+                                            &twitch_client,
+                                            format!("!{}", reward.title),
+                                        )
+                                        .await;
                                     }
                                 }
-                            };
-                        }
-                        None => {
-                            println!("NO REWARD FOUND!")
-                        }
+                            }
+                        };
                     }
-                }
+                    None => {
+                        println!("NO REWARD FOUND!")
+                    }
+                },
                 None => {
                     println!("NO EVENT FOUND!")
                 }
@@ -222,16 +216,18 @@ async fn post_request(
         }
     };
 
-   (StatusCode::OK, "".to_string())
+    (StatusCode::OK, "".to_string())
 }
 
+// we are going to call Chat GPT ourselves
 async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
     let mut prompt_file = File::create(format!("{}/prompt.txt", voice_dir))
         .expect("Unable to create prompt file");
     let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens. Be Cool.";
-    prompt_file.write_all(alex_jones_prompt.as_bytes())
+    prompt_file
+        .write_all(alex_jones_prompt.as_bytes())
         .expect("Unable to write data");
-    
+
     println!("YOU ARE DOING IT PETER: {:?}", user_input);
     let mut file = File::create(format!("{}/transcription.txt", voice_dir))
         .expect("Unable to create file");

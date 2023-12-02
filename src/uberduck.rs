@@ -228,9 +228,11 @@ impl EventHandler for ElevenLabsHandler {
                 "melkey" => sink.set_volume(1.0),
                 "satan" => sink.set_volume(0.7),
                 "god" => sink.set_volume(0.7),
-                _ => { sink.set_volume(0.5); }
+                _ => {
+                    sink.set_volume(0.5);
+                }
             };
-        
+
             let file = BufReader::new(File::open(local_audio_path).unwrap());
 
             sink.append(Decoder::new(BufReader::new(file)).unwrap());

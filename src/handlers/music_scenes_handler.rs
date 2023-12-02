@@ -61,7 +61,7 @@ impl EventHandler for MusicScenesHandler {
 }
 
 async fn handle_commands(
-    tx: &broadcast::Sender<Event>,
+    _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
@@ -72,6 +72,8 @@ async fn handle_commands(
     let is_mod = msg.roles.is_twitch_mod();
     let is_vip = msg.roles.is_twitch_vip();
     let background_scene = "BackgroundMusic";
+    let _not_beginbot =
+        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     // We try and do some parsing on every command here
     // These may not always be what we want, but they are sensible
@@ -82,17 +84,14 @@ async fn handle_commands(
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
-    let filter_value = splitmsg
+    let _filter_value = splitmsg
         .get(3)
         .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
 
-    let scene = match obs_scenes::find_scene(source).await {
+    let _scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
         Err(_) => obs::MEME_SCENE.to_string(),
     };
-
-    let not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     // This fails, and we stop
     // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
