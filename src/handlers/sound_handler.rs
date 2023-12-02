@@ -1,21 +1,21 @@
+use crate::obs;
+use crate::twitch_stream_state;
+use crate::uberduck;
 use anyhow::Result;
-use csv::Writer;
 use async_trait::async_trait;
+use csv::Writer;
 use events::EventHandler;
-use rodio::*;
 use rodio::Decoder;
+use rodio::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
-use crate::twitch_stream_state;
-use crate::uberduck;
-use crate::obs;
 use tokio::sync::broadcast;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -33,7 +33,6 @@ pub struct ExplicitSoundHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
 }
-
 
 // Define a custom data structure to hold the values
 #[derive(Serialize)]
@@ -74,7 +73,7 @@ impl EventHandler for ExplicitSoundHandler {
 
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
-            
+
             // Only continue if we have the implicit_soundeffects enabled
             if !state.explicit_soundeffects {
                 continue;
@@ -83,13 +82,12 @@ impl EventHandler for ExplicitSoundHandler {
             let mut potential_sound = msg.contents.clone();
             let first_char = potential_sound.remove(0);
             if first_char != '!' {
-                continue
+                continue;
             }
             let word = potential_sound;
- 
-            let text_source =
-                obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
-            
+
+            let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+
             let sanitized_word = word.to_lowercase();
             let full_name = format!("./MP3s/{}.mp3", sanitized_word);
 
@@ -103,7 +101,8 @@ impl EventHandler for ExplicitSoundHandler {
 
                 let file = BufReader::new(
                     File::open(format!("./MP3s/{}.mp3", sanitized_word))
-                        .unwrap(),);
+                        .unwrap(),
+                );
                 self.sink.set_volume(0.5);
                 self.sink
                     .append(Decoder::new(BufReader::new(file)).unwrap());
@@ -123,7 +122,6 @@ impl EventHandler for ExplicitSoundHandler {
             ));
         }
     }
-    
 }
 
 // Looks through raw-text to either play TTS or play soundeffects
@@ -134,7 +132,6 @@ impl EventHandler for SoundHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-
         // Get all soundeffects loaded up once
         // so we can search through them all
         let soundeffect_files = fs::read_dir("./MP3s").unwrap();
@@ -179,7 +176,7 @@ impl EventHandler for SoundHandler {
                 Some(voice) => voice,
                 None => obs::TWITCH_MOD_DEFAULT_VOICE.to_string(),
             };
-            
+
             // This is the current state of the stream:
             //    whether you are allowing all text to be read
             //    whether you are allowing soundeffects to happen automatically
@@ -197,14 +194,12 @@ impl EventHandler for SoundHandler {
             if msg.roles.is_twitch_staff() {
                 character.voice =
                     Some(obs::TWITCH_STAFF_OBS_SOURCE.to_string());
-                character.source =
-                    Some(obs::TWITCH_STAFF_VOICE.to_string());
+                character.source = Some(obs::TWITCH_STAFF_VOICE.to_string());
             } else if msg.user_name == "beginbotbot" {
-                character.voice =
-                    Some(obs::TWITCH_HELPER_VOICE.to_string());
+                character.voice = Some(obs::TWITCH_HELPER_VOICE.to_string());
             } else if msg.roles.is_twitch_mod() {
                 match character.voice {
-                    Some(_) => { }
+                    Some(_) => {}
                     None => {
                         character.voice =
                             Some(obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
@@ -217,13 +212,11 @@ impl EventHandler for SoundHandler {
                 // if we are allowing non-subs to speak
                 character.voice = Some(voice);
             }
-            
 
             // If the character
             // If we have a voice assigned, then we fire off an UberDuck Request
             match character.voice {
                 Some(voice) => {
-                    
                     // Write records to a CSV file
                     // let records = vec![Record {
                     //     field_1: voice.clone(),
@@ -238,14 +231,16 @@ impl EventHandler for SoundHandler {
                     println!("\n\tvoice: {}", voice);
 
                     // The voice here isn't be respected
-                    let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
-                        voice: Some(voice),
-                        message: speech_bubble_text,
-                        voice_text,
-                        username: msg.user_name,
-                        source: character.source,
-                        ..Default::default()
-                    }));
+                    let _ = tx.send(Event::ElevenLabsRequest(
+                        subd_types::ElevenLabsRequest {
+                            voice: Some(voice),
+                            message: speech_bubble_text,
+                            voice_text,
+                            username: msg.user_name,
+                            source: character.source,
+                            ..Default::default()
+                        },
+                    ));
                 }
                 None => {}
             }
@@ -261,8 +256,7 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let text_source =
-                obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+            let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
@@ -277,7 +271,8 @@ impl EventHandler for SoundHandler {
 
                     let file = BufReader::new(
                         File::open(format!("./MP3s/{}.mp3", sanitized_word))
-                            .unwrap(),);
+                            .unwrap(),
+                    );
                     self.sink
                         .append(Decoder::new(BufReader::new(file)).unwrap());
 

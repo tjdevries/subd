@@ -1,8 +1,7 @@
 use crate::audio;
-use std::process::Command;
 use crate::obs;
-use crate::stream_character;
 use crate::redirect;
+use crate::stream_character;
 use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -19,12 +18,12 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::process::Command;
 use std::{thread, time};
+use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
-use subd_types::ElevenLabsRequest;
 use tokio::sync::broadcast;
-
 
 #[derive(Deserialize, Debug)]
 struct ElevenlabsVoice {
@@ -82,11 +81,10 @@ impl EventHandler for ElevenLabsHandler {
             };
 
             let ch = match msg.message.chars().next() {
-                Some(ch) =>  ch,
+                Some(ch) => ch,
                 None => {
                     continue;
                 }
-                            
             };
             if ch == '!' || ch == '@' {
                 continue;
@@ -99,27 +97,27 @@ impl EventHandler for ElevenLabsHandler {
             };
 
             let is_global_voice_enabled = match twitch_state.await {
-                Ok(state) => {
-                    state.global_voice
-                },
+                Ok(state) => state.global_voice,
                 Err(err) => {
                     eprintln!("Error fetching twitch_stream_state: {:?}", err);
                     false
                 }
             };
-            let global_voice = stream_character::get_voice_from_username(&self.pool, "beginbot").await.unwrap();
-            
+            let global_voice = stream_character::get_voice_from_username(
+                &self.pool, "beginbot",
+            )
+            .await
+            .unwrap();
+
             // Do we want explicit voice's passed to override global?
             // That means all !reverb !pitch etc. commands
             // If we passed in an explict voice use that
             let voice_name = match msg.voice {
                 Some(voice) => voice,
-                None =>{
-                    global_voice.clone()
-                }
+                None => global_voice.clone(),
             };
-            
-            let final_voice = if is_global_voice_enabled  {
+
+            let final_voice = if is_global_voice_enabled {
                 global_voice
             } else {
                 voice_name
@@ -136,15 +134,13 @@ impl EventHandler for ElevenLabsHandler {
 
             let voice_data = find_voice_id_by_name(&final_voice);
             let (voice_id, voice_name) = match voice_data {
-                Some((id, name)) => {
-                    (id, name)
-                },
+                Some((id, name)) => (id, name),
                 None => {
                     is_random = true;
                     find_random_voice()
-                },
+                }
             };
-            
+
             // The voice here in the TTS body is final
             let tts_body = TtsBody {
                 model_id: None,
@@ -157,52 +153,67 @@ impl EventHandler for ElevenLabsHandler {
             // w/ Extension
             let full_filename = format!("{}.wav", filename);
             let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
-            let mut local_audio_path = format!("{}/{}", tts_folder, full_filename);
+            let mut local_audio_path =
+                format!("{}/{}", tts_folder, full_filename);
 
             std::fs::write(local_audio_path.clone(), bytes).unwrap();
-            
+
             if msg.reverb {
-                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
+                local_audio_path =
+                    normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path =
+                    add_reverb(local_audio_path.clone()).unwrap();
             }
 
             match msg.stretch {
                 Some(stretch) => {
-                    local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path = stretch_audio(local_audio_path, stretch).unwrap();
-                },
+                    local_audio_path =
+                        normalize_tts_file(local_audio_path.clone()).unwrap();
+                    local_audio_path =
+                        stretch_audio(local_audio_path, stretch).unwrap();
+                }
                 None => {}
             }
-            
+
             match msg.pitch {
                 Some(pitch) => {
-                    local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path = change_pitch(local_audio_path, pitch).unwrap();
-                },
+                    local_audio_path =
+                        normalize_tts_file(local_audio_path.clone()).unwrap();
+                    local_audio_path =
+                        change_pitch(local_audio_path, pitch).unwrap();
+                }
                 None => {}
             }
-            
+
             if final_voice == "satan" {
-                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path = change_pitch(local_audio_path, "-350".to_string()).unwrap();
-                local_audio_path = add_reverb(local_audio_path.clone()).unwrap();
+                local_audio_path =
+                    normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path =
+                    change_pitch(local_audio_path, "-350".to_string()).unwrap();
+                local_audio_path =
+                    add_reverb(local_audio_path.clone()).unwrap();
             }
-            
+
             // What is the difference
             if final_voice == "god" {
-                local_audio_path = normalize_tts_file(local_audio_path.clone()).unwrap();
+                local_audio_path =
+                    normalize_tts_file(local_audio_path.clone()).unwrap();
                 local_audio_path = add_reverb(local_audio_path).unwrap();
             }
 
             // =====================================================
 
             // We are supressing a whole bunch of alsa message
-            let backup = redirect::redirect_stderr().expect("Failed to redirect stderr");
-            
+            let backup =
+                redirect::redirect_stderr().expect("Failed to redirect stderr");
+
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
-            
-            let onscreen_msg = format!("{} | g: {} | r: {} | {}", msg.username, is_global_voice_enabled, is_random, voice_name);
+
+            let onscreen_msg = format!(
+                "{} | g: {} | r: {} | {}",
+                msg.username, is_global_voice_enabled, is_random, voice_name
+            );
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
@@ -214,12 +225,12 @@ impl EventHandler for ElevenLabsHandler {
             // sink.set_volume(1.3);
             sink.set_volume(0.5);
             let file = BufReader::new(File::open(local_audio_path).unwrap());
-            
+
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
             sink.sleep_until_end();
-            
+
             redirect::restore_stderr(backup);
-            
+
             // This playsthe text
             let ten_millis = time::Duration::from_millis(1000);
             thread::sleep(ten_millis);
@@ -376,9 +387,9 @@ fn add_postfix_to_filepath(filepath: String, postfix: String) -> String {
     }
 }
 
-
 fn normalize_tts_file(local_audio_path: String) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
+    let audio_dest_path =
+        add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
     let ffmpeg_status = Command::new("ffmpeg")
         .args(&["-i", &local_audio_path, &audio_dest_path])
         .status()
@@ -392,11 +403,20 @@ fn normalize_tts_file(local_audio_path: String) -> Result<String> {
     }
 }
 
-
 fn stretch_audio(local_audio_path: String, stretch: String) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_stretch".to_string());
+    let audio_dest_path = add_postfix_to_filepath(
+        local_audio_path.clone(),
+        "_stretch".to_string(),
+    );
     Command::new("sox")
-        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "stretch", &stretch])
+        .args(&[
+            "-t",
+            "wav",
+            &local_audio_path,
+            &audio_dest_path,
+            "stretch",
+            &stretch,
+        ])
         .status()
         .expect("Failed to execute sox");
     Ok(audio_dest_path)
@@ -404,20 +424,44 @@ fn stretch_audio(local_audio_path: String, stretch: String) -> Result<String> {
 
 fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
     let postfix = format!("{}_{}", "_pitch".to_string(), pitch);
-    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), postfix);
+    let audio_dest_path =
+        add_postfix_to_filepath(local_audio_path.clone(), postfix);
     Command::new("sox")
-        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "pitch", &pitch])
+        .args(&[
+            "-t",
+            "wav",
+            &local_audio_path,
+            &audio_dest_path,
+            "pitch",
+            &pitch,
+        ])
         .status()
         .expect("Failed to execute sox");
-    
+
     Ok(audio_dest_path)
 }
 
-
 fn add_reverb(local_audio_path: String) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(local_audio_path.clone(), "_reverb".to_string());
+    let audio_dest_path = add_postfix_to_filepath(
+        local_audio_path.clone(),
+        "_reverb".to_string(),
+    );
     Command::new("sox")
-        .args(&["-t", "wav", &local_audio_path, &audio_dest_path, "gain", "-2", "reverb", "70", "100", "50", "100", "10", "2"])
+        .args(&[
+            "-t",
+            "wav",
+            &local_audio_path,
+            &audio_dest_path,
+            "gain",
+            "-2",
+            "reverb",
+            "70",
+            "100",
+            "50",
+            "100",
+            "10",
+            "2",
+        ])
         .status()
         .expect("Failed to execute sox");
     Ok(audio_dest_path)
@@ -446,9 +490,22 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
 
 fn sanitize_chat_message(raw_msg: String) -> String {
     // Let's replace any word longer than 50 characters
-    raw_msg.split_whitespace()
-        .map(|word| if word.contains("http") {"U.R.L".to_string()} else { word.to_string() })
-        .map(|word| if word.len() > 50 { "long word".to_string() } else { word.to_string() })
+    raw_msg
+        .split_whitespace()
+        .map(|word| {
+            if word.contains("http") {
+                "U.R.L".to_string()
+            } else {
+                word.to_string()
+            }
+        })
+        .map(|word| {
+            if word.len() > 50 {
+                "long word".to_string()
+            } else {
+                word.to_string()
+            }
+        })
         .collect::<Vec<String>>()
         .join(" ")
 }

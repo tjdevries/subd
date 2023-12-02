@@ -80,9 +80,9 @@ pub async fn spin(
     // )
     // .await;
     // TODO: fix
-    
+
     let move_filtername = format!("Move_{}", obs::THE_3D_TRANSFORM_FILTER_NAME);
-    
+
     match move_transition::update_and_trigger_move_value_filter(
         source,
         &move_filtername,
@@ -165,7 +165,6 @@ pub async fn trigger_3d(
     .await
 }
 
-
 // Filter name
 // OG filter
 // Move Filter
@@ -181,16 +180,18 @@ pub async fn trigger_move_value_3d_transform(
     duration: u32,
     obs_client: &OBSClient,
 ) -> Result<()> {
-
     let three_d_transform_filter_name = filter_name;
-    let filter_settings = obs_client.filters().get(&source, &three_d_transform_filter_name).await;
+    let filter_settings = obs_client
+        .filters()
+        .get(&source, &three_d_transform_filter_name)
+        .await;
 
     let filt: SourceFilter = match filter_settings {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
     println!("\nOG 3D Transform Filter Settings: {:?}", filt);
-    
+
     let new_settings = match serde_json::from_value::<stream_fx::StreamFXSettings>(
         filt.settings,
     ) {
@@ -203,7 +204,7 @@ pub async fn trigger_move_value_3d_transform(
         }
     };
     println!("\nNew 3D Transform Filter Settings: {:?}", new_settings);
-    
+
     let new_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: filter_name,
@@ -212,7 +213,8 @@ pub async fn trigger_move_value_3d_transform(
     };
     obs_client.filters().set_settings(new_settings).await?;
 
-    let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
+    let move_transition_filter_name =
+        format!("Move_{}", three_d_transform_filter_name);
     println!("MOVE {}", move_transition_filter_name);
     _ = move_transition::update_and_trigger_move_value_filter(
         source,

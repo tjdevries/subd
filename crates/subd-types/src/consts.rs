@@ -24,8 +24,8 @@ pub fn get_twitch_broadcaster_raw() -> String {
     TWITCH_BROADCASTER_OAUTH
         .get_or_init(|| {
             dotenv::var("SUBD_TWITCH_BROADCASTER_OAUTH")
-            // dotenv::var("TWITCH_OAUTH_TOKEN")
-            // dotenv::var("BEGINBOT_TWITCH_OAUTH_TOKEN")
+                // dotenv::var("TWITCH_OAUTH_TOKEN")
+                // dotenv::var("BEGINBOT_TWITCH_OAUTH_TOKEN")
                 .expect("$SUBD_TWITCH_BROADCASTER_OAUTH must be set")
                 .replace("oauth:", "")
                 .to_string()

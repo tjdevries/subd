@@ -1,5 +1,3 @@
-use anyhow::{bail, Result};
-use std::collections::HashMap;
 use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
@@ -13,16 +11,20 @@ use crate::sdf_effects;
 use crate::skybox;
 use crate::stream_character;
 use crate::twitch_stream_state;
-use obws::Client as OBSClient;
-use obws::requests::scene_items::Scale;
+use anyhow::{bail, Result};
 use obws;
+use obws::requests::scene_items::Scale;
+use obws::Client as OBSClient;
+use std::collections::HashMap;
 use std::process::Command;
 use std::thread;
 use std::time;
-use subd_types::{Event, UserMessage, TransformOBSTextRequest};
+use subd_types::{Event, TransformOBSTextRequest, UserMessage};
 use tokio::sync::broadcast;
 use twitch_chat::send_message;
-use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
+};
 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
@@ -55,11 +57,12 @@ pub async fn handle_obs_commands(
         Ok(scene) => scene.to_string(),
         Err(_) => obs::MEME_SCENE.to_string(),
     };
-    
-    let not_beginbot = msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-    
-   // This fails, and we stop
-   // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
+
+    let not_beginbot =
+        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
+
+    // This fails, and we stop
+    // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
 
     // NOTE: If we want to extract values like filter_setting_name and filter_value
     //       we need to figure a way to look up the defaults per command
@@ -67,8 +70,7 @@ pub async fn handle_obs_commands(
 
     println!("Splitmsg: {} | {}", splitmsg[0], msg.user_name);
     let command = splitmsg[0].as_str();
-    let _ =  match command {
-
+    let _ = match command {
         // =================== //
         // === Experiments === //
         // =================== //
@@ -87,7 +89,8 @@ pub async fn handle_obs_commands(
                 filter_value,
                 duration,
                 obs_client,
-            ).await;
+            )
+            .await;
             Ok(())
         }
 
@@ -103,7 +106,7 @@ pub async fn handle_obs_commands(
                 enabled: true,
             };
             obs_client.filters().set_enabled(filter_enabled).await?;
-            
+
             let filter_name = "Default_3D-Transform-Orthographic";
             let filter_enabled = obws::requests::filters::SetEnabled {
                 source: "begin",
@@ -111,7 +114,7 @@ pub async fn handle_obs_commands(
                 enabled: true,
             };
             obs_client.filters().set_enabled(filter_enabled).await?;
-            
+
             let filter_name = "Default_3D-Transform-CornerPin";
             let filter_enabled = obws::requests::filters::SetEnabled {
                 source: "begin",
@@ -121,14 +124,13 @@ pub async fn handle_obs_commands(
             obs_client.filters().set_enabled(filter_enabled).await?;
 
             Ok(())
-
         }
-        
+
         // This is a demonstration of updating a single Setting
         // We need to make sure it works going back forth for updating multi-effects
         "!nerd3" => {
             println!("Nerd TIME!");
- 
+
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
             let duration = 5000;
@@ -141,19 +143,20 @@ pub async fn handle_obs_commands(
                 filter_value,
                 duration,
                 obs_client,
-            ).await;
+            )
+            .await;
             Ok(())
         }
 
         "!nerd" => {
             println!("Nerd TIME!");
- 
+
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
-            
+
             // See the settings aren't correct
             // We need to convert from the settings of the filter
-            let new_settings = move_transition::MoveMultipleValuesSetting{
+            let new_settings = move_transition::MoveMultipleValuesSetting {
                 filter: Some(filter_name.to_string()),
                 scale_x: Some(125.3),
                 scale_y: Some(140.6),
@@ -167,8 +170,9 @@ pub async fn handle_obs_commands(
             };
 
             let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
-            
+            let move_transition_filter_name =
+                format!("Move_{}", three_d_transform_filter_name);
+
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
@@ -183,8 +187,8 @@ pub async fn handle_obs_commands(
         "!chad" => {
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
-        
-            let new_settings = move_transition::MoveMultipleValuesSetting{
+
+            let new_settings = move_transition::MoveMultipleValuesSetting {
                 filter: Some(filter_name.to_string()),
                 scale_x: Some(217.0),
                 scale_y: Some(200.0),
@@ -205,7 +209,7 @@ pub async fn handle_obs_commands(
 
             // dbg!(&new_settings);
             let move_transition_filter_name = format!("Move_{}", filter_name);
-            
+
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
@@ -220,7 +224,6 @@ pub async fn handle_obs_commands(
         // ======================== //
         // === Rapper Functions === //
         // ======================== //
-
         "!reload_rapper" => {
             let source = "SpeechBubble";
             let _ = obs_source::set_enabled(
@@ -237,14 +240,13 @@ pub async fn handle_obs_commands(
                 source,
                 true,
                 &obs_client,
-        )
-        .await;
+            )
+            .await;
             Ok(())
         }
         // ===========================================
         // == Test Area
         // ===========================================
-        
         "!durf" => {
             // Put any code you want to experiment w/ the chat with here
             Ok(())
@@ -256,28 +258,23 @@ pub async fn handle_obs_commands(
         // == Stream State
         // ===========================================
         "!implicit" | "!peace" => {
-            twitch_stream_state::update_implicit_soundeffects(&pool)
-                .await?;
+            twitch_stream_state::update_implicit_soundeffects(&pool).await?;
             Ok(())
         }
         "!explicit" => {
-            twitch_stream_state::update_explicit_soundeffects(&pool)
-                .await?;
+            twitch_stream_state::update_explicit_soundeffects(&pool).await?;
             Ok(())
         }
         // returns the current state of stream
         "!state" => {
-           let state = twitch_stream_state::get_twitch_state(&pool).await?;
-           let msg = format!("Twitch State! {:?}", state);
-           send_message(twitch_client, 
-                msg).await?;
-           // send_message(format!("Twitch State! {:?}", state));
+            let state = twitch_stream_state::get_twitch_state(&pool).await?;
+            let msg = format!("Twitch State! {:?}", state);
+            send_message(twitch_client, msg).await?;
+            // send_message(format!("Twitch State! {:?}", state));
             // twitch_stream_state::update_implicit_soundeffects(false, &pool)
             //     .await?;
             Ok(())
-                
         }
-        
 
         // !upload_image URL
         // "!upload_image" => handlers::upload_image(msg),
@@ -290,7 +287,7 @@ pub async fn handle_obs_commands(
         // !scroll begin x 5 300
         "!scroll" => {
             let default_filter_setting_name = String::from("speed_x");
-            
+
             let filter_setting_name =
                 splitmsg.get(2).unwrap_or(&default_filter_setting_name);
             let filter_setting_name: String = match filter_setting_name.as_str()
@@ -386,7 +383,7 @@ pub async fn handle_obs_commands(
                 let err_msg = format!("Error Scaling {:?}", e);
                 send_message(twitch_client, err_msg).await?;
             }
-            
+
             Ok(())
         }
 
@@ -395,21 +392,28 @@ pub async fn handle_obs_commands(
         // ===========================================
         "!move" => {
             let temp_scene = "Primary";
-            
+
             println!("\n!move {} {}", temp_scene, source);
 
             if splitmsg.len() > 3 {
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
-               let _ = obs_source::move_source(temp_scene, source, x, y, &obs_client).await;
+                let _ = obs_source::move_source(
+                    temp_scene,
+                    source,
+                    x,
+                    y,
+                    &obs_client,
+                )
+                .await;
             } else {
-                send_message(twitch_client, "Missing X and Y").await?; 
+                send_message(twitch_client, "Missing X and Y").await?;
             }
 
             Ok(())
         }
-        
+
         "!gg" => {
             let x: f32 = splitmsg
                 .get(2)
@@ -440,7 +444,7 @@ pub async fn handle_obs_commands(
                 let err_msg = format!("Error Scaling {:?}", e);
                 send_message(twitch_client, err_msg).await?;
             }
-            
+
             Ok(())
         }
 
@@ -490,16 +494,18 @@ pub async fn handle_obs_commands(
             obs_source::set_enabled(obs::MEME_SCENE, source, true, &obs_client)
                 .await
         }
-        
+
         // ===========================================
         // == HotKeys
         // ===========================================
         "!hk" => {
             let key = splitmsg[1].as_str().to_uppercase();
-            let obs_formatted_key =  format!("OBS_KEY_{}", key);
-            let _ = tx.send(Event::TriggerHotkeyRequest(subd_types::TriggerHotkeyRequest{
-                hotkey: obs_formatted_key,
-            }));
+            let obs_formatted_key = format!("OBS_KEY_{}", key);
+            let _ = tx.send(Event::TriggerHotkeyRequest(
+                subd_types::TriggerHotkeyRequest {
+                    hotkey: obs_formatted_key,
+                },
+            ));
             Ok(())
         }
 
@@ -534,13 +540,14 @@ pub async fn handle_obs_commands(
         "!source" => {
             obs_source::print_source_info(source, &scene, &obs_client).await
         }
-        
+
         "!filter" => {
-            let default_filter_name  = "Move-3D-Transform-Orthographic".to_string();
-            
+            let default_filter_name =
+                "Move-3D-Transform-Orthographic".to_string();
+
             let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
-                match obs_client.filters().get("begin",source).await {
+                match obs_client.filters().get("begin", source).await {
                     Ok(val) => Ok(val),
                     Err(err) => Err(err),
                 }?;
@@ -574,11 +581,10 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
         // ===============================================================================================
 
-
         // Examples:
         //           !spin 1080 18000 ease-in-and-out cubic
         //
-        // 
+        //
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
             let default_duration = 9001;
@@ -590,43 +596,44 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map_or(default_duration, |x| x.trim().parse().unwrap_or(3000));
             let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
-            let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
-            let easing_function_index = &easing_functions[easing_function.as_str()];
+            let easing_function =
+                splitmsg.get(4).unwrap_or(&default_easing_function);
+            let easing_function_index =
+                &easing_functions[easing_function.as_str()];
             let easing_type_index = &easing_types[easing_type.as_str()];
-            
-            let default_spin_amount = 1080.0;
-            let spin_amount: f32 = splitmsg
-                .get(1)
-                .map_or(default_spin_amount, |x| x.trim().parse().unwrap_or(default_spin_amount));
 
-            
+            let default_spin_amount = 1080.0;
+            let spin_amount: f32 =
+                splitmsg.get(1).map_or(default_spin_amount, |x| {
+                    x.trim().parse().unwrap_or(default_spin_amount)
+                });
+
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
-            
-            let new_settings = move_transition::MoveMultipleValuesSetting{
+
+            let new_settings = move_transition::MoveMultipleValuesSetting {
                 // filter: Some(filter_name.to_string()),
                 // scale_x: Some(217.0),
                 // scale_y: Some(200.0),
                 rotation_z: Some(spin_amount),
-                
+
                 easing_function: Some(*easing_function_index),
                 easing_type: Some(*easing_type_index),
-            
+
                 // field_of_view: Some(108.0),
                 //
                 // // If a previous Move_transition set this and you don't reset it, you're gonna hate
                 // // you life
                 // position_y: Some(0.0),
-
-
                 duration: Some(duration),
                 ..Default::default()
             };
 
             dbg!(&new_settings);
             let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
-            
+            let move_transition_filter_name =
+                format!("Move_{}", three_d_transform_filter_name);
+
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
@@ -698,18 +705,18 @@ pub async fn handle_obs_commands(
         // We need to eventually take in style IDs
         "!skybox" => {
             println!("Trying Skybox");
-            
+
             let skybox_info = splitmsg
                 .clone()
                 .into_iter()
                 .skip(1)
                 .collect::<Vec<String>>()
                 .join(" ");
-            
-                let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest{
-                    msg: skybox_info,
-                }));
-        
+
+            let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest {
+                msg: skybox_info,
+            }));
+
             // let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
             // if let Err(e) = write_to_file(file_path, &skybox_info) {
             //     eprintln!("Error writing to file: {}", e);
@@ -742,7 +749,6 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Characters
         // ===========================================
-
         "!talk" => {
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
@@ -753,7 +759,7 @@ pub async fn handle_obs_commands(
             ));
             Ok(())
         }
-        
+
         // This Creates a new soundboard text item
         "!soundboard_text" => {
             move_transition_bootstrap::create_soundboard_text(obs_client).await
@@ -787,7 +793,7 @@ pub fn easing_function_match() -> HashMap<&'static str, i32> {
         ("back", 10),
     ])
 }
- 
+
 pub fn easing_match() -> HashMap<&'static str, i32> {
     HashMap::from([
         ("nothing", 0),
@@ -796,4 +802,3 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
         ("ease-in-and-out", 3),
     ])
 }
- 

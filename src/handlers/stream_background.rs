@@ -1,10 +1,10 @@
-use obws::Client as OBSClient;
-use anyhow::Result;
-use subd_types::Event;
-use async_trait::async_trait;
 use crate::stream_background_routing;
-use tokio::sync::broadcast;
+use anyhow::Result;
+use async_trait::async_trait;
 use events::EventHandler;
+use obws::Client as OBSClient;
+use subd_types::Event;
+use tokio::sync::broadcast;
 
 pub struct StreamBackgroundHandler {
     pub obs_client: OBSClient,
@@ -17,7 +17,6 @@ impl EventHandler for StreamBackgroundHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        
         loop {
             let event = rx.recv().await?;
             let msg = match event {

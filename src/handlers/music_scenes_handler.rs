@@ -1,20 +1,20 @@
-use anyhow::Result;
-use async_trait::async_trait;
 use crate::move_transition;
 use crate::music_scenes;
-use crate::obs_scenes;
 use crate::obs;
+use crate::obs_scenes;
+use crate::obs_source;
 use crate::twitch_stream_state;
 use crate::uberduck;
-use crate::obs_source;
+use anyhow::Result;
+use async_trait::async_trait;
 use events::EventHandler;
-use std::path::Path;
 use obws::Client as OBSClient;
 use rand::seq::SliceRandom;
 use std::fs;
-use subd_types::{Event, UserMessage};
+use std::path::Path;
 use std::thread;
 use std::time;
+use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 
 pub struct MusicScenesHandler {
@@ -29,7 +29,6 @@ impl EventHandler for MusicScenesHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -91,11 +90,12 @@ async fn handle_commands(
         Ok(scene) => scene.to_string(),
         Err(_) => obs::MEME_SCENE.to_string(),
     };
-    
-    let not_beginbot = msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-    
-   // This fails, and we stop
-   // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
+
+    let not_beginbot =
+        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
+
+    // This fails, and we stop
+    // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
 
     // NOTE: If we want to extract values like filter_setting_name and filter_value
     //       we need to figure a way to look up the defaults per command
@@ -105,12 +105,13 @@ async fn handle_commands(
     let command = splitmsg[0].as_str();
 
     // TODO: Check for a playlist
-    let exists = music_scenes::VOICE_TO_MUSIC.iter().any(|&(cmd, _)| cmd == command);
+    let exists = music_scenes::VOICE_TO_MUSIC
+        .iter()
+        .any(|&(cmd, _)| cmd == command);
     if exists {
         if !is_mod && !is_vip {
             return Ok(());
         }
-        
 
         let mut scene_details = None;
         for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
@@ -127,18 +128,30 @@ async fn handle_commands(
                 Some(playlist_folder) => {
                     match get_random_mp3_file_name(playlist_folder) {
                         Some(music_filename) => {
-
-                            let items = obs_client.scene_items().list(background_scene).await?;
+                            let items = obs_client
+                                .scene_items()
+                                .list(background_scene)
+                                .await?;
                             for item in items {
-                                let enabled = obs_client.scene_items().enabled(background_scene, item.id).await.unwrap();
+                                let enabled = obs_client
+                                    .scene_items()
+                                    .enabled(background_scene, item.id)
+                                    .await
+                                    .unwrap();
 
                                 // println!("Enabled: {}", enabled);
                                 // println!("Item: {:?}", item);
 
-                                if enabled && item.source_name == details.music {
+                                if enabled && item.source_name == details.music
+                                {
                                     println!("We are just changing the music!");
-                                    
-                                    let _ = obs_source::hide_source(background_scene, details.music, obs_client).await;
+
+                                    let _ = obs_source::hide_source(
+                                        background_scene,
+                                        details.music,
+                                        obs_client,
+                                    )
+                                    .await;
                                     set_global_voice = false;
                                 }
                             }
@@ -147,9 +160,9 @@ async fn handle_commands(
                             // Now we just need to update the Ffmpeg Source
                             // Now I have to use this model
                             let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
-                            
+
                             let path = Path::new(&music_filename);
-                                
+
                             let media_source = obws::requests::custom::source_settings::FfmpegSource{
                                 is_local_file: true,
                                 local_file: path,
@@ -168,47 +181,62 @@ async fn handle_commands(
                                 reconnect_delay_sec: 1,
                                 // ..Default::default()
                             };
-                            let set_settings = obws::requests::inputs::SetSettings{
-                                settings: &media_source,
-                                input: details.music,
-                                overlay: Some(true),
-                            };
-                            let _ = obs_client.inputs().set_settings(set_settings).await;
+                            let set_settings =
+                                obws::requests::inputs::SetSettings {
+                                    settings: &media_source,
+                                    input: details.music,
+                                    overlay: Some(true),
+                                };
+                            let _ = obs_client
+                                .inputs()
+                                .set_settings(set_settings)
+                                .await;
                         }
                         None => {
                             println!("Could not find a random mp3 file in the playlist folder");
                         }
                     }
-                } 
+                }
                 None => {}
             };
-            
+
             // Hide all Background Music Sources
-            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC.iter()
+            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC
+                .iter()
                 .map(|(_, scene)| scene.music)
                 .collect();
             for source in music_list.iter() {
-                let _ = obs_source::hide_source(background_scene, source, obs_client).await;
+                let _ = obs_source::hide_source(
+                    background_scene,
+                    source,
+                    obs_client,
+                )
+                .await;
             }
 
             // I think we need a gap, to allow the pervious media source update to finish
             let ten_millis = time::Duration::from_millis(300);
             thread::sleep(ten_millis);
-            
+
             // Do
-            let _ = obs_source::show_source(background_scene, details.music, obs_client).await;
+            let _ = obs_source::show_source(
+                background_scene,
+                details.music,
+                obs_client,
+            )
+            .await;
             // If we have a playlist that isn't None, then we need to first get a RANDOM
             // mp3 from the playlist folder
             //
             // then we update the OBS source w/ the new Media
             // Turn on the Music for the scene
-            
+
             if command == "!sigma" {
                 println!("We are in Chad mode!");
                 let source = "begin";
                 let filter_name = "3D-Transform-Perspective";
-                
-                let new_settings = move_transition::MoveMultipleValuesSetting{
+
+                let new_settings = move_transition::MoveMultipleValuesSetting {
                     filter: Some(filter_name.to_string()),
                     scale_x: Some(217.0),
                     scale_y: Some(200.0),
@@ -224,8 +252,9 @@ async fn handle_commands(
 
                 dbg!(&new_settings);
                 let three_d_transform_filter_name = filter_name;
-                let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
-                
+                let move_transition_filter_name =
+                    format!("Move_{}", three_d_transform_filter_name);
+
                 _ = move_transition::update_and_trigger_move_values_filter(
                     source,
                     &move_transition_filter_name,
@@ -242,11 +271,10 @@ async fn handle_commands(
                 pool,
             )
             .await;
-        
+
             // Enable Global Voice Mode
             if set_global_voice {
-                twitch_stream_state::turn_on_global_voice(&pool)
-                    .await?;
+                twitch_stream_state::turn_on_global_voice(&pool).await?;
             }
         } else {
             println!("Could not find voice info for command.");
@@ -256,13 +284,15 @@ async fn handle_commands(
 }
 
 fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
-    let full_path = format!("/home/begin/stream/Stream/BackgroundMusic/{}", folder_path);
+    let full_path =
+        format!("/home/begin/stream/Stream/BackgroundMusic/{}", folder_path);
     let paths = fs::read_dir(full_path).ok()?;
 
     let mp3_files: Vec<_> = paths
         .filter_map(Result::ok)
         .filter(|dir_entry| {
-            dir_entry.path().extension().and_then(|ext| ext.to_str()) == Some("mp3")
+            dir_entry.path().extension().and_then(|ext| ext.to_str())
+                == Some("mp3")
         })
         .collect();
 
@@ -273,7 +303,14 @@ fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
     let mut rng = rand::thread_rng();
     let selected_file = mp3_files.choose(&mut rng).unwrap();
 
-    let new_music = selected_file.file_name().to_str().map(String::from).unwrap();
-    let full_path = format!("/home/begin/stream/Stream/BackgroundMusic/{}/{}", folder_path, new_music);
+    let new_music = selected_file
+        .file_name()
+        .to_str()
+        .map(String::from)
+        .unwrap();
+    let full_path = format!(
+        "/home/begin/stream/Stream/BackgroundMusic/{}/{}",
+        folder_path, new_music
+    );
     Some(full_path)
 }

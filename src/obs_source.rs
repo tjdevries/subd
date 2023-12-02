@@ -27,12 +27,10 @@ pub async fn scale_source(
         x: Some(x),
         y: Some(y),
     };
-    
-    println!("\n\t#scale_source scene: {} | ID: {} | scale: {:?} {:?}",
-        scene,
-        id,
-        new_scale.x,
-        new_scale.y,
+
+    println!(
+        "\n\t#scale_source scene: {} | ID: {} | scale: {:?} {:?}",
+        scene, id, new_scale.x, new_scale.y,
     );
 
     // This is fucking me up

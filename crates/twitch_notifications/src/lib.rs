@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpResponse, HttpServer, HttpRequest, Responder};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use serde_json::Value;
 
 // TODO: update to actually validate twitch messages are from Twitch
@@ -11,7 +11,10 @@ async fn eventsub_get(req: HttpRequest) -> impl Responder {
     HttpResponse::Ok().json("")
 }
 
-pub async fn eventsub_post(req: HttpRequest, body: web::Bytes) -> impl Responder {
+pub async fn eventsub_post(
+    req: HttpRequest,
+    body: web::Bytes,
+) -> impl Responder {
     // let secret = get_secret();
     // let message = get_hmac_message(&req, &body);
     // let mut mac = HmacSha256::new_varkey(secret.as_bytes()).expect("HMAC can take key of any size");
@@ -19,26 +22,33 @@ pub async fn eventsub_post(req: HttpRequest, body: web::Bytes) -> impl Responder
     // let hmac_hex = format!("sha256={}", hex::encode(mac.finalize().into_bytes()));
 
     //if verify_message(&hmac_hex, req.headers().get("Twitch-Eventsub-Message-Signature").unwrap().to_str().unwrap()) {
-        println!("signatures match");
-        let notification: Value = serde_json::from_slice(&body).unwrap();
+    println!("signatures match");
+    let notification: Value = serde_json::from_slice(&body).unwrap();
 
-        match req.headers().get("Twitch-Eventsub-Message-Type").unwrap().to_str().unwrap() {
-            "notification" => {
-                // Process the event's data
-                println!("Event type: {}", notification["subscription"]["type"]);
-                HttpResponse::NoContent().finish()
-            }
-            "webhook_callback_verification" => {
-                // HttpResponse::Ok().content_type("text/plain").body(notification["challenge"].as_str().unwrap())
-                HttpResponse::Ok().content_type("text/plain").body(notification["challenge"].as_str().unwrap().to_string())
-
-            }
-            "revocation" => {
-                println!("notifications revoked!");
-                HttpResponse::NoContent().finish()
-            }
-            _ => HttpResponse::NoContent().finish(),
+    match req
+        .headers()
+        .get("Twitch-Eventsub-Message-Type")
+        .unwrap()
+        .to_str()
+        .unwrap()
+    {
+        "notification" => {
+            // Process the event's data
+            println!("Event type: {}", notification["subscription"]["type"]);
+            HttpResponse::NoContent().finish()
         }
+        "webhook_callback_verification" => {
+            // HttpResponse::Ok().content_type("text/plain").body(notification["challenge"].as_str().unwrap())
+            HttpResponse::Ok()
+                .content_type("text/plain")
+                .body(notification["challenge"].as_str().unwrap().to_string())
+        }
+        "revocation" => {
+            println!("notifications revoked!");
+            HttpResponse::NoContent().finish()
+        }
+        _ => HttpResponse::NoContent().finish(),
+    }
 }
 
 // fn get_secret() -> String {

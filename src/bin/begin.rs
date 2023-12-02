@@ -1,16 +1,15 @@
 use anyhow::Result;
+use elevenlabs_api::{Auth, Elevenlabs};
+use serde::{Deserialize, Serialize};
 use server::audio;
 use server::handlers;
 use server::uberduck;
+use std::collections::HashMap;
 use subd_db::get_db_pool;
+use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-use twitch_irc::login::StaticLoginCredentials;
-use elevenlabs_api::{Elevenlabs, Auth};
-use serde::{Deserialize,Serialize};
-use std::collections::HashMap;
-
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
@@ -58,7 +57,6 @@ struct EventSub {
     is_gift: Option<bool>,
 }
 
-
 #[tokio::main]
 async fn main() -> Result<()> {
     {
@@ -93,7 +91,8 @@ async fn main() -> Result<()> {
     // Turns twitch IRC things into our message events
     event_loop.push(twitch_chat::TwitchChat::new(
         pool.clone(),
-        "beginbot".to_string(),)?);
+        "beginbot".to_string(),
+    )?);
 
     // TODO: Update this description to be more exact
     // Saves the message and extracts out some information
@@ -106,13 +105,13 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-    
+
     let twitch_config = get_chat_config();
     let (_, twitch_client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(twitch_config);
-    
+
     // This really is named wrong
     // this handles more than OBS
     // and it's also earlier in the program
@@ -128,7 +127,7 @@ async fn main() -> Result<()> {
     // Works for Arch Linux
     let (_stream, stream_handle) =
         audio::get_output_stream("pulse").expect("stream handle");
-    
+
     // Works for Mac
     // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -146,39 +145,56 @@ async fn main() -> Result<()> {
 
     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     let pool = get_db_pool().await;
-    
+
     let elevenlabs_auth = Auth::from_env().unwrap();
-    let elevenlabs = Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
+    let elevenlabs =
+        Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
 
     // Uberduck handles voice messages
-    event_loop.push(uberduck::ElevenLabsHandler { pool: pool.clone(), sink, elevenlabs });
+    event_loop.push(uberduck::ElevenLabsHandler {
+        pool: pool.clone(),
+        sink,
+        elevenlabs,
+    });
 
     // OBS Hotkeys are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::trigger_obs_hotkey::TriggerHotkeyHandler { obs_client });
+    event_loop.push(handlers::trigger_obs_hotkey::TriggerHotkeyHandler {
+        obs_client,
+    });
 
     // OBS Text is controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::transform_obs_test::TransformOBSTextHandler { obs_client });
+    event_loop.push(handlers::transform_obs_test::TransformOBSTextHandler {
+        obs_client,
+    });
 
     // OBS Sources are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::source_visibility::SourceVisibilityHandler { obs_client });
-    
+    event_loop.push(handlers::source_visibility::SourceVisibilityHandler {
+        obs_client,
+    });
+
     // Skyboxes
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::skybox::SkyboxHandler{ obs_client });
-    
+    event_loop.push(handlers::skybox::SkyboxHandler { obs_client });
+
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::stream_character_handler::StreamCharacterHandler { obs_client });
-    
+    event_loop.push(
+        handlers::stream_character_handler::StreamCharacterHandler {
+            obs_client,
+        },
+    );
+
     let twitch_config = get_chat_config();
     let (_, twitch_client) = TwitchIRCClient::<
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(twitch_config);
-    event_loop.push(handlers::chatgpt_response_handler::ChatGPTResponse { twitch_client });
+    event_loop.push(handlers::chatgpt_response_handler::ChatGPTResponse {
+        twitch_client,
+    });
 
     // Twitch EventSub Events
     let twitch_config = get_chat_config();
@@ -187,16 +203,27 @@ async fn main() -> Result<()> {
         StaticLoginCredentials,
     >::new(twitch_config);
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler { obs_client,  twitch_client });
-    
+    event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler {
+        obs_client,
+        twitch_client,
+    });
+
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::stream_background::StreamBackgroundHandler { obs_client });
-    
+    event_loop.push(handlers::stream_background::StreamBackgroundHandler {
+        obs_client,
+    });
+
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::voices_handler::VoicesHandler{ pool: pool.clone(), obs_client });
-    
+    event_loop.push(handlers::voices_handler::VoicesHandler {
+        pool: pool.clone(),
+        obs_client,
+    });
+
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::music_scenes_handler::MusicScenesHandler{ pool: pool.clone(), obs_client });
+    event_loop.push(handlers::music_scenes_handler::MusicScenesHandler {
+        pool: pool.clone(),
+        obs_client,
+    });
     // =======================================================================
 
     event_loop.run().await?;

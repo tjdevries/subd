@@ -1,18 +1,21 @@
 use crate::obs_routing;
 
 use anyhow::Result;
-use events::EventHandler;
-use tokio::sync::broadcast;
-use subd_types::Event;
-use obws::Client as OBSClient;
 use async_trait::async_trait;
+use events::EventHandler;
+use obws::Client as OBSClient;
+use subd_types::Event;
+use tokio::sync::broadcast;
 
-use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
+};
 
 pub struct OBSMessageHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
-    pub twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pub twitch_client:
+        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
 #[async_trait]
@@ -22,7 +25,6 @@ impl EventHandler for OBSMessageHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -55,4 +57,3 @@ impl EventHandler for OBSMessageHandler {
         }
     }
 }
-

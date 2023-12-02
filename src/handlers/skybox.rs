@@ -1,7 +1,7 @@
 extern crate reqwest;
-extern crate serde; extern crate serde_json;
+extern crate serde;
+extern crate serde_json;
 use anyhow::Result;
-use std::env;
 use async_trait::async_trait;
 use chrono::prelude::*;
 use events::EventHandler;
@@ -9,12 +9,13 @@ use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::env;
 use std::fs::File;
-use std::io::prelude::*;
 use std::io;
+use std::io::prelude::*;
 use subd_types::Event;
-use tokio::sync::broadcast;
 use tokio;
+use tokio::sync::broadcast;
 
 #[allow(dead_code)]
 pub struct Skybox {
@@ -29,7 +30,6 @@ pub struct SkyboxHandler {
 pub struct SkyboxRemixHandler {
     pub obs_client: OBSClient,
 }
-
 
 #[async_trait]
 #[allow(unused_variables)]
@@ -46,7 +46,6 @@ impl EventHandler for SkyboxHandler {
                 _ => continue,
             };
 
-
             println!("Attempting to Skybox");
             request_skybox(request.msg).await?;
 
@@ -61,7 +60,8 @@ impl EventHandler for SkyboxHandler {
 async fn request_skybox(prompt: String) -> io::Result<String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
     // https://backend.blockadelabs.com/api/v1/skybox
-    let requests_url = format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
+    let requests_url =
+        format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
 
     // So this doesn't work right now because we don't a have a working subscription
     // println!("Skybox API URL: {}", requests_url);
@@ -80,7 +80,7 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
 
     // return Ok(String::from("this a hack"));
-    
+
     let post_body = json!({
         "prompt": prompt,
         // "generator": "stable-skybox",
@@ -88,7 +88,8 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     });
 
     let client = Client::new();
-    let resp = client.post(&requests_url)
+    let resp = client
+        .post(&requests_url)
         .json(&post_body)
         .send()
         .await
@@ -110,7 +111,6 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     Ok(response_filepath)
 }
 
-
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
@@ -119,8 +119,10 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
 // CHAT GPT Generated Code, BE CAREFUL
 
 #[allow(dead_code)]
-static SKYBOX_REMIX_URL: &str = "https://backend.blockadelabs.com/api/v1/skybox";
-static SKYBOX_IMAGINE_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine";
+static SKYBOX_REMIX_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/skybox";
+static SKYBOX_IMAGINE_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/imagine";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OuterRequest {
@@ -161,7 +163,8 @@ pub struct RemixRequestResponse {
     pub skybox_name: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)] pub struct GeneratorData {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct GeneratorData {
     pub prompt: String,
     pub negative_text: String,
     pub animation_mode: String,
@@ -201,21 +204,27 @@ pub struct Response {
 #[allow(unused_variables)]
 fn find_style_id(words: Vec<&str>) -> i32 {
     // What is a good default style ID
-    return 1
+    return 1;
 }
 
 #[allow(dead_code)]
 async fn request_status(id: &str) -> Result<Response> {
     // let skybox_api_key: String = std::env::var("SKYBOX_API_KEY").unwrap();
-    let skybox_api_key: String = String::from("3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c");
+    let skybox_api_key: String = String::from(
+        "3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c",
+    );
     // let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
-    let url = format!("{}/requests/{}?api_key={}", SKYBOX_IMAGINE_URL, id, skybox_api_key);
+    let url = format!(
+        "{}/requests/{}?api_key={}",
+        SKYBOX_IMAGINE_URL, id, skybox_api_key
+    );
 
     println!("URL: {}", url);
     // x-api-key
 
     let client = reqwest::Client::new();
-    let resp = client.get(&url)
+    let resp = client
+        .get(&url)
         // .header("x-api-key", skybox_api_key)
         .send()
         .await?;
@@ -225,7 +234,6 @@ async fn request_status(id: &str) -> Result<Response> {
 
     Ok(parsed_response.response)
 }
-
 
 // async fn remix(remix_id: i32, style_id: i32, prompt: &str) -> Result<String, Box<dyn Error>> {
 //     // Perform HTTP POST request here...

@@ -28,16 +28,17 @@ impl EventHandler for TransformOBSTextHandler {
 
             let filter_name = format!("Transform{}", msg.text_source);
             // println!("Attempting to Transform! {} {} {}", &msg.text_source, &filter_name, &msg.message);
-            
+
             // We are calling the update and move text filter
             // we should see output
-            let _ = crate::move_transition::update_and_trigger_text_move_filter(
-                &msg.text_source,
-                &filter_name,
-                &msg.message,
-                &self.obs_client,
-            )
-            .await;
+            let _ =
+                crate::move_transition::update_and_trigger_text_move_filter(
+                    &msg.text_source,
+                    &filter_name,
+                    &msg.message,
+                    &self.obs_client,
+                )
+                .await;
         }
     }
 }

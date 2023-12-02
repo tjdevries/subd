@@ -1,9 +1,8 @@
+use anyhow::Result;
+use obws::Client as OBSClient;
+use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
-use anyhow::Result;
-use std::collections::HashMap;
-use obws::Client as OBSClient;
-
 
 // OBS_filter_name
 // skybox_id
@@ -30,7 +29,6 @@ pub async fn trigger_scene(
         ("bar1".to_string(), "2451051".to_string()),
         ("bar".to_string(), "2449796".to_string()),
     ]);
-
 
     let skybox_path = if skybox_id == "" {
         let new_skybox_id = &skybox_id_map[filter_name.clone()];
@@ -70,4 +68,3 @@ pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
-

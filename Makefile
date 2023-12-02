@@ -36,3 +36,5 @@ install-trunk:
 error:
 	cargo rustc --bin begin -- -Awarnings
 
+fmt:
+	cargo fmt --all

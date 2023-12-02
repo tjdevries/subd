@@ -7,7 +7,6 @@ use std::thread;
 use std::time;
 use std::time::Duration;
 
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
     #[serde(rename = "bottom")]
@@ -55,19 +54,18 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
-
 // we create Json of What we want
 // we then convert to a MoveMultipleStruct
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MoveMultipleValuesSetting {
     pub filter: Option<String>,
-    
+
     // #[serde(default="multiple_settings_value_type_default")]
     pub move_value_type: u32,
-    
+
     #[serde(rename = "duration")]
     pub duration: Option<u32>,
-    
+
     // What is the difference
     // #[serde(default="multiple_settings_value_type_default")]
     pub value_type: u32,
@@ -230,7 +228,7 @@ pub async fn update_and_trigger_text_move_filter(
         settings: new_settings,
         overlay: None,
     };
-    
+
     // println!("Setting new settings for Filter Name: {}", filter_name);
     obs_client.filters().set_settings(new_settings).await?;
 
@@ -316,7 +314,7 @@ pub async fn update_and_trigger_move_value_filter(
 
     println!("Target Filter Name: {}", target_filter_name);
     new_settings.filter = target_filter_name.to_string();
-    
+
     // Update the settings based on what is passed into the function
     new_settings.source = Some(source.to_string());
     new_settings.setting_name = String::from(filter_setting_name);
@@ -324,12 +322,11 @@ pub async fn update_and_trigger_move_value_filter(
     new_settings.duration = Some(duration);
     new_settings.value_type = value_type;
     new_settings.move_value_type = Some(value_type);
-    
 
     println!("------------------------");
     println!("\n\n\tFinal Move Transition Settings: {:?}", new_settings);
     println!("------------------------");
-    
+
     // Create a SetSettings struct & use it to update the OBS settings
     // TODO: Should this moved into the update_move_source_filters function?
     let new_settings = obws::requests::filters::SetSettings {
@@ -363,28 +360,37 @@ pub async fn update_and_trigger_move_values_filter(
 ) -> Result<()> {
     new_settings.move_value_type = 1;
     new_settings.value_type = 1;
-    
+
     // First we get all the values from the current Move filters
     let og_filter_settings =
         match obs_client.filters().get(&source, &filter_name).await {
             Ok(val) => Ok(val),
             Err(err) => Err(err),
         }?;
-    let j_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-j").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let k_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-k").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
-    let l_filter_settings =
-        match obs_client.filters().get(&source, "Perspective-Cache-l").await {
-            Ok(val) => Ok(val),
-            Err(err) => Err(err),
-        }?;
+    let j_filter_settings = match obs_client
+        .filters()
+        .get(&source, "Perspective-Cache-j")
+        .await
+    {
+        Ok(val) => Ok(val),
+        Err(err) => Err(err),
+    }?;
+    let k_filter_settings = match obs_client
+        .filters()
+        .get(&source, "Perspective-Cache-k")
+        .await
+    {
+        Ok(val) => Ok(val),
+        Err(err) => Err(err),
+    }?;
+    let l_filter_settings = match obs_client
+        .filters()
+        .get(&source, "Perspective-Cache-l")
+        .await
+    {
+        Ok(val) => Ok(val),
+        Err(err) => Err(err),
+    }?;
 
     // We then update all the Move filters
     let settings = obws::requests::filters::SetSettings {
@@ -394,7 +400,7 @@ pub async fn update_and_trigger_move_values_filter(
         overlay: None,
     };
     let _ = obs_client.filters().set_settings(settings).await;
-    
+
     let new_last_settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: "Perspective-Cache-;",
@@ -419,14 +425,12 @@ pub async fn update_and_trigger_move_values_filter(
         settings: og_filter_settings.settings,
         overlay: None,
     };
-    
-    
+
     let _ = obs_client.filters().set_settings(new_last_settings).await;
     let _ = obs_client.filters().set_settings(new_l_settings).await;
     let _ = obs_client.filters().set_settings(new_k_settings).await;
     let _ = obs_client.filters().set_settings(new_j_settings).await;
 
-    
     // Trigger the main move filter filter
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: &source,
@@ -434,9 +438,9 @@ pub async fn update_and_trigger_move_values_filter(
         enabled: true,
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
-    
+
     thread::sleep(Duration::from_millis(400));
-    
+
     // Trigger the filter
     Ok(())
 }

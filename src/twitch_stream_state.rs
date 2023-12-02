@@ -36,36 +36,25 @@ impl twitch_stream_state::Model {
     }
 }
 
-pub async fn turn_off_global_voice(
-    pool: &PgPool,
-) -> Result<()> {
-    let _res = sqlx::query!(
-        "UPDATE twitch_stream_state SET global_voice = $1",
-        false
-    )
-    .execute(pool)
-    .await?;
+pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {
+    let _res =
+        sqlx::query!("UPDATE twitch_stream_state SET global_voice = $1", false)
+            .execute(pool)
+            .await?;
 
     Ok(())
 }
 
-pub async fn turn_on_global_voice(
-    pool: &PgPool,
-) -> Result<()> {
-    let _res = sqlx::query!(
-        "UPDATE twitch_stream_state SET global_voice = $1",
-        true
-    )
-    .execute(pool)
-    .await?;
+pub async fn turn_on_global_voice(pool: &PgPool) -> Result<()> {
+    let _res =
+        sqlx::query!("UPDATE twitch_stream_state SET global_voice = $1", true)
+            .execute(pool)
+            .await?;
 
     Ok(())
 }
 
-
-pub async fn update_implicit_soundeffects(
-    pool: &PgPool,
-) -> Result<()> {
+pub async fn update_implicit_soundeffects(pool: &PgPool) -> Result<()> {
     let state = get_twitch_state(pool).await?;
     let soundeffects = !state.implicit_soundeffects;
     let _res = sqlx::query!(
@@ -78,12 +67,10 @@ pub async fn update_implicit_soundeffects(
     Ok(())
 }
 
-pub async fn update_explicit_soundeffects(
-    pool: &PgPool,
-) -> Result<()> {
+pub async fn update_explicit_soundeffects(pool: &PgPool) -> Result<()> {
     let state = get_twitch_state(pool).await?;
     let soundeffects = !state.explicit_soundeffects;
-    
+
     let _res = sqlx::query!(
         "UPDATE twitch_stream_state SET explicit_soundeffects = $1",
         soundeffects

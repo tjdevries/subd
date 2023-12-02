@@ -1,13 +1,12 @@
 use anyhow::Result;
-use events::EventHandler;
-use tokio::sync::broadcast;
-use subd_types::Event;
-use obws::Client as OBSClient;
 use async_trait::async_trait;
+use events::EventHandler;
+use obws::Client as OBSClient;
+use subd_types::Event;
+use tokio::sync::broadcast;
 
-use serde::{Deserialize,Serialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-
 
 pub struct StreamCharacterHandler {
     pub obs_client: OBSClient,
@@ -58,8 +57,6 @@ impl EventHandler for StreamCharacterHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        
-
         loop {
             let event = rx.recv().await?;
             let msg = match event {
