@@ -228,7 +228,7 @@ async fn post_request(
 async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
     let mut prompt_file = File::create(format!("{}/prompt.txt", voice_dir))
         .expect("Unable to create prompt file");
-    let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens";
+    let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens. Be Cool.";
     prompt_file.write_all(alex_jones_prompt.as_bytes())
         .expect("Unable to write data");
     
@@ -238,7 +238,7 @@ async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
     file.write_all(user_input.as_bytes())
         .expect("Unable to write data");
 
-    Command::new("/home/begin/code/BeginGPT/begintime.sh")
-        .status()
-        .expect("Failed to execute script");
+    // Command::new("/home/begin/code/BeginGPT/begintime.sh")
+    //     .status()
+    //     .expect("Failed to execute script");
 }
