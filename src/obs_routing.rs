@@ -576,20 +576,6 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
 
         "!spin" | "!spinx" | "spiny" => {
-            // let default_filter_setting_name = String::from("z");
-            // let filter_setting_name =
-            //     splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-            //
-            // println!("!spin time {} - {}", source, filter_setting_name);
-            // move_transition_effects::spin(
-            //     source,
-            //     filter_setting_name,
-            //     filter_value,
-            //     duration,
-            //     &obs_client,
-            // )
-            // .await
-            
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
             
@@ -597,7 +583,7 @@ pub async fn handle_obs_commands(
                 // filter: Some(filter_name.to_string()),
                 // scale_x: Some(217.0),
                 // scale_y: Some(200.0),
-                rotation_z: Some(500000.0),
+                rotation_z: Some(1080.0),
                 field_of_view: Some(108.0),
                 //
                 // // If a previous Move_transition set this and you don't reset it, you're gonna hate
