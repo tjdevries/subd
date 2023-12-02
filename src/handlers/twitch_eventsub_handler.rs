@@ -49,6 +49,9 @@ pub struct Subscription {
 struct Condition {
     broadcaster_user_id: String,
     reward_id: String,
+
+    // Will this crash shit
+    // user_input: Option<String>,
 }
 // "reward": {
 //         "id": "92af127c-7326-4483-a52b-b0da0be61c01",
@@ -80,6 +83,7 @@ pub struct SubEvent {
     tier: Option<String>,
     is_gift: Option<bool>,
     reward: Option<Reward>,
+    user_input: Option<String>,
 }
 
 #[async_trait]
@@ -154,12 +158,29 @@ async fn post_request(
                                 Some(reward) => {
                                     let command = reward.title.as_ref();
                                     match command {
+                                        "Ask Begin Jones a Question" => {
+
+                                            let user_input = event.user_input.unwrap();
+
+                                            // How can we call the 
+                                            
+                                            // how do we get the input from the redemption
+                                            // println!("USER INPUT: {:?}", reward.user_input);
+                                            println!("YOU ARE DOING IT PETER: {:?}", user_input);
+                                            // let _ = obs_scenes::change_scene(
+                                            //     &c, "4 Piece",
+                                            // )
+                                            // .await;
+                                            // Ok(())
+                                        }
+                                        
                                         "gallery" => {
                                             let _ = obs_scenes::change_scene(
                                                 &c, "4 Piece",
                                             )
                                             .await;
                                         }
+                                        
                                         "code" => {
                                             let _ = obs_scenes::change_scene(
                                                 &c, "Primary",
@@ -200,7 +221,7 @@ async fn post_request(
                         }
                     }
                 }
-                _ => println!("nothing"),
+                _ => println!("No Event Subscription Found"),
             };
 
             "".to_string()
