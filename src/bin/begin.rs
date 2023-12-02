@@ -194,6 +194,9 @@ async fn main() -> Result<()> {
     
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::voices_handler::VoicesHandler{ pool: pool.clone(), obs_client });
+    
+    let obs_client = server::obs::create_obs_client().await?;
+    event_loop.push(handlers::music_scenes_handler::MusicScenesHandler{ pool: pool.clone(), obs_client });
     // =======================================================================
 
     event_loop.run().await?;
