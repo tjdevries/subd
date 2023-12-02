@@ -17,6 +17,9 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use std::fs::File;
+use std::io::Write;
+use std::process::Command;
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -124,109 +127,118 @@ async fn post_request(
     >,
 ) -> impl IntoResponse {
     println!("\t~~ Eventsub Body: {:?}", eventsub_body);
+    let voice_dir = "/home/begin/code/BeginGPT/tmp/current";
 
-    let challenge = match eventsub_body.challenge {
+    match eventsub_body.challenge {
         Some(challenge) => {
             println!("We got a challenge!");
             // This is required for EventSub's to work!
             // If we don't Twitch's challenge, you don't events
-            challenge
+            return (StatusCode::OK, challenge);
         }
-        _ => {
-            let c = obs_client;
-            match eventsub_body.subscription.type_field.as_str() {
-                // What if we checked for Polls here!
-                "channel.follow" => {
-                    println!("follow time");
-                }
+        _ => { }
+    }
+    
+    let c = obs_client;
+    
+    match eventsub_body.subscription.type_field.as_str() {
+        // What if we checked for Polls here!
+        "channel.follow" => {
+            println!("follow time");
+        }
 
-                // I don't know if the eventsub_body will match
-                "channel.poll.begin" => {
-                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                }
-                "channel.poll.progress" => {
-                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                }
-                "channel.poll.end" => {
-                    println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-                }
+        // I don't know if the eventsub_body will match
+        "channel.poll.begin" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
+        "channel.poll.progress" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
+        "channel.poll.end" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
 
-                "channel.channel_points_custom_reward_redemption.add" => {
-                    match eventsub_body.event {
-                        Some(event) => {
-                            match event.reward {
-                                Some(reward) => {
-                                    let command = reward.title.as_ref();
-                                    match command {
-                                        "Ask Begin Jones a Question" => {
+        "channel.channel_points_custom_reward_redemption.add" => {
+            match eventsub_body.event {
+                Some(event) => {
+                    match event.reward {
+                        Some(reward) => {
+                            let command = reward.title.as_ref();
+                            match command {
+                                "Ask Begin Jones a Question" => {
+                                    let user_input = event.user_input.unwrap();
+                                    let _ = handle_ask_begin_jones(user_input, voice_dir).await;
+                                }
+                                
+                                "gallery" => {
+                                    let _ = obs_scenes::change_scene(
+                                        &c, "4 Piece",
+                                    )
+                                    .await;
+                                }
+                                
+                                "code" => {
+                                    let _ = obs_scenes::change_scene(
+                                        &c, "Primary",
+                                    )
+                                    .await;
+                                }
 
-                                            let user_input = event.user_input.unwrap();
+                                _ => {
+                                    for &(cmd, ref scene) in
+                                        music_scenes::VOICE_TO_MUSIC
+                                            .iter()
+                                    {
+                                        println!("Reward Title {} - Music: {:?}", reward.title, scene.music);
 
-                                            // How can we call the 
-                                            
-                                            // how do we get the input from the redemption
-                                            // println!("USER INPUT: {:?}", reward.user_input);
-                                            println!("YOU ARE DOING IT PETER: {:?}", user_input);
-                                            // let _ = obs_scenes::change_scene(
-                                            //     &c, "4 Piece",
-                                            // )
-                                            // .await;
-                                            // Ok(())
-                                        }
-                                        
-                                        "gallery" => {
-                                            let _ = obs_scenes::change_scene(
-                                                &c, "4 Piece",
+                                        let cmd_no_bang = &cmd[1..];
+
+                                        if cmd_no_bang == reward.title {
+                                            let _ = send_message(
+                                                &twitch_client,
+                                                format!(
+                                                    "!{}",
+                                                    reward.title
+                                                ),
                                             )
                                             .await;
                                         }
-                                        
-                                        "code" => {
-                                            let _ = obs_scenes::change_scene(
-                                                &c, "Primary",
-                                            )
-                                            .await;
-                                        }
-
-                                        _ => {
-                                            for &(cmd, ref scene) in
-                                                music_scenes::VOICE_TO_MUSIC
-                                                    .iter()
-                                            {
-                                                println!("Reward Title {} - Music: {:?}", reward.title, scene.music);
-
-                                                let cmd_no_bang = &cmd[1..];
-
-                                                if cmd_no_bang == reward.title {
-                                                    let _ = send_message(
-                                                        &twitch_client,
-                                                        format!(
-                                                            "!{}",
-                                                            reward.title
-                                                        ),
-                                                    )
-                                                    .await;
-                                                }
-                                            }
-                                        }
-                                    };
+                                    }
                                 }
-                                None => {
-                                    println!("No reward found!")
-                                }
-                            }
+                            };
                         }
                         None => {
-                            println!("No event found!")
+                            println!("NO REWARD FOUND!")
                         }
                     }
                 }
-                _ => println!("No Event Subscription Found"),
-            };
-
-            "".to_string()
+                None => {
+                    println!("NO EVENT FOUND!")
+                }
+            }
+        }
+        _ => {
+            println!("NO EVENT FOUND!")
         }
     };
 
-    (StatusCode::OK, challenge)
+   (StatusCode::OK, "".to_string())
+}
+
+async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
+    let mut prompt_file = File::create(format!("{}/prompt.txt", voice_dir))
+        .expect("Unable to create prompt file");
+    let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens";
+    prompt_file.write_all(alex_jones_prompt.as_bytes())
+        .expect("Unable to write data");
+    
+    println!("YOU ARE DOING IT PETER: {:?}", user_input);
+    let mut file = File::create(format!("{}/transcription.txt", voice_dir))
+        .expect("Unable to create file");
+    file.write_all(user_input.as_bytes())
+        .expect("Unable to write data");
+
+    Command::new("/home/begin/code/BeginGPT/begintime.sh")
+        .status()
+        .expect("Failed to execute script");
 }
