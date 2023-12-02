@@ -94,6 +94,10 @@ pub struct MoveMultipleValuesSetting {
     pub rotation_y: Option<f32>,
     #[serde(rename = "Rotation.Z")]
     pub rotation_z: Option<f32>,
+
+    // "easing_function_match": Number(10), "easing_match": Number(2),
+    pub easing_function_match: Option<u32>,
+    pub easing_match: Option<u32>,
 }
 
 // THESE EXTRA VALUES ARE BULLSHIT!!!
@@ -352,13 +356,11 @@ pub async fn update_and_trigger_move_value_filter(
 pub async fn update_and_trigger_move_values_filter(
     source: &str,
     filter_name: &str,
-    duration: u32,
     mut new_settings: MoveMultipleValuesSetting,
     obs_client: &OBSClient,
 ) -> Result<()> {
     new_settings.move_value_type = 1;
     new_settings.value_type = 1;
-    new_settings.duration = Some(duration);
     
     // First we get all the values from the current Move filters
     let og_filter_settings =

@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use std::collections::HashMap;
 use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
@@ -23,7 +24,6 @@ use tokio::sync::broadcast;
 use twitch_chat::send_message;
 use twitch_irc::{TwitchIRCClient, SecureTCPTransport, login::StaticLoginCredentials};
 
- 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
@@ -159,6 +159,7 @@ pub async fn handle_obs_commands(
                 scale_y: Some(140.6),
                 position_y: Some(40.0),
                 rotation_x: Some(-51.4),
+                duration: Some(duration),
 
                 // Added this to test
                 field_of_view: Some(90.0),
@@ -171,7 +172,6 @@ pub async fn handle_obs_commands(
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
-                duration,
                 new_settings,
                 &obs_client,
             )
@@ -209,7 +209,6 @@ pub async fn handle_obs_commands(
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
-                duration,
                 new_settings,
                 &obs_client,
             )
@@ -537,8 +536,8 @@ pub async fn handle_obs_commands(
         }
         
         "!filter" => {
-            
             let default_filter_name  = "Move-3D-Transform-Orthographic".to_string();
+            
             let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
                 match obs_client.filters().get("begin",source).await {
@@ -575,7 +574,28 @@ pub async fn handle_obs_commands(
         // ===============================================================================================
         // ===============================================================================================
 
+        // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
+            let default_spin_amount = 1080.0;
+            let default_duration = 9001;
+            let default_easing_type = "ease-in".to_string();
+            let default_easing_function = "cubic".to_string();
+            
+            let easing_functions = easing_function_match();
+            let easing_types = easing_match();
+            let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
+            let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
+            let easing_function_index = &easing_functions[easing_function.as_str()];
+            let easing_type_index = &easing_types[easing_type.as_str()];
+            
+            let spin_amount: f32 = splitmsg
+                .get(1)
+                .map_or(default_spin_amount, |x| x.trim().parse().unwrap_or(default_spin_amount));
+
+            let duration: u32 = splitmsg
+                .get(2)
+                .map_or(default_duration, |x| x.trim().parse().unwrap_or(3000));
+            
             let source = "begin";
             let filter_name = "3D-Transform-Perspective";
             
@@ -583,16 +603,18 @@ pub async fn handle_obs_commands(
                 // filter: Some(filter_name.to_string()),
                 // scale_x: Some(217.0),
                 // scale_y: Some(200.0),
-                rotation_z: Some(1080.0),
-                field_of_view: Some(108.0),
+                rotation_z: Some(spin_amount),
+                // field_of_view: Some(108.0),
                 //
                 // // If a previous Move_transition set this and you don't reset it, you're gonna hate
                 // // you life
                 // position_y: Some(0.0),
+
+
+                duration: Some(duration),
                 ..Default::default()
             };
 
-            let duration = 30000;
             dbg!(&new_settings);
             let three_d_transform_filter_name = filter_name;
             let move_transition_filter_name = format!("Move_{}", three_d_transform_filter_name);
@@ -600,7 +622,6 @@ pub async fn handle_obs_commands(
             _ = move_transition::update_and_trigger_move_values_filter(
                 source,
                 &move_transition_filter_name,
-                duration,
                 new_settings,
                 &obs_client,
             )
@@ -744,3 +765,27 @@ pub async fn handle_obs_commands(
     Ok(())
 }
 
+pub fn easing_function_match() -> HashMap<&'static str, i32> {
+    HashMap::from([
+        ("quadratic", 1),
+        ("cubic", 2),
+        ("quartic", 3),
+        ("quintic", 4),
+        ("sine", 5),
+        ("circular", 6),
+        ("exponential", 7),
+        ("elastic", 8),
+        ("bounce", 9),
+        ("back", 10),
+    ])
+}
+ 
+pub fn easing_match() -> HashMap<&'static str, i32> {
+    HashMap::from([
+        ("nothing", 1),
+        ("ease-in", 2),
+        ("ease-out", 3),
+        ("ease-in-and-out", 4),
+    ])
+}
+ 

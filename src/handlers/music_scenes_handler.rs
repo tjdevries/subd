@@ -214,6 +214,7 @@ async fn handle_commands(
                     scale_y: Some(200.0),
                     rotation_x: Some(50.0),
                     field_of_view: Some(108.0),
+                    duration: Some(duration),
 
                     // If a previous Move_transition set this and you don't reset it, you're gonna hate
                     // you life
@@ -228,7 +229,6 @@ async fn handle_commands(
                 _ = move_transition::update_and_trigger_move_values_filter(
                     source,
                     &move_transition_filter_name,
-                    duration,
                     new_settings,
                     &obs_client,
                 )
