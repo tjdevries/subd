@@ -55,7 +55,7 @@ pub struct Subscription {
     // condition: HashMap<String, String>,
     transport: Transport,
     created_at: String,
-    cost: i32,
+    // cost: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -75,6 +75,7 @@ struct Condition {
 #[derive(Serialize, Deserialize, Debug)]
 struct Reward {
     title: String,
+    cost: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -139,6 +140,7 @@ async fn trigger_full_scene(
 
     let content = chat_response.content.unwrap().to_string();
 
+    // We need to generate better dalle, for higher channel point prices
     let dalle_response =
         ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
     let dalle_prompt = dalle_response.content.unwrap().to_string();
@@ -149,6 +151,7 @@ async fn trigger_full_scene(
         message: content.clone(),
         voice_text: content,
         music_bg: Some(music_bg),
+        // dalle_prompt: None,
         dalle_prompt: Some(dalle_prompt),
         ..Default::default()
     }));
@@ -262,6 +265,74 @@ async fn post_request(
                                 )
                                 .await;
                             }
+                            
+                            "America Greed VO" => {
+                                let user_input = event.user_input.unwrap();
+
+                                let base_prompt =  "Don't include directions, or instructions. Just the words a voice-over would contain. Be Short. Be Concise. Don't mention the inspiration. Act like its the intro to an episode of american greed, explaining the rise and fall of a scammer. Never say more than 80 words.".to_string();
+
+                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like the cover of the show American greed.".to_string();
+
+                                let voice = "james".to_string();
+                                let music_bg = "!greed".to_string();
+
+                                let _ = trigger_full_scene(
+                                    tx.clone(),
+                                    voice.clone(),
+                                    music_bg.clone(),
+                                    user_input.clone(),
+                                    base_prompt,
+                                    base_dalle_prompt,
+                                )
+                                .await;
+                            }
+
+                            "Ask Pokimane a Question" => {
+                                println!("Poki-time!");
+                                let user_input = event.user_input.unwrap();
+
+                                let base_prompt =  "Make it dynamic and fun. No directions or stage directions, just the VO words. Make it fun and funny. be concise. Make it short. You are the streamer Pokimane, how would you asnwer the following: ".to_string();
+
+                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like a high-quality photograph of a super cool female Twitch streamer.".to_string();
+
+                                let voice = "pokimane".to_string();
+                                let music_bg = "!streamer".to_string();
+
+                                let _ = trigger_full_scene(
+                                    tx.clone(),
+                                    voice.clone(),
+                                    music_bg.clone(),
+                                    user_input.clone(),
+                                    base_prompt,
+                                    base_dalle_prompt,
+                                )
+                                .await;
+                            }
+
+
+                            
+                            "Planet Earth VO" => {
+                                println!("Planet Earth VO");
+                                let user_input = event.user_input.unwrap();
+
+                                let base_prompt =  "david attenbourgh style VO, with no references to David Attenbourgh. Make it dynamic and fun. No directions or stage directions, just the VO words. Make it fun and funny. be concise. Make it short.".to_string();
+
+                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like a high-quality animal photograph that would be in national geographic or Planet Earth.".to_string();
+
+                                let voice = "atten".to_string();
+                                let music_bg = "!earth".to_string();
+
+                                let _ = trigger_full_scene(
+                                    tx.clone(),
+                                    voice.clone(),
+                                    music_bg.clone(),
+                                    user_input.clone(),
+                                    base_prompt,
+                                    base_dalle_prompt,
+                                )
+                                .await;
+                            }
+
 
                             "Ask Satan" => {
                                 let user_input = event.user_input.unwrap();
