@@ -114,11 +114,13 @@ impl EventHandler for TwitchEventSubHandler {
         _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         let clonable_obs_client = Arc::new(self.obs_client);
+        let clonable_pool = Arc::new(self.pool);
 
         // Define the route
         let app = Router::new()
             .route("/eventsub", post(post_request))
             .layer(Extension(clonable_obs_client))
+            .layer(Extension(clonable_pool))
             .layer(Extension(tx))
             .layer(Extension(self.twitch_client));
 
@@ -138,6 +140,7 @@ impl EventHandler for TwitchEventSubHandler {
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(obs_client): Extension<Arc<OBSClient>>,
+    Extension(pool): Extension<Arc<sqlx::PgPool>>,
     Extension(tx): Extension<broadcast::Sender<Event>>,
     Extension(twitch_client): Extension<
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -196,15 +199,14 @@ async fn post_request(
                             None => {"".to_string()}
                         };
                             
-                            // event.user_input.clone(),
-                        // let _ = redemptions::save_redemptions(
-                        //     pool,
-                        //     reward.title.clone(),
-                        //     reward.cost.clone(),
-                        //     event.user_name.clone(),
-                        //     reward.id.clone(),
-                        //     user_input,
-                        // ).await;
+                        let _ = redemptions::save_redemptions(
+                            &pool,
+                            reward.title.clone(),
+                            reward.cost.clone(),
+                            event.user_name.clone(),
+                            reward.id.clone(),
+                            user_input,
+                        ).await;
                             
                         
                         let command = reward.title;
