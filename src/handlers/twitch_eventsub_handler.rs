@@ -199,6 +199,7 @@ async fn post_request(
                             None => {"".to_string()}
                         };
                             
+                        // Check for ID:
                         let _ = redemptions::save_redemptions(
                             &pool,
                             reward.title.clone(),
