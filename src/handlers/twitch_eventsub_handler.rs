@@ -10,7 +10,6 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use subd_types::Event;
@@ -19,6 +18,17 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use dotenv::dotenv;
+use openai::chat::{ChatCompletion, ChatCompletionDelta};
+use openai::{
+    chat::{ChatCompletionMessage, ChatCompletionMessageRole},
+    set_key,
+};
+use std::{
+    env,
+    io::{stdin, stdout, Write},
+};
+use tokio::sync::mpsc::Receiver;
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -163,8 +173,9 @@ async fn post_request(
                         let command = reward.title.as_ref();
                         match command {
                             "Ask Begin Jones a Question" => {
+                                println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();
-                                let _ = handle_ask_begin_jones(
+                                let _ = handle_ask_begin_jones3(
                                     user_input, voice_dir,
                                 )
                                 .await;
@@ -218,23 +229,133 @@ async fn post_request(
 
     (StatusCode::OK, "".to_string())
 }
+async fn handle_ask_begin_jones3(user_input: String, _voice_dir: &str) {
+    let base_content =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
+    set_key(env::var("OPENAI_KEY").unwrap());
 
-// we are going to call Chat GPT ourselves
-async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
-    let mut prompt_file = File::create(format!("{}/prompt.txt", voice_dir))
-        .expect("Unable to create prompt file");
-    let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens. Be Cool.";
-    prompt_file
-        .write_all(alex_jones_prompt.as_bytes())
-        .expect("Unable to write data");
 
-    println!("YOU ARE DOING IT PETER: {:?}", user_input);
-    let mut file = File::create(format!("{}/transcription.txt", voice_dir))
-        .expect("Unable to create file");
-    file.write_all(user_input.as_bytes())
-        .expect("Unable to write data");
+    // let content = format!("{} {}", base_content, user_input);
+    
+    let mut messages = vec![ChatCompletionMessage {
+        role: ChatCompletionMessageRole::System,
+        content: Some(base_content),
+        name: None,
+        function_call: None,
+    }];
 
-    // Command::new("/home/begin/code/BeginGPT/begintime.sh")
-    //     .status()
-    //     .expect("Failed to execute script");
+    messages.push(ChatCompletionMessage {
+        role: ChatCompletionMessageRole::User,
+        content: Some(user_input),
+        name: None,
+        function_call: None,
+    });
+
+    let chat_completion = ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
+        .create()
+        .await
+        .unwrap();
+    let returned_message = chat_completion.choices.first().unwrap().message.clone();
+
+    println!(
+        "Returned Messages {:#?}: {}",
+        &returned_message.role,
+        &returned_message.content.clone().unwrap().trim()
+    );
+
+    messages.push(returned_message);
 }
+
+
+// Figure out how this would operate in a loop
+//  we have to figure out, how chat wants to interact...because when do you start a new loop?
+//  maybe it's timed?
+//  we have lots running
+async fn _handle_ask_begin_jones2(user_input: String, _voice_dir: &str) {
+    let base_content =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
+    
+    let mut messages = vec![ChatCompletionMessage {
+        role: ChatCompletionMessageRole::System,
+        content: Some(base_content),
+        name: None,
+        function_call: None,
+    }];
+
+    messages.push(ChatCompletionMessage {
+        role: ChatCompletionMessageRole::User,
+        content: Some(user_input),
+        name: None,
+        function_call: None,
+    });
+
+    let chat_stream = ChatCompletionDelta::builder("gpt-3.5-turbo", messages.clone())
+        .create_stream()
+        .await
+        .unwrap();
+
+    println!("Before awaiting");
+    match listen_for_tokens(chat_stream).await {
+        Some(chat_completion_delta) => {
+            println!("After awaiting");
+            let chat_completion: ChatCompletion  = chat_completion_delta.into();
+            let returned_message = chat_completion.choices.first().unwrap().message.clone();
+            println!("\n\tReturned Message: {:?}", returned_message);
+        }
+        None => {
+            println!("No Match")
+        }
+    }
+
+    // messages.push(returned_message);
+}
+
+
+async fn listen_for_tokens(mut chat_stream: Receiver<ChatCompletionDelta>) -> Option<ChatCompletionDelta> {
+    let mut merged: Option<ChatCompletionDelta> = None;
+    while let Some(delta) = chat_stream.recv().await {
+        let choice = &delta.choices[0];
+        if let Some(role) = &choice.delta.role {
+            print!("{:#?}: ", role);
+        }
+        if let Some(content) = &choice.delta.content {
+            print!("{}", content);
+        }
+        if let Some(_) = &choice.finish_reason {
+            // The message being streamed has been fully received.
+            print!("\n");
+        }
+        // Merge completion into accrued.
+        match merged.as_mut() {
+            Some(c) => {
+                c.merge(delta).unwrap();
+            }
+            None => merged = Some(delta),
+        };
+    }
+    
+    return merged;
+    // We are failing herre
+    // match merged {
+    //     Some(c) => c.into(),
+    //     None => panic!("No chat stream"),
+    // }
+}
+
+// // we are going to call Chat GPT ourselves
+// async fn handle_ask_begin_jones(user_input: String, voice_dir: &str) {
+//     let mut prompt_file = File::create(format!("{}/prompt.txt", voice_dir))
+//         .expect("Unable to create prompt file");
+//     let alex_jones_prompt = "I want you to act like a raving lunatic, and tell me your crazy theories on anything I ask. Be Funny. Be concise. Never say more than 80 words. don't mention aliens. Be Cool.";
+//     prompt_file
+//         .write_all(alex_jones_prompt.as_bytes())
+//         .expect("Unable to write data");
+//
+//     println!("YOU ARE DOING IT PETER: {:?}", user_input);
+//     let mut file = File::create(format!("{}/transcription.txt", voice_dir))
+//         .expect("Unable to create file");
+//     file.write_all(user_input.as_bytes())
+//         .expect("Unable to write data");
+//
+//     // Command::new("/home/begin/code/BeginGPT/begintime.sh")
+//     //     .status()
+//     //     .expect("Failed to execute script");
+// }
