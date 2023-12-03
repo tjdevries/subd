@@ -237,24 +237,6 @@ impl EventHandler for ElevenLabsHandler {
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
-            // So here, we need a dalle prompt
-            match msg.dalle_prompt {
-                Some(dalle_prompt) => {
-                    let _ = dalle::dalle_time(
-                        dalle_prompt,
-                        msg.username.clone(),
-                        1,
-                    )
-                    .await;
-                    let _ = obs_scenes::change_scene(
-                        &locked_obs_client,
-                        "Art Gallery",
-                    );
-                    // Then OBS
-                }
-                None => {}
-            };
-
             // This sending a message, makes sure we have the right background music
             match msg.music_bg {
                 Some(music_bg) => {
@@ -264,7 +246,25 @@ impl EventHandler for ElevenLabsHandler {
                 None => {}
             };
 
-            // I could try and use an OBS client here
+            // So here, we need a dalle prompt
+            match msg.dalle_prompt {
+                Some(dalle_prompt) => {
+                    println!("Attempting to Generate Dalle");
+                    let _ = dalle::dalle_time(
+                        dalle_prompt,
+                        msg.username.clone(),
+                        1,
+                    )
+                    .await;
+                    println!("Done Attempting to Generate Dalle");
+                    let _ = obs_scenes::change_scene(
+                        &locked_obs_client,
+                        "art_gallery",
+                    )
+                    .await;
+                }
+                None => {}
+            };
 
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
