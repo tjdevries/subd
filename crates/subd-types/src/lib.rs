@@ -55,6 +55,8 @@ pub struct ElevenLabsRequest {
     pub stretch: Option<String>,
 
     pub source: Option<String>,
+
+    pub music_bg: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

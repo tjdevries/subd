@@ -24,6 +24,13 @@ use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
+// use std::sync::Mutex;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use twitch_chat::send_message;
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
+};
 
 #[derive(Deserialize, Debug)]
 struct ElevenlabsVoice {
@@ -39,6 +46,8 @@ struct VoiceList {
 pub struct ElevenLabsHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
+    pub twitch_client:
+        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pub elevenlabs: Elevenlabs,
 }
 
@@ -72,6 +81,10 @@ impl EventHandler for ElevenLabsHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        let twitch_client = Arc::new(Mutex::new(self.twitch_client));
+        let clone_twitch_client = twitch_client.clone();
+        let locked_client = clone_twitch_client.lock().await;
+
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -109,18 +122,24 @@ impl EventHandler for ElevenLabsHandler {
             .await
             .unwrap();
 
-            // Do we want explicit voice's passed to override global?
-            // That means all !reverb !pitch etc. commands
-            // If we passed in an explict voice use that
-            let voice_name = match msg.voice {
-                Some(voice) => voice,
-                None => global_voice.clone(),
-            };
+            let user_voice_opt = stream_character::get_voice_from_username(
+                &self.pool,
+                msg.username.clone().as_str(),
+            )
+            .await;
 
-            let final_voice = if is_global_voice_enabled {
-                global_voice
-            } else {
-                voice_name
+            let final_voice = match msg.voice {
+                Some(voice) => voice,
+                None => {
+                    if is_global_voice_enabled {
+                        global_voice.clone()
+                    } else {
+                        match user_voice_opt {
+                            Ok(user_voice) => user_voice,
+                            Err(_) => global_voice.clone(),
+                        }
+                    }
+                }
             };
 
             let filename =
@@ -202,10 +221,20 @@ impl EventHandler for ElevenLabsHandler {
             }
 
             // =====================================================
+            // WE just send a mesage to chat, with the mood
+            // and it's optional
 
             // We are supressing a whole bunch of alsa message
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
+
+            match msg.music_bg {
+                Some(music_bg) => {
+                    let _ =
+                        send_message(&locked_client, music_bg.clone()).await;
+                }
+                None => {}
+            };
 
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
@@ -214,6 +243,7 @@ impl EventHandler for ElevenLabsHandler {
                 "{} | g: {} | r: {} | {}",
                 msg.username, is_global_voice_enabled, is_random, voice_name
             );
+
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
