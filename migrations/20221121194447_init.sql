@@ -73,3 +73,11 @@ CREATE TABLE twitch_users (
   login           TEXT UNIQUE NOT NULL,
   display_name    TEXT NOT NULL
 );
+
+CREATE TABLE redemptions (
+  title      TEXT NOT NULL ,
+  reward_id  UUID NOT NULL,
+  user_name  TEXT NOT NULL,
+  cost       INT NOT NULL,
+  user_input TEXT
+);
