@@ -172,11 +172,40 @@ async fn post_request(
                     Some(reward) => {
                         let command = reward.title.as_ref();
                         match command {
+                                "Hospital Commercial" => {
+                                println!("Time to ask Chat GPT");
+                                let user_input = event.user_input.unwrap();
+                                
+                                let base_content =  "Don't include directions, or instructions. Just the words a voice-over would contain. Be Short. Be Concise. Don't mention the inspiration. Never say more than 80 words. Act like a Hospital or pharmaceutical comerical.".to_string();
+
+                                let chat_response = ask_chat_gpt(
+                                    user_input, base_content,
+                                )
+                                .await;
+
+                                // This unwrap might fail
+                                let content =
+                                    chat_response.content.unwrap().to_string();
+
+                                let voice = "bella".to_string();
+                                let _ = tx.send(Event::ElevenLabsRequest(
+                                    subd_types::ElevenLabsRequest {
+                                        voice: Some(voice),
+                                        message: content.clone(),
+                                        voice_text: content,
+                                        music_bg: Some("!hospital".to_string()),
+                                        ..Default::default()
+                                    },
+                                ));
+                            }
+                            
                             "Ask Begin Jones a Question" => {
                                 println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();
-                                let chat_response = handle_ask_begin_jones(
-                                    user_input, voice_dir,
+                                
+                                let base_content =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
+                                let chat_response = ask_chat_gpt(
+                                    user_input, base_content,
                                 )
                                 .await;
 
@@ -194,11 +223,6 @@ async fn post_request(
                                         ..Default::default()
                                     },
                                 ));
-
-                                // we also need to trigger Drama music
-
-                                // I need to send an ElevenLabs Message now
-                                // chat_response.
                             }
 
                             "gallery" => {
@@ -249,11 +273,10 @@ async fn post_request(
 
     (StatusCode::OK, "".to_string())
 }
-async fn handle_ask_begin_jones(
+async fn ask_chat_gpt(
     user_input: String,
-    _voice_dir: &str,
+    base_content: String,
 ) -> ChatCompletionMessage {
-    let base_content =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
     set_key(env::var("OPENAI_KEY").unwrap());
 
     let mut messages = vec![ChatCompletionMessage {
