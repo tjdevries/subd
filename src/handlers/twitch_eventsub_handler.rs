@@ -1,4 +1,3 @@
-use crate::dalle;
 use crate::music_scenes;
 use crate::obs_scenes;
 use anyhow::Result;
@@ -7,29 +6,39 @@ use axum::routing::post;
 use axum::{
     http::StatusCode, response::IntoResponse, Extension, Json, Router, Server,
 };
-use dotenv::dotenv;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use openai::chat::{ChatCompletion, ChatCompletionDelta};
+use openai::chat::ChatCompletion;
 use openai::{
     chat::{ChatCompletionMessage, ChatCompletionMessageRole},
     set_key,
 };
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::collections::HashMap;
+use std::env;
+use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::{
-    env,
-    io::{stdin, stdout, Write},
-};
 use subd_types::Event;
 use tokio::sync::broadcast;
-use tokio::sync::mpsc::Receiver;
 use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AIScenes {
+    pub scenes: Vec<AIScene>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AIScene {
+    pub reward_title: String,
+    pub base_prompt: String,
+    pub base_dalle_prompt: String,
+    pub voice: String,
+    pub music_bg: String,
+}
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -128,36 +137,6 @@ impl EventHandler for TwitchEventSubHandler {
     }
 }
 
-async fn trigger_full_scene(
-    tx: broadcast::Sender<Event>,
-    voice: String,
-    music_bg: String,
-    user_input: String,
-    base_prompt: String,
-    base_dalle_prompt: String,
-) -> Result<()> {
-    let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
-
-    let content = chat_response.content.unwrap().to_string();
-
-    // We need to generate better dalle, for higher channel point prices
-    let dalle_response =
-        ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
-    let dalle_prompt = dalle_response.content.unwrap().to_string();
-    println!("\n\tDalle Prompt: {}", dalle_prompt.clone());
-
-    let _ = tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
-        voice: Some(voice),
-        message: content.clone(),
-        voice_text: content,
-        music_bg: Some(music_bg),
-        // dalle_prompt: None,
-        dalle_prompt: Some(dalle_prompt),
-        ..Default::default()
-    }));
-    Ok(())
-}
-
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(obs_client): Extension<Arc<OBSClient>>,
@@ -167,7 +146,19 @@ async fn post_request(
     >,
 ) -> impl IntoResponse {
     println!("\t~~ Eventsub Body: {:?}", eventsub_body);
-    let voice_dir = "/home/begin/code/BeginGPT/tmp/current";
+
+    // We need to read in the json file
+    let file_path = "/home/begin/code/subd/data/AIScenes.json";
+    let contents = fs::read_to_string(file_path).expect("Can read file");
+
+    let ai_scenes: AIScenes = serde_json::from_str(&contents).unwrap();
+
+    let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
+        .scenes
+        .iter()
+        .map(|scene| (scene.reward_title.clone(), scene))
+        .collect();
+    // println!("AI SCENES: {:?}", ai_scenes_map);
 
     match eventsub_body.challenge {
         Some(challenge) => {
@@ -202,206 +193,48 @@ async fn post_request(
             match eventsub_body.event {
                 Some(event) => match event.reward {
                     Some(reward) => {
-                        let command = reward.title.as_ref();
-                        match command {
-                            "Ask Prime a Question" => {
-                                // random include prime Buzzword
+                        let command = reward.title;
+                        match ai_scenes_map.get(&command) {
+                            Some(scene) => {
                                 let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "Yell your words, Also, Randomly shout out POR QUE MARIA!!!! kyou're an excited super smart and hyper programmer. You hate bad code. You are funny. no more than 80 words.".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Base it on the following information - ".to_string();
-
-                                let voice = "prime".to_string();
-                                let music_bg = "!streamer".to_string();
 
                                 let _ = trigger_full_scene(
                                     tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
+                                    scene.voice.clone(),
+                                    scene.music_bg.clone(),
+                                    user_input,
+                                    scene.base_prompt.clone(),
+                                    scene.base_dalle_prompt.clone(),
                                 )
                                 .await;
                             }
-
-                            "Hospital Commercial" => {
-                                println!("Time to ask Chat GPT");
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "Don't include directions, or instructions. Just the words a voice-over would contain. Be Short. Be Concise. Don't mention the inspiration. Never say more than 80 words. Act like a Hospital or pharmaceutical comerical.".to_string();
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. Based on the follow information.DO NOT INCLUDE THE word DALLE. if they mention a name, make that very prominent. Make it look like an image for a Drug advertisement. Clean and simple, and selling a Drug. ".to_string();
-                                let voice = "bella".to_string();
-                                let music_bg = "!hospital".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
+                            None => {
+                                println!("Scene not found for reward title")
                             }
+                        }
 
-                            "Ask Begin Jones a Question" => {
-                                println!("Time to ask Chat GPT");
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. Based on the follow information. if they mention a name, make that very prominent. DO NOT INCLUDE THE word DALLE.".to_string();
-                                let voice = "ethan".to_string();
-                                let music_bg = "!drama".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-                            
-                            "America Greed VO" => {
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "Don't include directions, or instructions. Just the words a voice-over would contain. Be Short. Be Concise. Don't mention the inspiration. Act like its the intro to an episode of american greed, explaining the rise and fall of a scammer. Never say more than 80 words.".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like the cover of the show American greed.".to_string();
-
-                                let voice = "james".to_string();
-                                let music_bg = "!greed".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-
-                            "Ask Pokimane a Question" => {
-                                println!("Poki-time!");
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "Make it dynamic and fun. No directions or stage directions, just the VO words. Make it fun and funny. be concise. Make it short. You are the streamer Pokimane, how would you asnwer the following: ".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like a high-quality photograph of a super cool female Twitch streamer.".to_string();
-
-                                let voice = "pokimane".to_string();
-                                let music_bg = "!streamer".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-
-
-                            
-                            "Planet Earth VO" => {
-                                println!("Planet Earth VO");
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "david attenbourgh style VO, with no references to David Attenbourgh. Make it dynamic and fun. No directions or stage directions, just the VO words. Make it fun and funny. be concise. Make it short.".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic and like a high-quality animal photograph that would be in national geographic or Planet Earth.".to_string();
-
-                                let voice = "atten".to_string();
-                                let music_bg = "!earth".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-
-
-                            "Ask Satan" => {
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "I want you to act like an evil character, who has a has supreme power, be kinda funny and condensending. be concise. 80 Words Max.".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic.".to_string();
-
-                                let voice = "satan".to_string();
-                                let music_bg = "!evil".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-
-                            "Ask God" => {
-                                let user_input = event.user_input.unwrap();
-
-                                let base_prompt =  "I want you to act like an all loving benevolent god. You give advice and are warm and kinda silly, but also supremely wise. be concise. no more than 100 words.".to_string();
-
-                                let base_dalle_prompt =  "Generate a prompt to be used with Dall-E. DO NOT INCLUDE THE word DALLE. Based on the follow information. if they mention a name, make that very prominent. Make the image photo-realistic.".to_string();
-
-                                let voice = "god".to_string();
-                                let music_bg = "!yoga".to_string();
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    voice.clone(),
-                                    music_bg.clone(),
-                                    user_input.clone(),
-                                    base_prompt,
-                                    base_dalle_prompt,
-                                )
-                                .await;
-                            }
-
+                        // let ai_scene = ai_scene_map[command.clone().to_string()];
+                        match command.clone().as_str() {
                             "gallery" => {
                                 let _ =
                                     obs_scenes::change_scene(&c, "art_gallery")
                                         .await;
                             }
-
                             "code" => {
                                 let _ = obs_scenes::change_scene(&c, "Primary")
                                     .await;
                             }
 
                             _ => {
-                                for &(cmd, ref scene) in
+                                for &(cmd, ref _scene) in
                                     music_scenes::VOICE_TO_MUSIC.iter()
                                 {
-                                    println!(
-                                        "Reward Title {} - Music: {:?}",
-                                        reward.title, scene.music
-                                    );
-
                                     let cmd_no_bang = &cmd[1..];
 
-                                    if cmd_no_bang == reward.title {
+                                    if cmd_no_bang == command.clone() {
                                         let _ = send_message(
                                             &twitch_client,
-                                            format!("!{}", reward.title),
+                                            format!("!{}", command.clone()),
                                         )
                                         .await;
                                     }
@@ -458,4 +291,46 @@ async fn ask_chat_gpt(
         &returned_message.content.clone().unwrap().trim()
     );
     returned_message
+}
+
+async fn trigger_full_scene(
+    tx: broadcast::Sender<Event>,
+    voice: String,
+    music_bg: String,
+    user_input: String,
+    base_prompt: String,
+    base_dalle_prompt: String,
+) -> Result<()> {
+    let dalle_mode = true;
+
+    let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
+    let content = chat_response.content.unwrap().to_string();
+
+    if dalle_mode {
+        // We need to generate better dalle, for higher channel point prices
+        let dalle_response =
+            ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
+        let dalle_prompt = dalle_response.content.unwrap().to_string();
+        println!("\n\tDalle Prompt: {}", dalle_prompt.clone());
+        let _ =
+            tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
+                voice: Some(voice),
+                message: content.clone(),
+                voice_text: content,
+                music_bg: Some(music_bg),
+                dalle_prompt: Some(dalle_prompt),
+                ..Default::default()
+            }));
+    } else {
+        let _ =
+            tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
+                voice: Some(voice),
+                message: content.clone(),
+                voice_text: content,
+                music_bg: Some(music_bg),
+                dalle_prompt: None,
+                ..Default::default()
+            }));
+    }
+    Ok(())
 }
