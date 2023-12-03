@@ -1,5 +1,7 @@
 use crate::music_scenes;
+use sqlx::types::Uuid;
 use crate::obs_scenes;
+use crate::redemptions;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::routing::post;
@@ -79,6 +81,7 @@ struct Condition {
 struct Reward {
     title: String,
     cost: i32,
+    id: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -186,6 +189,23 @@ async fn post_request(
             match eventsub_body.event {
                 Some(event) => match event.reward {
                     Some(reward) => {
+
+                        let user_input = match event.user_input.clone() {
+                            Some(input) => {input}
+                            None => {"".to_string()}
+                        };
+                            
+                            // event.user_input.clone(),
+                        // let _ = redemptions::save_redemptions(
+                        //     pool,
+                        //     reward.title.clone(),
+                        //     reward.cost.clone(),
+                        //     event.user_name.clone(),
+                        //     reward.id.clone(),
+                        //     user_input,
+                        // ).await;
+                            
+                        
                         let command = reward.title;
                         match ai_scenes_map.get(&command) {
                             Some(scene) => {

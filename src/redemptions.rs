@@ -42,22 +42,25 @@ impl redemptions::Model {
     }
 }
 
-pub async fn save_twitch_message(
-    _pool: &sqlx::PgPool,
-    // user_id: &UserID,
-    // platform: UserPlatform,
-    // message: &str,
+pub async fn save_redemptions(
+    pool: &sqlx::PgPool,
+    title: String,
+    cost: i32,
+    user_name: String,
+    reward_id: Uuid, 
+    user_input: String,
 ) -> Result<()> {
-    // sqlx::query!(
-    //     r#"INSERT INTO user_messages (user_id, platform, contents)
-    //    VALUES ( $1, $2, $3 )"#,
-    //     user_id.0,
-    //     platform as _,
-    //     message
-    // )
-    // .execute(pool)
-    // .await?;
-    //
+    sqlx::query!(
+        r#"INSERT INTO redemptions (title, cost, user_name, reward_id, user_input)
+       VALUES ( $1, $2, $3, $4, $5 )"#,
+        title,
+        cost,
+        user_name,
+        reward_id,
+        user_input,
+    )
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
