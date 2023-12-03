@@ -1,4 +1,5 @@
 use anyhow::Result;
+use anyhow::Error;
 use sqlx::PgPool;
 use sqlx::types::Uuid;
 use subd_macros::database_model;
@@ -64,29 +65,31 @@ pub async fn save_redemptions(
     Ok(())
 }
 
-pub async fn get_redemption(
+pub async fn find_redemption_by_reward_id(
     pool: &PgPool,
     reward_id: Uuid, 
-) -> Result<redemptions::Model> {
-    // sqlx::query!("DELETE FROM user_theme_songs WHERE user_id = $1", user_id)
-    let res = sqlx::query!("SELECT * FROM redemptions WHERE reward_id = $1", reward_id)
+// ) -> Result<redemptions::Model> {
+) -> Result<Record, Error> {
+    let res = sqlx::query!("SELECT user_name FROM redemptions WHERE reward_id = $1", reward_id)
         .fetch_one(pool)
-        .await?;
+        .await;
 
+    return res;
+    
     // Res return
-    let model = redemptions::Model {
-        title: todo!(),
-        cost: todo!(),
-        user_name: todo!(),
-        reward_id: todo!(),
-        user_input: todo!(),
-        
-        // sub_only_tts: res.sub_only_tts,
-        // explicit_soundeffects: res.explicit_soundeffects,
-        // implicit_soundeffects: res.implicit_soundeffects,
-        // global_voice: res.global_voice,
-    };
-    Ok(model)
+    // title: todo!(),
+    // let model = redemptions::Model {
+    //     cost: todo!(),
+    //     user_name: todo!(),
+    //     reward_id: todo!(),
+    //     user_input: todo!(),
+    //     
+    //     // sub_only_tts: res.sub_only_tts,
+    //     // explicit_soundeffects: res.explicit_soundeffects,
+    //     // implicit_soundeffects: res.implicit_soundeffects,
+    //     // global_voice: res.global_voice,
+    // };
+    // Ok(())
 }
 //
 // pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {
