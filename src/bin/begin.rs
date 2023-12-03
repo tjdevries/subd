@@ -212,6 +212,7 @@ async fn main() -> Result<()> {
     >::new(twitch_config);
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::twitch_eventsub_handler::TwitchEventSubHandler {
+        pool: pool.clone(),
         obs_client,
         twitch_client,
     });

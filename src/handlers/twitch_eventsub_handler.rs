@@ -44,6 +44,7 @@ pub struct AIScene {
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
+    pub pool: sqlx::PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
