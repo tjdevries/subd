@@ -1,3 +1,4 @@
+use crate::dalle;
 use crate::music_scenes;
 use crate::obs_scenes;
 use anyhow::Result;
@@ -176,27 +177,52 @@ async fn post_request(
                                 println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();
 
-                                let base_content =  "Yell your words, you're an excited super smart and hyper programmer. You are funny. no more than 80 words. coconut oil.".to_string();
+                                let base_content =  "Yell your words, you're an excited super smart and hyper programmer. You hate bad code. You are funny. no more than 80 words. coconut oil.".to_string();
 
-                                let chat_response =
-                                    ask_chat_gpt(user_input, base_content)
-                                        .await;
+                                let chat_response = ask_chat_gpt(
+                                    user_input.clone(),
+                                    base_content,
+                                )
+                                .await;
 
                                 // This unwrap might fail
                                 let content =
                                     chat_response.content.unwrap().to_string();
 
+                                // This is from chat-GPT
+                                // let _ = dalle::dalle_time(user_input.clone(), event.user_name, 1).await;
+                                // This isn't working
+                                let _ =
+                                    obs_scenes::change_scene(&c, "Art Gallery");
+
                                 let voice = "prime".to_string();
+                                let dalle_prompt = format!(
+                                    "Programmer, Hoodie, Moustache. {}",
+                                    user_input.clone()
+                                );
                                 let _ = tx.send(Event::ElevenLabsRequest(
                                     subd_types::ElevenLabsRequest {
                                         voice: Some(voice),
                                         message: content.clone(),
                                         voice_text: content,
                                         music_bg: Some("!streamer".to_string()),
+                                        dalle_prompt: Some(dalle_prompt),
                                         ..Default::default()
                                     },
                                 ));
+
+                                // can I change scenes here?
+
+                                // I want to change to a scene here
+
+                                // Now I need to update the BG
+                                // How can I do it with
+
+                                // We could do to the Dalle Scene
+                                // We could also make this a single scene
+                                // Let's do some Dall-e Here
                             }
+
                             "Hospital Commercial" => {
                                 println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();

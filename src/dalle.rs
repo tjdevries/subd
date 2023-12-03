@@ -21,6 +21,7 @@ struct ImageData {
 pub async fn dalle_time(
     contents: String,
     username: String,
+    amount: i32,
 ) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
 
@@ -40,7 +41,7 @@ pub async fn dalle_time(
         .header("Authorization", format!("Bearer {}", api_key))
         .json(&serde_json::json!({
             "prompt": contents,
-            "n": 4,
+            "n": amount,
             // "size": size,
             // "size": "1080x1080",
             // "size": "1792x1024",

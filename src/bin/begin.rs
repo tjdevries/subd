@@ -150,6 +150,7 @@ async fn main() -> Result<()> {
     let elevenlabs =
         Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
 
+    let obs_client = server::obs::create_obs_client().await?;
     // Elevenlabs/Uberduck handles voice messages
     let twitch_config = get_chat_config();
     let (_, twitch_client) = TwitchIRCClient::<
@@ -160,6 +161,7 @@ async fn main() -> Result<()> {
         pool: pool.clone(),
         twitch_client,
         sink,
+        obs_client,
         elevenlabs,
     });
 

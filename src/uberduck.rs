@@ -1,5 +1,7 @@
 use crate::audio;
+use crate::dalle;
 use crate::obs;
+use crate::obs_scenes;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
@@ -11,6 +13,7 @@ use elevenlabs_api::{
     *,
 };
 use events::EventHandler;
+use obws::Client as OBSClient;
 use rand::Rng;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
@@ -43,12 +46,14 @@ struct VoiceList {
     voices: Vec<ElevenlabsVoice>,
 }
 
+// Should this have an OBS Client as well
 pub struct ElevenLabsHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pub elevenlabs: Elevenlabs,
+    pub obs_client: OBSClient,
 }
 
 // Should they be optional???
@@ -84,6 +89,10 @@ impl EventHandler for ElevenLabsHandler {
         let twitch_client = Arc::new(Mutex::new(self.twitch_client));
         let clone_twitch_client = twitch_client.clone();
         let locked_client = clone_twitch_client.lock().await;
+
+        let obs_client = Arc::new(Mutex::new(self.obs_client));
+        let obs_client_clone = obs_client.clone();
+        let locked_obs_client = obs_client_clone.lock().await;
 
         loop {
             let event = rx.recv().await?;
@@ -228,6 +237,25 @@ impl EventHandler for ElevenLabsHandler {
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
+            // So here, we need a dalle prompt
+            match msg.dalle_prompt {
+                Some(dalle_prompt) => {
+                    let _ = dalle::dalle_time(
+                        dalle_prompt,
+                        msg.username.clone(),
+                        1,
+                    )
+                    .await;
+                    let _ = obs_scenes::change_scene(
+                        &locked_obs_client,
+                        "Art Gallery",
+                    );
+                    // Then OBS
+                }
+                None => {}
+            };
+
+            // This sending a message, makes sure we have the right background music
             match msg.music_bg {
                 Some(music_bg) => {
                     let _ =
@@ -235,6 +263,8 @@ impl EventHandler for ElevenLabsHandler {
                 }
                 None => {}
             };
+
+            // I could try and use an OBS client here
 
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");

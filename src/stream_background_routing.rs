@@ -172,7 +172,7 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
             println!("Dalle Time!");
-            let _ = dalle::dalle_time(prompt, msg.user_name).await;
+            let _ = dalle::dalle_time(prompt, msg.user_name, 4).await;
             Ok(())
         }
         _ => Ok(()),

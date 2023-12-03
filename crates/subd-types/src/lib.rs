@@ -57,6 +57,7 @@ pub struct ElevenLabsRequest {
     pub source: Option<String>,
 
     pub music_bg: Option<String>,
+    pub dalle_prompt: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
