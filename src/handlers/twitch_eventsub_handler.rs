@@ -74,12 +74,6 @@ struct Condition {
     // Will this crash shit
     // user_input: Option<String>,
 }
-// "reward": {
-//         "id": "92af127c-7326-4483-a52b-b0da0be61c01",
-//         "title": "title",
-//         "cost": 100,
-//         "prompt": "reward prompt"
-//     },
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Reward {
@@ -158,7 +152,6 @@ async fn post_request(
         .iter()
         .map(|scene| (scene.reward_title.clone(), scene))
         .collect();
-    // println!("AI SCENES: {:?}", ai_scenes_map);
 
     match eventsub_body.challenge {
         Some(challenge) => {
@@ -307,6 +300,7 @@ async fn trigger_full_scene(
     let content = chat_response.content.unwrap().to_string();
 
     if dalle_mode {
+        
         // We need to generate better dalle, for higher channel point prices
         let dalle_response =
             ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;

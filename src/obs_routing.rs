@@ -17,7 +17,6 @@ use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use std::collections::HashMap;
 use std::process::Command;
-use std::sync::Mutex;
 use std::thread;
 use std::time;
 use subd_types::{Event, TransformOBSTextRequest, UserMessage};
