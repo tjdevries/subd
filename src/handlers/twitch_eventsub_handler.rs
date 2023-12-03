@@ -191,6 +191,7 @@ async fn post_request(
                             Some(scene) => {
                                 let user_input = event.user_input.unwrap();
 
+                                // This is where you would create a redemption
                                 let _ = trigger_full_scene(
                                     tx.clone(),
                                     scene.voice.clone(),
