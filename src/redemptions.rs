@@ -41,6 +41,26 @@ impl redemptions::Model {
         .await?)
     }
 }
+
+pub async fn save_twitch_message(
+    _pool: &sqlx::PgPool,
+    // user_id: &UserID,
+    // platform: UserPlatform,
+    // message: &str,
+) -> Result<()> {
+    // sqlx::query!(
+    //     r#"INSERT INTO user_messages (user_id, platform, contents)
+    //    VALUES ( $1, $2, $3 )"#,
+    //     user_id.0,
+    //     platform as _,
+    //     message
+    // )
+    // .execute(pool)
+    // .await?;
+    //
+    Ok(())
+}
+
 //
 // pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {
 //     let _res =
