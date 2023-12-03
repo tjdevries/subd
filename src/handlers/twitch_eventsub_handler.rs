@@ -172,16 +172,40 @@ async fn post_request(
                     Some(reward) => {
                         let command = reward.title.as_ref();
                         match command {
-                                "Hospital Commercial" => {
+                            "Ask Prime a Question" => {
                                 println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();
-                                
+
+                                let base_content =  "Yell your words, you're an excited super smart and hyper programmer. You are funny. no more than 80 words. coconut oil.".to_string();
+
+                                let chat_response =
+                                    ask_chat_gpt(user_input, base_content)
+                                        .await;
+
+                                // This unwrap might fail
+                                let content =
+                                    chat_response.content.unwrap().to_string();
+
+                                let voice = "prime".to_string();
+                                let _ = tx.send(Event::ElevenLabsRequest(
+                                    subd_types::ElevenLabsRequest {
+                                        voice: Some(voice),
+                                        message: content.clone(),
+                                        voice_text: content,
+                                        music_bg: Some("!streamer".to_string()),
+                                        ..Default::default()
+                                    },
+                                ));
+                            }
+                            "Hospital Commercial" => {
+                                println!("Time to ask Chat GPT");
+                                let user_input = event.user_input.unwrap();
+
                                 let base_content =  "Don't include directions, or instructions. Just the words a voice-over would contain. Be Short. Be Concise. Don't mention the inspiration. Never say more than 80 words. Act like a Hospital or pharmaceutical comerical.".to_string();
 
-                                let chat_response = ask_chat_gpt(
-                                    user_input, base_content,
-                                )
-                                .await;
+                                let chat_response =
+                                    ask_chat_gpt(user_input, base_content)
+                                        .await;
 
                                 // This unwrap might fail
                                 let content =
@@ -198,16 +222,15 @@ async fn post_request(
                                     },
                                 ));
                             }
-                            
+
                             "Ask Begin Jones a Question" => {
                                 println!("Time to ask Chat GPT");
                                 let user_input = event.user_input.unwrap();
-                                
+
                                 let base_content =  "You're a conspiracy theorist, you give us wild theories on what we ask. But never more than 80 words".to_string();
-                                let chat_response = ask_chat_gpt(
-                                    user_input, base_content,
-                                )
-                                .await;
+                                let chat_response =
+                                    ask_chat_gpt(user_input, base_content)
+                                        .await;
 
                                 // This unwrap might fail
                                 let content =
