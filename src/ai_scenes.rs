@@ -323,27 +323,6 @@ impl EventHandler for AiScenesHandler {
     }
 }
 
-fn chop_text(starting_text: String) -> String {
-    let mut seal_text = starting_text.clone();
-
-    let spaces: Vec<_> = starting_text.match_indices(" ").collect();
-    let line_length_modifier = 20;
-    let mut line_length_limit = 20;
-    for val in spaces.iter() {
-        if val.0 > line_length_limit {
-            seal_text.replace_range(val.0..=val.0, "\n");
-            line_length_limit = line_length_limit + line_length_modifier;
-        }
-    }
-
-    seal_text
-}
-
-fn find_obs_character(_voice: &str) -> &str {
-    let default_character = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
-    return default_character;
-}
-
 // ============= //
 // Audio Effects //
 // ============= //

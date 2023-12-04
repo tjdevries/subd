@@ -146,24 +146,24 @@ async fn main() -> Result<()> {
 
     let pool = get_db_pool().await;
 
-    // Elevenlabs/Uberduck handles voice messages
-    let elevenlabs_auth = Auth::from_env().unwrap();
-    let elevenlabs =
-        Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    let obs_client = server::obs::create_obs_client().await?;
-    let twitch_config = get_chat_config();
-    let (_, twitch_client) = TwitchIRCClient::<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >::new(twitch_config);
-    event_loop.push(uberduck::ElevenLabsHandler {
-        pool: pool.clone(),
-        twitch_client,
-        sink,
-        obs_client,
-        elevenlabs,
-    });
+    // // Elevenlabs/Uberduck handles voice messages
+    // let elevenlabs_auth = Auth::from_env().unwrap();
+    // let elevenlabs =
+    //     Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
+    // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    // let obs_client = server::obs::create_obs_client().await?;
+    // let twitch_config = get_chat_config();
+    // let (_, twitch_client) = TwitchIRCClient::<
+    //     SecureTCPTransport,
+    //     StaticLoginCredentials,
+    // >::new(twitch_config);
+    // event_loop.push(uberduck::ElevenLabsHandler {
+    //     pool: pool.clone(),
+    //     twitch_client,
+    //     sink,
+    //     obs_client,
+    //     elevenlabs,
+    // });
 
     // AI Scenes
     let elevenlabs_auth = Auth::from_env().unwrap();

@@ -1,4 +1,6 @@
 use crate::music_scenes;
+use std::time;
+use std::thread;
 use crate::obs_scenes;
 use crate::redemptions;
 use anyhow::Result;
@@ -300,10 +302,11 @@ async fn post_request(
 
     (StatusCode::OK, "".to_string())
 }
+
 async fn ask_chat_gpt(
     user_input: String,
     base_content: String,
-) -> ChatCompletionMessage {
+) -> Result<ChatCompletionMessage, openai::OpenAiError> {
     set_key(env::var("OPENAI_KEY").unwrap());
 
     let mut messages = vec![ChatCompletionMessage {
@@ -320,19 +323,30 @@ async fn ask_chat_gpt(
         function_call: None,
     });
 
-    let chat_completion =
-        ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
-            .create()
-            .await
-            .unwrap();
+    // These 2 unwraps are sus
+    // let chat_completion =
+    //     ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
+    //         .create()
+    //         .await
+    //         .unwrap();
+    let chat_completion = match ChatCompletion::builder("gpt-3.5-turbo", messages.clone()).create().await {
+        Ok(completion) => completion,
+        Err(e) => {
+            // Handle error here. For example, you might log the error and/or return early from the function.
+            // You could return an error or a default value, depending on your application's needs.
+            eprintln!("An error occurred: {}", e);
+            return Err(e); // Or handle it as needed
+        }
+    };
     let returned_message =
         chat_completion.choices.first().unwrap().message.clone();
+    
     println!(
-        "Returned Messages {:#?}: {}",
+        "Chat GPT Response {:#?}: {}",
         &returned_message.role,
         &returned_message.content.clone().unwrap().trim()
     );
-    returned_message
+    Ok(returned_message)
 }
 
 async fn trigger_full_scene(
@@ -344,26 +358,47 @@ async fn trigger_full_scene(
     base_dalle_prompt: String,
 ) -> Result<()> {
     let dalle_mode = true;
-
+    
     let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
-    let content = chat_response.content.unwrap().to_string();
+    let content = chat_response.unwrap().content.unwrap().to_string();
+    
+    // TOTAL HacK
+    // let sleep_time = time::Duration::from_millis(3000);
+    // thread::sleep(sleep_time);
 
     if dalle_mode {
         println!("\nDalle Mode!");
-        // We need to generate better dalle, for higher channel point prices
-        let dalle_response =
-            ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
-        let dalle_prompt = dalle_response.content.unwrap().to_string();
-        println!("\n\tDalle Prompt: {}", dalle_prompt.clone());
+        println!("\ninput: {}\nbase: {} ", user_input.clone(), base_dalle_prompt);
+
+        // Try catch with a timing
+        // the dalle prompt failure
+        // // WE pause on this way long
+        // let dalle_response =
+        //     ask_chat_gpt(user_input.clone(), base_dalle_prompt.clone()).await.unwrap();
+        // println!("\nAfter Dalle Request! {:?}", dalle_response);
+        // let dalle_prompt = dalle_response.content.unwrap();
+        // let dalle_prompt = match dalle_response.content {
+        //     Some(content) => content,
+        //     None => {
+        //         println!("We didn't find a dalle response");
+        //         base_dalle_prompt.clone()
+        //     },
+        // };
+        // println!("\n\tDalle Prompt: {}", dalle_prompt.clone().to_string());
+    
+        let hack_prompt = format!("{} {}", base_dalle_prompt.clone(), content.clone());
         let _ =
             tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                 voice: Some(voice),
                 message: content.clone(),
-                voice_text: content,
+                voice_text: content.clone(),
                 music_bg: Some(music_bg),
-                dalle_prompt: Some(dalle_prompt),
+                dalle_prompt: Some(hack_prompt),
                 ..Default::default()
             }));
+            // dalle_prompt: Some(base_dalle_prompt.clone()),
+            // dalle_prompt: Some(dalle_prompt),
+            // dalle_prompt: Some(content.clone()),
     } else {
         println!("\nNo Dalle Mode!");
         let _ =
