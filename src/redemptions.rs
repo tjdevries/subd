@@ -1,6 +1,7 @@
 use anyhow::Result;
 use anyhow::Error;
 use sqlx::PgPool;
+use sqlx::postgres::PgRow;
 use sqlx::types::Uuid;
 use subd_macros::database_model;
 
@@ -68,30 +69,11 @@ pub async fn save_redemptions(
 pub async fn find_redemption_by_reward_id(
     pool: &PgPool,
     reward_id: Uuid, 
-) -> Result<()> {
-// ) -> Result<redemptions::Model> {
-// ) -> Result<Record, Error> {
-    let res = sqlx::query!("SELECT user_name FROM redemptions WHERE reward_id = $1", reward_id)
+) -> Result<PgRow, sqlx::Error> {
+    sqlx::query("SELECT * FROM redemptions WHERE reward_id = ?")
+        .bind(reward_id)
         .fetch_one(pool)
-        .await;
-    Ok(())
-
-    // return res;
-    
-    // Res return
-    // title: todo!(),
-    // let model = redemptions::Model {
-    //     cost: todo!(),
-    //     user_name: todo!(),
-    //     reward_id: todo!(),
-    //     user_input: todo!(),
-    //     
-    //     // sub_only_tts: res.sub_only_tts,
-    //     // explicit_soundeffects: res.explicit_soundeffects,
-    //     // implicit_soundeffects: res.implicit_soundeffects,
-    //     // global_voice: res.global_voice,
-    // };
-    // Ok(())
+        .await
 }
 //
 // pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {

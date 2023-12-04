@@ -146,7 +146,7 @@ async fn post_request(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-    println!("\t~~ Eventsub Body: {:?}", eventsub_body);
+    dbg!(&eventsub_body);
 
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
@@ -199,24 +199,33 @@ async fn post_request(
                             None => {"".to_string()}
                         };
 
-                        // let old_redemp = redemptions::find_redemption_by_reward_id(&pool, reward.id.clone()).await;
-                        //
-                        // match old_redemp {
-                        //     Ok(_reward_id) => {
-                        //         return (StatusCode::OK, "".to_string());
-                        //    }
-                        //     Err(_) => {
-                        //         let _ = redemptions::save_redemptions(
-                        //             &pool,
-                        //             command.clone(),
-                        //             reward.cost.clone(),
-                        //             event.user_name.clone(),
-                        //             reward.id.clone(),
-                        //             user_input,
-                        //         ).await;
-                        //         
-                        //     }
-                        // }
+                        if user_input == "".to_string() {
+                            println!("No user input");
+
+                            // Should we return error status code
+                            return (StatusCode::OK, "".to_string()); 
+                        };
+
+                        let old_redemp = redemptions::find_redemption_by_reward_id(&pool, reward.id.clone()).await;
+                        match old_redemp {
+                            Ok(_reward_id) => {
+                                // dbg!(reward_id);
+                                println!("We found a redemption: {}", command.clone());
+                                // return (StatusCode::OK, "".to_string());
+                           }
+                            Err(e) => {
+                                println!("No redemption found, saving new redemption: {:?}", e);
+                                
+                                let _ = redemptions::save_redemptions(
+                                    &pool,
+                                    command.clone(),
+                                    reward.cost.clone(),
+                                    event.user_name.clone(),
+                                    reward.id.clone(),
+                                    user_input,
+                                ).await;
+                            }
+                        }
                             
                         
                         match ai_scenes_map.get(&command) {
