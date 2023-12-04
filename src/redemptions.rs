@@ -68,13 +68,15 @@ pub async fn save_redemptions(
 pub async fn find_redemption_by_reward_id(
     pool: &PgPool,
     reward_id: Uuid, 
+) -> Result<()> {
 // ) -> Result<redemptions::Model> {
-) -> Result<Record, Error> {
+// ) -> Result<Record, Error> {
     let res = sqlx::query!("SELECT user_name FROM redemptions WHERE reward_id = $1", reward_id)
         .fetch_one(pool)
         .await;
+    Ok(())
 
-    return res;
+    // return res;
     
     // Res return
     // title: todo!(),

@@ -199,24 +199,24 @@ async fn post_request(
                             None => {"".to_string()}
                         };
 
-                        let old_redemp = redemptions::find_redemption_by_reward_id(&pool, reward.id.clone()).await;
-
-                        match old_redemp {
-                            Ok(_reward_id) => {
-                                return (StatusCode::OK, "".to_string());
-                           }
-                            Err(_) => {
-                                let _ = redemptions::save_redemptions(
-                                    &pool,
-                                    command.clone(),
-                                    reward.cost.clone(),
-                                    event.user_name.clone(),
-                                    reward.id.clone(),
-                                    user_input,
-                                ).await;
-                                
-                            }
-                        }
+                        // let old_redemp = redemptions::find_redemption_by_reward_id(&pool, reward.id.clone()).await;
+                        //
+                        // match old_redemp {
+                        //     Ok(_reward_id) => {
+                        //         return (StatusCode::OK, "".to_string());
+                        //    }
+                        //     Err(_) => {
+                        //         let _ = redemptions::save_redemptions(
+                        //             &pool,
+                        //             command.clone(),
+                        //             reward.cost.clone(),
+                        //             event.user_name.clone(),
+                        //             reward.id.clone(),
+                        //             user_input,
+                        //         ).await;
+                        //         
+                        //     }
+                        // }
                             
                         
                         match ai_scenes_map.get(&command) {
