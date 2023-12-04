@@ -1,3 +1,4 @@
+pub mod ai_scenes;
 pub mod art_blocks;
 pub mod audio;
 pub mod bootstrap;

@@ -349,13 +349,14 @@ async fn trigger_full_scene(
     let content = chat_response.content.unwrap().to_string();
 
     if dalle_mode {
+        println!("\nDalle Mode!");
         // We need to generate better dalle, for higher channel point prices
         let dalle_response =
             ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
         let dalle_prompt = dalle_response.content.unwrap().to_string();
         println!("\n\tDalle Prompt: {}", dalle_prompt.clone());
         let _ =
-            tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
+            tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                 voice: Some(voice),
                 message: content.clone(),
                 voice_text: content,
@@ -364,8 +365,9 @@ async fn trigger_full_scene(
                 ..Default::default()
             }));
     } else {
+        println!("\nNo Dalle Mode!");
         let _ =
-            tx.send(Event::ElevenLabsRequest(subd_types::ElevenLabsRequest {
+            tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                 voice: Some(voice),
                 message: content.clone(),
                 voice_text: content,

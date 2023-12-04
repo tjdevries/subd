@@ -42,20 +42,29 @@ pub struct UserMessage {
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct AiScenesRequest {
+    pub voice_text: String,
+    pub message: String,
+    pub username: String,
+    pub voice: Option<String>,
+    pub reverb: bool,
+    pub pitch: Option<String>,
+    pub stretch: Option<String>,
+    pub source: Option<String>,
+    pub music_bg: Option<String>,
+    pub dalle_prompt: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct ElevenLabsRequest {
     pub voice_text: String,
     pub message: String,
     pub username: String,
     pub voice: Option<String>,
-
     pub reverb: bool,
-
-    // I know it's not actually a string, but we aren't doing any math on it
     pub pitch: Option<String>,
     pub stretch: Option<String>,
-
     pub source: Option<String>,
-
     pub music_bg: Option<String>,
     pub dalle_prompt: Option<String>,
 }
@@ -97,6 +106,7 @@ pub enum Event {
     UserMessage(UserMessage),
 
     ElevenLabsRequest(ElevenLabsRequest),
+    AiScenesRequest(AiScenesRequest),
     TransformOBSTextRequest(TransformOBSTextRequest),
     StreamCharacterRequest(StreamCharacterRequest),
     SourceVisibilityRequest(SourceVisibilityRequest),

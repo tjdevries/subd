@@ -46,16 +46,6 @@ struct VoiceList {
     voices: Vec<ElevenlabsVoice>,
 }
 
-// Should this have an OBS Client as well
-pub struct ElevenLabsHandler {
-    pub sink: Sink,
-    pub pool: sqlx::PgPool,
-    pub twitch_client:
-        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    pub elevenlabs: Elevenlabs,
-    pub obs_client: OBSClient,
-}
-
 // Should they be optional???
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StreamCharacter {
@@ -73,14 +63,22 @@ pub struct Voice {
     pub name: String,
 }
 
-pub fn twitch_chat_filename(username: String, voice: String) -> String {
-    let now: DateTime<Utc> = Utc::now();
 
-    format!("{}_{}_{}", now.timestamp(), username, voice)
+// ============================================================
+// 
+// Should this have an OBS Client as well
+pub struct AiScenesHandler {
+    pub sink: Sink,
+    pub pool: sqlx::PgPool,
+    pub twitch_client:
+        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pub elevenlabs: Elevenlabs,
+    pub obs_client: OBSClient,
 }
 
+
 #[async_trait]
-impl EventHandler for ElevenLabsHandler {
+impl EventHandler for AiScenesHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -88,17 +86,17 @@ impl EventHandler for ElevenLabsHandler {
     ) -> Result<()> {
         let twitch_client = Arc::new(Mutex::new(self.twitch_client));
         let clone_twitch_client = twitch_client.clone();
-        let _locked_client = clone_twitch_client.lock().await;
+        let locked_client = clone_twitch_client.lock().await;
 
         let obs_client = Arc::new(Mutex::new(self.obs_client));
         let obs_client_clone = obs_client.clone();
-        let _locked_obs_client = obs_client_clone.lock().await;
+        let locked_obs_client = obs_client_clone.lock().await;
 
         loop {
             let event = rx.recv().await?;
             let msg = match event {
                 // TODO: rename UberDuckRequest to ElevenLabsRequest
-                Event::ElevenLabsRequest(msg) => msg,
+                Event::AiScenesRequest(msg) => msg,
                 _ => continue,
             };
 
@@ -246,6 +244,35 @@ impl EventHandler for ElevenLabsHandler {
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
+            // This sending a message, makes sure we have the right background music
+            match msg.music_bg {
+                Some(music_bg) => {
+                    let _ =
+                        send_message(&locked_client, music_bg.clone()).await;
+                }
+                None => {}
+            };
+
+            // So here, we need a dalle prompt
+            match msg.dalle_prompt {
+                Some(dalle_prompt) => {
+                    println!("Attempting to Generate Dalle");
+                    let _ = dalle::dalle_time(
+                        dalle_prompt,
+                        msg.username.clone(),
+                        1,
+                    )
+                    .await;
+                    println!("Done Attempting to Generate Dalle");
+                    let _ = obs_scenes::change_scene(
+                        &locked_obs_client,
+                        "art_gallery",
+                    )
+                    .await;
+                }
+                None => {}
+            };
+
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
 
@@ -296,7 +323,7 @@ impl EventHandler for ElevenLabsHandler {
     }
 }
 
-pub fn chop_text(starting_text: String) -> String {
+fn chop_text(starting_text: String) -> String {
     let mut seal_text = starting_text.clone();
 
     let spaces: Vec<_> = starting_text.match_indices(" ").collect();
@@ -315,112 +342,6 @@ pub fn chop_text(starting_text: String) -> String {
 fn find_obs_character(_voice: &str) -> &str {
     let default_character = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
     return default_character;
-}
-
-pub async fn set_voice(
-    voice: String,
-    username: String,
-    pool: &sqlx::PgPool,
-) -> Result<()> {
-    let model = stream_character::user_stream_character_information::Model {
-        username: username.clone(),
-        voice: voice.to_string().to_lowercase(),
-        obs_character: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
-        random: false,
-    };
-
-    model.save(pool).await?;
-
-    Ok(())
-}
-
-pub async fn talk_in_voice(
-    contents: String,
-    voice: String,
-    username: String,
-    tx: &broadcast::Sender<Event>,
-) -> Result<()> {
-    let spoken_string =
-        contents.clone().replace(&format!("!voice {}", &voice), "");
-
-    if spoken_string == "" {
-        return Ok(());
-    }
-
-    let seal_text = chop_text(spoken_string.clone());
-
-    let voice_text = spoken_string.clone();
-    println!("We trying for the voice: {} - {}", voice, voice_text);
-    let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
-        voice: Some(voice.to_string()),
-        message: seal_text,
-        voice_text,
-        username,
-        ..Default::default()
-    }));
-    Ok(())
-}
-
-pub async fn use_random_voice(
-    contents: String,
-    username: String,
-    tx: &broadcast::Sender<Event>,
-) -> Result<()> {
-    let voices_contents = fs::read_to_string("data/voices.json").unwrap();
-    let voices: Vec<Voice> = serde_json::from_str(&voices_contents).unwrap();
-    let mut rng = thread_rng();
-    let random_index = rng.gen_range(0..voices.len());
-    let random_voice = &voices[random_index];
-
-    let spoken_string = contents.clone().replace("!random", "");
-    let speech_bubble_text = chop_text(spoken_string.clone());
-    let voice_text = spoken_string.clone();
-
-    let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
-        message: random_voice.name.clone(),
-
-        // TODO: This should probably be a different Text Source
-        text_source: "Soundboard-Text".to_string(),
-    }));
-
-    let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
-        voice: Some(random_voice.name.clone()),
-        message: speech_bubble_text,
-        voice_text,
-        username,
-        ..Default::default()
-    }));
-    Ok(())
-}
-
-pub async fn build_stream_character(
-    pool: &sqlx::PgPool,
-    username: &str,
-) -> Result<StreamCharacter> {
-    let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
-
-    let voice =
-        match stream_character::get_voice_from_username(pool, username).await {
-            Ok(voice) => voice,
-            Err(_) => {
-                println!("No Voice Found, Using Default");
-
-                return Ok(StreamCharacter {
-                    username: username.to_string(),
-                    voice: Some(default_voice.to_string()),
-                    source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
-                });
-            }
-        };
-
-    let character = find_obs_character(&voice);
-    println!("Voice: {:?}", voice);
-
-    Ok(StreamCharacter {
-        username: username.to_string(),
-        voice: Some(voice.to_string()),
-        source: character.to_string(),
-    })
 }
 
 // ============= //
@@ -576,3 +497,10 @@ fn find_random_voice() -> (String, String) {
     // Return both the voice ID and name
     (random_voice.voice_id.clone(), random_voice.name.clone())
 }
+
+fn twitch_chat_filename(username: String, voice: String) -> String {
+    let now: DateTime<Utc> = Utc::now();
+
+    format!("{}_{}_{}", now.timestamp(), username, voice)
+}
+
