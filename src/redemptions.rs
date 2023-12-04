@@ -1,8 +1,8 @@
-use anyhow::Result;
 use anyhow::Error;
-use sqlx::PgPool;
+use anyhow::Result;
 use sqlx::postgres::PgRow;
 use sqlx::types::Uuid;
+use sqlx::PgPool;
 use subd_macros::database_model;
 
 #[database_model]
@@ -15,7 +15,7 @@ pub mod redemptions {
         pub user_name: String,
         pub reward_id: Uuid,
         // This might need to be text
-        // optional might FUCKING US 
+        // optional might FUCKING US
         pub user_input: Option<String>,
     }
 }
@@ -24,7 +24,6 @@ impl redemptions::Model {
     #[allow(dead_code)]
 
     pub async fn save(self, pool: &PgPool) -> Result<Self> {
-        
         Ok(sqlx::query_as!(
             Self,
             r#"
@@ -49,7 +48,7 @@ pub async fn save_redemptions(
     title: String,
     cost: i32,
     user_name: String,
-    reward_id: Uuid, 
+    reward_id: Uuid,
     user_input: String,
 ) -> Result<()> {
     sqlx::query!(
@@ -68,9 +67,9 @@ pub async fn save_redemptions(
 
 pub async fn find_redemption_by_reward_id(
     pool: &PgPool,
-    reward_id: Uuid, 
+    reward_id: Uuid,
 ) -> Result<PgRow, sqlx::Error> {
-    sqlx::query("SELECT * FROM redemptions WHERE reward_id = ?")
+    sqlx::query("SELECT * FROM redemptions WHERE reward_id = $1")
         .bind(reward_id)
         .fetch_one(pool)
         .await

@@ -67,7 +67,6 @@ pub async fn handle_obs_commands(
     //       we need to figure a way to look up the defaults per command
     //       because they could be different types
 
-    println!("Splitmsg: {} | {}", splitmsg[0], msg.user_name);
     let command = splitmsg[0].as_str();
     let _ = match command {
         // =================== //

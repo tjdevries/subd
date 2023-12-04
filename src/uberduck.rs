@@ -212,7 +212,7 @@ impl EventHandler for ElevenLabsHandler {
                 }
                 None => {}
             }
-            
+
             if final_voice == "evil_pokimane" {
                 local_audio_path =
                     normalize_tts_file(local_audio_path.clone()).unwrap();
@@ -221,7 +221,6 @@ impl EventHandler for ElevenLabsHandler {
                 local_audio_path =
                     add_reverb(local_audio_path.clone()).unwrap();
             }
-
 
             if final_voice == "satan" {
                 local_audio_path =
@@ -530,10 +529,10 @@ fn add_reverb(local_audio_path: String) -> Result<String> {
     Command::new("sox")
         .args(&[
             "-t",
-        "wav",
-        &local_audio_path,
-        &audio_dest_path,
-        "gain",
+            "wav",
+            &local_audio_path,
+            &audio_dest_path,
+            "gain",
             "-2",
             "reverb",
             "70",

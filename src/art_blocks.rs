@@ -10,7 +10,6 @@ pub async fn updates_ab_browser(
     upper_bound: i64,
 ) -> Result<()> {
     let random_number = random_in_range(lower_bound, upper_bound);
-    println!("Random number: {}", random_number);
     let ab_id = random_number.to_string();
     let ab_url =
         format!("https://generator.artblocks.io/{}/{}", contract, ab_id);

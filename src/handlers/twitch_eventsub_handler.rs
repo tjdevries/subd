@@ -1,5 +1,4 @@
 use crate::music_scenes;
-use sqlx::types::Uuid;
 use crate::obs_scenes;
 use crate::redemptions;
 use anyhow::Result;
@@ -16,6 +15,7 @@ use openai::{
     set_key,
 };
 use serde::{Deserialize, Serialize};
+use sqlx::types::Uuid;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -93,6 +93,7 @@ struct Transport {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SubEvent {
+    id: Uuid,
     user_id: String,
     user_login: String,
     user_name: String,
@@ -146,7 +147,7 @@ async fn post_request(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-    dbg!(&eventsub_body);
+    // dbg!(&eventsub_body);
 
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
@@ -195,39 +196,45 @@ async fn post_request(
                     Some(reward) => {
                         let command = reward.title.clone();
                         let user_input = match event.user_input.clone() {
-                            Some(input) => {input}
-                            None => {"".to_string()}
+                            Some(input) => input,
+                            None => "".to_string(),
                         };
 
+                        // Should we return error status code?
                         if user_input == "".to_string() {
                             println!("No user input");
-
-                            // Should we return error status code
-                            return (StatusCode::OK, "".to_string()); 
+                            return (StatusCode::OK, "".to_string());
                         };
 
-                        let old_redemp = redemptions::find_redemption_by_reward_id(&pool, reward.id.clone()).await;
+                        let old_redemp =
+                            redemptions::find_redemption_by_reward_id(
+                                &pool,
+                                event.id.clone(),
+                            )
+                            .await;
                         match old_redemp {
                             Ok(_reward_id) => {
-                                // dbg!(reward_id);
-                                println!("We found a redemption: {}", command.clone());
-                                // return (StatusCode::OK, "".to_string());
-                           }
+                                println!(
+                                    "\nWe found a redemption: {}\n",
+                                    command.clone()
+                                );
+                                return (StatusCode::OK, "".to_string());
+                            }
                             Err(e) => {
-                                println!("No redemption found, saving new redemption: {:?}", e);
-                                
+                                println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), event.id.clone());
+
                                 let _ = redemptions::save_redemptions(
                                     &pool,
                                     command.clone(),
                                     reward.cost.clone(),
                                     event.user_name.clone(),
-                                    reward.id.clone(),
+                                    event.id.clone(),
                                     user_input,
-                                ).await;
+                                )
+                                .await;
                             }
                         }
-                            
-                        
+
                         match ai_scenes_map.get(&command) {
                             Some(scene) => {
                                 let user_input = event.user_input.unwrap();
@@ -342,7 +349,6 @@ async fn trigger_full_scene(
     let content = chat_response.content.unwrap().to_string();
 
     if dalle_mode {
-        
         // We need to generate better dalle, for higher channel point prices
         let dalle_response =
             ask_chat_gpt(user_input.clone(), base_dalle_prompt).await;
