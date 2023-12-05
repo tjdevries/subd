@@ -65,6 +65,7 @@ actix = "0.13.1"
 warp = "0.3.6"
 openai = "1.0.0-alpha.13"
 twitch_api = "0.7.0-rc.7"
+twitch_oauth2 = "0.12.7"
 
 [workspace]
 members = ["crates/*"]

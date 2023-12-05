@@ -1,5 +1,5 @@
 use once_cell::sync::OnceCell;
-use twitch_api2::twitch_oauth2::{AccessToken, RefreshToken};
+use twitch_oauth2::{AccessToken, RefreshToken};
 
 /// twitch_bot_oauth is the authentication for the bot that will respond to messages in chat and
 /// whispers (TODO). It can possibly be your account, but in general that will be pretty confusing

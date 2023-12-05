@@ -4,15 +4,18 @@ use events::EventHandler;
 use reqwest::Client as ReqwestClient;
 use subd_types::{Event, UserID, UserMessage, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
-use twitch_api2::{
+use twitch_api::{
     helix::subscriptions::GetBroadcasterSubscriptionsRequest,
-    twitch_oauth2::UserToken, HelixClient,
 };
+
+use twitch_api::helix::HelixClient;
+
+use twitch_oauth2::UserToken;
+
 use twitch_irc::{
     login::StaticLoginCredentials, message::ServerMessage, ClientConfig,
     SecureTCPTransport, TwitchIRCClient,
 };
-// use twitch_api2::tmi::{TmiClient, TmiMessage};
 // use twitch_oauth2::{tokens::errors::AppAccessTokenError, AppAccessToken, Scope, TwitchToken};
 
 // #[allow(dead_code)]
@@ -231,14 +234,16 @@ impl EventHandler for TwitchMessageHandler {
     }
 }
 
+// use twitch_api::helix::{HelixClient, subscriptions::GetBroadcasterSubscriptionsRequest};
 pub async fn get_twitch_sub_count<'a>(
     client: &HelixClient<'a, ReqwestClient>,
     token: UserToken,
 ) -> usize {
-    let req = GetBroadcasterSubscriptionsRequest::builder()
-        .broadcaster_id(token.user_id.clone())
-        .first("1".to_string())
-        .build();
+    
+// # let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
+// # let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
+// let req = GetBroadcasterSubscriptionsRequest::broadcaster_id("1234");
+    let req = GetBroadcasterSubscriptionsRequest::broadcaster_id(token.user_id.clone());
 
     let response = client
         .req_get(req, &token)

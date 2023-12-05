@@ -4,8 +4,8 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
-use twitch_api2::pubsub::channel_points::Redemption;
-pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
+use twitch_api::pubsub::channel_points::Redemption;
+pub use twitch_api::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 
 #[cfg(feature = "sql")]
 pub mod consts;
