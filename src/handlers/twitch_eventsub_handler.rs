@@ -1,6 +1,6 @@
 use crate::music_scenes;
-use std::time;
-use std::thread;
+// use std::time;
+// use std::thread;
 use crate::obs_scenes;
 use crate::redemptions;
 use anyhow::Result;
@@ -323,19 +323,11 @@ async fn ask_chat_gpt(
         function_call: None,
     });
 
-    // These 2 unwraps are sus
-    // let chat_completion =
-    //     ChatCompletion::builder("gpt-3.5-turbo", messages.clone())
-    //         .create()
-    //         .await
-    //         .unwrap();
     let chat_completion = match ChatCompletion::builder("gpt-3.5-turbo", messages.clone()).create().await {
         Ok(completion) => completion,
         Err(e) => {
-            // Handle error here. For example, you might log the error and/or return early from the function.
-            // You could return an error or a default value, depending on your application's needs.
             eprintln!("An error occurred: {}", e);
-            return Err(e); // Or handle it as needed
+            return Err(e);
         }
     };
     let returned_message =
@@ -374,16 +366,17 @@ async fn trigger_full_scene(
         // the dalle prompt failure
         // // WE pause on this way long
         // let dalle_response =
-        //     ask_chat_gpt(user_input.clone(), base_dalle_prompt.clone()).await.unwrap();
-        // println!("\nAfter Dalle Request! {:?}", dalle_response);
-        // let dalle_prompt = dalle_response.content.unwrap();
-        // let dalle_prompt = match dalle_response.content {
+        //     ask_chat_gpt(user_input.clone(), base_dalle_prompt.clone()).await;
+        // // let dalle_content = dalle_response.unwrap().content.unwrap().to_string();
+        // // let dalle_prompt = dalle_response.content.unwrap();
+        // let dalle_prompt = match dalle_response.unwrap().content {
         //     Some(content) => content,
         //     None => {
         //         println!("We didn't find a dalle response");
         //         base_dalle_prompt.clone()
         //     },
         // };
+        // println!("\nAfter Content! {:?}", dalle_prompt);
         // println!("\n\tDalle Prompt: {}", dalle_prompt.clone().to_string());
     
         let hack_prompt = format!("{} {}", base_dalle_prompt.clone(), content.clone());
@@ -396,7 +389,10 @@ async fn trigger_full_scene(
                 dalle_prompt: Some(hack_prompt),
                 ..Default::default()
             }));
+            // dalle_prompt: Some(dalle_prompt),
+            // dalle_prompt: Some(dalle_prompt),
             // dalle_prompt: Some(base_dalle_prompt.clone()),
+            // dalle_prompt: Some(hack_prompt),
             // dalle_prompt: Some(dalle_prompt),
             // dalle_prompt: Some(content.clone()),
     } else {
