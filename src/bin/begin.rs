@@ -2,15 +2,20 @@ use anyhow::Result;
 use elevenlabs_api::{Auth, Elevenlabs};
 use serde::{Deserialize, Serialize};
 use server::audio;
+use std::env;
 use server::handlers;
-use server::uberduck;
 use server::ai_scenes;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
+use subd_twitch::rewards::RewardManager;
+use twitch_api::helix::{self, points::update_custom_reward};
+use twitch_api::HelixClient;
+use twitch_oauth2::{AccessToken, UserToken};
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
+// use server::uberduck;
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
@@ -145,6 +150,51 @@ async fn main() -> Result<()> {
     });
 
     let pool = get_db_pool().await;
+    let twitch_user_access_token = env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
+    
+    // Setup the http client to use with the library.
+    let reqwest = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()?;
+    
+    
+    let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
+    let token = UserToken::from_token(&twitch_reward_client, AccessToken::from("my_access_token")).await?;
+
+    // let token =
+    //     twitch_oauth2::UserToken::from_existing(&reqwest, twitch_user_access_token, None, None)
+    //         .await?;
+    
+    // let twitch_user_access_token = UserToken::from_existing_unchecked(
+    //     &twitch_reward_client,
+    //     std::env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
+    //         .ok()
+    //         .map(AccessToken::new)
+    //         .expect("Please set env: TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN or pass token as first argument"),
+    //         None,
+    //         None,
+    //     ).await?;
+    //
+    
+    // let reward_manager = RewardManager::new(
+    //     &twitch_reward_client,
+    //     &twitch_user_access_token,
+    // );
+
+    // let client: helix::HelixClient<'static, client::DummyHttpClient> = helix::HelixClient::default();
+    // let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
+    // let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
+
+    // let broadcaster_id = "424038378";
+    // let reward_id = "";
+    // let request = update_custom_reward::UpdateCustomRewardRequest::new(broadcaster_id, reward_id);
+    // let mut body = update_custom_reward::UpdateCustomRewardBody::default();
+    // body.cost = Some(420);
+    // // // body.title = Some("hydrate but differently now!".into());
+    // let response: update_custom_reward::UpdateCustomReward = twitch_reward_client.req_patch(request, body, &token).await?.data;
+
+    
+    
 
     // // Elevenlabs/Uberduck handles voice messages
     // let elevenlabs_auth = Auth::from_env().unwrap();

@@ -257,7 +257,8 @@ pub async fn send_message<
     msg: impl Into<String>,
 ) -> Result<()> {
     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    let err = client.say(twitch_username.to_string(), msg.into()).await?;
-    println!("say err: {:?}", err);
+    let str_msg = msg.into();
+    let err = client.say(twitch_username.to_string(), str_msg.clone()).await?;
+    println!("Twitch Send Message err: {:?} - {:?}", err, str_msg);
     Ok(())
 }

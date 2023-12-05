@@ -149,7 +149,9 @@ async fn post_request(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-    // dbg!(&eventsub_body);
+
+    // We want this to occur later on, after some filtering
+    dbg!(&eventsub_body);
 
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";

@@ -133,7 +133,7 @@ pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
         NewVoiceScene {
             voice: "Fin",
             music: "Romcom-BG-Music",
-            playlist_folder: None,
+            playlist_folder: Some("RomCom"),
         },
     ),
     (
