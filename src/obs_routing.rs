@@ -1,5 +1,6 @@
 use crate::bootstrap;
 use crate::move_transition;
+use std::env;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
 use crate::obs;
@@ -11,6 +12,7 @@ use crate::sdf_effects;
 use crate::skybox;
 use crate::stream_character;
 use crate::twitch_stream_state;
+use crate::openai;
 use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
@@ -25,6 +27,10 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+// use openai::{
+//     chat::{ ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
+//     set_key,
+// };
 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
@@ -69,6 +75,12 @@ pub async fn handle_obs_commands(
 
     let command = splitmsg[0].as_str();
     let _ = match command {
+        "!test" => {
+            let contents = &splitmsg[1..].join(" ");
+            println!("contents: {}", contents);
+            let _ = openai::ask_chat_gpt("Description the following".to_string(), contents.to_string()).await;
+            Ok(())
+        }
         // =================== //
         // === Experiments === //
         // =================== //
@@ -800,3 +812,56 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
         ("ease-in-and-out", 3),
     ])
 }
+
+// // I want this to exist somewhere else
+// async fn ask_chat_gpt(
+//     user_input: String,
+//     base_content: String,
+// ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
+//     println!("pre ask_chat_gpt OPENAI_KEY");
+//     set_key(env::var("OPENAI_API_KEY").unwrap());
+//     println!("post ask_chat_gpt OPENAI_KEY)");
+//
+//     println!("pre ask_chat_gpt messages");
+//     let mut messages = vec![ChatCompletionMessage {
+//         role: ChatCompletionMessageRole::System,
+//         content: Some(base_content),
+//         name: None,
+//         function_call: None,
+//     }];
+//     println!("post ask_chat_gpt messages");
+//     
+//     println!("pre ask_chat_gpt message push");
+//     messages.push(ChatCompletionMessage {
+//         role: ChatCompletionMessageRole::User,
+//         content: Some(user_input),
+//         name: None,
+//         function_call: None,
+//     });
+//     println!("post ask_chat_gpt message push");
+//     
+//     println!("pre ask_chat_gpt completion");
+//     // let model = "gpt-4";
+//     let model="gpt-3.5-turbo";
+//     let chat_completion = match ChatCompletion::builder(model, messages.clone()).create().await {
+//         Ok(completion) => completion,
+//         Err(e) => {
+//             eprintln!("An error occurred: {}", e);
+//             return Err(e);
+//         }
+//     };
+//     println!("post ask_chat_gpt completion");
+//     
+//     println!("pre ask_chat_gpt completion choices");
+//     let returned_message =
+//         chat_completion.choices.first().unwrap().message.clone();
+//     println!("post ask_chat_gpt completion choices");
+//     
+//     println!(
+//         "Chat GPT Response {:#?}: {}",
+//         &returned_message.role,
+//         &returned_message.content.clone().unwrap().trim()
+//     );
+//     Ok(returned_message)
+// }
+//

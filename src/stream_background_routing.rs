@@ -164,17 +164,17 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
-        // "!dalle" => {
-        //     let prompt = splitmsg
-        //         .iter()
-        //         .skip(1)
-        //         .map(AsRef::as_ref)
-        //         .collect::<Vec<&str>>()
-        //         .join(" ");
-        //     println!("Dalle Time!");
-        //     let _ = dalle::dalle_time(prompt, msg.user_name, 4).await;
-        //     Ok(())
-        // }
+        "!dalle" => {
+            let prompt = splitmsg
+                .iter()
+                .skip(1)
+                .map(AsRef::as_ref)
+                .collect::<Vec<&str>>()
+                .join(" ");
+            println!("Dalle Time!");
+            let _ = dalle::dalle_time(prompt, msg.user_name, 1).await;
+            Ok(())
+        }
         _ => Ok(()),
     }
 }

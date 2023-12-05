@@ -2,6 +2,7 @@ use crate::music_scenes;
 // use std::time;
 // use std::thread;
 use crate::obs_scenes;
+use crate::openai;
 use crate::redemptions;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -11,11 +12,11 @@ use axum::{
 };
 use events::EventHandler;
 use obws::Client as OBSClient;
-use openai::chat::ChatCompletion;
-use openai::{
-    chat::{ChatCompletionMessage, ChatCompletionMessageRole},
-    set_key,
-};
+// use openai::chat::ChatCompletion;
+// use openai::{
+//     chat::{ChatCompletionMessage, ChatCompletionMessageRole},
+//     set_key,
+// };
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use std::collections::HashMap;
@@ -150,8 +151,9 @@ async fn post_request(
     >,
 ) -> impl IntoResponse {
 
+    // We could check our DB first, before printing this
     // We want this to occur later on, after some filtering
-    dbg!(&eventsub_body);
+    // dbg!(&eventsub_body);
 
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
@@ -243,13 +245,47 @@ async fn post_request(
                             Some(scene) => {
                                 let user_input = event.user_input.unwrap();
 
+                                // let thang = "dogs".to_string();
+                                // let chat_response = openai::ask_chat_gpt("Description the following".to_string(), thang).await;
+                                
+                                let base_prompt = scene.base_prompt.clone();
+                                println!("Asking Chat GPT: {} - {}", base_prompt, user_input);
+                                let chat_response = openai::ask_chat_gpt(user_input.clone().to_string(), base_prompt).await;
+                                // let content = chat_response.unwrap().content.unwrap().to_string();
+
+                                // What the heck is going wrong here?
+                                // Is there are eerrors we should jsut return
+                                let content = match chat_response {
+                                    Ok(response) => {
+                                        match response.content {
+                                            Some(c) => c,
+                                            None => {
+                                                // Handle the case where content is None
+                                                // You can return a default value or handle the error as needed
+                                                "Default content".to_string() // Example default value
+                                            }
+                                        }
+                                    },
+                                    Err(e) => {
+                                        // Handle the error case of chat_response
+                                        // Log the error, return a default value, or perform other error handling
+                                        eprintln!("Error occurred: {:?}", e); // Example error logging
+                                        "Error response".to_string() // Example default value
+                                    }
+                                };
+                                
+                                // So once we add this trigger full scene, other things stoped
+                                // getting printed???
+                                println!("Chat GPT response: {:?}", content.clone());
                                 // This is where you would create a redemption
+                                // 
                                 let _ = trigger_full_scene(
                                     tx.clone(),
                                     scene.voice.clone(),
                                     scene.music_bg.clone(),
-                                    user_input,
-                                    scene.base_prompt.clone(),
+                                    content,
+                                    // user_input,
+                                    // scene.base_prompt.clone(),
                                     scene.base_dalle_prompt.clone(),
                                 )
                                 .await;
@@ -305,56 +341,76 @@ async fn post_request(
     (StatusCode::OK, "".to_string())
 }
 
-async fn ask_chat_gpt(
-    user_input: String,
-    base_content: String,
-) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-    set_key(env::var("OPENAI_KEY").unwrap());
-
-    let mut messages = vec![ChatCompletionMessage {
-        role: ChatCompletionMessageRole::System,
-        content: Some(base_content),
-        name: None,
-        function_call: None,
-    }];
-
-    messages.push(ChatCompletionMessage {
-        role: ChatCompletionMessageRole::User,
-        content: Some(user_input),
-        name: None,
-        function_call: None,
-    });
-
-    let chat_completion = match ChatCompletion::builder("gpt-3.5-turbo", messages.clone()).create().await {
-        Ok(completion) => completion,
-        Err(e) => {
-            eprintln!("An error occurred: {}", e);
-            return Err(e);
-        }
-    };
-    let returned_message =
-        chat_completion.choices.first().unwrap().message.clone();
-    
-    println!(
-        "Chat GPT Response {:#?}: {}",
-        &returned_message.role,
-        &returned_message.content.clone().unwrap().trim()
-    );
-    Ok(returned_message)
-}
-
+// // I want this to exist somewhere else
+// async fn ask_chat_gpt(
+//     user_input: String,
+//     base_content: String,
+// ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
+//     println!("pre ask_chat_gpt OPENAI_KEY: {} - {}", base_content, user_input);
+//     set_key(env::var("OPENAI_KEY").unwrap());
+//     println!("post ask_chat_gpt OPENAI_KEY)");
+//
+//     println!("pre ask_chat_gpt messages");
+//     let mut messages = vec![ChatCompletionMessage {
+//         role: ChatCompletionMessageRole::System,
+//         content: Some(base_content),
+//         name: None,
+//         function_call: None,
+//     }];
+//     println!("post ask_chat_gpt messages");
+//     
+//     println!("pre ask_chat_gpt message push");
+//     messages.push(ChatCompletionMessage {
+//         role: ChatCompletionMessageRole::User,
+//         content: Some(user_input),
+//         name: None,
+//         function_call: None,
+//     });
+//     println!("post ask_chat_gpt message push");
+//     
+//     println!("pre ask_chat_gpt completion");
+//     // let model = "gpt-4";
+//     let model="gpt-3.5-turbo";
+//     let chat_completion = match ChatCompletion::builder(model, messages.clone()).create().await {
+//         Ok(completion) => completion,
+//         Err(e) => {
+//             eprintln!("An error occurred: {}", e);
+//             return Err(e);
+//         }
+//     };
+//     println!("post ask_chat_gpt completion");
+//     
+//     println!("pre ask_chat_gpt completion choices");
+//     let returned_message =
+//         chat_completion.choices.first().unwrap().message.clone();
+//     println!("post ask_chat_gpt completion choices");
+//     
+//     println!(
+//         "Chat GPT Response {:#?}: {}",
+//         &returned_message.role,
+//         &returned_message.content.clone().unwrap().trim()
+//     );
+//     Ok(returned_message)
+// }
+//
 async fn trigger_full_scene(
     tx: broadcast::Sender<Event>,
     voice: String,
     music_bg: String,
-    user_input: String,
-    base_prompt: String,
+    content: String,
+    // user_input: String,
+    // base_prompt: String,
     base_dalle_prompt: String,
 ) -> Result<()> {
     let dalle_mode = true;
     
-    let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
-    let content = chat_response.unwrap().content.unwrap().to_string();
+    println!("pre ask_chat_gpt");
+    
+    // let thang = "dogs".to_string();
+    // let chat_response = openai::ask_chat_gpt("Description the following".to_string(), thang).await;
+    // // let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
+    // println!("post ask_chat_gpt");
+    // let content = chat_response.unwrap().content.unwrap().to_string();
     
     // TOTAL HacK
     // let sleep_time = time::Duration::from_millis(3000);
@@ -362,7 +418,7 @@ async fn trigger_full_scene(
 
     if dalle_mode {
         println!("\nDalle Mode!");
-        println!("\ninput: {}\nbase: {} ", user_input.clone(), base_dalle_prompt);
+        // println!("\ninput: {}\nbase: {} ", user_input.clone(), base_dalle_prompt);
 
         // Try catch with a timing
         // the dalle prompt failure
@@ -381,6 +437,7 @@ async fn trigger_full_scene(
         // println!("\nAfter Content! {:?}", dalle_prompt);
         // println!("\n\tDalle Prompt: {}", dalle_prompt.clone().to_string());
     
+        // Can we use this???
         let hack_prompt = format!("{} {}", base_dalle_prompt.clone(), content.clone());
         let _ =
             tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
