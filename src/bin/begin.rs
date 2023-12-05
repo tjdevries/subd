@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
     
     
     let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
-    let token = UserToken::from_token(&twitch_reward_client, AccessToken::from("my_access_token")).await?;
+    // let token = UserToken::from_token(&twitch_reward_client, AccessToken::from("my_access_token")).await?;
 
     // let token =
     //     twitch_oauth2::UserToken::from_existing(&reqwest, twitch_user_access_token, None, None)
