@@ -63,9 +63,8 @@ pub struct Voice {
     pub name: String,
 }
 
-
 // ============================================================
-// 
+//
 // Should this have an OBS Client as well
 pub struct AiScenesHandler {
     pub sink: Sink,
@@ -75,7 +74,6 @@ pub struct AiScenesHandler {
     pub elevenlabs: Elevenlabs,
     pub obs_client: OBSClient,
 }
-
 
 #[async_trait]
 impl EventHandler for AiScenesHandler {
@@ -482,4 +480,3 @@ fn twitch_chat_filename(username: String, voice: String) -> String {
 
     format!("{}_{}_{}", now.timestamp(), username, voice)
 }
-

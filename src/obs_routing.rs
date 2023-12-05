@@ -1,6 +1,5 @@
 use crate::bootstrap;
 use crate::move_transition;
-use std::env;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
 use crate::obs;
@@ -8,16 +7,17 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
+use crate::openai;
 use crate::sdf_effects;
 use crate::skybox;
 use crate::stream_character;
 use crate::twitch_stream_state;
-use crate::openai;
 use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use std::collections::HashMap;
+use std::env;
 use std::process::Command;
 use std::thread;
 use std::time;
@@ -78,7 +78,11 @@ pub async fn handle_obs_commands(
         "!test" => {
             let contents = &splitmsg[1..].join(" ");
             println!("contents: {}", contents);
-            let _ = openai::ask_chat_gpt("Description the following".to_string(), contents.to_string()).await;
+            let _ = openai::ask_chat_gpt(
+                "Description the following".to_string(),
+                contents.to_string(),
+            )
+            .await;
             Ok(())
         }
         // =================== //
@@ -830,7 +834,7 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
 //         function_call: None,
 //     }];
 //     println!("post ask_chat_gpt messages");
-//     
+//
 //     println!("pre ask_chat_gpt message push");
 //     messages.push(ChatCompletionMessage {
 //         role: ChatCompletionMessageRole::User,
@@ -839,7 +843,7 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
 //         function_call: None,
 //     });
 //     println!("post ask_chat_gpt message push");
-//     
+//
 //     println!("pre ask_chat_gpt completion");
 //     // let model = "gpt-4";
 //     let model="gpt-3.5-turbo";
@@ -851,12 +855,12 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
 //         }
 //     };
 //     println!("post ask_chat_gpt completion");
-//     
+//
 //     println!("pre ask_chat_gpt completion choices");
 //     let returned_message =
 //         chat_completion.choices.first().unwrap().message.clone();
 //     println!("post ask_chat_gpt completion choices");
-//     
+//
 //     println!(
 //         "Chat GPT Response {:#?}: {}",
 //         &returned_message.role,

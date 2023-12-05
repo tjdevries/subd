@@ -4,9 +4,7 @@ use events::EventHandler;
 use reqwest::Client as ReqwestClient;
 use subd_types::{Event, UserID, UserMessage, UserPlatform};
 use tokio::sync::{broadcast, mpsc::UnboundedReceiver};
-use twitch_api::{
-    helix::subscriptions::GetBroadcasterSubscriptionsRequest,
-};
+use twitch_api::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
 
 use twitch_api::helix::HelixClient;
 
@@ -239,11 +237,12 @@ pub async fn get_twitch_sub_count<'a>(
     client: &HelixClient<'a, ReqwestClient>,
     token: UserToken,
 ) -> usize {
-    
-// # let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
-// # let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
-// let req = GetBroadcasterSubscriptionsRequest::broadcaster_id("1234");
-    let req = GetBroadcasterSubscriptionsRequest::broadcaster_id(token.user_id.clone());
+    // # let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
+    // # let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
+    // let req = GetBroadcasterSubscriptionsRequest::broadcaster_id("1234");
+    let req = GetBroadcasterSubscriptionsRequest::broadcaster_id(
+        token.user_id.clone(),
+    );
 
     let response = client
         .req_get(req, &token)
@@ -263,7 +262,9 @@ pub async fn send_message<
 ) -> Result<()> {
     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
     let str_msg = msg.into();
-    let err = client.say(twitch_username.to_string(), str_msg.clone()).await?;
+    let err = client
+        .say(twitch_username.to_string(), str_msg.clone())
+        .await?;
     println!("Twitch Send Message err: {:?} - {:?}", err, str_msg);
     Ok(())
 }

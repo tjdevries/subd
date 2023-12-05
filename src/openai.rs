@@ -1,8 +1,8 @@
-use std::env;
 use openai::{
-    chat::{ ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
+    chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
     set_key,
 };
+use std::env;
 
 // I want this to exist somewhere else
 pub async fn ask_chat_gpt(
@@ -21,7 +21,7 @@ pub async fn ask_chat_gpt(
         function_call: None,
     }];
     println!("post ask_chat_gpt messages");
-    
+
     println!("pre ask_chat_gpt message push");
     messages.push(ChatCompletionMessage {
         role: ChatCompletionMessageRole::User,
@@ -30,11 +30,14 @@ pub async fn ask_chat_gpt(
         function_call: None,
     });
     println!("post ask_chat_gpt message push");
-    
+
     println!("pre ask_chat_gpt completion");
     // let model = "gpt-4";
-    let model="gpt-3.5-turbo";
-    let chat_completion = match ChatCompletion::builder(model, messages.clone()).create().await {
+    let model = "gpt-3.5-turbo";
+    let chat_completion = match ChatCompletion::builder(model, messages.clone())
+        .create()
+        .await
+    {
         Ok(completion) => completion,
         Err(e) => {
             eprintln!("An error occurred: {}", e);
@@ -42,12 +45,12 @@ pub async fn ask_chat_gpt(
         }
     };
     println!("post ask_chat_gpt completion");
-    
+
     println!("pre ask_chat_gpt completion choices");
     let returned_message =
         chat_completion.choices.first().unwrap().message.clone();
     println!("post ask_chat_gpt completion choices");
-    
+
     println!(
         "Chat GPT Response {:#?}: {}",
         &returned_message.role,
@@ -55,4 +58,3 @@ pub async fn ask_chat_gpt(
     );
     Ok(returned_message)
 }
-

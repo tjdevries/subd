@@ -9,7 +9,10 @@ use twitch_api::{
     twitch_oauth2::UserToken,
 };
 
-pub struct RewardManager<'a, C> where C: twitch_api::HttpClient, {
+pub struct RewardManager<'a, C>
+where
+    C: twitch_api::HttpClient,
+{
     client: &'a HelixClient<'a, C>,
     token: &'a UserToken,
 }
@@ -30,7 +33,6 @@ where
         id: &str,
         status: bool,
     ) -> Result<()> {
-        
         // let client: helix::HelixClient<'static, client::DummyHttpClient> = helix::HelixClient::default();
         // let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
         // let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
@@ -39,7 +41,7 @@ where
         // body.cost = Some(501);
         // body.title = Some("hydrate but differently now!".into());
         // let response: update_custom_reward::UpdateCustomReward = self.client.req_patch(request, body, &token).await?.data;
-        
+
         //
         // let req = UpdateCustomRewardRequest::builder()
         //     .broadcaster_id(self.token.user_id.clone())

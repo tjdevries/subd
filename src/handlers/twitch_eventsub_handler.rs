@@ -1,6 +1,4 @@
 use crate::music_scenes;
-// use std::time;
-// use std::thread;
 use crate::obs_scenes;
 use crate::openai;
 use crate::redemptions;
@@ -12,11 +10,6 @@ use axum::{
 };
 use events::EventHandler;
 use obws::Client as OBSClient;
-// use openai::chat::ChatCompletion;
-// use openai::{
-//     chat::{ChatCompletionMessage, ChatCompletionMessageRole},
-//     set_key,
-// };
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use std::collections::HashMap;
@@ -150,7 +143,6 @@ async fn post_request(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-
     // We could check our DB first, before printing this
     // We want this to occur later on, after some filtering
     // dbg!(&eventsub_body);
@@ -247,10 +239,17 @@ async fn post_request(
 
                                 // let thang = "dogs".to_string();
                                 // let chat_response = openai::ask_chat_gpt("Description the following".to_string(), thang).await;
-                                
+
                                 let base_prompt = scene.base_prompt.clone();
-                                println!("Asking Chat GPT: {} - {}", base_prompt, user_input);
-                                let chat_response = openai::ask_chat_gpt(user_input.clone().to_string(), base_prompt).await;
+                                println!(
+                                    "Asking Chat GPT: {} - {}",
+                                    base_prompt, user_input
+                                );
+                                let chat_response = openai::ask_chat_gpt(
+                                    user_input.clone().to_string(),
+                                    base_prompt,
+                                )
+                                .await;
                                 // let content = chat_response.unwrap().content.unwrap().to_string();
 
                                 // What the heck is going wrong here?
@@ -265,7 +264,7 @@ async fn post_request(
                                                 "Default content".to_string() // Example default value
                                             }
                                         }
-                                    },
+                                    }
                                     Err(e) => {
                                         // Handle the error case of chat_response
                                         // Log the error, return a default value, or perform other error handling
@@ -273,20 +272,40 @@ async fn post_request(
                                         "Error response".to_string() // Example default value
                                     }
                                 };
-                                
-                                // So once we add this trigger full scene, other things stoped
-                                // getting printed???
-                                println!("Chat GPT response: {:?}", content.clone());
-                                // This is where you would create a redemption
-                                // 
+                                println!(
+                                    "Chat GPT response: {:?}",
+                                    content.clone()
+                                );
+
+                                let dalle_mode = true;
+                                let dalle_prompt = if dalle_mode {
+                                    let base_dalle_prompt =
+                                        scene.base_dalle_prompt.clone();
+                                    let dalle_response = openai::ask_chat_gpt(
+                                        user_input.clone(),
+                                        base_dalle_prompt,
+                                    )
+                                    .await;
+                                    let dalle_content = dalle_response
+                                        .unwrap()
+                                        .content
+                                        .unwrap()
+                                        .to_string();
+                                    Some(dalle_content)
+                                } else {
+                                    None
+                                };
+                                println!(
+                                    "Dalle GPT response: {:?}",
+                                    dalle_prompt.clone()
+                                );
+
                                 let _ = trigger_full_scene(
                                     tx.clone(),
                                     scene.voice.clone(),
                                     scene.music_bg.clone(),
                                     content,
-                                    // user_input,
-                                    // scene.base_prompt.clone(),
-                                    scene.base_dalle_prompt.clone(),
+                                    dalle_prompt,
                                 )
                                 .await;
                             }
@@ -341,130 +360,38 @@ async fn post_request(
     (StatusCode::OK, "".to_string())
 }
 
-// // I want this to exist somewhere else
-// async fn ask_chat_gpt(
-//     user_input: String,
-//     base_content: String,
-// ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-//     println!("pre ask_chat_gpt OPENAI_KEY: {} - {}", base_content, user_input);
-//     set_key(env::var("OPENAI_KEY").unwrap());
-//     println!("post ask_chat_gpt OPENAI_KEY)");
-//
-//     println!("pre ask_chat_gpt messages");
-//     let mut messages = vec![ChatCompletionMessage {
-//         role: ChatCompletionMessageRole::System,
-//         content: Some(base_content),
-//         name: None,
-//         function_call: None,
-//     }];
-//     println!("post ask_chat_gpt messages");
-//     
-//     println!("pre ask_chat_gpt message push");
-//     messages.push(ChatCompletionMessage {
-//         role: ChatCompletionMessageRole::User,
-//         content: Some(user_input),
-//         name: None,
-//         function_call: None,
-//     });
-//     println!("post ask_chat_gpt message push");
-//     
-//     println!("pre ask_chat_gpt completion");
-//     // let model = "gpt-4";
-//     let model="gpt-3.5-turbo";
-//     let chat_completion = match ChatCompletion::builder(model, messages.clone()).create().await {
-//         Ok(completion) => completion,
-//         Err(e) => {
-//             eprintln!("An error occurred: {}", e);
-//             return Err(e);
-//         }
-//     };
-//     println!("post ask_chat_gpt completion");
-//     
-//     println!("pre ask_chat_gpt completion choices");
-//     let returned_message =
-//         chat_completion.choices.first().unwrap().message.clone();
-//     println!("post ask_chat_gpt completion choices");
-//     
-//     println!(
-//         "Chat GPT Response {:#?}: {}",
-//         &returned_message.role,
-//         &returned_message.content.clone().unwrap().trim()
-//     );
-//     Ok(returned_message)
-// }
-//
 async fn trigger_full_scene(
     tx: broadcast::Sender<Event>,
     voice: String,
     music_bg: String,
     content: String,
-    // user_input: String,
-    // base_prompt: String,
-    base_dalle_prompt: String,
+    dalle_prompt: Option<String>,
 ) -> Result<()> {
-    let dalle_mode = true;
-    
-    println!("pre ask_chat_gpt");
-    
-    // let thang = "dogs".to_string();
-    // let chat_response = openai::ask_chat_gpt("Description the following".to_string(), thang).await;
-    // // let chat_response = ask_chat_gpt(user_input.clone(), base_prompt).await;
-    // println!("post ask_chat_gpt");
-    // let content = chat_response.unwrap().content.unwrap().to_string();
-    
-    // TOTAL HacK
-    // let sleep_time = time::Duration::from_millis(3000);
-    // thread::sleep(sleep_time);
-
-    if dalle_mode {
-        println!("\nDalle Mode!");
-        // println!("\ninput: {}\nbase: {} ", user_input.clone(), base_dalle_prompt);
-
-        // Try catch with a timing
-        // the dalle prompt failure
-        // // WE pause on this way long
-        // let dalle_response =
-        //     ask_chat_gpt(user_input.clone(), base_dalle_prompt.clone()).await;
-        // // let dalle_content = dalle_response.unwrap().content.unwrap().to_string();
-        // // let dalle_prompt = dalle_response.content.unwrap();
-        // let dalle_prompt = match dalle_response.unwrap().content {
-        //     Some(content) => content,
-        //     None => {
-        //         println!("We didn't find a dalle response");
-        //         base_dalle_prompt.clone()
-        //     },
-        // };
-        // println!("\nAfter Content! {:?}", dalle_prompt);
-        // println!("\n\tDalle Prompt: {}", dalle_prompt.clone().to_string());
-    
-        // Can we use this???
-        let hack_prompt = format!("{} {}", base_dalle_prompt.clone(), content.clone());
-        let _ =
-            tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                voice: Some(voice),
-                message: content.clone(),
-                voice_text: content.clone(),
-                music_bg: Some(music_bg),
-                dalle_prompt: Some(hack_prompt),
-                ..Default::default()
-            }));
-            // dalle_prompt: Some(dalle_prompt),
-            // dalle_prompt: Some(dalle_prompt),
-            // dalle_prompt: Some(base_dalle_prompt.clone()),
-            // dalle_prompt: Some(hack_prompt),
-            // dalle_prompt: Some(dalle_prompt),
-            // dalle_prompt: Some(content.clone()),
-    } else {
-        println!("\nNo Dalle Mode!");
-        let _ =
-            tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                voice: Some(voice),
-                message: content.clone(),
-                voice_text: content,
-                music_bg: Some(music_bg),
-                dalle_prompt: None,
-                ..Default::default()
-            }));
+    match dalle_prompt {
+        Some(prompt) => {
+            println!("\n\tDalle Prompt: {}", prompt.clone().to_string());
+            let _ =
+                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+                    voice: Some(voice),
+                    message: content.clone(),
+                    voice_text: content.clone(),
+                    music_bg: Some(music_bg),
+                    dalle_prompt: Some(prompt),
+                    ..Default::default()
+                }));
+        }
+        None => {
+            println!("\n\tDalle Prompt: None");
+            let _ =
+                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+                    voice: Some(voice),
+                    message: content.clone(),
+                    voice_text: content,
+                    music_bg: Some(music_bg),
+                    dalle_prompt: None,
+                    ..Default::default()
+                }));
+        }
     }
     Ok(())
 }
