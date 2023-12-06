@@ -8,8 +8,11 @@ CREATE TABLE users (
 CREATE TABLE twitch_stream_state(
   sub_only_tts boolean NOT NULL DEFAULT false,
   explicit_soundeffects boolean NOT NULL DEFAULT false,
-  implicit_soundeffects boolean NOT NULL DEFAULT false
-  global_voice boolean NOT NULL DEFAULT false
+  implicit_soundeffects boolean NOT NULL DEFAULT false,
+  global_voice boolean NOT NULL DEFAULT false,
+  
+  dalle_model TEXT NOT NULL DEFAULT "gpt-3.5-turbo",
+  dalle_mode boolean NOT NULL DEFAULT true
 );
 
 CREATE TABLE user_stream_character_information(

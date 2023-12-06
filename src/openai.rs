@@ -1,5 +1,5 @@
-use anyhow::Result;
 use anyhow::Error;
+use anyhow::Result;
 
 use openai::{
     chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
@@ -15,7 +15,7 @@ pub async fn ask_chat_gpt(
 ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
     // I use this key
     set_key(env::var("OPENAI_API_KEY").unwrap());
-    
+
     // but this lib wanted this key
     set_key(env::var("OPENAI_KEY").unwrap());
 
@@ -36,21 +36,22 @@ pub async fn ask_chat_gpt(
     println!("pre ask_chat_gpt completion");
     // let model = "gpt-4";
     let model = "gpt-3.5-turbo";
-    
-    let chat_completion = match ChatCompletion::builder(model.clone(), messages.clone())
-        .create()
-        .await
-    {
-        Ok(completion) => completion,
-        Err(e) => {
-            println!("\n\tChat GPT error occurred: {}", e);
-            return Err(e);
-        }
-    };
-    
+
+    let chat_completion =
+        match ChatCompletion::builder(model.clone(), messages.clone())
+            .create()
+            .await
+        {
+            Ok(completion) => completion,
+            Err(e) => {
+                println!("\n\tChat GPT error occurred: {}", e);
+                return Err(e);
+            }
+        };
+
     let returned_message =
         chat_completion.choices.first().unwrap().message.clone();
-    
+
     println!(
         "Chat GPT Response {:#?}: {}",
         &returned_message.role,
@@ -64,10 +65,10 @@ pub async fn ask_davinci(
     user_input: String,
     base_content: String,
 ) -> Result<String, anyhow::Error> {
-// ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
+    // ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
     // I use this key
     set_key(env::var("OPENAI_API_KEY").unwrap());
-    
+
     // but this lib wanted this key
     set_key(env::var("OPENAI_KEY").unwrap());
 
@@ -93,7 +94,7 @@ pub async fn ask_davinci(
     // let model = "gpt-4";
     // let model = "gpt-3.5-turbo";
     let model = "text-davinci-003";
-    
+
     let chat_completion = Completion::builder(model.clone())
         .prompt(prompt)
         .create()
@@ -106,9 +107,7 @@ pub async fn ask_davinci(
             let response = &chat.choices.first().unwrap().text;
             return Ok(response.to_string());
         }
-        Err(e) => {
-           Err(e.into())
-        }
+        Err(e) => Err(e.into()),
     }
 
     // let response = &completion.choices.first().unwrap().text;

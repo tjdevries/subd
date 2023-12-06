@@ -251,8 +251,23 @@ pub async fn handle_voices_commands(
         //    send_message(twitch_client, info).await?;
         //     Ok(())
         // }
+        "!no_dalle_mode" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            twitch_stream_state::turn_off_dalle_mode(&pool).await?;
+            Ok(())
+        }
 
-        // !global_voice Ethan
+        "!dalle_mode" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            println!("Turning on Dalle Mode");
+            twitch_stream_state::turn_on_dalle_mode(&pool).await?;
+            Ok(())
+        }
+
         "!no_global_voice" => {
             if not_beginbot {
                 return Ok(());
@@ -262,7 +277,6 @@ pub async fn handle_voices_commands(
             Ok(())
         }
 
-        // TODO: improve this
         "!global_voice" => {
             if not_beginbot {
                 return Ok(());

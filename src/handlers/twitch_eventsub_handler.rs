@@ -1,7 +1,6 @@
-use crate::music_scenes;
-use crate::obs_scenes;
 use crate::openai;
 use crate::redemptions;
+use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::routing::post;
@@ -13,16 +12,21 @@ use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use subd_types::Event;
 use tokio::sync::broadcast;
-use twitch_chat::send_message;
+use tokio::sync::oneshot;
+use tokio::time::timeout;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+// use crate::music_scenes;
+// use crate::obs_scenes;
+// use std::env;
+// use twitch_chat::send_message;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AIScenes {
@@ -172,7 +176,8 @@ async fn handle_ai_scene(
     ai_scenes_map: HashMap<String, &AIScene>,
     event: SubEvent,
 ) -> Result<()> {
-    let dalle_mode = true;
+    let state = twitch_stream_state::get_twitch_state(&pool).await?;
+    let dalle_mode = state.dalle_mode;
 
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
@@ -207,46 +212,46 @@ async fn handle_ai_scene(
                 base_prompt,
             )
             .await;
-            // let content = chat_response.unwrap().content.unwrap().to_string();
 
+            // let content = chat_response.unwrap().content.unwrap().to_string();
             let content = match chat_response {
-                Ok(response) => {
-                    response.content.unwrap()
-                }
+                Ok(response) => response.content.unwrap(),
                 Err(e) => {
-                    // Handle the error case of chat_response
-                    // Log the error, return a default value, or perform other error handling
                     eprintln!("Error occurred: {:?}", e); // Example error logging
                     "Error response".to_string() // Example default value
                 }
             };
-            println!(
-                "Chat GPT response: {:?}",
-                content.clone()
-            );
+            println!("Chat GPT response: {:?}", content.clone());
 
             let dalle_prompt = if dalle_mode {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
+
+                // This is not using Chat-GPT
+                let prompt = format!("{} {}", base_dalle_prompt, user_input);
+                Some(prompt)
+
+                // This is Danvinci
                 // let dalle_response = openai::ask_davinci(
                 //     user_input.clone(),
                 //     base_dalle_prompt.clone(),
                 // )
                 // .await;
-                let dalle_response = openai::ask_chat_gpt(
-                    user_input.clone(),
-                    base_dalle_prompt.clone(),
-                )
-                .await;
-                
-                match dalle_response {
-                    Ok(chat_completion) => {
-                        Some(chat_completion.content.unwrap())
-                    },
-                    Err(e) => {
-                        eprintln!("Error finding Dalle Content: {:?}", e);
-                        None
-                    }
-                }
+
+                // This is Chat GPT
+                // let dalle_response = openai::ask_chat_gpt(
+                //     user_input.clone(),
+                //     base_dalle_prompt.clone(),
+                // )
+                // .await;
+                // match dalle_response {
+                //     Ok(chat_completion) => {
+                //         Some(chat_completion.content.unwrap())
+                //     },
+                //     Err(e) => {
+                //         eprintln!("Error finding Dalle Content: {:?}", e);
+                //         None
+                //     }
+                // }
             } else {
                 None
             };

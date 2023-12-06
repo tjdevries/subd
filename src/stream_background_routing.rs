@@ -166,7 +166,7 @@ pub async fn handle_stream_background_commands(
 
         "!dalle" => {
             if not_beginbot {
-                return Ok(())
+                return Ok(());
             }
             let prompt = splitmsg
                 .iter()
