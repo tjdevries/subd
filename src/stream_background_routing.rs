@@ -13,7 +13,7 @@ pub async fn handle_stream_background_commands(
 ) -> Result<()> {
     let _is_mod = msg.roles.is_twitch_mod();
     let _is_vip = msg.roles.is_twitch_vip();
-    let _not_beginbot =
+    let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     let command = splitmsg[0].as_str();
@@ -165,6 +165,9 @@ pub async fn handle_stream_background_commands(
         }
 
         "!dalle" => {
+            if not_beginbot {
+                return Ok(())
+            }
             let prompt = splitmsg
                 .iter()
                 .skip(1)

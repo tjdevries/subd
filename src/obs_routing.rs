@@ -76,23 +76,23 @@ pub async fn handle_obs_commands(
     let command = splitmsg[0].as_str();
     let _ = match command {
         "!test" => {
-            let contents = &splitmsg[1..].join(" ");
-            println!("contents: {}", contents);
-            let res = openai::ask_chat_gpt(
-                "Description the following".to_string(),
-                contents.to_string(),
-            )
-            .await;
-            let content = res.unwrap().content.unwrap().to_string();
-
-            let dalle_res = openai::ask_chat_gpt(
-                "Turn this into a Dalle prompt: ".to_string(),
-                content,
-            )
-            .await;
-
-            let nice_res = dalle_res.unwrap().content.unwrap().to_string();
-            println!("\n\tNice Res: {:?}", nice_res);
+            // let contents = &splitmsg[1..].join(" ");
+            // println!("contents: {}", contents);
+            // let res = openai::ask_chat_gpt(
+            //     "Description the following".to_string(),
+            //     contents.to_string(),
+            // )
+            // .await;
+            // let content = res.unwrap().content.unwrap().to_string();
+            //
+            // let dalle_res = openai::ask_chat_gpt(
+            //     "Turn this into a Dalle prompt: ".to_string(),
+            //     content,
+            // )
+            // .await;
+            //
+            // let nice_res = dalle_res.unwrap().content.unwrap().to_string();
+            // println!("\n\tNice Res: {:?}", nice_res);
             Ok(())
         }
         // =================== //
@@ -826,56 +826,3 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
         ("ease-in-and-out", 3),
     ])
 }
-
-// // I want this to exist somewhere else
-// async fn ask_chat_gpt(
-//     user_input: String,
-//     base_content: String,
-// ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-//     println!("pre ask_chat_gpt OPENAI_KEY");
-//     set_key(env::var("OPENAI_API_KEY").unwrap());
-//     println!("post ask_chat_gpt OPENAI_KEY)");
-//
-//     println!("pre ask_chat_gpt messages");
-//     let mut messages = vec![ChatCompletionMessage {
-//         role: ChatCompletionMessageRole::System,
-//         content: Some(base_content),
-//         name: None,
-//         function_call: None,
-//     }];
-//     println!("post ask_chat_gpt messages");
-//
-//     println!("pre ask_chat_gpt message push");
-//     messages.push(ChatCompletionMessage {
-//         role: ChatCompletionMessageRole::User,
-//         content: Some(user_input),
-//         name: None,
-//         function_call: None,
-//     });
-//     println!("post ask_chat_gpt message push");
-//
-//     println!("pre ask_chat_gpt completion");
-//     // let model = "gpt-4";
-//     let model="gpt-3.5-turbo";
-//     let chat_completion = match ChatCompletion::builder(model, messages.clone()).create().await {
-//         Ok(completion) => completion,
-//         Err(e) => {
-//             eprintln!("An error occurred: {}", e);
-//             return Err(e);
-//         }
-//     };
-//     println!("post ask_chat_gpt completion");
-//
-//     println!("pre ask_chat_gpt completion choices");
-//     let returned_message =
-//         chat_completion.choices.first().unwrap().message.clone();
-//     println!("post ask_chat_gpt completion choices");
-//
-//     println!(
-//         "Chat GPT Response {:#?}: {}",
-//         &returned_message.role,
-//         &returned_message.content.clone().unwrap().trim()
-//     );
-//     Ok(returned_message)
-// }
-//

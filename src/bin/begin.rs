@@ -159,31 +159,14 @@ async fn main() -> Result<()> {
         .build()?;
 
     let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
-    // let token = UserToken::from_token(&twitch_reward_client, AccessToken::from("my_access_token")).await?;
 
     // let token =
-    //     twitch_oauth2::UserToken::from_existing(&reqwest, twitch_user_access_token, None, None)
+    //     twitch_oauth2::UserToken::from_existing(&reqwest, twitch_user_access_token.into(), None, None)
     //         .await?;
-
-    // let twitch_user_access_token = UserToken::from_existing_unchecked(
-    //     &twitch_reward_client,
-    //     std::env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
-    //         .ok()
-    //         .map(AccessToken::new)
-    //         .expect("Please set env: TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN or pass token as first argument"),
-    //         None,
-    //         None,
-    //     ).await?;
-    //
-
     // let reward_manager = RewardManager::new(
     //     &twitch_reward_client,
-    //     &twitch_user_access_token,
+    //     &token,
     // );
-
-    // let client: helix::HelixClient<'static, client::DummyHttpClient> = helix::HelixClient::default();
-    // let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
-    // let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
 
     // let broadcaster_id = "424038378";
     // let reward_id = "";

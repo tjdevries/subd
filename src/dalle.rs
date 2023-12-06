@@ -42,7 +42,7 @@ pub async fn dalle_time(
         .json(&serde_json::json!({
             "prompt": contents,
             "n": amount,
-            "model": "dall-e-3",
+            // "model": "dall-e-3",
             // "size": size,
             // "size": "1080x1080",
             // "size": "1792x1024",

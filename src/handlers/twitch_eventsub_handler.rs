@@ -207,42 +207,40 @@ async fn handle_ai_scene(
                 base_prompt,
             )
             .await;
-            let content = chat_response.unwrap().content.unwrap().to_string();
+            // let content = chat_response.unwrap().content.unwrap().to_string();
 
-            // let content = match chat_response {
-            //     Ok(response) => {
-            //         match response.content {
-            //             Some(c) => c,
-            //             None => {
-            //                 // Handle the case where content is None
-            //                 // You can return a default value or handle the error as needed
-            //                 "Default content".to_string() // Example default value
-            //             }
-            //         }
-            //     }
-            //     Err(e) => {
-            //         // Handle the error case of chat_response
-            //         // Log the error, return a default value, or perform other error handling
-            //         eprintln!("Error occurred: {:?}", e); // Example error logging
-            //         "Error response".to_string() // Example default value
-            //     }
-            // };
-            // println!(
-            //     "Chat GPT response: {:?}",
-            //     content.clone()
-            // );
+            let content = match chat_response {
+                Ok(response) => {
+                    response.content.unwrap()
+                }
+                Err(e) => {
+                    // Handle the error case of chat_response
+                    // Log the error, return a default value, or perform other error handling
+                    eprintln!("Error occurred: {:?}", e); // Example error logging
+                    "Error response".to_string() // Example default value
+                }
+            };
+            println!(
+                "Chat GPT response: {:?}",
+                content.clone()
+            );
 
             let dalle_prompt = if dalle_mode {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
+                // let dalle_response = openai::ask_davinci(
+                //     user_input.clone(),
+                //     base_dalle_prompt.clone(),
+                // )
+                // .await;
                 let dalle_response = openai::ask_chat_gpt(
                     user_input.clone(),
                     base_dalle_prompt.clone(),
                 )
                 .await;
+                
                 match dalle_response {
-                    Ok(chat_completion) => match chat_completion.content {
-                        Some(content) => Some(content),
-                        None => None,
+                    Ok(chat_completion) => {
+                        Some(chat_completion.content.unwrap())
                     },
                     Err(e) => {
                         eprintln!("Error finding Dalle Content: {:?}", e);
