@@ -134,6 +134,162 @@ impl EventHandler for TwitchEventSubHandler {
     }
 }
 
+async fn find_or_save_redemption(
+    pool: Arc<sqlx::PgPool>,
+    id: Uuid,
+    command: String,
+    reward_cost: i32,
+    user_name: String,
+    user_input: String,
+) -> Result<()> {
+    let old_redemp =
+        redemptions::find_redemption_by_reward_id(
+            &pool,
+            id,
+        )
+        .await;
+    
+    match old_redemp {
+        Ok(_reward_id) => {
+            println!(
+                "\nWe found a redemption: {}\n",
+                command.clone()
+            );
+            return Ok(())
+        }
+        Err(e) => {
+            println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), id.clone());
+
+            let _ = redemptions::save_redemptions(
+                &pool,
+                command,
+                reward_cost.clone(),
+                user_name,
+                id,
+                user_input,
+            )
+            .await;
+        }
+    }
+    Ok(()) 
+}
+
+async fn handle_ai_scene(
+    tx: broadcast::Sender<Event>,
+    pool: Arc<sqlx::PgPool>,
+    ai_scenes_map: HashMap<String,
+    &AIScene>, event: SubEvent) -> Result<()> {
+    let dalle_mode = false;
+    
+    let reward = event.reward.unwrap();
+    let command = reward.title.clone();
+    
+    let user_input = match event.user_input.clone() {
+        Some(input) => input,
+        None => "".to_string(),
+    };
+    if user_input == "".to_string() {
+        println!("No user input for handle_ai_scene");
+        return Ok(())
+    };
+
+    let _ = find_or_save_redemption(
+        pool.clone(),
+        event.id.clone(),
+        command.clone(),
+        reward.cost.clone(),
+        event.user_name.clone(),
+        user_input.clone(),
+    ).await;
+    
+    match ai_scenes_map.get(&command) {
+        Some(scene) => {
+            let user_input = event.user_input.unwrap();
+            let base_prompt = scene.base_prompt.clone();
+            println!(
+                "Asking Chat GPT: {} - {}",
+                base_prompt, user_input
+            );
+
+            
+            let chat_response = openai::ask_chat_gpt(
+                user_input.clone().to_string(),
+                base_prompt,
+            )
+            .await;
+            let content = chat_response.unwrap().content.unwrap().to_string();
+
+            // let content = match chat_response {
+            //     Ok(response) => {
+            //         match response.content {
+            //             Some(c) => c,
+            //             None => {
+            //                 // Handle the case where content is None
+            //                 // You can return a default value or handle the error as needed
+            //                 "Default content".to_string() // Example default value
+            //             }
+            //         }
+            //     }
+            //     Err(e) => {
+            //         // Handle the error case of chat_response
+            //         // Log the error, return a default value, or perform other error handling
+            //         eprintln!("Error occurred: {:?}", e); // Example error logging
+            //         "Error response".to_string() // Example default value
+            //     }
+            // };
+            // println!(
+            //     "Chat GPT response: {:?}",
+            //     content.clone()
+            // );
+
+            
+            let dalle_prompt = if dalle_mode {
+                let base_dalle_prompt = scene.base_dalle_prompt.clone();
+                let dalle_response = openai::ask_chat_gpt(
+                    user_input.clone(),
+                    base_dalle_prompt.clone(),
+                ).await;
+                match dalle_response {
+                    Ok(chat_completion) => {
+                        match chat_completion.content {
+                            Some(content) => Some(content),
+                            None => None,
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Error finding Dalle Content: {:?}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
+            println!(
+                "Dalle GPT response: {:?}",
+                dalle_prompt.clone()
+            );
+
+            // New Theory:
+            //             // Calling this trigger_full_scene, stops it from printing Dalle GPT
+            //                response above 
+            let _ = trigger_full_scene(
+                tx.clone(),
+                scene.voice.clone(),
+                scene.music_bg.clone(),
+                content.clone(),
+                dalle_prompt.clone(),
+            )
+            .await;
+        }
+        None => {
+            println!("Scene not found for reward title")
+        }
+    }
+    
+    Ok(())
+}
+
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(obs_client): Extension<Arc<OBSClient>>,
@@ -169,15 +325,13 @@ async fn post_request(
         _ => {}
     }
 
-    let c = obs_client;
+    // We aren't currently using this
+    // let c = obs_client;
 
     match eventsub_body.subscription.type_field.as_str() {
-        // What if we checked for Polls here!
         "channel.follow" => {
             println!("follow time");
         }
-
-        // I don't know if the eventsub_body will match
         "channel.poll.begin" => {
             println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
         }
@@ -190,165 +344,11 @@ async fn post_request(
 
         "channel.channel_points_custom_reward_redemption.add" => {
             match eventsub_body.event {
-                Some(event) => match event.reward {
-                    Some(reward) => {
-                        let command = reward.title.clone();
-                        let user_input = match event.user_input.clone() {
-                            Some(input) => input,
-                            None => "".to_string(),
-                        };
-
-                        // Should we return error status code?
-                        if user_input == "".to_string() {
-                            println!("No user input");
-                            return (StatusCode::OK, "".to_string());
-                        };
-
-                        let old_redemp =
-                            redemptions::find_redemption_by_reward_id(
-                                &pool,
-                                event.id.clone(),
-                            )
-                            .await;
-                        match old_redemp {
-                            Ok(_reward_id) => {
-                                println!(
-                                    "\nWe found a redemption: {}\n",
-                                    command.clone()
-                                );
-                                return (StatusCode::OK, "".to_string());
-                            }
-                            Err(e) => {
-                                println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), event.id.clone());
-
-                                let _ = redemptions::save_redemptions(
-                                    &pool,
-                                    command.clone(),
-                                    reward.cost.clone(),
-                                    event.user_name.clone(),
-                                    event.id.clone(),
-                                    user_input,
-                                )
-                                .await;
-                            }
-                        }
-
-                        match ai_scenes_map.get(&command) {
-                            Some(scene) => {
-                                let user_input = event.user_input.unwrap();
-
-                                // let thang = "dogs".to_string();
-                                // let chat_response = openai::ask_chat_gpt("Description the following".to_string(), thang).await;
-
-                                let base_prompt = scene.base_prompt.clone();
-                                println!(
-                                    "Asking Chat GPT: {} - {}",
-                                    base_prompt, user_input
-                                );
-                                let chat_response = openai::ask_chat_gpt(
-                                    user_input.clone().to_string(),
-                                    base_prompt,
-                                )
-                                .await;
-                                // let content = chat_response.unwrap().content.unwrap().to_string();
-
-                                // What the heck is going wrong here?
-                                // Is there are eerrors we should jsut return
-                                let content = match chat_response {
-                                    Ok(response) => {
-                                        match response.content {
-                                            Some(c) => c,
-                                            None => {
-                                                // Handle the case where content is None
-                                                // You can return a default value or handle the error as needed
-                                                "Default content".to_string() // Example default value
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        // Handle the error case of chat_response
-                                        // Log the error, return a default value, or perform other error handling
-                                        eprintln!("Error occurred: {:?}", e); // Example error logging
-                                        "Error response".to_string() // Example default value
-                                    }
-                                };
-                                println!(
-                                    "Chat GPT response: {:?}",
-                                    content.clone()
-                                );
-
-                                let dalle_mode = true;
-                                let dalle_prompt = if dalle_mode {
-                                    let base_dalle_prompt =
-                                        scene.base_dalle_prompt.clone();
-                                    let dalle_response = openai::ask_chat_gpt(
-                                        user_input.clone(),
-                                        base_dalle_prompt,
-                                    )
-                                    .await;
-                                    let dalle_content = dalle_response
-                                        .unwrap()
-                                        .content
-                                        .unwrap()
-                                        .to_string();
-                                    Some(dalle_content)
-                                } else {
-                                    None
-                                };
-                                println!(
-                                    "Dalle GPT response: {:?}",
-                                    dalle_prompt.clone()
-                                );
-
-                                let _ = trigger_full_scene(
-                                    tx.clone(),
-                                    scene.voice.clone(),
-                                    scene.music_bg.clone(),
-                                    content,
-                                    dalle_prompt,
-                                )
-                                .await;
-                            }
-                            None => {
-                                println!("Scene not found for reward title")
-                            }
-                        }
-
-                        // let ai_scene = ai_scene_map[command.clone().to_string()];
-                        match command.clone().as_str() {
-                            "gallery" => {
-                                let _ =
-                                    obs_scenes::change_scene(&c, "art_gallery")
-                                        .await;
-                            }
-                            "code" => {
-                                let _ = obs_scenes::change_scene(&c, "Primary")
-                                    .await;
-                            }
-
-                            _ => {
-                                for &(cmd, ref _scene) in
-                                    music_scenes::VOICE_TO_MUSIC.iter()
-                                {
-                                    let cmd_no_bang = &cmd[1..];
-
-                                    if cmd_no_bang == command.clone() {
-                                        let _ = send_message(
-                                            &twitch_client,
-                                            format!("!{}", command.clone()),
-                                        )
-                                        .await;
-                                    }
-                                }
-                            }
-                        };
-                    }
-                    None => {
-                        println!("NO REWARD FOUND!")
-                    }
+                Some(event) => {
+                    let _ = handle_ai_scene(tx, pool, ai_scenes_map, event).await;
                 },
                 None => {
-                    println!("NO EVENT FOUND!")
+                    println!("NO Event Found for redemption!")
                 }
             }
         }

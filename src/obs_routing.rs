@@ -78,11 +78,21 @@ pub async fn handle_obs_commands(
         "!test" => {
             let contents = &splitmsg[1..].join(" ");
             println!("contents: {}", contents);
-            let _ = openai::ask_chat_gpt(
+            let res = openai::ask_chat_gpt(
                 "Description the following".to_string(),
                 contents.to_string(),
             )
             .await;
+            let content = res.unwrap().content.unwrap().to_string();
+            
+            let dalle_res = openai::ask_chat_gpt(
+                "Turn this into a Dalle prompt: ".to_string(),
+                content,
+            )
+            .await;
+
+            let nice_res = dalle_res.unwrap().content.unwrap().to_string();
+            println!("\n\tNice Res: {:?}", nice_res);
             Ok(())
         }
         // =================== //
