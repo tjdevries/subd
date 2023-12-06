@@ -84,7 +84,7 @@ pub async fn handle_obs_commands(
             )
             .await;
             let content = res.unwrap().content.unwrap().to_string();
-            
+
             let dalle_res = openai::ask_chat_gpt(
                 "Turn this into a Dalle prompt: ".to_string(),
                 content,

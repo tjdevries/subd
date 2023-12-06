@@ -25,7 +25,7 @@ pub async fn ask_chat_gpt(
         function_call: None,
     });
 
-    // this is where we pause???? 
+    // this is where we pause????
     println!("pre ask_chat_gpt completion");
     // let model = "gpt-4";
     let model = "gpt-3.5-turbo";

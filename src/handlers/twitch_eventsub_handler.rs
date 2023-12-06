@@ -142,20 +142,12 @@ async fn find_or_save_redemption(
     user_name: String,
     user_input: String,
 ) -> Result<()> {
-    let old_redemp =
-        redemptions::find_redemption_by_reward_id(
-            &pool,
-            id,
-        )
-        .await;
-    
+    let old_redemp = redemptions::find_redemption_by_reward_id(&pool, id).await;
+
     match old_redemp {
         Ok(_reward_id) => {
-            println!(
-                "\nWe found a redemption: {}\n",
-                command.clone()
-            );
-            return Ok(())
+            println!("\nWe found a redemption: {}\n", command.clone());
+            return Ok(());
         }
         Err(e) => {
             println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), id.clone());
@@ -171,26 +163,27 @@ async fn find_or_save_redemption(
             .await;
         }
     }
-    Ok(()) 
+    Ok(())
 }
 
 async fn handle_ai_scene(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
-    ai_scenes_map: HashMap<String,
-    &AIScene>, event: SubEvent) -> Result<()> {
+    ai_scenes_map: HashMap<String, &AIScene>,
+    event: SubEvent,
+) -> Result<()> {
     let dalle_mode = true;
-    
+
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
-    
+
     let user_input = match event.user_input.clone() {
         Some(input) => input,
         None => "".to_string(),
     };
     if user_input == "".to_string() {
         println!("No user input for handle_ai_scene");
-        return Ok(())
+        return Ok(());
     };
 
     let _ = find_or_save_redemption(
@@ -200,18 +193,15 @@ async fn handle_ai_scene(
         reward.cost.clone(),
         event.user_name.clone(),
         user_input.clone(),
-    ).await;
-    
+    )
+    .await;
+
     match ai_scenes_map.get(&command) {
         Some(scene) => {
             let user_input = event.user_input.unwrap();
             let base_prompt = scene.base_prompt.clone();
-            println!(
-                "Asking Chat GPT: {} - {}",
-                base_prompt, user_input
-            );
+            println!("Asking Chat GPT: {} - {}", base_prompt, user_input);
 
-            
             let chat_response = openai::ask_chat_gpt(
                 user_input.clone().to_string(),
                 base_prompt,
@@ -242,20 +232,18 @@ async fn handle_ai_scene(
             //     content.clone()
             // );
 
-            
             let dalle_prompt = if dalle_mode {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
                 let dalle_response = openai::ask_chat_gpt(
                     user_input.clone(),
                     base_dalle_prompt.clone(),
-                ).await;
+                )
+                .await;
                 match dalle_response {
-                    Ok(chat_completion) => {
-                        match chat_completion.content {
-                            Some(content) => Some(content),
-                            None => None,
-                        }
-                    }
+                    Ok(chat_completion) => match chat_completion.content {
+                        Some(content) => Some(content),
+                        None => None,
+                    },
                     Err(e) => {
                         eprintln!("Error finding Dalle Content: {:?}", e);
                         None
@@ -265,14 +253,11 @@ async fn handle_ai_scene(
                 None
             };
 
-            println!(
-                "Dalle GPT response: {:?}",
-                dalle_prompt.clone()
-            );
+            println!("Dalle GPT response: {:?}", dalle_prompt.clone());
 
             // New Theory:
             //             // Calling this trigger_full_scene, stops it from printing Dalle GPT
-            //                response above 
+            //                response above
             let _ = trigger_full_scene(
                 tx.clone(),
                 scene.voice.clone(),
@@ -286,7 +271,7 @@ async fn handle_ai_scene(
             println!("Scene not found for reward title")
         }
     }
-    
+
     Ok(())
 }
 
@@ -345,8 +330,9 @@ async fn post_request(
         "channel.channel_points_custom_reward_redemption.add" => {
             match eventsub_body.event {
                 Some(event) => {
-                    let _ = handle_ai_scene(tx, pool, ai_scenes_map, event).await;
-                },
+                    let _ =
+                        handle_ai_scene(tx, pool, ai_scenes_map, event).await;
+                }
                 None => {
                     println!("NO Event Found for redemption!")
                 }
