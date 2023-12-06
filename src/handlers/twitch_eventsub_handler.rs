@@ -179,7 +179,7 @@ async fn handle_ai_scene(
     pool: Arc<sqlx::PgPool>,
     ai_scenes_map: HashMap<String,
     &AIScene>, event: SubEvent) -> Result<()> {
-    let dalle_mode = false;
+    let dalle_mode = true;
     
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
