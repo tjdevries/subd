@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 // use anyhow::Error;
 use anyhow::Result;
 use sqlx::postgres::PgRow;
@@ -62,6 +64,31 @@ pub async fn save_twitch_rewards(
     Ok(())
 }
 
+pub async fn update_cost_on_all(
+    pool: &PgPool,
+    cost: i32,
+) -> Result<Vec<String>> {
+    let mut ids: Vec<String> = vec![];
+    let res = sqlx::query!("SELECT twitch_id FROM twitch_rewards")
+        .fetch_all(pool)
+        .await?;
+
+    for item in res {
+        let _res = sqlx::query!(
+            "UPDATE twitch_rewards SET cost = $1 WHERE twitch_id = $2",
+            cost,
+            item.twitch_id,
+        )
+        .execute(pool)
+        .await?;
+        ids.push(item.twitch_id.to_string());
+    }
+
+    // We need to call the other thang
+
+    Ok(ids)
+}
+
 pub async fn find_by_title(
     pool: &PgPool,
     title: String,
@@ -116,7 +143,7 @@ pub async fn update_cost(
     cost: i32,
 ) -> Result<()> {
     let _res = sqlx::query!(
-        "UPDATE twitch_rewards SET cost = $1 WHERE title = $2 ",
+        "UPDATE twitch_rewards SET cost = $1 WHERE title = $2",
         cost,
         title,
     )

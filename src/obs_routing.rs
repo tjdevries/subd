@@ -97,11 +97,42 @@ pub async fn handle_obs_commands(
                 return Ok(());
             }
 
-            let file_path = "/home/begin/code/subd/data/AIScenes2.json";
+            let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let contents =
                 fs::read_to_string(file_path).expect("Can read file");
             let ai_scenes: ai_scenes::AIScenes =
                 serde_json::from_str(&contents.clone()).unwrap();
+
+            // This is need to create Reward Manager
+            let twitch_user_access_token =
+                env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
+            let reqwest = reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()?;
+            let twitch_reward_client: HelixClient<reqwest::Client> =
+                HelixClient::new();
+            let token = UserToken::from_existing(
+                &reqwest,
+                twitch_user_access_token.into(),
+                None,
+                None,
+            )
+            .await?;
+            let broadcaster_id = "424038378";
+            let reward_manager = rewards::RewardManager::new(
+                &twitch_reward_client,
+                &token,
+                &broadcaster_id,
+            );
+
+            // doesnt update DB though
+            let ids = twitch_rewards::update_cost_on_all(pool, 4200)
+                .await
+                .unwrap();
+
+            for id in ids {
+                let _ = reward_manager.update_reward(id, 4200).await;
+            }
 
             // https://stackoverflow.com/questions/67443847/how-to-generate-random-numbers-in-async-rust
             let random = {
@@ -116,6 +147,30 @@ pub async fn handle_obs_commands(
                 twitch_rewards::find_by_title(&pool, title.to_string())
                     .await
                     .unwrap();
+
+            // // let _ = reward_manager.update_all(4200).await;
+            // for scene in ai_scenes.scenes {
+            //     scene.id,,
+            //     // We need to choose a random
+            //     println!("Scene: {:?}", scene);
+            // }
+
+            let flash_cost = 100;
+            let _ = reward_manager
+                .update_reward(reward_res.twitch_id.to_string(), flash_cost)
+                .await;
+
+            let update = twitch_rewards::update_cost(
+                &pool,
+                reward_res.title.to_string(),
+                flash_cost as i32,
+            )
+            .await
+            .unwrap();
+
+            println!("Update: {:?}", update);
+
+            // We need a Twitch update
 
             let msg = format!("(Fake) Flash Sale! {}", reward_res.title);
             let _ = send_message(&twitch_client, msg).await;
@@ -135,10 +190,6 @@ pub async fn handle_obs_commands(
             // };
 
             // let scene_count
-            // for scene in ai_scenes.scenes {
-            //     // We need to choose a random
-            //     println!("Scene: {:?}", scene);
-            // }
 
             Ok(())
         }
@@ -160,7 +211,7 @@ pub async fn handle_obs_commands(
 
             // bootstrap::bootstrap_rewards(&obs_client).await
             // let file_path = "/home/begin/code/subd/data/AIScenes.json";
-            let file_path = "/home/begin/code/subd/data/AIScenes2.json";
+            let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let contents =
                 fs::read_to_string(file_path).expect("Can read file");
             let ai_scenes: ai_scenes::AIScenes =
@@ -190,8 +241,9 @@ pub async fn handle_obs_commands(
             );
 
             for scene in ai_scenes.scenes {
+                let cost = scene.cost * 10;
                 let res = reward_manager
-                    .create_reward(&scene.reward_title, scene.cost)
+                    .create_reward(&scene.reward_title, cost)
                     .await?;
 
                 let reward_id = res.as_str();
@@ -200,7 +252,7 @@ pub async fn handle_obs_commands(
                 let _ = twitch_rewards::save_twitch_rewards(
                     &pool.clone(),
                     scene.reward_title,
-                    scene.cost,
+                    cost,
                     reward_id,
                     true,
                 )

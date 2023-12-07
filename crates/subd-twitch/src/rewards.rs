@@ -1,4 +1,5 @@
 use anyhow::Result;
+use sqlx::types::Uuid;
 
 use twitch_api::helix::points::{
     CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
@@ -46,8 +47,26 @@ where
         Ok(())
     }
 
-    pub async fn update_reward(&self, title: &str, cost: usize) -> Result<()> {
-        // let reward_res = twitch_rewards::find_by_title(&pool, title.to_string()).await.unwrap();
+    // pub async fn update_all(&self, cost: usize) -> Result<()> {
+    //     // I have to iterate through all
+    //     let reward_id = id.clone();
+    //     let request = update_custom_reward::UpdateCustomRewardRequest::new(self.broadcaster_id, reward_id);
+    //     let mut body = update_custom_reward::UpdateCustomRewardBody::default();
+    //     body.cost = Some(cost);
+    //     let response: update_custom_reward::UpdateCustomReward = self.client.req_patch(request, body, self.token).await?.data;
+    //     Ok(())
+    // }
+
+    pub async fn update_reward(&self, id: String, cost: usize) -> Result<()> {
+        let reward_id = id.clone();
+        let request = update_custom_reward::UpdateCustomRewardRequest::new(
+            self.broadcaster_id,
+            reward_id,
+        );
+        let mut body = update_custom_reward::UpdateCustomRewardBody::default();
+        body.cost = Some(cost);
+        let response: update_custom_reward::UpdateCustomReward =
+            self.client.req_patch(request, body, self.token).await?.data;
         Ok(())
     }
 
@@ -58,6 +77,9 @@ where
     ) -> Result<String> {
         let mut body =
             create_custom_rewards::CreateCustomRewardBody::new(title, cost);
+
+        body.is_user_input_required = Some(true);
+
         let request =
             create_custom_rewards::CreateCustomRewardRequest::broadcaster_id(
                 self.broadcaster_id,
