@@ -1,8 +1,7 @@
-use std::collections::VecDeque;
-
+// use std::collections::VecDeque;
 // use anyhow::Error;
+// use sqlx::postgres::PgRow;
 use anyhow::Result;
-use sqlx::postgres::PgRow;
 use sqlx::types::Uuid;
 use sqlx::PgPool;
 use subd_macros::database_model;
@@ -64,7 +63,7 @@ pub async fn save_twitch_rewards(
     Ok(())
 }
 
-pub async fn update_cost_on_all(
+pub async fn update_cost_of_all(
     pool: &PgPool,
     cost: i32,
 ) -> Result<Vec<String>> {

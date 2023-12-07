@@ -1,4 +1,4 @@
-use reqwest::Client as ReqwestClient;
+// use reqwest::Client as ReqwestClient;
 // use twitch_api2::{
 //     helix::points::{
 //         CreateCustomRewardBody, CreateCustomRewardRequest,

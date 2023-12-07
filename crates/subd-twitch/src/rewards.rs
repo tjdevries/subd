@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sqlx::types::Uuid;
+// use sqlx::types::Uuid;
 
 use twitch_api::helix::points::{
     CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
@@ -7,7 +7,7 @@ use twitch_api::helix::points::{
 };
 use twitch_api::helix::HelixClient;
 use twitch_api::helix::{
-    self, points::create_custom_rewards, points::update_custom_reward,
+    points::create_custom_rewards, points::update_custom_reward,
 };
 use twitch_api::twitch_oauth2::UserToken;
 
@@ -59,13 +59,11 @@ where
 
     pub async fn update_reward(&self, id: String, cost: usize) -> Result<()> {
         let reward_id = id.clone();
-        let request = update_custom_reward::UpdateCustomRewardRequest::new(
-            self.broadcaster_id,
-            reward_id,
-        );
-        let mut body = update_custom_reward::UpdateCustomRewardBody::default();
+        let request =
+            UpdateCustomRewardRequest::new(self.broadcaster_id, reward_id);
+        let mut body = UpdateCustomRewardBody::default();
         body.cost = Some(cost);
-        let response: update_custom_reward::UpdateCustomReward =
+        let _response: update_custom_reward::UpdateCustomReward =
             self.client.req_patch(request, body, self.token).await?.data;
         Ok(())
     }
@@ -75,15 +73,12 @@ where
         title: &str,
         cost: usize,
     ) -> Result<String> {
-        let mut body =
-            create_custom_rewards::CreateCustomRewardBody::new(title, cost);
+        let mut body = CreateCustomRewardBody::new(title, cost);
 
         body.is_user_input_required = Some(true);
 
         let request =
-            create_custom_rewards::CreateCustomRewardRequest::broadcaster_id(
-                self.broadcaster_id,
-            );
+            CreateCustomRewardRequest::broadcaster_id(self.broadcaster_id);
         let response: create_custom_rewards::CreateCustomRewardResponse =
             self.client.req_post(request, body, self.token).await?.data;
 

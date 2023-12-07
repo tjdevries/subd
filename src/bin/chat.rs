@@ -34,7 +34,7 @@ use tokio::sync::broadcast;
 use tracing::info;
 use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
+// use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
@@ -505,7 +505,7 @@ async fn handle_obs_stuff(
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         // .with_max_level(Level::TRACE)
-        .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
+        // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
         .without_time()
         .with_target(false)
         .finish()

@@ -10,11 +10,11 @@ use crate::obs_scenes;
 use crate::obs_source;
 use crate::twitch_rewards;
 use rand::Rng;
-use rand::{seq::SliceRandom, thread_rng};
+// use rand::{seq::SliceRandom, thread_rng};
 use std::env;
 use std::fs;
 use twitch_oauth2::UserToken;
-use uuid::{uuid, Uuid};
+use uuid::Uuid;
 // use crate::openai;
 // use std::env;
 use crate::sdf_effects;
@@ -125,13 +125,16 @@ pub async fn handle_obs_commands(
                 &broadcaster_id,
             );
 
-            // doesnt update DB though
-            let ids = twitch_rewards::update_cost_on_all(pool, 4200)
+            let default_cost: i32 = 4200;
+
+            let ids = twitch_rewards::update_cost_of_all(pool, default_cost)
                 .await
                 .unwrap();
 
+            let default_cost_usize = default_cost as usize;
             for id in ids {
-                let _ = reward_manager.update_reward(id, 4200).await;
+                let _ =
+                    reward_manager.update_reward(id, default_cost_usize).await;
             }
 
             // https://stackoverflow.com/questions/67443847/how-to-generate-random-numbers-in-async-rust
@@ -172,7 +175,10 @@ pub async fn handle_obs_commands(
 
             // We need a Twitch update
 
-            let msg = format!("(Fake) Flash Sale! {}", reward_res.title);
+            let msg = format!(
+                "Flash Sale! {} - New Low Price! {}",
+                reward_res.title, flash_cost
+            );
             let _ = send_message(&twitch_client, msg).await;
             // Use this to update
             // reward_res.twitch_id

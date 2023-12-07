@@ -311,7 +311,7 @@ async fn handle_ai_scene(
             };
             println!("Chat GPT response: {:?}", content.clone());
 
-            let dalle_prompt = if (enable_dalle || enable_stable_diffusion) {
+            let dalle_prompt = if enable_dalle || enable_stable_diffusion {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
 
                 // This is not using Chat-GPT

@@ -4,25 +4,24 @@ use serde::{Deserialize, Serialize};
 use server::ai_scenes;
 use server::audio;
 use server::handlers;
-// use server::uberduck;
 use std::collections::HashMap;
-use std::env;
 use subd_db::get_db_pool;
+use twitch_irc::login::StaticLoginCredentials;
+use twitch_irc::ClientConfig;
+use twitch_irc::SecureTCPTransport;
+use twitch_irc::TwitchIRCClient;
+// use server::uberduck;
 // use subd_twitch::rewards::RewardManager;
 // use twitch_api::helix::points::{
 //     CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
 //     UpdateCustomRewardRequest,
 // };
-// use twitch_api::helix::{
+// use twitch_api::helix::
 //     self, points::create_custom_rewards, points::update_custom_reward,
 // };
-use twitch_api::helix::points::update_custom_reward;
-use twitch_api::HelixClient;
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::ClientConfig;
-use twitch_irc::SecureTCPTransport;
-use twitch_irc::TwitchIRCClient;
-use twitch_oauth2::UserToken;
+// use twitch_api::helix::points::update_custom_reward;
+// use twitch_api::HelixClient;
+// use twitch_oauth2::UserToken;
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
