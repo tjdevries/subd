@@ -14,7 +14,8 @@ use elevenlabs_api::{
 };
 use events::EventHandler;
 use obws::Client as OBSClient;
-use rand::Rng;
+// use rand::Rng;
+// use subd_types::ElevenLabsRequest;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
 use serde::{Deserialize, Serialize};
@@ -23,7 +24,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::process::Command;
 use std::{thread, time};
-use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;

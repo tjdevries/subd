@@ -1,20 +1,14 @@
 use anyhow::Result;
 
 use twitch_api::helix::HelixClient;
-use twitch_api::{
-    helix::points::{
-        CreateCustomRewardBody, CreateCustomRewardRequest,
-        UpdateCustomRewardBody, UpdateCustomRewardRequest,
-    },
-    twitch_oauth2::UserToken,
-};
+use twitch_api::twitch_oauth2::UserToken;
 
 pub struct RewardManager<'a, C>
 where
     C: twitch_api::HttpClient,
 {
-    client: &'a HelixClient<'a, C>,
-    token: &'a UserToken,
+    _client: &'a HelixClient<'a, C>,
+    _token: &'a UserToken,
 }
 
 impl<'a, C> RewardManager<'a, C>
@@ -25,13 +19,16 @@ where
     where
         C: twitch_api::HttpClient,
     {
-        Self { client, token }
+        Self {
+            _client: client,
+            _token: token,
+        }
     }
 
     pub async fn set_reward_status(
         &self,
-        id: &str,
-        status: bool,
+        _id: &str,
+        _status: bool,
     ) -> Result<()> {
         // let client: helix::HelixClient<'static, client::DummyHttpClient> = helix::HelixClient::default();
         // let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
@@ -57,7 +54,11 @@ where
         Ok(())
     }
 
-    pub async fn create_reward(&self, title: &str, cost: usize) -> Result<()> {
+    pub async fn create_reward(
+        &self,
+        _title: &str,
+        _cost: usize,
+    ) -> Result<()> {
         // let req = CreateCustomRewardRequest::builder()
         //     .broadcaster_id(self.token.user_id.clone())
         //     .build();

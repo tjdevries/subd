@@ -15,11 +15,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 use subd_types::Event;
 use tokio::sync::broadcast;
-use tokio::sync::oneshot;
-use tokio::time::timeout;
+// use std::time::Duration;
+// use tokio::sync::oneshot;
+// use tokio::time::timeout;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -140,10 +140,10 @@ impl EventHandler for TwitchEventSubHandler {
 
 async fn post_request(
     Json(eventsub_body): Json<EventSubRoot>,
-    Extension(obs_client): Extension<Arc<OBSClient>>,
+    Extension(_obs_client): Extension<Arc<OBSClient>>,
     Extension(pool): Extension<Arc<sqlx::PgPool>>,
     Extension(tx): Extension<broadcast::Sender<Event>>,
-    Extension(twitch_client): Extension<
+    Extension(_twitch_client): Extension<
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {

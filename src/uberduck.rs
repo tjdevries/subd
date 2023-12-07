@@ -1,7 +1,7 @@
 use crate::audio;
-use crate::dalle;
 use crate::obs;
-use crate::obs_scenes;
+// use crate::dalle;
+// use crate::obs_scenes;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
@@ -30,7 +30,7 @@ use tokio::sync::broadcast;
 // use std::sync::Mutex;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use twitch_chat::send_message;
+// use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
