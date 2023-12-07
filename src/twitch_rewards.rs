@@ -24,7 +24,7 @@ impl twitch_rewards::Model {
         Ok(sqlx::query_as!(
             Self,
             r#"
-            INSERT INTO redemptions 
+            INSERT INTO twitch_rewards
             (title, cost, twitch_id, enabled)
             VALUES ( $1, $2, $3, $4)
             RETURNING title, cost, twitch_id, enabled
@@ -42,17 +42,18 @@ impl twitch_rewards::Model {
 pub async fn save_twitch_rewards(
     pool: &sqlx::PgPool,
     title: String,
-    cost: i32,
+    cost: usize,
     twitch_id: Uuid,
     enabled: bool,
 ) -> Result<()> {
+    let icost = cost as i32;
     sqlx::query!(
         r#"
         INSERT INTO twitch_rewards (title, cost, twitch_id, enabled)
         VALUES ( $1, $2, $3, $4)
        "#,
         title,
-        cost,
+        icost,
         twitch_id,
         enabled,
     )
@@ -61,15 +62,44 @@ pub async fn save_twitch_rewards(
     Ok(())
 }
 
-pub async fn find_twitch_reward_by_id(
+pub async fn find_by_title(
     pool: &PgPool,
-    twitch_id: Uuid,
-) -> Result<PgRow, sqlx::Error> {
-    sqlx::query("SELECT * FROM twitch_rewards WHERE twitch_id = $1")
-        .bind(twitch_id)
-        .fetch_one(pool)
-        .await
+    title: String,
+) -> Result<twitch_rewards::Model> {
+    let res =
+        sqlx::query!("SELECT * FROM twitch_rewards WHERE title = $1", title)
+            .fetch_one(pool)
+            .await?;
+
+    let model = twitch_rewards::Model {
+        title,
+        cost: res.cost,
+        twitch_id: res.twitch_id,
+        enabled: res.enabled,
+    };
+    return Ok(model);
 }
+
+pub async fn find_by_id(
+    pool: &sqlx::PgPool,
+    twitch_id: Uuid,
+) -> Result<twitch_rewards::Model> {
+    let res = sqlx::query!(
+        "SELECT * FROM twitch_rewards WHERE twitch_id = $1",
+        twitch_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let model = twitch_rewards::Model {
+        title: res.title,
+        cost: res.cost,
+        twitch_id: res.twitch_id,
+        enabled: res.enabled,
+    };
+    Ok(model)
+}
+
 //
 // pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {
 //     let _res =
@@ -79,4 +109,19 @@ pub async fn find_twitch_reward_by_id(
 //
 //     Ok(())
 // }
-//
+
+pub async fn update_cost(
+    pool: &PgPool,
+    title: String,
+    cost: i32,
+) -> Result<()> {
+    let _res = sqlx::query!(
+        "UPDATE twitch_rewards SET cost = $1 WHERE title = $2 ",
+        cost,
+        title,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}

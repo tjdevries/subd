@@ -8,9 +8,13 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
+use crate::twitch_rewards;
+use rand::Rng;
+use rand::{seq::SliceRandom, thread_rng};
 use std::env;
 use std::fs;
 use twitch_oauth2::UserToken;
+use uuid::{uuid, Uuid};
 // use crate::openai;
 // use std::env;
 use crate::sdf_effects;
@@ -81,6 +85,74 @@ pub async fn handle_obs_commands(
 
     let command = splitmsg[0].as_str();
     let _ = match command {
+        // Iterate through the json file
+        // choose a random scene
+        // look up the ID in the DB
+        //
+        // update the price to be 100
+        // post about the Sale in the Chat
+        // or go to a scene????KJ,,,
+        "!flash_sale" => {
+            if not_beginbot {
+                return Ok(());
+            }
+
+            let file_path = "/home/begin/code/subd/data/AIScenes2.json";
+            let contents =
+                fs::read_to_string(file_path).expect("Can read file");
+            let ai_scenes: ai_scenes::AIScenes =
+                serde_json::from_str(&contents.clone()).unwrap();
+
+            // https://stackoverflow.com/questions/67443847/how-to-generate-random-numbers-in-async-rust
+            let random = {
+                let mut rng = rand::thread_rng();
+                rng.gen_range(0..ai_scenes.scenes.len())
+            };
+            let random_scene = &ai_scenes.scenes[random];
+            let title = &random_scene.reward_title;
+
+            // If we don't have a reward for that Thang
+            let reward_res =
+                twitch_rewards::find_by_title(&pool, title.to_string())
+                    .await
+                    .unwrap();
+
+            let msg = format!("(Fake) Flash Sale! {}", reward_res.title);
+            let _ = send_message(&twitch_client, msg).await;
+            // Use this to update
+            // reward_res.twitch_id
+
+            // let res = reward_res.unwrap();
+            // println!("Found Reward: {}", res.twitch_id);
+
+            // match reward_res {
+            //     Ok(res) => {
+            //         println!("Found Reward: {}", res.id);
+            //     },
+            //     Err(e) => {
+            //         println!("Error finding Reward: {}", e);
+            //     }
+            // };
+
+            // let scene_count
+            // for scene in ai_scenes.scenes {
+            //     // We need to choose a random
+            //     println!("Scene: {:?}", scene);
+            // }
+
+            Ok(())
+        }
+
+        "da_faq" => {
+            // let random_index = rng.gen_range(0..ai_scenes.scenes.len());
+            // let random_scene = &ai_scenes.scenes[random_index];
+            // let title = &random_scene.reward_title;
+
+            // let mut rng = thread_rng();
+            // let reward_res = twitch_rewards::find_by_title(&pool.clone()).await;
+            Ok(())
+        }
+
         "!bootstrap_rewards" => {
             if not_beginbot {
                 return Ok(());
@@ -118,9 +190,21 @@ pub async fn handle_obs_commands(
             );
 
             for scene in ai_scenes.scenes {
-                reward_manager
+                let res = reward_manager
                     .create_reward(&scene.reward_title, scene.cost)
                     .await?;
+
+                let reward_id = res.as_str();
+                let reward_id = Uuid::parse_str(reward_id)?;
+
+                let _ = twitch_rewards::save_twitch_rewards(
+                    &pool.clone(),
+                    scene.reward_title,
+                    scene.cost,
+                    reward_id,
+                    true,
+                )
+                .await;
             }
 
             Ok(())
@@ -339,16 +423,19 @@ pub async fn handle_obs_commands(
         // == Stream State
         // ===========================================
         "!implicit" | "!peace" => {
-            twitch_stream_state::update_implicit_soundeffects(&pool).await?;
+            twitch_stream_state::update_implicit_soundeffects(&pool.clone())
+                .await?;
             Ok(())
         }
         "!explicit" => {
-            twitch_stream_state::update_explicit_soundeffects(&pool).await?;
+            twitch_stream_state::update_explicit_soundeffects(&pool.clone())
+                .await?;
             Ok(())
         }
         // returns the current state of stream
         "!state" => {
-            let state = twitch_stream_state::get_twitch_state(&pool).await?;
+            let state =
+                twitch_stream_state::get_twitch_state(&pool.clone()).await?;
             let msg = format!("Twitch State! {:?}", state);
             send_message(twitch_client, msg).await?;
             // send_message(format!("Twitch State! {:?}", state));

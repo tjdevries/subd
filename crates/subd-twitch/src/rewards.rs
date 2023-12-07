@@ -46,7 +46,16 @@ where
         Ok(())
     }
 
-    pub async fn create_reward(&self, title: &str, cost: usize) -> Result<()> {
+    pub async fn update_reward(&self, title: &str, cost: usize) -> Result<()> {
+        // let reward_res = twitch_rewards::find_by_title(&pool, title.to_string()).await.unwrap();
+        Ok(())
+    }
+
+    pub async fn create_reward(
+        &self,
+        title: &str,
+        cost: usize,
+    ) -> Result<String> {
         let mut body =
             create_custom_rewards::CreateCustomRewardBody::new(title, cost);
         let request =
@@ -55,6 +64,12 @@ where
             );
         let response: create_custom_rewards::CreateCustomRewardResponse =
             self.client.req_post(request, body, self.token).await?.data;
+
+        // I
+        let id = format!("{}", response.id);
+
+        Ok(id)
+
         // response.id
 
         // I need to save in our DB!
@@ -70,7 +85,5 @@ where
         //     .build();
         //
         // self.client.req_post(req, body, self.token).await?;
-
-        Ok(())
     }
 }

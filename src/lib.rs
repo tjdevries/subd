@@ -25,6 +25,7 @@ pub mod stream_background_routing;
 pub mod stream_character;
 pub mod stream_fx;
 pub mod themesong;
+pub mod twitch_rewards;
 pub mod twitch_stream_state;
 pub mod uberduck;
 pub mod user_messages;
