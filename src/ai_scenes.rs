@@ -1,4 +1,5 @@
 use crate::audio;
+use sqlx::types::Uuid;
 use crate::dalle;
 use crate::obs;
 use crate::obs_scenes;
@@ -34,6 +35,22 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AIScenes {
+    pub scenes: Vec<AIScene>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AIScene {
+    pub reward_title: String,
+    pub base_prompt: String,
+    pub base_dalle_prompt: String,
+    pub voice: String,
+    pub music_bg: String,
+    pub cost: usize,
+    pub id: Option<Uuid>,
+}
 
 #[derive(Deserialize, Debug)]
 struct ElevenlabsVoice {

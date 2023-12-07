@@ -1,6 +1,7 @@
 use crate::openai;
 use crate::redemptions;
 use crate::twitch_stream_state;
+use crate::ai_scenes;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::routing::post;
@@ -27,20 +28,6 @@ use twitch_irc::{
 // use crate::obs_scenes;
 // use std::env;
 // use twitch_chat::send_message;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScenes {
-    pub scenes: Vec<AIScene>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScene {
-    pub reward_title: String,
-    pub base_prompt: String,
-    pub base_dalle_prompt: String,
-    pub voice: String,
-    pub music_bg: String,
-}
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -149,15 +136,14 @@ async fn post_request(
 ) -> impl IntoResponse {
     // We could check our DB first, before printing this
     // We want this to occur later on, after some filtering
-    dbg!(&eventsub_body);
+    // dbg!(&eventsub_body);
 
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
+    let ai_scenes: ai_scenes::AIScenes = serde_json::from_str(&contents).unwrap();
 
-    let ai_scenes: AIScenes = serde_json::from_str(&contents).unwrap();
-
-    let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
+    let ai_scenes_map: HashMap<String, &ai_scenes::AIScene> = ai_scenes
         .scenes
         .iter()
         .map(|scene| (scene.reward_title.clone(), scene))
@@ -277,7 +263,7 @@ async fn find_or_save_redemption(
 async fn handle_ai_scene(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
-    ai_scenes_map: HashMap<String, &AIScene>,
+    ai_scenes_map: HashMap<String, &ai_scenes::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
     let state = twitch_stream_state::get_twitch_state(&pool).await?;

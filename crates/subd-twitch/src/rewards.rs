@@ -2,26 +2,35 @@ use anyhow::Result;
 
 use twitch_api::helix::HelixClient;
 use twitch_api::twitch_oauth2::UserToken;
+use twitch_api::helix::points::{
+    CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
+    UpdateCustomRewardRequest,
+};
+use twitch_api::helix::{
+    self, points::create_custom_rewards, points::update_custom_reward,
+};
 
 pub struct RewardManager<'a, C>
 where
     C: twitch_api::HttpClient,
 {
-    _client: &'a HelixClient<'a, C>,
-    _token: &'a UserToken,
+    client: &'a HelixClient<'a, C>,
+    broadcaster_id: &'a str,
+    token: &'a UserToken,
 }
 
 impl<'a, C> RewardManager<'a, C>
 where
     C: twitch_api::HttpClient,
 {
-    pub fn new(client: &'a HelixClient<'a, C>, token: &'a UserToken) -> Self
+    pub fn new(client: &'a HelixClient<'a, C>, token: &'a UserToken, broadcaster_id: &'a str) -> Self
     where
         C: twitch_api::HttpClient,
     {
         Self {
-            _client: client,
-            _token: token,
+            client,
+            broadcaster_id,
+            token,
         }
     }
 
@@ -30,35 +39,22 @@ where
         _id: &str,
         _status: bool,
     ) -> Result<()> {
-        // let client: helix::HelixClient<'static, client::DummyHttpClient> = helix::HelixClient::default();
-        // let token = twitch_oauth2::AccessToken::new("validtoken".to_string());
-        // let token = twitch_oauth2::UserToken::from_existing(&client, token, None, None).await?;
-        // let request = update_custom_reward::UpdateCustomRewardRequest::new("274637212", "reward-id");
-        // let mut body = update_custom_reward::UpdateCustomRewardBody::default();
-        // body.cost = Some(501);
-        // body.title = Some("hydrate but differently now!".into());
-        // let response: update_custom_reward::UpdateCustomReward = self.client.req_patch(request, body, &token).await?.data;
-
-        //
-        // let req = UpdateCustomRewardRequest::builder()
-        //     .broadcaster_id(self.token.user_id.clone())
-        //     .id(id)
-        //     .build();
-        //
-        // let body = UpdateCustomRewardBody::builder()
-        //     .is_enabled(Some(status))
-        //     .build();
-        //
-        // self.client.req_patch(req, body, self.token).await?;
+        
 
         Ok(())
     }
 
     pub async fn create_reward(
         &self,
-        _title: &str,
-        _cost: usize,
+        title: &str,
+        cost: usize,
     ) -> Result<()> {
+        
+    let mut body = create_custom_rewards::CreateCustomRewardBody::new(title, cost);
+    let request = create_custom_rewards::CreateCustomRewardRequest::broadcaster_id(self.broadcaster_id);
+    let response: create_custom_rewards::CreateCustomRewardResponse = self.client.req_post(request, body, self.token).await?.data;
+
+    // println!("Response: {:?}", response);
         // let req = CreateCustomRewardRequest::builder()
         //     .broadcaster_id(self.token.user_id.clone())
         //     .build();

@@ -157,56 +157,6 @@ async fn main() -> Result<()> {
     });
 
     let pool = get_db_pool().await;
-    let twitch_user_access_token =
-        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
-
-    // Setup the http client to use with the library.
-    let reqwest = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()?;
-
-    let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
-
-    let token = UserToken::from_existing(
-        &reqwest,
-        twitch_user_access_token.into(),
-        None,
-        None,
-    )
-    .await?;
-    // let reward_manager = RewardManager::new(
-    //     &twitch_reward_client,
-    //     &token,
-    // );
-
-    // This is beginbot: 424038378
-    let broadcaster_id = "424038378";
-    // let reward_id = "168699df-74c0-40d0-bf48-73bf0d331b58";
-
-    // CAn we query by names???
-
-    // This is ask god2
-    let reward_id = "ad43a279-6826-498f-9d88-18556455b4b7";
-
-    // This worked creating a new reward!
-    // let mut body = create_custom_rewards::CreateCustomRewardBody::new("Ask God2", 420);
-    // let request = create_custom_rewards::CreateCustomRewardRequest::broadcaster_id(broadcaster_id);
-    // let response: create_custom_rewards::CreateCustomRewardResponse = twitch_reward_client.req_post(request, body, &token).await?.data;
-    // println!("Response: {:?}", response);
-
-    let request = update_custom_reward::UpdateCustomRewardRequest::new(
-        broadcaster_id,
-        reward_id,
-    );
-    let mut body = update_custom_reward::UpdateCustomRewardBody::default();
-    body.cost = Some(4200);
-    // body.title = Some("hydrate but differently now!".into());
-    let response: update_custom_reward::UpdateCustomReward =
-        twitch_reward_client
-            .req_patch(request, body, &token)
-            .await?
-            .data;
-    println!("Response: {:?}", response);
 
     // Can we delete?
 

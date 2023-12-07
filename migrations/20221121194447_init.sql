@@ -84,3 +84,10 @@ CREATE TABLE redemptions (
   cost       INT NOT NULL,
   user_input TEXT
 );
+
+CREATE TABLE twitch_rewards (
+  title      TEXT NOT NULL,
+  twitch_id  UUID NOT NULL,
+  cost       INT NOT NULL,
+  enabled boolean NOT NULL
+);
