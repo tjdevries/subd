@@ -11,8 +11,9 @@ CREATE TABLE twitch_stream_state(
   implicit_soundeffects boolean NOT NULL DEFAULT false,
   global_voice boolean NOT NULL DEFAULT false,
   
-  dalle_model TEXT NOT NULL DEFAULT "gpt-3.5-turbo",
+  dalle_model TEXT NOT NULL DEFAULT "dalle-3",
   dalle_mode boolean NOT NULL DEFAULT true
+  enable_stable_diffusion boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE user_stream_character_information(

@@ -1,5 +1,4 @@
 use crate::audio;
-use sqlx::types::Uuid;
 use crate::dalle;
 use crate::obs;
 use crate::obs_scenes;
@@ -15,6 +14,7 @@ use elevenlabs_api::{
 };
 use events::EventHandler;
 use obws::Client as OBSClient;
+use sqlx::types::Uuid;
 // use rand::Rng;
 // use subd_types::ElevenLabsRequest;
 use rand::{seq::SliceRandom, thread_rng};
@@ -271,27 +271,46 @@ impl EventHandler for AiScenesHandler {
             // So here, we need a dalle prompt
             match msg.dalle_prompt {
                 Some(dalle_prompt) => {
-                    // TODO: Read in an DB for this
-                    // // However we need to just pass in the name?
-                    // if let Err(e) = generate_image(dalle_prompt, image_name).await {
-                    //     eprintln!("Error: {}", e);
-                    // }
+                    // How can we unpack all on one call
+                    let twitch_state = async {
+                        twitch_stream_state::get_twitch_state(&pool_clone).await
+                    };
+                    let (stable_diffusion_enabled, dalle_enabled) =
+                        match twitch_state.await {
+                            Ok(state) => (
+                                state.enable_stable_diffusion,
+                                state.dalle_mode,
+                            ),
+                            Err(err) => {
+                                eprintln!(
+                                    "Error fetching twitch_stream_state: {:?}",
+                                    err
+                                );
+                                (false, false)
+                            }
+                        };
 
-                    // So here we could twitch out to other
-                    println!("Attempting to Generate Dalle");
-                    // let _ = dalle::dalle_time(
-                    //     dalle_prompt,
-                    //     msg.username.clone(),
-                    //     1,
-                    // )
-                    // .await;
+                    if stable_diffusion_enabled {
+                        println!("Attempting to Generate Stable Diffusion");
+                        let _ = dalle::generate_image(
+                            dalle_prompt.clone(),
+                            msg.username.clone(),
+                        )
+                        .await;
+                        println!("Done Generating Stable Diffusion");
+                    };
 
-                    let _ = dalle::generate_image(
-                        dalle_prompt,
-                        msg.username.clone(),
-                    )
-                    .await;
-                    println!("Done Attempting to Generate Dalle");
+                    if dalle_enabled {
+                        println!("Attempting to Generate Dalle");
+                        let _ = dalle::dalle_time(
+                            dalle_prompt.clone(),
+                            msg.username.clone(),
+                            1,
+                        )
+                        .await;
+                        println!("Done Attempting to Generate Dalle");
+                    };
+
                     let _ = obs_scenes::change_scene(
                         &locked_obs_client,
                         "art_gallery",

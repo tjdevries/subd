@@ -253,7 +253,25 @@ pub async fn handle_voices_commands(
         // }
 
         // TODO: move this somewhere more apporpriate
-        "!no_dalle_mode" => {
+        "!disable_stable_diffusion" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            twitch_stream_state::disable_stable_diffusion(&pool).await?;
+            Ok(())
+        }
+
+        "!enable_stable_diffusion" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            println!("Turning on Dalle Mode");
+            twitch_stream_state::enable_stable_diffusion(&pool).await?;
+            Ok(())
+        }
+
+        // TODO: move this somewhere more apporpriate
+        "!disable_dalle" => {
             if not_beginbot {
                 return Ok(());
             }
@@ -261,7 +279,7 @@ pub async fn handle_voices_commands(
             Ok(())
         }
 
-        "!dalle_mode" => {
+        "!enable_dalle" => {
             if not_beginbot {
                 return Ok(());
             }

@@ -1,7 +1,5 @@
+use crate::ai_scenes;
 use crate::bootstrap;
-use std::env;
-use twitch_oauth2::UserToken;
-use std::fs;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -10,7 +8,9 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
-use crate::ai_scenes;
+use std::env;
+use std::fs;
+use twitch_oauth2::UserToken;
 // use crate::openai;
 // use std::env;
 use crate::sdf_effects;
@@ -25,14 +25,14 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::thread;
 use std::time;
+use subd_twitch::rewards;
 use subd_types::{Event, TransformOBSTextRequest, UserMessage};
 use tokio::sync::broadcast;
+use twitch_api::HelixClient;
 use twitch_chat::send_message;
-use subd_twitch::rewards;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use twitch_api::HelixClient;
 // use openai::{
 //     chat::{ ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
 //     set_key,
@@ -81,25 +81,27 @@ pub async fn handle_obs_commands(
 
     let command = splitmsg[0].as_str();
     let _ = match command {
-
         "!bootstrap_rewards" => {
             if not_beginbot {
                 return Ok(());
             }
-            
+
             // bootstrap::bootstrap_rewards(&obs_client).await
             // let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let file_path = "/home/begin/code/subd/data/AIScenes2.json";
-            let contents = fs::read_to_string(file_path).expect("Can read file");
-            let ai_scenes: ai_scenes::AIScenes = serde_json::from_str(&contents).unwrap();
-            
+            let contents =
+                fs::read_to_string(file_path).expect("Can read file");
+            let ai_scenes: ai_scenes::AIScenes =
+                serde_json::from_str(&contents).unwrap();
+
             // This is need to create Reward Manager
             let twitch_user_access_token =
                 env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
             let reqwest = reqwest::Client::builder()
                 .redirect(reqwest::redirect::Policy::none())
                 .build()?;
-            let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
+            let twitch_reward_client: HelixClient<reqwest::Client> =
+                HelixClient::new();
             let token = UserToken::from_existing(
                 &reqwest,
                 twitch_user_access_token.into(),
@@ -114,20 +116,22 @@ pub async fn handle_obs_commands(
                 &token,
                 &broadcaster_id,
             );
-            
+
             for scene in ai_scenes.scenes {
-                reward_manager.create_reward(&scene.reward_title, scene.cost).await?;
+                reward_manager
+                    .create_reward(&scene.reward_title, scene.cost)
+                    .await?;
             }
-            
+
             Ok(())
         }
-        
-    //
-    // let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
-    //     .scenes
-    //     .iter()
-    //     .map(|scene| (scene.reward_title.clone(), scene))
-    //     .collect();
+
+        //
+        // let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
+        //     .scenes
+        //     .iter()
+        //     .map(|scene| (scene.reward_title.clone(), scene))
+        //     .collect();
         "!test" => {
             // let contents = &splitmsg[1..].join(" ");
             // println!("contents: {}", contents);

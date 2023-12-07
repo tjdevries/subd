@@ -1,7 +1,7 @@
+use crate::ai_scenes;
 use crate::openai;
 use crate::redemptions;
 use crate::twitch_stream_state;
-use crate::ai_scenes;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::routing::post;
@@ -141,7 +141,8 @@ async fn post_request(
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes::AIScenes = serde_json::from_str(&contents).unwrap();
+    let ai_scenes: ai_scenes::AIScenes =
+        serde_json::from_str(&contents).unwrap();
 
     let ai_scenes_map: HashMap<String, &ai_scenes::AIScene> = ai_scenes
         .scenes
@@ -267,7 +268,8 @@ async fn handle_ai_scene(
     event: SubEvent,
 ) -> Result<()> {
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
-    let dalle_mode = state.dalle_mode;
+    let enable_dalle = state.dalle_mode;
+    let enable_stable_diffusion = state.enable_stable_diffusion;
 
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
@@ -309,7 +311,7 @@ async fn handle_ai_scene(
             };
             println!("Chat GPT response: {:?}", content.clone());
 
-            let dalle_prompt = if dalle_mode {
+            let dalle_prompt = if (enable_dalle || enable_stable_diffusion) {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
 
                 // This is not using Chat-GPT

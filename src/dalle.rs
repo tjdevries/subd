@@ -119,7 +119,6 @@ pub async fn generate_image(
         .await?;
 
     let image_data = response.bytes().await?;
-    // let mut file = File::create(image_name)?;
 
     // We aren't currently able to generate more than image
     let index = 1;
