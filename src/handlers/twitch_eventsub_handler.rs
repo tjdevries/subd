@@ -15,11 +15,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
-use std::time::Duration;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -288,9 +288,7 @@ async fn handle_ai_scene(
 
     let user_input = match event.user_input.clone() {
         Some(input) => input,
-        None => {
-            return Ok(())
-        }
+        None => return Ok(()),
     };
 
     let _ = find_or_save_redemption(

@@ -9,10 +9,12 @@ use std::collections::HashMap;
 use std::env;
 use subd_db::get_db_pool;
 use subd_twitch::rewards::RewardManager;
-use twitch_api::helix::{self, points::update_custom_reward, points::create_custom_rewards};
 use twitch_api::helix::points::{
-        CreateCustomRewardBody, CreateCustomRewardRequest,
-        UpdateCustomRewardBody, UpdateCustomRewardRequest,
+    CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
+    UpdateCustomRewardRequest,
+};
+use twitch_api::helix::{
+    self, points::create_custom_rewards, points::update_custom_reward,
 };
 use twitch_api::HelixClient;
 use twitch_irc::login::StaticLoginCredentials;
@@ -164,9 +166,13 @@ async fn main() -> Result<()> {
 
     let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
 
-    let token =
-        twitch_oauth2::UserToken::from_existing(&reqwest, twitch_user_access_token.into(), None, None)
-            .await?;
+    let token = twitch_oauth2::UserToken::from_existing(
+        &reqwest,
+        twitch_user_access_token.into(),
+        None,
+        None,
+    )
+    .await?;
     // let reward_manager = RewardManager::new(
     //     &twitch_reward_client,
     //     &token,
@@ -175,7 +181,6 @@ async fn main() -> Result<()> {
     // This is beginbot: 424038378
     let broadcaster_id = "424038378";
     // let reward_id = "168699df-74c0-40d0-bf48-73bf0d331b58";
-    
 
     // CAn we query by names???
 
@@ -187,12 +192,19 @@ async fn main() -> Result<()> {
     // let request = create_custom_rewards::CreateCustomRewardRequest::broadcaster_id(broadcaster_id);
     // let response: create_custom_rewards::CreateCustomRewardResponse = twitch_reward_client.req_post(request, body, &token).await?.data;
     // println!("Response: {:?}", response);
-    
-    let request = update_custom_reward::UpdateCustomRewardRequest::new(broadcaster_id, reward_id);
+
+    let request = update_custom_reward::UpdateCustomRewardRequest::new(
+        broadcaster_id,
+        reward_id,
+    );
     let mut body = update_custom_reward::UpdateCustomRewardBody::default();
     body.cost = Some(4200);
     // body.title = Some("hydrate but differently now!".into());
-    let response: update_custom_reward::UpdateCustomReward = twitch_reward_client.req_patch(request, body, &token).await?.data;
+    let response: update_custom_reward::UpdateCustomReward =
+        twitch_reward_client
+            .req_patch(request, body, &token)
+            .await?
+            .data;
     println!("Response: {:?}", response);
 
     // Can we delete?

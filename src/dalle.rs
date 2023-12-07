@@ -1,13 +1,13 @@
 use anyhow::Result;
 use chrono::Utc;
 use reqwest;
-use serde::{Deserialize, Serialize};
-use std::env;
-use std::fs::OpenOptions;
 use reqwest::Client;
-use std::fs::File;
-use std::io::Write;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::env;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -32,7 +32,7 @@ pub async fn dalle_time(
     let _truncated_prompt = contents.chars().take(80).collect::<String>();
     let client = reqwest::Client::new();
 
-    let size =  "1024x1024";
+    let size = "1024x1024";
     // TODO: read from the database
     let model = "dall-e-3";
 
@@ -51,15 +51,15 @@ pub async fn dalle_time(
 
     let dalle_response_text = response.text().await?;
 
-
     let mut csv_file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true) // This will create the file if it doesn't exist
         .open("output.csv")
         .unwrap();
-    
-    let image_response: Result<ImageResponse, _> = serde_json::from_str(&dalle_response_text);
+
+    let image_response: Result<ImageResponse, _> =
+        serde_json::from_str(&dalle_response_text);
     match image_response {
         Ok(response) => {
             for (index, image_data) in response.data.iter().enumerate() {
@@ -76,7 +76,7 @@ pub async fn dalle_time(
                     format!("{}_{}_{}", timestamp, index, username);
                 let archive_file =
                     format!("./archive/{}.png", unique_identifier);
-                
+
                 let mut file = File::create(archive_file).unwrap();
                 file.write_all(&image_data).unwrap();
 
@@ -96,20 +96,23 @@ pub async fn dalle_time(
     Ok(())
 }
 
+// let prompt = "A majestic dog sitting on a throne, wearing a crown.";
+// let image_name = "majestic_dog.png";
+//
+// if let Err(e) = generate_image(prompt, image_name).await {
+//     eprintln!("Error: {}", e);
+// }
 
-    // let prompt = "A majestic dog sitting on a throne, wearing a crown.";
-    // let image_name = "majestic_dog.png";
-    //
-    // if let Err(e) = generate_image(prompt, image_name).await {
-    //     eprintln!("Error: {}", e);
-    // }
-
-pub async fn generate_image(prompt: String, username: String) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn generate_image(
+    prompt: String,
+    username: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let url = env::var("STABLE_DIFFUSION_URL")
         .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")?;
 
     let client = Client::new();
-    let response = client.post(&url)
+    let response = client
+        .post(&url)
         .header("Content-Type", "application/json")
         .json(&json!({"prompt": prompt}))
         .send()
@@ -117,16 +120,14 @@ pub async fn generate_image(prompt: String, username: String) -> Result<(), Box<
 
     let image_data = response.bytes().await?;
     // let mut file = File::create(image_name)?;
-    
+
     // We aren't currently able to generate more than image
     let index = 1;
     // TODO: move this to a function
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-    let unique_identifier =
-        format!("{}_{}_{}", timestamp, index, username);
-    let archive_file =
-        format!("./archive/{}.png", unique_identifier);
-                
+    let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
+    let archive_file = format!("./archive/{}.png", unique_identifier);
+
     let mut file = File::create(archive_file).unwrap();
     file.write_all(&image_data).unwrap();
 

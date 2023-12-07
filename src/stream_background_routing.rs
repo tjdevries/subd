@@ -175,7 +175,7 @@ pub async fn handle_stream_background_commands(
                 .map(AsRef::as_ref)
                 .collect::<Vec<&str>>()
                 .join(" ");
-            
+
             // We need to finish the code though
             let _ = dalle::generate_image(prompt, msg.user_name).await;
             Ok(())
