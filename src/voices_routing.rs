@@ -251,6 +251,8 @@ pub async fn handle_voices_commands(
         //    send_message(twitch_client, info).await?;
         //     Ok(())
         // }
+
+        // TODO: move this somewhere more apporpriate
         "!no_dalle_mode" => {
             if not_beginbot {
                 return Ok(());

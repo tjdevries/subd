@@ -3,9 +3,11 @@ use chrono::Utc;
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::fs::File;
 use std::fs::OpenOptions;
+use reqwest::Client;
+use std::fs::File;
 use std::io::Write;
+use serde_json::json;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -25,16 +27,15 @@ pub async fn dalle_time(
 ) -> Result<(), reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
 
-    // TODO: This is for saving to the file
+    // TODO: This was supposed to be for saving to the file
     // which we aren't doing yet
     let _truncated_prompt = contents.chars().take(80).collect::<String>();
     let client = reqwest::Client::new();
 
-    // let size = "1792x1024";
-    // let other_size = "1024x1792";
+    let size =  "1024x1024";
+    // TODO: read from the database
+    let model = "dall-e-3";
 
-    // Not sure
-    // TODO: Update these
     let response = client
         .post("https://api.openai.com/v1/images/generations")
         .header("Content-Type", "application/json")
@@ -42,18 +43,14 @@ pub async fn dalle_time(
         .json(&serde_json::json!({
             "prompt": contents,
             "n": amount,
-            // "model": "dall-e-3",
-            // "size": size,
-            // "size": "1080x1080",
-            // "size": "1792x1024",
-            "size": "1024x1024",
+            "model": model,
+            "size": size,
         }))
         .send()
         .await?;
 
-    let text = response.text().await?;
+    let dalle_response_text = response.text().await?;
 
-    let image_response: Result<ImageResponse, _> = serde_json::from_str(&text);
 
     let mut csv_file = OpenOptions::new()
         .write(true)
@@ -61,6 +58,8 @@ pub async fn dalle_time(
         .create(true) // This will create the file if it doesn't exist
         .open("output.csv")
         .unwrap();
+    
+    let image_response: Result<ImageResponse, _> = serde_json::from_str(&dalle_response_text);
     match image_response {
         Ok(response) => {
             for (index, image_data) in response.data.iter().enumerate() {
@@ -71,20 +70,13 @@ pub async fn dalle_time(
                     .await?
                     .to_vec();
 
-                // Features to Save:
-                // username
-                // resolution
-                // prompt
-                // timestamp
-                // let username = "default";
-
-                // Is there a subsecond
+                // request for AI_image_filename
                 let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
                 let unique_identifier =
                     format!("{}_{}_{}", timestamp, index, username);
-                println!("Contents: {}", contents);
                 let archive_file =
                     format!("./archive/{}.png", unique_identifier);
+                
                 let mut file = File::create(archive_file).unwrap();
                 file.write_all(&image_data).unwrap();
 
@@ -101,5 +93,45 @@ pub async fn dalle_time(
         }
     }
 
+    Ok(())
+}
+
+
+    // let prompt = "A majestic dog sitting on a throne, wearing a crown.";
+    // let image_name = "majestic_dog.png";
+    //
+    // if let Err(e) = generate_image(prompt, image_name).await {
+    //     eprintln!("Error: {}", e);
+    // }
+
+pub async fn generate_image(prompt: String, username: String) -> Result<(), Box<dyn std::error::Error>> {
+    let url = env::var("STABLE_DIFFUSION_URL")
+        .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")?;
+
+    let client = Client::new();
+    let response = client.post(&url)
+        .header("Content-Type", "application/json")
+        .json(&json!({"prompt": prompt}))
+        .send()
+        .await?;
+
+    let image_data = response.bytes().await?;
+    // let mut file = File::create(image_name)?;
+    
+    // We aren't currently able to generate more than image
+    let index = 1;
+    // TODO: move this to a function
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let unique_identifier =
+        format!("{}_{}_{}", timestamp, index, username);
+    let archive_file =
+        format!("./archive/{}.png", unique_identifier);
+                
+    let mut file = File::create(archive_file).unwrap();
+    file.write_all(&image_data).unwrap();
+
+    let filename = format!("./tmp/dalle-{}.png", index);
+    let mut file = File::create(filename).unwrap();
+    file.write_all(&image_data).unwrap();
     Ok(())
 }

@@ -15,11 +15,11 @@ use std::collections::HashMap;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use tokio::sync::oneshot;
 use tokio::time::timeout;
+use std::time::Duration;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -138,6 +138,110 @@ impl EventHandler for TwitchEventSubHandler {
     }
 }
 
+async fn post_request(
+    Json(eventsub_body): Json<EventSubRoot>,
+    Extension(obs_client): Extension<Arc<OBSClient>>,
+    Extension(pool): Extension<Arc<sqlx::PgPool>>,
+    Extension(tx): Extension<broadcast::Sender<Event>>,
+    Extension(twitch_client): Extension<
+        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    >,
+) -> impl IntoResponse {
+    // We could check our DB first, before printing this
+    // We want this to occur later on, after some filtering
+    dbg!(&eventsub_body);
+
+    // We need to read in the json file
+    let file_path = "/home/begin/code/subd/data/AIScenes.json";
+    let contents = fs::read_to_string(file_path).expect("Can read file");
+
+    let ai_scenes: AIScenes = serde_json::from_str(&contents).unwrap();
+
+    let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
+        .scenes
+        .iter()
+        .map(|scene| (scene.reward_title.clone(), scene))
+        .collect();
+
+    // This is required for EventSub's to work!
+    // If we don't Twitch's challenge, you don't events
+    match eventsub_body.challenge {
+        Some(challenge) => {
+            println!("We got a challenge!");
+            return (StatusCode::OK, challenge);
+        }
+        _ => {}
+    }
+
+    match eventsub_body.subscription.type_field.as_str() {
+        "channel.follow" => {
+            println!("follow time");
+        }
+        "channel.poll.begin" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
+        "channel.poll.progress" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
+        "channel.poll.end" => {
+            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+        }
+
+        "channel.channel_points_custom_reward_redemption.add" => {
+            match eventsub_body.event {
+                Some(event) => {
+                    let _ =
+                        handle_ai_scene(tx, pool, ai_scenes_map, event).await;
+                }
+                None => {
+                    println!("NO Event Found for redemption!")
+                }
+            }
+        }
+        _ => {
+            println!("NO EVENT FOUND!")
+        }
+    };
+
+    (StatusCode::OK, "".to_string())
+}
+
+async fn trigger_full_scene(
+    tx: broadcast::Sender<Event>,
+    voice: String,
+    music_bg: String,
+    content: String,
+    dalle_prompt: Option<String>,
+) -> Result<()> {
+    match dalle_prompt {
+        Some(prompt) => {
+            println!("\n\tDalle Prompt: {}", prompt.clone().to_string());
+            let _ =
+                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+                    voice: Some(voice),
+                    message: content.clone(),
+                    voice_text: content.clone(),
+                    music_bg: Some(music_bg),
+                    dalle_prompt: Some(prompt),
+                    ..Default::default()
+                }));
+        }
+        None => {
+            println!("\n\tDalle Prompt: None");
+            let _ =
+                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+                    voice: Some(voice),
+                    message: content.clone(),
+                    voice_text: content,
+                    music_bg: Some(music_bg),
+                    dalle_prompt: None,
+                    ..Default::default()
+                }));
+        }
+    }
+    Ok(())
+}
+
 async fn find_or_save_redemption(
     pool: Arc<sqlx::PgPool>,
     id: Uuid,
@@ -184,11 +288,9 @@ async fn handle_ai_scene(
 
     let user_input = match event.user_input.clone() {
         Some(input) => input,
-        None => "".to_string(),
-    };
-    if user_input == "".to_string() {
-        println!("No user input for handle_ai_scene");
-        return Ok(());
+        None => {
+            return Ok(())
+        }
     };
 
     let _ = find_or_save_redemption(
@@ -275,112 +377,5 @@ async fn handle_ai_scene(
         }
     }
 
-    Ok(())
-}
-
-async fn post_request(
-    Json(eventsub_body): Json<EventSubRoot>,
-    Extension(obs_client): Extension<Arc<OBSClient>>,
-    Extension(pool): Extension<Arc<sqlx::PgPool>>,
-    Extension(tx): Extension<broadcast::Sender<Event>>,
-    Extension(twitch_client): Extension<
-        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    >,
-) -> impl IntoResponse {
-    // We could check our DB first, before printing this
-    // We want this to occur later on, after some filtering
-    // dbg!(&eventsub_body);
-
-    // We need to read in the json file
-    let file_path = "/home/begin/code/subd/data/AIScenes.json";
-    let contents = fs::read_to_string(file_path).expect("Can read file");
-
-    let ai_scenes: AIScenes = serde_json::from_str(&contents).unwrap();
-
-    let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
-        .scenes
-        .iter()
-        .map(|scene| (scene.reward_title.clone(), scene))
-        .collect();
-
-    match eventsub_body.challenge {
-        Some(challenge) => {
-            println!("We got a challenge!");
-            // This is required for EventSub's to work!
-            // If we don't Twitch's challenge, you don't events
-            return (StatusCode::OK, challenge);
-        }
-        _ => {}
-    }
-
-    // We aren't currently using this
-    // let c = obs_client;
-
-    match eventsub_body.subscription.type_field.as_str() {
-        "channel.follow" => {
-            println!("follow time");
-        }
-        "channel.poll.begin" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-        }
-        "channel.poll.progress" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-        }
-        "channel.poll.end" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
-        }
-
-        "channel.channel_points_custom_reward_redemption.add" => {
-            match eventsub_body.event {
-                Some(event) => {
-                    let _ =
-                        handle_ai_scene(tx, pool, ai_scenes_map, event).await;
-                }
-                None => {
-                    println!("NO Event Found for redemption!")
-                }
-            }
-        }
-        _ => {
-            println!("NO EVENT FOUND!")
-        }
-    };
-
-    (StatusCode::OK, "".to_string())
-}
-
-async fn trigger_full_scene(
-    tx: broadcast::Sender<Event>,
-    voice: String,
-    music_bg: String,
-    content: String,
-    dalle_prompt: Option<String>,
-) -> Result<()> {
-    match dalle_prompt {
-        Some(prompt) => {
-            println!("\n\tDalle Prompt: {}", prompt.clone().to_string());
-            let _ =
-                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                    voice: Some(voice),
-                    message: content.clone(),
-                    voice_text: content.clone(),
-                    music_bg: Some(music_bg),
-                    dalle_prompt: Some(prompt),
-                    ..Default::default()
-                }));
-        }
-        None => {
-            println!("\n\tDalle Prompt: None");
-            let _ =
-                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                    voice: Some(voice),
-                    message: content.clone(),
-                    voice_text: content,
-                    music_bg: Some(music_bg),
-                    dalle_prompt: None,
-                    ..Default::default()
-                }));
-        }
-    }
     Ok(())
 }

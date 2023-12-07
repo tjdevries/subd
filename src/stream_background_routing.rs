@@ -164,6 +164,23 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
+        "!picasso" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            println!("Picasso!");
+            let prompt = splitmsg
+                .iter()
+                .skip(1)
+                .map(AsRef::as_ref)
+                .collect::<Vec<&str>>()
+                .join(" ");
+            
+            // We need to finish the code though
+            let _ = dalle::generate_image(prompt, msg.user_name).await;
+            Ok(())
+        }
+
         "!dalle" => {
             if not_beginbot {
                 return Ok(());

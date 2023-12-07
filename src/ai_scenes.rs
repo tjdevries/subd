@@ -254,6 +254,13 @@ impl EventHandler for AiScenesHandler {
             // So here, we need a dalle prompt
             match msg.dalle_prompt {
                 Some(dalle_prompt) => {
+                    
+                    // // However we need to just pass in the name?
+                    // if let Err(e) = generate_image(dalle_prompt, image_name).await {
+                    //     eprintln!("Error: {}", e);
+                    // }
+
+                    // So here we could twitch out to other
                     println!("Attempting to Generate Dalle");
                     let _ = dalle::dalle_time(
                         dalle_prompt,
