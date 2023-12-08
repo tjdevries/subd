@@ -1,5 +1,4 @@
 use anyhow::Result;
-use sqlx::PgPool;
 use askama::Template;
 use chrono::Utc;
 use obws::Client as OBSClient;
@@ -10,53 +9,9 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use subd_macros::database_model;
-use sqlx::types::time::OffsetDateTime;
 
 static SKYBOX_STATUS_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine/requests";
-
-#[database_model]
-pub mod skybox_requests {
-    use super::*;
-
-    pub struct Model {
-        pub blockade_id: i32,
-        pub prompt: String,
-        pub skybox_style_id: i32,
-        pub file_url: Option<String>,
-        pub created_at: Option<OffsetDateTime>,
-        pub completed_at: Option<OffsetDateTime>,
-    }
-}
-
-impl skybox_requests::Model {
-    #[allow(dead_code)]
-
-    pub async fn save(self, pool: &PgPool) -> Result<Self> {
-        Ok(sqlx::query_as!(
-            Self,
-            r#"
-            INSERT INTO skybox_requests 
-            (blockade_id, prompt, skybox_style_id, file_url, created_at, completed_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING blockade_id, prompt, skybox_style_id, file_url, created_at, completed_at
-        "#,
-            self.blockade_id,
-            self.prompt,
-            self.skybox_style_id,
-            self.file_url,
-            self.created_at,
-            self.completed_at
-        
-        )
-        .fetch_one(pool)
-        .await?)
-    }
-}
-
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OuterSkyboxStatusResponse {
@@ -164,6 +119,12 @@ pub async fn trigger_scene(
     return Ok(());
 }
 
+pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
+    let mut file = fs::File::create(file_path)?;
+    file.write_all(content.as_bytes())?;
+    Ok(())
+}
+
 pub async fn check_skybox_status(id: i32) -> Result<()> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
 
@@ -203,17 +164,11 @@ pub async fn check_skybox_status(id: i32) -> Result<()> {
         let render = skybox_template.render().unwrap();
         file.write_all(render.as_bytes()).unwrap();
 
-        // I need to disable/enable the skybox source, to trigger refresh
+        // Where can I save thijs
+        println!("{}", skybox_template.render().unwrap());
     }
     Ok(())
 }
-
-pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
-    let mut file = fs::File::create(file_path)?;
-    file.write_all(content.as_bytes())?;
-    Ok(())
-}
-
 
 #[cfg(test)]
 mod tests {

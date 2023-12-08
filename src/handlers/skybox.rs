@@ -47,7 +47,6 @@ impl EventHandler for SkyboxHandler {
                 _ => continue,
             };
 
-
             // We don't just need to call request here
             // this event isn't just pure request
             // we need to start somewhere else
@@ -61,78 +60,6 @@ impl EventHandler for SkyboxHandler {
             // AND generate a fresh HTML page using pannellum
         }
     }
-}
-
-pub async fn check_skybox_status(id: i32) -> Result<()> {
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-
-    // https://backend.blockadelabs.com/api/v1/skybox
-    // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
-    let requests_url =
-        format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
-    let client = Client::new();
-    let resp = client.get(&requests_url).send().await.unwrap();
-
-    // We should be able to parse this into the StatusResponse
-    let text = resp.text().await.unwrap();
-    let parsed_response: skybox::SkyboxStatusResponse =
-        serde_json::from_str(&text)?;
-
-    println!("Parsed Response: {:?}", parsed_response);
-    Ok(())
-}
-
-#[allow(dead_code)]
-async fn request_skybox(prompt: String) -> io::Result<String> {
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-
-    // https://backend.blockadelabs.com/api/v1/skybox
-    let requests_url =
-        format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
-
-    // Do we need to trim start
-    // orjshould this done before i'ts passed
-    let prompt = prompt.trim_start().to_string();
-
-    // Why???
-    let words: Vec<&str> = prompt.split_whitespace().collect();
-
-    // This returns a static style currently
-    let skybox_style_id = find_style_id(words);
-
-    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
-
-    // return Ok(String::from("this a hack"));
-
-    let post_body = json!({
-        "prompt": prompt,
-        // "generator": "stable-skybox",
-        // "skybox_style_id": skybox_style_id,
-    });
-
-    let client = Client::new();
-    let resp = client
-        .post(&requests_url)
-        .json(&post_body)
-        .send()
-        .await
-        .unwrap();
-
-    let body = resp.text().await.unwrap();
-    let bytes = body.as_bytes();
-
-    let t = Utc::now();
-    // so I think this path should be relative
-    let response_filepath = format!("./tmp/skybox_{}.json", t);
-
-    // I need a parsed out body, to save
-    let mut file = File::create(response_filepath.clone())?;
-    file.write_all(bytes)?;
-
-    // We need to parse the response
-    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
-    // if our AI generated bg is done
-    Ok(response_filepath)
 }
 
 // ============================================================================================
@@ -266,3 +193,55 @@ async fn request_status(id: &str) -> Result<Response> {
 //     let skybox_remix_response_file_path = "/home/begin/code/subd/tmp/skybox_archive";
 //     Ok(skybox_remix_response_file_path)
 // }
+
+async fn request_skybox(prompt: String) -> io::Result<String> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+
+    // https://backend.blockadelabs.com/api/v1/skybox
+    let requests_url =
+        format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
+
+    // Do we need to trim start
+    // orjshould this done before i'ts passed
+    let prompt = prompt.trim_start().to_string();
+
+    // Why???
+    let words: Vec<&str> = prompt.split_whitespace().collect();
+
+    // This returns a static style currently
+    let skybox_style_id = find_style_id(words);
+
+    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
+
+    // return Ok(String::from("this a hack"));
+
+    let post_body = json!({
+        "prompt": prompt,
+        // "generator": "stable-skybox",
+        // "skybox_style_id": skybox_style_id,
+    });
+
+    let client = Client::new();
+    let resp = client
+        .post(&requests_url)
+        .json(&post_body)
+        .send()
+        .await
+        .unwrap();
+
+    let body = resp.text().await.unwrap();
+    let bytes = body.as_bytes();
+
+    let t = Utc::now();
+    // so I think this path should be relative
+    let response_filepath = format!("./tmp/skybox_{}.json", t);
+
+    // I need a parsed out body, to save
+    let mut file = File::create(response_filepath.clone())?;
+    file.write_all(bytes)?;
+
+    // We need to parse the response
+    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
+    // if our AI generated bg is done
+    Ok(response_filepath)
+}

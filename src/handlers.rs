@@ -2,6 +2,7 @@ pub mod chatgpt_response_handler;
 pub mod music_scenes_handler;
 pub mod obs_messages;
 pub mod skybox;
+pub mod skybox_status;
 pub mod sound_handler;
 pub mod source_visibility;
 pub mod stream_background;
