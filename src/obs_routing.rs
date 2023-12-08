@@ -125,7 +125,7 @@ pub async fn handle_obs_commands(
                 &broadcaster_id,
             );
 
-            let default_cost: i32 = 4200;
+            let default_cost: i32 = 300;
 
             let ids = twitch_rewards::update_cost_of_all(pool, default_cost)
                 .await

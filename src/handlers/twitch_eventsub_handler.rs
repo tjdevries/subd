@@ -1,6 +1,7 @@
 use crate::ai_scenes;
 use crate::openai;
 use crate::redemptions;
+use crate::twitch_rewards;
 use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -17,7 +18,7 @@ use std::env;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use subd_twitch::rewards;
+// use subd_twitch::rewards;
 use subd_twitch::rewards::RewardManager;
 use subd_types::Event;
 use tokio::sync::broadcast;
@@ -299,9 +300,29 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             )
             .await;
 
-            let reward_cost_as_float = reward_cost as f32;
-            let new_cost = (reward_cost_as_float * 1.1).round() as usize;
+            let increase_mult = 1.5;
+            let decrease_mult = 0.8;
 
+            let reward_cost_as_float = reward_cost as f32;
+            let other_ids =
+                twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
+
+            for (id, cost) in other_ids {
+                let float_cost = cost as f32;
+                let new_cost = (float_cost * decrease_mult).round() as usize;
+
+                let _ = reward_manager
+                    .update_reward(id.to_string(), new_cost)
+                    .await;
+
+                let cost_as_i32 = new_cost as i32;
+                let _ =
+                    twitch_rewards::update_cost_by_id(&pool, id, cost_as_i32)
+                        .await;
+            }
+
+            let new_cost =
+                (reward_cost_as_float * increase_mult).round() as usize;
             println!(
                 "Updating Reward: {}- {}",
                 reward_id.to_string(),
@@ -310,6 +331,13 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             let _ = reward_manager
                 .update_reward(reward_id.to_string(), new_cost)
                 .await;
+            let cost_as_i32 = new_cost as i32;
+            let _ = twitch_rewards::update_cost_by_id(
+                &pool,
+                reward_id,
+                cost_as_i32,
+            )
+            .await;
         }
     }
     Ok(())

@@ -106,6 +106,17 @@ pub async fn find_by_title(
     return Ok(model);
 }
 
+pub async fn find_all_ids_except(
+    pool: &sqlx::PgPool,
+    twitch_id: Uuid,
+) -> Result<Vec<(Uuid, i32)>> {
+    let id = twitch_id.to_string();
+    let res = sqlx::query!( "SELECT twitch_id, cost FROM twitch_rewards WHERE twitch_id::text != $1", id).fetch_all(pool).await?;
+
+    let uuids = res.iter().map(|r| (r.twitch_id, r.cost)).collect();
+    return Ok(uuids);
+}
+
 pub async fn find_by_id(
     pool: &sqlx::PgPool,
     twitch_id: Uuid,
@@ -135,6 +146,22 @@ pub async fn find_by_id(
 //
 //     Ok(())
 // }
+
+pub async fn update_cost_by_id(
+    pool: &PgPool,
+    id: Uuid,
+    cost: i32,
+) -> Result<()> {
+    let _res = sqlx::query!(
+        "UPDATE twitch_rewards SET cost = $1 WHERE twitch_id = $2",
+        cost,
+        id,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
 
 pub async fn update_cost(
     pool: &PgPool,
