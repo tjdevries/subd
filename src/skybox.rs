@@ -1,8 +1,49 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
+use std::env;
+use reqwest::Client;
 use obws::Client as OBSClient;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
+
+static SKYBOX_STATUS_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine/requests";
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SkyboxStatusResponse {
+    id: i32,
+    obfuscated_id: String,
+    user_id: i32,
+    api_key_id: i32,
+    title: String,
+    seed: i32,
+    negative_text: Option<String>,
+    prompt: String,
+    username: String,
+    status: String,
+    queue_position: i32,
+    file_url: String,
+    thumb_url: String,
+    depth_map_url: String,
+    remix_imagine_id: Option<i32>,
+    remix_obfuscated_id: Option<String>,
+    #[serde(rename = "isMyFavorite")]
+    is_my_favorite: bool,
+    #[serde(rename = "created_at")]
+    created_at: String,
+    #[serde(rename = "updated_at")]
+    updated_at: String,
+    error_message: Option<String>,
+    pusher_channel: String,
+    pusher_event: String,
+    #[serde(rename = "type")]
+    item_type: String,
+    skybox_style_id: i32,
+    skybox_id: i32,
+    skybox_style_name: String,
+    skybox_name: String,
+}
+
 
 // OBS_filter_name
 // skybox_id
@@ -68,3 +109,26 @@ pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
+
+pub async fn check_skybox_status(id: i32) -> Result<()> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    
+    // https://backend.blockadelabs.com/api/v1/skybox
+    // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
+    let requests_url =
+        format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
+    let client = Client::new();
+    let resp = client
+        .get(&requests_url)
+        .send()
+        .await
+        .unwrap();
+
+    // We should be able to parse this into the StatusResponse
+    let text = resp.text().await.unwrap();
+    let parsed_response: SkyboxStatusResponse = serde_json::from_str(&text)?;
+
+    println!("Parsed Response: {:?}", parsed_response);
+    Ok(())
+}
+    

@@ -10,11 +10,11 @@ use crate::obs_scenes;
 use crate::obs_source;
 use crate::twitch_rewards;
 use rand::Rng;
-// use rand::{seq::SliceRandom, thread_rng};
 use std::env;
 use std::fs;
 use twitch_oauth2::UserToken;
 use uuid::Uuid;
+// use rand::{seq::SliceRandom, thread_rng};
 // use crate::openai;
 // use std::env;
 use crate::sdf_effects;
@@ -927,9 +927,21 @@ pub async fn handle_obs_commands(
             }
             Ok(())
         }
+        
+        "!check_skybox" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            
+            let _ = skybox::check_skybox_status(9612607).await;
+            Ok(())
+        }
 
         // We need to eventually take in style IDs
         "!skybox" => {
+            if not_beginbot {
+                return Ok(());
+            }
             println!("Trying Skybox");
 
             let skybox_info = splitmsg

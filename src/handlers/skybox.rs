@@ -31,6 +31,41 @@ pub struct SkyboxRemixHandler {
     pub obs_client: OBSClient,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SkyboxStatusResponse {
+    id: i32,
+    obfuscated_id: String,
+    user_id: i32,
+    api_key_id: i32,
+    title: String,
+    seed: i32,
+    negative_text: Option<String>,
+    prompt: String,
+    username: String,
+    status: String,
+    queue_position: i32,
+    file_url: String,
+    thumb_url: String,
+    depth_map_url: String,
+    remix_imagine_id: Option<i32>,
+    remix_obfuscated_id: Option<String>,
+    #[serde(rename = "isMyFavorite")]
+    is_my_favorite: bool,
+    #[serde(rename = "created_at")]
+    created_at: String,
+    #[serde(rename = "updated_at")]
+    updated_at: String,
+    error_message: Option<String>,
+    pusher_channel: String,
+    pusher_event: String,
+    #[serde(rename = "type")]
+    item_type: String,
+    skybox_style_id: i32,
+    skybox_id: i32,
+    skybox_style_name: String,
+    skybox_name: String,
+}
+
 #[async_trait]
 #[allow(unused_variables)]
 impl EventHandler for SkyboxHandler {
@@ -56,16 +91,37 @@ impl EventHandler for SkyboxHandler {
     }
 }
 
+
+pub async fn check_skybox_status(id: i32) -> Result<()> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    
+    // https://backend.blockadelabs.com/api/v1/skybox
+    // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
+    let requests_url =
+        format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
+    let client = Client::new();
+    let resp = client
+        .get(&requests_url)
+        .send()
+        .await
+        .unwrap();
+
+    // We should be able to parse this into the StatusResponse
+    let text = resp.text().await.unwrap();
+    let parsed_response: SkyboxStatusResponse = serde_json::from_str(&text)?;
+
+    println!("Parsed Response: {:?}", parsed_response);
+    Ok(())
+}
+    
+
 #[allow(dead_code)]
 async fn request_skybox(prompt: String) -> io::Result<String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    
     // https://backend.blockadelabs.com/api/v1/skybox
     let requests_url =
         format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
-
-    // So this doesn't work right now because we don't a have a working subscription
-    // println!("Skybox API URL: {}", requests_url);
-    // return Ok(requests_url);
 
     // Do we need to trim start
     // or should this done before i'ts passed
@@ -119,8 +175,11 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
 // CHAT GPT Generated Code, BE CAREFUL
 
 #[allow(dead_code)]
+static SKYBOX_STATUS_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine/requests";
+
 static SKYBOX_REMIX_URL: &str =
     "https://backend.blockadelabs.com/api/v1/skybox";
+
 static SKYBOX_IMAGINE_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine";
 
@@ -207,25 +266,18 @@ fn find_style_id(words: Vec<&str>) -> i32 {
     return 1;
 }
 
+// Why are we passing the API Key in the URL?
 #[allow(dead_code)]
 async fn request_status(id: &str) -> Result<Response> {
-    // let skybox_api_key: String = std::env::var("SKYBOX_API_KEY").unwrap();
-    let skybox_api_key: String = String::from(
-        "3c4bDk5l777GwoXdULwFuB6bqwYJwr1fDN9GL3bhw8XQ4W7Vv7RiV0JAxH5c",
-    );
-    // let skybox_api_key: String = String::from("IVgnrZpVpTYbBzgW0Lk3vJIRvNOQuxnYHOw5n1HI9O8AMnib3gdAhPFUQkak");
+    let skybox_api_key: String = std::env::var("SKYBOX_API_KEY").unwrap();
     let url = format!(
         "{}/requests/{}?api_key={}",
         SKYBOX_IMAGINE_URL, id, skybox_api_key
     );
 
-    println!("URL: {}", url);
-    // x-api-key
-
     let client = reqwest::Client::new();
     let resp = client
         .get(&url)
-        // .header("x-api-key", skybox_api_key)
         .send()
         .await?;
     let body = resp.text().await?;
