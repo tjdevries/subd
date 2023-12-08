@@ -1,4 +1,6 @@
 use anyhow::Result;
+use chrono::Utc;
+use std::fs::File;
 use serde::{Deserialize, Serialize};
 use std::env;
 use reqwest::Client;
@@ -8,6 +10,11 @@ use std::fs;
 use std::io::Write;
 
 static SKYBOX_STATUS_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine/requests";
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OuterSkyboxStatusResponse {
+    request: SkyboxStatusResponse,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SkyboxStatusResponse {
@@ -124,11 +131,49 @@ pub async fn check_skybox_status(id: i32) -> Result<()> {
         .await
         .unwrap();
 
-    // We should be able to parse this into the StatusResponse
-    let text = resp.text().await.unwrap();
-    let parsed_response: SkyboxStatusResponse = serde_json::from_str(&text)?;
+    println!("Skybox Status: {:?}", resp.status());
+    // println!("Skybox Text: {:?}", resp.text().await);
+    let body = resp.json::<OuterSkyboxStatusResponse>().await?;
 
-    println!("Parsed Response: {:?}", parsed_response);
+    let file_url = body.request.file_url;
+    
+    if file_url != "" {
+        let image_data = reqwest::get(file_url.clone())
+            .await?
+            .bytes()
+            .await?
+            .to_vec();
+        
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_{}", timestamp, body.request.id);
+        let archive_file =
+            format!("./archive/skybox/{}.png", unique_identifier);
+        
+        let mut file = File::create(archive_file).unwrap();
+        file.write_all(&image_data).unwrap();
+    }
+
+
+                
+                //
+                //
+                // writeln!(csv_file, "{},{}", unique_identifier, contents)
+                //     .unwrap();
+                //
+                // let filename = format!("./tmp/dalle-{}.png", index + 1);
+                // let mut file = File::create(filename).unwrap();
+                // file.write_all(&image_data).unwrap();
     Ok(())
 }
     
+
+#[cfg(test)]
+mod tests {
+    use crate::skybox;
+    
+    #[tokio::test]
+    async fn test_time() {
+       let _ = skybox::check_skybox_status(9612607).await;
+       assert_eq!(1, 2);
+    }
+}

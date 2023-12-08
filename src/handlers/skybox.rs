@@ -2,6 +2,7 @@ extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
 use anyhow::Result;
+use crate::skybox;
 use async_trait::async_trait;
 use chrono::prelude::*;
 use events::EventHandler;
@@ -29,41 +30,6 @@ pub struct SkyboxHandler {
 #[allow(dead_code)]
 pub struct SkyboxRemixHandler {
     pub obs_client: OBSClient,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SkyboxStatusResponse {
-    id: i32,
-    obfuscated_id: String,
-    user_id: i32,
-    api_key_id: i32,
-    title: String,
-    seed: i32,
-    negative_text: Option<String>,
-    prompt: String,
-    username: String,
-    status: String,
-    queue_position: i32,
-    file_url: String,
-    thumb_url: String,
-    depth_map_url: String,
-    remix_imagine_id: Option<i32>,
-    remix_obfuscated_id: Option<String>,
-    #[serde(rename = "isMyFavorite")]
-    is_my_favorite: bool,
-    #[serde(rename = "created_at")]
-    created_at: String,
-    #[serde(rename = "updated_at")]
-    updated_at: String,
-    error_message: Option<String>,
-    pusher_channel: String,
-    pusher_event: String,
-    #[serde(rename = "type")]
-    item_type: String,
-    skybox_style_id: i32,
-    skybox_id: i32,
-    skybox_style_name: String,
-    skybox_name: String,
 }
 
 #[async_trait]
@@ -108,7 +74,7 @@ pub async fn check_skybox_status(id: i32) -> Result<()> {
 
     // We should be able to parse this into the StatusResponse
     let text = resp.text().await.unwrap();
-    let parsed_response: SkyboxStatusResponse = serde_json::from_str(&text)?;
+    let parsed_response: skybox::SkyboxStatusResponse = serde_json::from_str(&text)?;
 
     println!("Parsed Response: {:?}", parsed_response);
     Ok(())

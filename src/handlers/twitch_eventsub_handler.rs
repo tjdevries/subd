@@ -302,7 +302,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             .await;
 
             let increase_mult = 1.5;
-            let decrease_mult = 0.8;
+            let _decrease_mult = 0.8;
 
             let reward_cost_as_float = reward_cost as f32;
 
@@ -310,18 +310,20 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             let other_ids =
                 twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
 
-            for (id, cost) in other_ids {
-                let float_cost = cost as f32;
-                let new_cost = (float_cost * decrease_mult).round() as usize;
-
-                let _ = reward_manager
-                    .update_reward(id.to_string(), new_cost)
-                    .await;
-
-                let cost_as_i32 = new_cost as i32;
-                let _ =
-                    twitch_rewards::update_cost_by_id(&pool, id, cost_as_i32)
-                        .await;
+            // We need to prevent out economy from collapsing
+            // These should never get below a 100
+            for (_id, _cost) in other_ids {
+                let _float_cost = _cost as f32;
+                // let new_cost = (float_cost * decrease_mult).round() as usize;
+                //
+                // let _ = reward_manager
+                //     .update_reward(id.to_string(), new_cost)
+                //     .await;
+                //
+                // let cost_as_i32 = new_cost as i32;
+                // let _ =
+                //     twitch_rewards::update_cost_by_id(&pool, id, cost_as_i32)
+                //         .await;
             }
 
             let new_cost =

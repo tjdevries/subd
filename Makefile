@@ -3,6 +3,9 @@ default:
 	# cargo build
 	# cargo check
 
+test:
+	cargo test
+
 fix:
 	cargo fix --lib -p server
 

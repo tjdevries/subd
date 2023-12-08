@@ -70,6 +70,7 @@ pub async fn dalle_time(
                     .await?
                     .to_vec();
 
+                // "id": 9612607,
                 // request for AI_image_filename
                 let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
                 let unique_identifier =
