@@ -96,6 +96,7 @@ pub async fn handle_obs_commands(
             if not_beginbot {
                 return Ok(());
             }
+            let broadcaster_id = "424038378";
 
             let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let contents =
@@ -118,24 +119,21 @@ pub async fn handle_obs_commands(
                 None,
             )
             .await?;
-            let broadcaster_id = "424038378";
             let reward_manager = rewards::RewardManager::new(
                 &twitch_reward_client,
                 &token,
                 &broadcaster_id,
             );
 
-            let default_cost: i32 = 300;
-
-            let ids = twitch_rewards::update_cost_of_all(pool, default_cost)
-                .await
-                .unwrap();
-
-            let default_cost_usize = default_cost as usize;
-            for id in ids {
-                let _ =
-                    reward_manager.update_reward(id, default_cost_usize).await;
-            }
+            // This returns the default cost to every reward to everyone
+            // let default_cost: i32 = 300;
+            // let ids = twitch_rewards::update_cost_of_all(pool, default_cost)
+            //     .await
+            //     .unwrap();
+            // for id in ids {
+            //     let _ =
+            //         reward_manager.update_reward(id, default_cost_usize).await;
+            // }
 
             // https://stackoverflow.com/questions/67443847/how-to-generate-random-numbers-in-async-rust
             let random = {
@@ -933,6 +931,7 @@ pub async fn handle_obs_commands(
                 return Ok(());
             }
 
+            // obs_client
             let _ = skybox::check_skybox_status(9612607).await;
             Ok(())
         }

@@ -93,9 +93,14 @@ CREATE TABLE redemptions (
   created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE twitch_rewards (
-  title      TEXT NOT NULL,
-  twitch_id  UUID NOT NULL,
-  cost       INT NOT NULL,
-  enabled boolean NOT NULL
+CREATE TABLE skybox_requests (
+  blockade_id INT NOT NULL,
+  prompt TEXT NOT NULL,
+  skybox_style_id INT NOT NULL,
+  file_url TEXT, 
+  
+  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  completed_at  TIMESTAMPTZ
 );
+
+

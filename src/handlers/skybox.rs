@@ -47,8 +47,14 @@ impl EventHandler for SkyboxHandler {
                 _ => continue,
             };
 
+
+            // We don't just need to call request here
+            // this event isn't just pure request
+            // we need to start somewhere else
             println!("Attempting to Skybox");
             request_skybox(request.msg).await?;
+
+            // Can I kick off another loop???
 
             // TODO: we will need to trigger the skybox OBS source
             // to refresh, after we get an updated Skybox
@@ -85,7 +91,7 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
         format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
 
     // Do we need to trim start
-    // or should this done before i'ts passed
+    // orjshould this done before i'ts passed
     let prompt = prompt.trim_start().to_string();
 
     // Why???
@@ -119,6 +125,7 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
     // so I think this path should be relative
     let response_filepath = format!("./tmp/skybox_{}.json", t);
 
+    // I need a parsed out body, to save
     let mut file = File::create(response_filepath.clone())?;
     file.write_all(bytes)?;
 
