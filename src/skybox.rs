@@ -1,15 +1,17 @@
 use anyhow::Result;
+use askama::Template;
 use chrono::Utc;
-use std::fs::File;
-use serde::{Deserialize, Serialize};
-use std::env;
-use reqwest::Client;
 use obws::Client as OBSClient;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::env;
 use std::fs;
+use std::fs::File;
 use std::io::Write;
 
-static SKYBOX_STATUS_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine/requests";
+static SKYBOX_STATUS_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/imagine/requests";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OuterSkyboxStatusResponse {
@@ -51,6 +53,12 @@ pub struct SkyboxStatusResponse {
     skybox_name: String,
 }
 
+#[derive(Template)] // this will generate the code...
+#[template(path = "skybox.html")] // using the template in this path, relative
+struct SkyboxTemplate<'a> {
+    // the name of the struct can be anything
+    url: &'a str, // the field name should match the variable name
+}
 
 // OBS_filter_name
 // skybox_id
@@ -119,61 +127,56 @@ pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
 
 pub async fn check_skybox_status(id: i32) -> Result<()> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    
+
     // https://backend.blockadelabs.com/api/v1/skybox
     // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
     let requests_url =
         format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
     let client = Client::new();
-    let resp = client
-        .get(&requests_url)
-        .send()
-        .await
-        .unwrap();
+    let resp = client.get(&requests_url).send().await.unwrap();
 
     println!("Skybox Status: {:?}", resp.status());
     // println!("Skybox Text: {:?}", resp.text().await);
     let body = resp.json::<OuterSkyboxStatusResponse>().await?;
 
     let file_url = body.request.file_url;
-    
+
     if file_url != "" {
+        println!("File URL: {}", file_url);
+
         let image_data = reqwest::get(file_url.clone())
             .await?
             .bytes()
             .await?
             .to_vec();
-        
+
         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
         let unique_identifier = format!("{}_{}", timestamp, body.request.id);
         let archive_file =
             format!("./archive/skybox/{}.png", unique_identifier);
-        
+
         let mut file = File::create(archive_file).unwrap();
         file.write_all(&image_data).unwrap();
+
+        let skybox_template = SkyboxTemplate { url: &file_url };
+        let new_skybox = "./build/skybox.html";
+        let mut file = File::create(new_skybox).unwrap();
+        let render = skybox_template.render().unwrap();
+        file.write_all(render.as_bytes()).unwrap();
+
+        // Where can I save thijs
+        println!("{}", skybox_template.render().unwrap());
     }
-
-
-                
-                //
-                //
-                // writeln!(csv_file, "{},{}", unique_identifier, contents)
-                //     .unwrap();
-                //
-                // let filename = format!("./tmp/dalle-{}.png", index + 1);
-                // let mut file = File::create(filename).unwrap();
-                // file.write_all(&image_data).unwrap();
     Ok(())
 }
-    
 
 #[cfg(test)]
 mod tests {
     use crate::skybox;
-    
+
     #[tokio::test]
     async fn test_time() {
-       let _ = skybox::check_skybox_status(9612607).await;
-       assert_eq!(1, 2);
+        let _ = skybox::check_skybox_status(9612607).await;
+        assert_eq!(1, 2);
     }
 }

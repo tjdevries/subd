@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 use server::ai_scenes;
 use server::audio;
 use server::handlers;
+use server::uberduck;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
 use twitch_irc::TwitchIRCClient;
-// use server::uberduck;
 // use subd_twitch::rewards::RewardManager;
 // use twitch_api::helix::points::{
 //     CreateCustomRewardBody, CreateCustomRewardRequest, UpdateCustomRewardBody,
@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
 
     // Can we delete?
 
-    // // Elevenlabs/Uberduck handles voice messages
+    // Elevenlabs/Uberduck handles voice messages
     // let elevenlabs_auth = Auth::from_env().unwrap();
     // let elevenlabs =
     //     Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");

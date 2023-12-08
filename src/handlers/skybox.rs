@@ -1,8 +1,8 @@
 extern crate reqwest;
 extern crate serde;
 extern crate serde_json;
-use anyhow::Result;
 use crate::skybox;
+use anyhow::Result;
 use async_trait::async_trait;
 use chrono::prelude::*;
 use events::EventHandler;
@@ -57,34 +57,29 @@ impl EventHandler for SkyboxHandler {
     }
 }
 
-
 pub async fn check_skybox_status(id: i32) -> Result<()> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    
+
     // https://backend.blockadelabs.com/api/v1/skybox
     // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
     let requests_url =
         format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
     let client = Client::new();
-    let resp = client
-        .get(&requests_url)
-        .send()
-        .await
-        .unwrap();
+    let resp = client.get(&requests_url).send().await.unwrap();
 
     // We should be able to parse this into the StatusResponse
     let text = resp.text().await.unwrap();
-    let parsed_response: skybox::SkyboxStatusResponse = serde_json::from_str(&text)?;
+    let parsed_response: skybox::SkyboxStatusResponse =
+        serde_json::from_str(&text)?;
 
     println!("Parsed Response: {:?}", parsed_response);
     Ok(())
 }
-    
 
 #[allow(dead_code)]
 async fn request_skybox(prompt: String) -> io::Result<String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-    
+
     // https://backend.blockadelabs.com/api/v1/skybox
     let requests_url =
         format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
@@ -141,7 +136,8 @@ async fn request_skybox(prompt: String) -> io::Result<String> {
 // CHAT GPT Generated Code, BE CAREFUL
 
 #[allow(dead_code)]
-static SKYBOX_STATUS_URL: &str = "https://backend.blockadelabs.com/api/v1/imagine/requests";
+static SKYBOX_STATUS_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/imagine/requests";
 
 static SKYBOX_REMIX_URL: &str =
     "https://backend.blockadelabs.com/api/v1/skybox";
@@ -242,10 +238,7 @@ async fn request_status(id: &str) -> Result<Response> {
     );
 
     let client = reqwest::Client::new();
-    let resp = client
-        .get(&url)
-        .send()
-        .await?;
+    let resp = client.get(&url).send().await?;
     let body = resp.text().await?;
 
     let parsed_response: OuterRequest = serde_json::from_str(&body)?;

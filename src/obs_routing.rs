@@ -927,12 +927,12 @@ pub async fn handle_obs_commands(
             }
             Ok(())
         }
-        
+
         "!check_skybox" => {
             if not_beginbot {
                 return Ok(());
             }
-            
+
             let _ = skybox::check_skybox_status(9612607).await;
             Ok(())
         }
