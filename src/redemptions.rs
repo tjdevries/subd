@@ -14,7 +14,7 @@ pub mod redemptions {
         pub cost: i32,
         pub user_name: String,
         pub reward_id: Uuid,
-        pub twitch_id: Option<Uuid>,
+        pub twitch_id: Uuid,
 
         // This might need to be text
         // optional might FUCKING US
