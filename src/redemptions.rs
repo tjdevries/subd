@@ -14,6 +14,8 @@ pub mod redemptions {
         pub cost: i32,
         pub user_name: String,
         pub reward_id: Uuid,
+        pub twitch_id: Option<Uuid>,
+
         // This might need to be text
         // optional might FUCKING US
         pub user_input: Option<String>,
@@ -28,15 +30,16 @@ impl redemptions::Model {
             Self,
             r#"
             INSERT INTO redemptions 
-            (title, cost, user_name, reward_id, user_input)
-            VALUES ( $1, $2, $3, $4, $5)
-            RETURNING title, cost, user_name, reward_id, user_input
+            (title, cost, user_name, twitch_id, reward_id, user_input)
+            VALUES ( $1, $2, $3, $4, $5, $6)
+            RETURNING title, cost, user_name, twitch_id, reward_id, user_input
         "#,
             self.title,
             self.cost,
             self.user_name,
+            self.twitch_id,
             self.reward_id,
-            self.user_input
+            self.user_input,
         )
         .fetch_one(pool)
         .await?)
@@ -48,21 +51,33 @@ pub async fn save_redemptions(
     title: String,
     cost: i32,
     user_name: String,
+    twitch_id: Uuid,
     reward_id: Uuid,
     user_input: String,
 ) -> Result<()> {
     sqlx::query!(
-        r#"INSERT INTO redemptions (title, cost, user_name, reward_id, user_input)
-       VALUES ( $1, $2, $3, $4, $5 )"#,
+        r#"INSERT INTO redemptions (title, cost, user_name, twitch_id, reward_id, user_input)
+       VALUES ( $1, $2, $3, $4, $5, $6 )"#,
         title,
         cost,
         user_name,
+        twitch_id,
         reward_id,
         user_input,
     )
     .execute(pool)
     .await?;
     Ok(())
+}
+
+pub async fn find_redemption_by_twitch_id(
+    pool: &PgPool,
+    twitch_id: Uuid,
+) -> Result<PgRow, sqlx::Error> {
+    sqlx::query("SELECT * FROM redemptions WHERE twitch_id = $1")
+        .bind(twitch_id)
+        .fetch_one(pool)
+        .await
 }
 
 pub async fn find_redemption_by_reward_id(

@@ -80,7 +80,12 @@ CREATE TABLE twitch_users (
 
 CREATE TABLE redemptions (
   title      TEXT NOT NULL ,
-  reward_id  UUID NOT NULL,
+
+  twitch_id  UUID NOT NULL,
+  
+  -- TODO: Add NOT NULL, after we populate/delete redemptions
+  redemptions ADD COLUMN twitch_id UUID;
+  reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
   user_name  TEXT NOT NULL,
   cost       INT NOT NULL,
   user_input TEXT

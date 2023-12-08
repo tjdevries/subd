@@ -280,7 +280,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     user_name: String,
     user_input: String,
 ) -> Result<()> {
-    let old_redemp = redemptions::find_redemption_by_reward_id(&pool, id).await;
+    let old_redemp = redemptions::find_redemption_by_twitch_id(&pool, id).await;
 
     match old_redemp {
         Ok(_reward_id) => {
@@ -296,6 +296,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
                 reward_cost.clone(),
                 user_name,
                 id,
+                reward_id,
                 user_input,
             )
             .await;
