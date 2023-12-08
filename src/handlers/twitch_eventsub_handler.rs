@@ -13,11 +13,17 @@ use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use subd_twitch::rewards;
+use subd_twitch::rewards::RewardManager;
 use subd_types::Event;
 use tokio::sync::broadcast;
+use twitch_api::helix::HelixClient;
+use twitch_api::twitch_oauth2::UserToken;
+// use subd_twitch::rewards;
 // use std::time::Duration;
 // use tokio::sync::oneshot;
 // use tokio::time::timeout;
@@ -103,16 +109,43 @@ impl EventHandler for TwitchEventSubHandler {
     ) -> Result<()> {
         let clonable_obs_client = Arc::new(self.obs_client);
         let clonable_pool = Arc::new(self.pool);
+        // This is need to create Reward Manager
+        let twitch_user_access_token =
+            env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
+        let reqwest = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()?;
+        let twitch_reward_client: HelixClient<reqwest::Client> =
+            HelixClient::new();
+        let token = UserToken::from_existing(
+            &reqwest,
+            twitch_user_access_token.into(),
+            None,
+            None,
+        )
+        .await?;
 
+        let box_token: &'static UserToken = Box::leak(Box::new(token));
+        let box_twitch_client: &'static HelixClient<reqwest::Client> =
+            Box::leak(Box::new(twitch_reward_client));
+
+        let broadcaster_id = "424038378";
+        let reward_manager =
+            RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
+        let cloneable_reward_manager = Arc::new(reward_manager);
+
+        // How do you specify Generic arguments to a function that is being passed to another
+        // function?
         // Define the route
         let app = Router::new()
-            .route("/eventsub", post(post_request))
+            .route("/eventsub", post(post_request::<reqwest::Client>))
             .layer(Extension(clonable_obs_client))
             .layer(Extension(clonable_pool))
+            .layer(Extension(cloneable_reward_manager))
             .layer(Extension(tx))
             .layer(Extension(self.twitch_client));
 
-        // Run the Axum server in a separate async task
+        // // Run the Axum server in a separate async task
         tokio::spawn(async move {
             let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
             Server::bind(&addr)
@@ -120,15 +153,16 @@ impl EventHandler for TwitchEventSubHandler {
                 .await
                 .unwrap();
         });
-
+        //
         Ok(())
     }
 }
 
-async fn post_request(
+async fn post_request<'a, C: twitch_api::HttpClient>(
     Json(eventsub_body): Json<EventSubRoot>,
     Extension(_obs_client): Extension<Arc<OBSClient>>,
     Extension(pool): Extension<Arc<sqlx::PgPool>>,
+    Extension(reward_manager): Extension<Arc<RewardManager<'a, C>>>,
     Extension(tx): Extension<broadcast::Sender<Event>>,
     Extension(_twitch_client): Extension<
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -177,8 +211,14 @@ async fn post_request(
         "channel.channel_points_custom_reward_redemption.add" => {
             match eventsub_body.event {
                 Some(event) => {
-                    let _ =
-                        handle_ai_scene(tx, pool, ai_scenes_map, event).await;
+                    let _ = handle_ai_scene(
+                        tx,
+                        pool,
+                        reward_manager,
+                        ai_scenes_map,
+                        event,
+                    )
+                    .await;
                 }
                 None => {
                     println!("NO Event Found for redemption!")
@@ -229,10 +269,12 @@ async fn trigger_full_scene(
     Ok(())
 }
 
-async fn find_or_save_redemption(
+async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     pool: Arc<sqlx::PgPool>,
+    reward_manager: Arc<RewardManager<'a, C>>,
     id: Uuid,
     command: String,
+    reward_id: Uuid,
     reward_cost: i32,
     user_name: String,
     user_input: String,
@@ -256,14 +298,28 @@ async fn find_or_save_redemption(
                 user_input,
             )
             .await;
+
+            let reward_cost_as_float = reward_cost as f32;
+            let new_cost = (reward_cost_as_float * 1.1).round() as usize;
+
+            println!(
+                "Updating Reward: {}- {}",
+                reward_id.to_string(),
+                new_cost
+            );
+            let _ = reward_manager
+                .update_reward(reward_id.to_string(), new_cost)
+                .await;
         }
     }
     Ok(())
 }
 
-async fn handle_ai_scene(
+// This should take in a reward manager
+async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
+    reward_manager: Arc<RewardManager<'a, C>>,
     ai_scenes_map: HashMap<String, &ai_scenes::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
@@ -281,8 +337,10 @@ async fn handle_ai_scene(
 
     let _ = find_or_save_redemption(
         pool.clone(),
+        reward_manager,
         event.id.clone(),
         command.clone(),
+        reward.id.clone(),
         reward.cost.clone(),
         event.user_name.clone(),
         user_input.clone(),
