@@ -89,6 +89,8 @@ CREATE TABLE redemptions (
   user_name  TEXT NOT NULL,
   cost       INT NOT NULL,
   user_input TEXT
+  
+  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE twitch_rewards (

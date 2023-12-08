@@ -1,6 +1,7 @@
 // use anyhow::Error;
 use anyhow::Result;
 use sqlx::postgres::PgRow;
+use sqlx::types::time::OffsetDateTime;
 use sqlx::types::Uuid;
 use sqlx::PgPool;
 use subd_macros::database_model;
@@ -16,6 +17,8 @@ pub mod redemptions {
         pub reward_id: Uuid,
         pub twitch_id: Uuid,
 
+        pub created_at: Option<OffsetDateTime>,
+
         // This might need to be text
         // optional might FUCKING US
         pub user_input: Option<String>,
@@ -30,9 +33,9 @@ impl redemptions::Model {
             Self,
             r#"
             INSERT INTO redemptions 
-            (title, cost, user_name, twitch_id, reward_id, user_input)
-            VALUES ( $1, $2, $3, $4, $5, $6)
-            RETURNING title, cost, user_name, twitch_id, reward_id, user_input
+            (title, cost, user_name, twitch_id, reward_id, user_input, created_at)
+            VALUES ( $1, $2, $3, $4, $5, $6, $7)
+            RETURNING title, cost, user_name, twitch_id, reward_id, user_input, created_at
         "#,
             self.title,
             self.cost,
@@ -40,6 +43,7 @@ impl redemptions::Model {
             self.twitch_id,
             self.reward_id,
             self.user_input,
+            self.created_at,
         )
         .fetch_one(pool)
         .await?)
@@ -89,6 +93,17 @@ pub async fn find_redemption_by_reward_id(
         .fetch_one(pool)
         .await
 }
+
+pub async fn find_recent_rewards(pool: &PgPool) -> Result<Vec<Uuid>> {
+    // I want all from the Last hour
+    let res = sqlx::query!("SELECT reward_id FROM redemptions WHERE created_at >= now() - interval '60 minutes'")
+        .fetch_all(pool)
+        .await;
+
+    let ids: Vec<Uuid> = res.unwrap().iter().map(|r| r.reward_id).collect();
+    Ok(ids)
+}
+
 //
 // pub async fn turn_off_global_voice(pool: &PgPool) -> Result<()> {
 //     let _res =

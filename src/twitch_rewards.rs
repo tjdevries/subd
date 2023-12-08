@@ -108,6 +108,31 @@ pub async fn find_by_title(
 
 pub async fn find_all_ids_except(
     pool: &sqlx::PgPool,
+    current_reward_id: Uuid,
+) -> Result<Vec<(Uuid, i32)>> {
+    let res = sqlx::query!(
+        r#"
+            SELECT tw.twitch_id, tw.cost
+            FROM twitch_rewards tw
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM redemptions red
+                WHERE red.reward_id = tw.twitch_id 
+                AND red.reward_id != $1
+                AND red.created_at >= now() - interval '60 minutes'
+            );
+        "#,
+        current_reward_id,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let uuids = res.iter().map(|r| (r.twitch_id, r.cost)).collect();
+    Ok(uuids)
+}
+
+pub async fn find_all_ids_for_twitch_id(
+    pool: &sqlx::PgPool,
     twitch_id: Uuid,
 ) -> Result<Vec<(Uuid, i32)>> {
     let id = twitch_id.to_string();

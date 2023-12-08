@@ -305,6 +305,8 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             let decrease_mult = 0.8;
 
             let reward_cost_as_float = reward_cost as f32;
+
+            // We are trying to only get the redemptions that didn't happen in the last 60 mins
             let other_ids =
                 twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
 
