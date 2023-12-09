@@ -1,28 +1,19 @@
 extern crate reqwest;
-use std::io;
 extern crate serde;
 extern crate serde_json;
-use crate::skybox;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::env;
-use std::fs::File;
+use std::time::Duration;
 use subd_types::Event;
 use tokio;
 use tokio::sync::broadcast;
+use tokio::time::sleep;
 
-// use chrono::prelude::*;
-// use serde_json::json;
-// use std::io;
-// use std::io::prelude::*;
-
-static SKYBOX_STATUS_URL: &str =
-    "https://backend.blockadelabs.com/api/v1/imagine/requests";
+// static SKYBOX_STATUS_URL: &str =
+//     "https://backend.blockadelabs.com/api/v1/imagine/requests";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GeneratorData {
@@ -74,32 +65,26 @@ pub struct SkyboxStatusHandler {
     pub obs_client: OBSClient,
 }
 
+// This should be moved into a handlers/ folder
 #[async_trait]
 #[allow(unused_variables)]
 impl EventHandler for SkyboxStatusHandler {
     async fn handle(
         self: Box<Self>,
-        tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
+        _tx: broadcast::Sender<Event>,
+        _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
-            let event = rx.recv().await?;
-            let request = match event {
-                Event::SkyboxRequest(msg) => msg,
-                _ => continue,
-            };
+            // do we wait for events???
+            // let event = rx.recv().await?;
+            // let request = match event {
+            //     Event::SkyboxRequest(msg) => msg,
+            //     _ => continue,
+            // };
 
-            // We don't just need to call request here
-            // this event isn't just pure request
-            // we need to start somewhere else
-            println!("Attempting to Skybox");
-            // request_skybox(request.msg).await?;
-
-            // Can I kick off another loop???
-
-            // TODO: we will need to trigger the skybox OBS source
-            // to refresh, after we get an updated Skybox
-            // AND generate a fresh HTML page using pannellum
+            // Check DB
+            // Sleep 60 seconds
+            sleep(Duration::from_secs(60)).await;
         }
     }
 }

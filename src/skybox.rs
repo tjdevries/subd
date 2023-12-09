@@ -4,20 +4,26 @@ use chrono::Utc;
 use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
+use std::io;
 use std::io::Write;
 
 static SKYBOX_STATUS_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine/requests";
+
+static SKYBOX_REMIX_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/skybox";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OuterSkyboxStatusResponse {
     request: SkyboxStatusResponse,
 }
 
+// TODO: Consider this name
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SkyboxStatusResponse {
     id: i32,
@@ -170,13 +176,77 @@ pub async fn check_skybox_status(id: i32) -> Result<()> {
     Ok(())
 }
 
+// TODO: add the logic for this later
+#[allow(dead_code)]
+#[allow(unused_variables)]
+fn find_style_id(words: Vec<&str>) -> i32 {
+    // What is a good default style ID
+    return 1;
+}
+
+pub async fn request_skybox(prompt: String) -> io::Result<String> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+
+    // https://backend.blockadelabs.com/api/v1/skybox
+    let requests_url =
+        format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
+
+    // Do we need to trim start
+    // orjshould this done before i'ts passed
+    let prompt = prompt.trim_start().to_string();
+
+    // Why???
+    let words: Vec<&str> = prompt.split_whitespace().collect();
+
+    // This returns a static style currently
+    let skybox_style_id = find_style_id(words);
+
+    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
+
+    // return Ok(String::from("this a hack"));
+
+    let post_body = json!({
+        "prompt": prompt,
+        // "generator": "stable-skybox",
+        // "skybox_style_id": skybox_style_id,
+    });
+
+    let client = Client::new();
+    let resp = client
+        .post(&requests_url)
+        .json(&post_body)
+        .send()
+        .await
+        .unwrap();
+
+    let body = resp.text().await.unwrap();
+    let bytes = body.as_bytes();
+
+    let t = Utc::now();
+    let response_filepath = format!("./tmp/skybox_{}.json", t);
+
+    // I need a parsed out body, to save
+    let mut file = File::create(response_filepath.clone())?;
+    file.write_all(bytes)?;
+
+    // let model = skybox::Skybox
+
+    // if we start saving in the DB here
+
+    // We need to parse the response
+    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
+    // if our AI generated bg is done
+    Ok(response_filepath)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::skybox;
 
     #[tokio::test]
     async fn test_time() {
-        let _ = skybox::check_skybox_status(9612607).await;
-        assert_eq!(1, 2);
+        // let _ = skybox::check_skybox_status(9612607).await;
+        let _ =
+            skybox::request_skybox("a lush magical castle".to_string()).await;
     }
 }

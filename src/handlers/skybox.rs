@@ -4,19 +4,19 @@ extern crate serde_json;
 use crate::skybox;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::prelude::*;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::env;
-use std::fs::File;
-use std::io;
-use std::io::prelude::*;
 use subd_types::Event;
 use tokio;
 use tokio::sync::broadcast;
+// use chrono::prelude::*;
+// use reqwest::Client;
+// use serde_json::json;
+// use std::env;
+// use std::fs::File;
+// use std::io::prelude::*;
+// use std::io;
 
 #[allow(dead_code)]
 pub struct Skybox {
@@ -51,7 +51,7 @@ impl EventHandler for SkyboxHandler {
             // this event isn't just pure request
             // we need to start somewhere else
             println!("Attempting to Skybox");
-            request_skybox(request.msg).await?;
+            skybox::request_skybox(request.msg).await?;
 
             // Can I kick off another loop???
 
@@ -72,10 +72,6 @@ impl EventHandler for SkyboxHandler {
 #[allow(dead_code)]
 static SKYBOX_STATUS_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine/requests";
-
-static SKYBOX_REMIX_URL: &str =
-    "https://backend.blockadelabs.com/api/v1/skybox";
-
 static SKYBOX_IMAGINE_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine";
 
@@ -154,14 +150,6 @@ pub struct Response {
     pub user_imaginarium_image_left: i32,
 }
 
-// TODO: add the logic for this later
-#[allow(dead_code)]
-#[allow(unused_variables)]
-fn find_style_id(words: Vec<&str>) -> i32 {
-    // What is a good default style ID
-    return 1;
-}
-
 // Why are we passing the API Key in the URL?
 #[allow(dead_code)]
 async fn request_status(id: &str) -> Result<Response> {
@@ -193,55 +181,3 @@ async fn request_status(id: &str) -> Result<Response> {
 //     let skybox_remix_response_file_path = "/home/begin/code/subd/tmp/skybox_archive";
 //     Ok(skybox_remix_response_file_path)
 // }
-
-async fn request_skybox(prompt: String) -> io::Result<String> {
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-
-    // https://backend.blockadelabs.com/api/v1/skybox
-    let requests_url =
-        format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
-
-    // Do we need to trim start
-    // orjshould this done before i'ts passed
-    let prompt = prompt.trim_start().to_string();
-
-    // Why???
-    let words: Vec<&str> = prompt.split_whitespace().collect();
-
-    // This returns a static style currently
-    let skybox_style_id = find_style_id(words);
-
-    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
-
-    // return Ok(String::from("this a hack"));
-
-    let post_body = json!({
-        "prompt": prompt,
-        // "generator": "stable-skybox",
-        // "skybox_style_id": skybox_style_id,
-    });
-
-    let client = Client::new();
-    let resp = client
-        .post(&requests_url)
-        .json(&post_body)
-        .send()
-        .await
-        .unwrap();
-
-    let body = resp.text().await.unwrap();
-    let bytes = body.as_bytes();
-
-    let t = Utc::now();
-    // so I think this path should be relative
-    let response_filepath = format!("./tmp/skybox_{}.json", t);
-
-    // I need a parsed out body, to save
-    let mut file = File::create(response_filepath.clone())?;
-    file.write_all(bytes)?;
-
-    // We need to parse the response
-    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
-    // if our AI generated bg is done
-    Ok(response_filepath)
-}
