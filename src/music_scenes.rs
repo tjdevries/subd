@@ -23,6 +23,14 @@ pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
         },
     ),
     (
+        "!comedy",
+        NewVoiceScene {
+            voice: "Fin",
+            music: "Comedy",
+            playlist_folder: Some("Comedy"),
+        },
+    ),
+    (
         "!bond",
         NewVoiceScene {
             voice: "james",

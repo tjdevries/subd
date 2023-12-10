@@ -245,8 +245,9 @@ pub async fn handle_obs_commands(
                 &broadcaster_id,
             );
 
+            // WE could make this more dynamic
             for scene in ai_scenes.scenes {
-                if scene.voice == "josh" {
+                if scene.reward_title == "Comedy Trailer" {
                     let cost = scene.cost * 10;
                     let res = reward_manager
                         .create_reward(&scene.reward_title, cost)
