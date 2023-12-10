@@ -23,6 +23,9 @@ pub struct SkyboxStatusHandler {
     pub pool: sqlx::PgPool,
 }
 
+static SKYBOX_SCENE: &str = "SkyboxScene";
+static SKYBOX_SOURCE: &str = "skybox";
+
 // This should be moved into a handlers/ folder
 #[async_trait]
 #[allow(unused_variables)]
@@ -91,19 +94,16 @@ impl EventHandler for SkyboxStatusHandler {
                             let render = skybox_template.render().unwrap();
                             file.write_all(render.as_bytes()).unwrap();
 
-                            let scene = "Primary";
-                            let source = "skybox";
-
                             let _ = obs_source::hide_source(
-                                scene,
-                                source,
+                                SKYBOX_SCENE,
+                                SKYBOX_SOURCE,
                                 &self.obs_client,
                             )
                             .await;
                             sleep(Duration::from_secs(1)).await;
                             let _ = obs_source::show_source(
-                                scene,
-                                source,
+                                SKYBOX_SCENE,
+                                SKYBOX_SOURCE,
                                 &self.obs_client,
                             )
                             .await;
@@ -114,8 +114,6 @@ impl EventHandler for SkyboxStatusHandler {
                     }
                 };
             }
-
-            // println!("Sleep Time!");
 
             sleep(Duration::from_secs(5)).await;
         }

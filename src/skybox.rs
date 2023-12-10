@@ -165,12 +165,15 @@ pub async fn check_skybox_status_and_save(id: i32) -> Result<()> {
             .bytes()
             .await?
             .to_vec();
+
         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
         let unique_identifier = format!("{}_{}", timestamp, request.id);
         let archive_file =
             format!("./archive/skybox/{}.png", unique_identifier);
+
         let mut file = File::create(archive_file).unwrap();
         file.write_all(&image_data).unwrap();
+
         let skybox_template = SkyboxTemplate { url: &file_url };
         let new_skybox = "./build/skybox.html";
         let mut file = File::create(new_skybox).unwrap();
@@ -232,10 +235,8 @@ pub async fn request_skybox(
     let body = resp.text().await.unwrap();
     let bytes = body.as_bytes();
 
-    let outer_response: SkyboxStatusResponse =
+    let skybox_request: SkyboxStatusResponse =
         serde_json::from_str(&body).unwrap();
-
-    let skybox_request = outer_response;
 
     let t = Utc::now();
     let response_filepath = format!("./tmp/skybox_{}.json", t);

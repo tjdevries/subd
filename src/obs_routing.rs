@@ -939,9 +939,9 @@ pub async fn handle_obs_commands(
 
         // We need to eventually take in style IDs
         "!skybox" => {
-            if not_beginbot {
-                return Ok(());
-            }
+            // if not_beginbot {
+            //     return Ok(());
+            // }
             println!("Trying Skybox");
 
             let skybox_info = splitmsg
