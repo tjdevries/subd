@@ -246,22 +246,25 @@ pub async fn handle_obs_commands(
             );
 
             for scene in ai_scenes.scenes {
-                let cost = scene.cost * 10;
-                let res = reward_manager
-                    .create_reward(&scene.reward_title, cost)
-                    .await?;
+                if scene.voice == "josh" {
+                        
+                    let cost = scene.cost * 10; 
+                    let res = reward_manager
+                        .create_reward(&scene.reward_title, cost)
+                        .await?;
 
-                let reward_id = res.as_str();
-                let reward_id = Uuid::parse_str(reward_id)?;
+                    let reward_id = res.as_str();
+                    let reward_id = Uuid::parse_str(reward_id)?;
 
-                let _ = twitch_rewards::save_twitch_rewards(
-                    &pool.clone(),
-                    scene.reward_title,
-                    cost,
-                    reward_id,
-                    true,
-                )
-                .await;
+                    let _ = twitch_rewards::save_twitch_rewards(
+                        &pool.clone(),
+                        scene.reward_title,
+                        cost,
+                        reward_id,
+                        true,
+                    )
+                    .await;
+                } 
             }
 
             Ok(())

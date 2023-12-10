@@ -15,6 +15,14 @@ pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
         },
     ),
     (
+        "!horror",
+        NewVoiceScene {
+            voice: "josh",
+            music: "Horror",
+            playlist_folder: Some("Horror"),
+        },
+    ),
+    (
         "!bond",
         NewVoiceScene {
             voice: "james",
