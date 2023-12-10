@@ -184,7 +184,7 @@ pub async fn styles_for_chat() -> String {
     match res {
         Ok(styles) => styles
             .iter()
-            .map(|s| format!("{} - {} |", s.skybox_style_id, s.name))
+            .map(|s| format!("{} - {},", s.skybox_style_id, s.name))
             .collect::<String>(),
         Err(_) => default_val.clone(),
     }

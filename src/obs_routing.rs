@@ -1073,7 +1073,9 @@ fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
         current_count += 1;
 
         // Check if the current character is a space or we reached the end of the string
-        if ch.is_whitespace() || idx == s.len() - 1 {
+        // if ch.is_whitespace() || idx == s.len() - 1 {
+
+        if ch.to_string() == "," || idx == s.len() - 1 {
             if current_count >= chunk_size {
                 chunks.push(s[last_split..=idx].to_string());
 
@@ -1096,9 +1098,10 @@ mod tests {
 
     #[test]
     fn test_chunk_string() {
-        let input = "hello now";
+        let input = "hello, now";
         let strs = chunk_string(input, 4);
         assert_eq!(strs[0], "hello ");
+        assert_eq!(strs[1], "now");
         assert_eq!(strs.len(), 2);
     }
 
