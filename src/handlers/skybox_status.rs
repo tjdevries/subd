@@ -10,9 +10,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::io;
 use std::io::Write;
 use std::time::Duration;
 use subd_types::Event;
@@ -119,7 +117,7 @@ impl EventHandler for SkyboxStatusHandler {
 
             // println!("Sleep Time!");
 
-            sleep(Duration::from_secs(60)).await;
+            sleep(Duration::from_secs(5)).await;
         }
     }
 }
