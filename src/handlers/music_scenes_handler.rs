@@ -137,9 +137,6 @@ async fn handle_commands(
                                     .await
                                     .unwrap();
 
-                                // println!("Enabled: {}", enabled);
-                                // println!("Item: {:?}", item);
-
                                 if enabled && item.source_name == details.music
                                 {
                                     println!("We are just changing the music!");

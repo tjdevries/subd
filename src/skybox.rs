@@ -1,3 +1,4 @@
+use crate::skybox_requests;
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
@@ -24,46 +25,46 @@ pub struct OuterSkyboxStatusResponse {
 }
 
 // TODO: Consider this name
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SkyboxStatusResponse {
-    id: i32,
-    obfuscated_id: String,
-    user_id: i32,
-    api_key_id: i32,
-    title: String,
-    seed: i32,
-    negative_text: Option<String>,
-    prompt: String,
-    username: String,
-    status: String,
-    queue_position: i32,
-    file_url: String,
-    thumb_url: String,
-    depth_map_url: String,
-    remix_imagine_id: Option<i32>,
-    remix_obfuscated_id: Option<String>,
+    pub id: i32,
+    pub obfuscated_id: String,
+    pub user_id: i32,
+    pub api_key_id: i32,
+    pub title: String,
+    pub seed: i32,
+    pub negative_text: Option<String>,
+    pub prompt: String,
+    pub username: String,
+    pub status: String,
+    pub queue_position: i32,
+    pub file_url: String,
+    pub thumb_url: String,
+    pub depth_map_url: String,
+    pub remix_imagine_id: Option<i32>,
+    pub remix_obfuscated_id: Option<String>,
     #[serde(rename = "isMyFavorite")]
-    is_my_favorite: bool,
+    pub is_my_favorite: bool,
     #[serde(rename = "created_at")]
-    created_at: String,
+    pub created_at: String,
     #[serde(rename = "updated_at")]
-    updated_at: String,
-    error_message: Option<String>,
-    pusher_channel: String,
-    pusher_event: String,
+    pub updated_at: String,
+    pub error_message: Option<String>,
+    pub pusher_channel: String,
+    pub pusher_event: String,
     #[serde(rename = "type")]
-    item_type: String,
-    skybox_style_id: i32,
-    skybox_id: i32,
-    skybox_style_name: String,
-    skybox_name: String,
+    pub item_type: String,
+    pub skybox_style_id: i32,
+    pub skybox_id: i32,
+    pub skybox_style_name: String,
+    pub skybox_name: String,
 }
 
 #[derive(Template)] // this will generate the code...
 #[template(path = "skybox.html")] // using the template in this path, relative
-struct SkyboxTemplate<'a> {
+pub struct SkyboxTemplate<'a> {
     // the name of the struct can be anything
-    url: &'a str, // the field name should match the variable name
+    pub url: &'a str, // the field name should match the variable name
 }
 
 // OBS_filter_name
@@ -131,21 +132,30 @@ pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub async fn check_skybox_status(id: i32) -> Result<()> {
+// TODO: refactor this, so we don't
+pub async fn check_skybox_status(id: i32) -> Result<SkyboxStatusResponse> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
 
-    // https://backend.blockadelabs.com/api/v1/skybox
-    // https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
     let requests_url =
         format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
     let client = Client::new();
     let resp = client.get(&requests_url).send().await.unwrap();
 
     println!("Skybox Status: {:?}", resp.status());
-    // println!("Skybox Text: {:?}", resp.text().await);
     let body = resp.json::<OuterSkyboxStatusResponse>().await?;
+    Ok(body.request)
+}
 
-    let file_url = body.request.file_url;
+// https://api-documentation.blockadelabs.com/api/skybox.html#get-skybox-by-id
+pub async fn check_skybox_status_and_save(id: i32) -> Result<()> {
+    let request = match check_skybox_status(id).await {
+        Ok(skybox_status) => skybox_status,
+        Err(e) => {
+            println!("Error Checking Skybox Status: {}", e);
+            return Ok(());
+        }
+    };
+    let file_url = request.file_url;
 
     if file_url != "" {
         println!("File URL: {}", file_url);
@@ -155,23 +165,20 @@ pub async fn check_skybox_status(id: i32) -> Result<()> {
             .bytes()
             .await?
             .to_vec();
-
         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-        let unique_identifier = format!("{}_{}", timestamp, body.request.id);
+        let unique_identifier = format!("{}_{}", timestamp, request.id);
         let archive_file =
             format!("./archive/skybox/{}.png", unique_identifier);
-
         let mut file = File::create(archive_file).unwrap();
         file.write_all(&image_data).unwrap();
-
         let skybox_template = SkyboxTemplate { url: &file_url };
         let new_skybox = "./build/skybox.html";
         let mut file = File::create(new_skybox).unwrap();
         let render = skybox_template.render().unwrap();
         file.write_all(render.as_bytes()).unwrap();
 
-        // Where can I save thijs
-        println!("{}", skybox_template.render().unwrap());
+        // we need to save to the DB
+        // We need to trigger OBS
     }
     Ok(())
 }
@@ -184,7 +191,10 @@ fn find_style_id(words: Vec<&str>) -> i32 {
     return 1;
 }
 
-pub async fn request_skybox(prompt: String) -> io::Result<String> {
+pub async fn request_skybox(
+    pool: sqlx::PgPool,
+    prompt: String,
+) -> io::Result<String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
 
     // https://backend.blockadelabs.com/api/v1/skybox
@@ -201,7 +211,7 @@ pub async fn request_skybox(prompt: String) -> io::Result<String> {
     // This returns a static style currently
     let skybox_style_id = find_style_id(words);
 
-    println!("Generating Skybox w/ Custom Skybox ID: {}", skybox_style_id);
+    // println!("Generating Skybox w/ Custom Style ID: {}", skybox_style_id);
 
     // return Ok(String::from("this a hack"));
 
@@ -222,20 +232,26 @@ pub async fn request_skybox(prompt: String) -> io::Result<String> {
     let body = resp.text().await.unwrap();
     let bytes = body.as_bytes();
 
+    let outer_response: SkyboxStatusResponse =
+        serde_json::from_str(&body).unwrap();
+
+    let skybox_request = outer_response;
+
     let t = Utc::now();
     let response_filepath = format!("./tmp/skybox_{}.json", t);
 
-    // I need a parsed out body, to save
     let mut file = File::create(response_filepath.clone())?;
     file.write_all(bytes)?;
 
-    // let model = skybox::Skybox
+    let _ = skybox_requests::save_skybox_request(
+        &pool,
+        skybox_request.id,
+        prompt,
+        skybox_style_id,
+        skybox_request.username,
+    )
+    .await;
 
-    // if we start saving in the DB here
-
-    // We need to parse the response
-    // we need to get the idea, and kick off aprocess that checks Skybox every X seconds
-    // if our AI generated bg is done
     Ok(response_filepath)
 }
 
@@ -246,7 +262,7 @@ mod tests {
     #[tokio::test]
     async fn test_time() {
         // let _ = skybox::check_skybox_status(9612607).await;
-        let _ =
-            skybox::request_skybox("a lush magical castle".to_string()).await;
+        // let _ =
+        //     skybox::request_skybox("a lush magical castle".to_string()).await;
     }
 }

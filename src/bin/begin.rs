@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use server::ai_scenes;
 use server::audio;
 use server::handlers;
-// use server::uberduck;
+//use server::uberduck;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
@@ -148,7 +148,7 @@ async fn main() -> Result<()> {
 
     // Can we delete?
 
-    // Elevenlabs/Uberduck handles voice messages
+    // // Elevenlabs/Uberduck handles voice messages
     // let elevenlabs_auth = Auth::from_env().unwrap();
     // let elevenlabs =
     //     Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
@@ -206,11 +206,17 @@ async fn main() -> Result<()> {
 
     // Skyboxes
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop.push(handlers::skybox::SkyboxHandler { obs_client });
+    event_loop.push(handlers::skybox::SkyboxHandler {
+        obs_client,
+        pool: pool.clone(),
+    });
 
+    // This checks if Skyboxes are done, every 60 seconds
     let obs_client = server::obs::create_obs_client().await?;
-    event_loop
-        .push(handlers::skybox_status::SkyboxStatusHandler { obs_client });
+    event_loop.push(handlers::skybox_status::SkyboxStatusHandler {
+        obs_client,
+        pool: pool.clone(),
+    });
 
     // // OBS Stream Characters are controlled here
     let obs_client = server::obs::create_obs_client().await?;

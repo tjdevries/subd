@@ -98,6 +98,7 @@ CREATE TABLE skybox_requests (
   prompt TEXT NOT NULL,
   skybox_style_id INT NOT NULL,
   file_url TEXT, 
+  username  TEXT NOT NULL,
   
   created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   completed_at  TIMESTAMPTZ

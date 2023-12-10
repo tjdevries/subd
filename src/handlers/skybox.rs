@@ -25,11 +25,7 @@ pub struct Skybox {
 
 pub struct SkyboxHandler {
     pub obs_client: OBSClient,
-}
-
-#[allow(dead_code)]
-pub struct SkyboxRemixHandler {
-    pub obs_client: OBSClient,
+    pub pool: sqlx::PgPool,
 }
 
 #[async_trait]
@@ -51,7 +47,7 @@ impl EventHandler for SkyboxHandler {
             // this event isn't just pure request
             // we need to start somewhere else
             println!("Attempting to Skybox");
-            skybox::request_skybox(request.msg).await?;
+            skybox::request_skybox(self.pool.clone(), request.msg).await?;
 
             // Can I kick off another loop???
 

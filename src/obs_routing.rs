@@ -1,3 +1,4 @@
+
 use crate::ai_scenes;
 use crate::bootstrap;
 use crate::move_transition;
@@ -8,7 +9,7 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
-use crate::skybox::check_skybox_status;
+use crate::skybox::check_skybox_status_and_save;
 use crate::twitch_rewards;
 use rand::Rng;
 use std::env;
@@ -933,7 +934,7 @@ pub async fn handle_obs_commands(
             }
 
             // obs_client
-            let _ = check_skybox_status(9612607).await;
+            let _ = check_skybox_status_and_save(9612607).await;
             Ok(())
         }
 
