@@ -1100,8 +1100,8 @@ mod tests {
     fn test_chunk_string() {
         let input = "hello, now";
         let strs = chunk_string(input, 4);
-        assert_eq!(strs[0], "hello ");
-        assert_eq!(strs[1], "now");
+        assert_eq!(strs[0], "hello,");
+        assert_eq!(strs[1], " now");
         assert_eq!(strs.len(), 2);
     }
 
