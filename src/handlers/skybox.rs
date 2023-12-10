@@ -18,9 +18,11 @@ use tokio::sync::broadcast;
 // use std::io::prelude::*;
 // use std::io;
 
+// TODO: is this dead????
 #[allow(dead_code)]
 pub struct Skybox {
     pub name: String,
+    pub style_id: i32,
 }
 
 pub struct SkyboxHandler {
@@ -47,7 +49,12 @@ impl EventHandler for SkyboxHandler {
             // this event isn't just pure request
             // we need to start somewhere else
             println!("Attempting to Skybox");
-            skybox::request_skybox(self.pool.clone(), request.msg).await?;
+            skybox::request_skybox(
+                self.pool.clone(),
+                request.msg,
+                request.style_id,
+            )
+            .await?;
 
             // Can I kick off another loop???
 

@@ -942,17 +942,34 @@ pub async fn handle_obs_commands(
             // if not_beginbot {
             //     return Ok(());
             // }
-            println!("Trying Skybox");
+            // println!("Trying Skybox");
+            // // What is the range of acceptalbe Stylebox Ids
+            // let potential_style_id = splitmsg.get(1).unwrap_or("1".to_string())
+            // This will depend the type of 1
+            let style_id = find_style_id(splitmsg.clone());
 
-            let skybox_info = splitmsg
-                .clone()
-                .into_iter()
-                .skip(1)
-                .collect::<Vec<String>>()
-                .join(" ");
+            println!("\tStyle ID: {}", style_id);
 
+            let skybox_info = if style_id == 1 {
+                splitmsg
+                    .clone()
+                    .into_iter()
+                    .skip(1)
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            } else {
+                splitmsg
+                    .clone()
+                    .into_iter()
+                    .skip(2)
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            };
+
+            // we need to parse off style box ID
             let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest {
                 msg: skybox_info,
+                style_id,
             }));
 
             // let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
@@ -1039,4 +1056,59 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
         ("ease-out", 2),
         ("ease-in-and-out", 3),
     ])
+}
+
+fn find_style_id(splitmsg: Vec<String>) -> i32 {
+    println!("\t Splitmsg: {:?}", splitmsg);
+    // TODO: Do a search on Blockade ID for the values
+    let range = 1..10;
+    let default_style_id = 1;
+
+    match splitmsg.get(1) {
+        Some(val) => match val.parse::<i32>() {
+            Ok(iv) => {
+                if range.contains(&iv) {
+                    return iv;
+                } else {
+                    return default_style_id;
+                }
+            }
+            Err(_) => {
+                return default_style_id;
+            }
+        },
+        None => {
+            return default_style_id;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_skybox() {
+        // We want the style_id returned
+        let splitmsg: Vec<String> = vec![
+            "!skybox".to_string(),
+            "3".to_string(),
+            "A Cool House".to_string(),
+        ];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 3);
+
+        let splitmsg: Vec<String> =
+            vec!["!skybox".to_string(), "A Cool House".to_string()];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 1);
+
+        let splitmsg: Vec<String> = vec![
+            "!skybox".to_string(),
+            "69".to_string(),
+            "A Cool House".to_string(),
+        ];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 1);
+    }
 }

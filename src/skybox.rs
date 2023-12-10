@@ -186,17 +186,10 @@ pub async fn check_skybox_status_and_save(id: i32) -> Result<()> {
     Ok(())
 }
 
-// TODO: add the logic for this later
-#[allow(dead_code)]
-#[allow(unused_variables)]
-fn find_style_id(words: Vec<&str>) -> i32 {
-    // What is a good default style ID
-    return 1;
-}
-
 pub async fn request_skybox(
     pool: sqlx::PgPool,
     prompt: String,
+    style_id: i32,
 ) -> io::Result<String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
 
@@ -204,24 +197,12 @@ pub async fn request_skybox(
     let requests_url =
         format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
 
-    // Do we need to trim start
-    // orjshould this done before i'ts passed
     let prompt = prompt.trim_start().to_string();
-
-    // Why???
-    let words: Vec<&str> = prompt.split_whitespace().collect();
-
-    // This returns a static style currently
-    let skybox_style_id = find_style_id(words);
-
-    // println!("Generating Skybox w/ Custom Style ID: {}", skybox_style_id);
-
-    // return Ok(String::from("this a hack"));
 
     let post_body = json!({
         "prompt": prompt,
+        "skybox_style_id": style_id,
         // "generator": "stable-skybox",
-        // "skybox_style_id": skybox_style_id,
     });
 
     let client = Client::new();
@@ -248,7 +229,7 @@ pub async fn request_skybox(
         &pool,
         skybox_request.id,
         prompt,
-        skybox_style_id,
+        style_id,
         skybox_request.username,
     )
     .await;

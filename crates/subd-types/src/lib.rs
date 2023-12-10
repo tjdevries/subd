@@ -98,6 +98,7 @@ pub struct SourceVisibilityRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SkyboxRequest {
     pub msg: String,
+    pub style_id: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
