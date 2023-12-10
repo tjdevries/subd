@@ -30,7 +30,7 @@ use tokio::sync::broadcast;
 // use std::sync::Mutex;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-// use twitch_chat::send_message;
+use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -96,8 +96,8 @@ impl EventHandler for ElevenLabsHandler {
 
         loop {
             let event = rx.recv().await?;
+
             let msg = match event {
-                // TODO: rename UberDuckRequest to ElevenLabsRequest
                 Event::ElevenLabsRequest(msg) => msg,
                 _ => continue,
             };

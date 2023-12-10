@@ -247,8 +247,7 @@ pub async fn handle_obs_commands(
 
             for scene in ai_scenes.scenes {
                 if scene.voice == "josh" {
-                        
-                    let cost = scene.cost * 10; 
+                    let cost = scene.cost * 10;
                     let res = reward_manager
                         .create_reward(&scene.reward_title, cost)
                         .await?;
@@ -264,7 +263,7 @@ pub async fn handle_obs_commands(
                         true,
                     )
                     .await;
-                } 
+                }
             }
 
             Ok(())
