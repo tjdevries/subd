@@ -908,21 +908,15 @@ pub async fn handle_obs_commands(
         }
 
         // This needs to take an ID
-        "!styles" => {
-            let go_executable_path =
-                "/home/begin/code/BeginGPT/GoBeginGPT/bin/GoBeginGPT";
-            let styles_flag = "-styles";
-            let output = Command::new(go_executable_path)
-                .arg(styles_flag)
-                .output()
-                .expect("Failed to execute Go program.");
+        "!skybox_styles" => {
+            let styles = skybox::styles_for_chat().await;
+            println!("\n\nStyles Time: {:?}", styles);
 
-            if output.status.success() {
-                let result = String::from_utf8_lossy(&output.stdout);
-                println!("Output: {}", result);
-            } else {
-                let error = String::from_utf8_lossy(&output.stderr);
-                eprintln!("Error: {}", error);
+            // So we think this code isn't returning all chunks
+            let chunks = chunk_string(&styles, 500);
+            for chunk in chunks {
+                println!("Chunk: {}", chunk);
+                send_message(twitch_client, chunk).await?;
             }
             Ok(())
         }
@@ -942,12 +936,7 @@ pub async fn handle_obs_commands(
             // if not_beginbot {
             //     return Ok(());
             // }
-            // println!("Trying Skybox");
-            // // What is the range of acceptalbe Stylebox Ids
-            // let potential_style_id = splitmsg.get(1).unwrap_or("1".to_string())
-            // This will depend the type of 1
             let style_id = find_style_id(splitmsg.clone());
-
             println!("\tStyle ID: {}", style_id);
 
             let skybox_info = if style_id == 1 {
@@ -966,18 +955,10 @@ pub async fn handle_obs_commands(
                     .join(" ")
             };
 
-            // we need to parse off style box ID
             let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest {
                 msg: skybox_info,
                 style_id,
             }));
-
-            // let file_path = "/home/begin/code/BeginGPT/tmp/current/skybox.txt";
-            // if let Err(e) = write_to_file(file_path, &skybox_info) {
-            //     eprintln!("Error writing to file: {}", e);
-            // }
-            //
-            // println!("Attempting to Generate Skybox! {}", skybox_info);
 
             Ok(())
         }
@@ -1061,7 +1042,7 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
 fn find_style_id(splitmsg: Vec<String>) -> i32 {
     println!("\t Splitmsg: {:?}", splitmsg);
     // TODO: Do a search on Blockade ID for the values
-    let range = 1..10;
+    let range = 1..47;
     let default_style_id = 1;
 
     match splitmsg.get(1) {
@@ -1083,12 +1064,46 @@ fn find_style_id(splitmsg: Vec<String>) -> i32 {
     }
 }
 
+fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut last_split = 0;
+    let mut current_count = 0;
+
+    for (idx, ch) in s.char_indices() {
+        current_count += 1;
+
+        // Check if the current character is a space or we reached the end of the string
+        if ch.is_whitespace() || idx == s.len() - 1 {
+            if current_count >= chunk_size {
+                chunks.push(s[last_split..=idx].to_string());
+
+                last_split = idx + 1;
+                current_count = 0;
+            }
+        }
+    }
+
+    if last_split < s.len() {
+        chunks.push(s[last_split..].to_string());
+    }
+
+    chunks
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_chunk_string() {
+        let input = "hello now";
+        let strs = chunk_string(input, 4);
+        assert_eq!(strs[0], "hello ");
+        assert_eq!(strs.len(), 2);
+    }
+
     #[tokio::test]
-    async fn test_skybox() {
+    async fn test_find_style_id() {
         // We want the style_id returned
         let splitmsg: Vec<String> = vec![
             "!skybox".to_string(),

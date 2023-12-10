@@ -16,8 +16,25 @@ use std::io::Write;
 static SKYBOX_STATUS_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine/requests";
 
+static SKYBOX_STYLES_URL: &str =
+    "https://backend.blockadelabs.com/api/v1/skybox/styles";
+
 static SKYBOX_REMIX_URL: &str =
     "https://backend.blockadelabs.com/api/v1/skybox";
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SkyboxStyle {
+    #[serde(rename = "id")]
+    pub skybox_style_id: i32,
+    pub name: String,
+    #[serde(rename = "max-char")]
+    pub max_char: u32,
+    #[serde(rename = "negative-text-max-char")]
+    pub negative_text_max_char: u32,
+    pub image: Option<String>,
+    pub sort_order: i32,
+    pub premium: i32,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OuterSkyboxStatusResponse {
@@ -130,6 +147,47 @@ pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
     let mut file = fs::File::create(file_path)?;
     file.write_all(content.as_bytes())?;
     Ok(())
+}
+
+pub async fn check_styles() -> Result<Vec<SkyboxStyle>> {
+    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+
+    let requests_url =
+        format!("{}?api_key={}", SKYBOX_STYLES_URL, skybox_api_key);
+    let client = Client::new();
+    let resp = client.get(&requests_url).send().await.unwrap();
+
+    println!("Skybox Styles: {:?}", resp.status());
+
+    // Let's save this json
+    let body = resp.text().await?;
+
+    let mut file = File::create("./tmp/skybox_styles.json")?;
+    file.write_all(body.as_bytes())?;
+
+    // Try to parse the String as JSON
+    match serde_json::from_str::<Vec<SkyboxStyle>>(&body) {
+        Ok(parsed) => Ok(parsed),
+        Err(e) => {
+            // If parsing fails, print the error and the raw body for debugging
+            eprintln!("Failed to parse JSON: {}", e);
+            eprintln!("Raw response body: {}", body);
+            Err(e.into()) // Convert the serde_json::Error into a reqwest::Error
+        }
+    }
+}
+
+pub async fn styles_for_chat() -> String {
+    let default_val = "".to_string();
+    let res = check_styles().await;
+
+    match res {
+        Ok(styles) => styles
+            .iter()
+            .map(|s| format!("{} - {} |", s.skybox_style_id, s.name))
+            .collect::<String>(),
+        Err(_) => default_val.clone(),
+    }
 }
 
 // TODO: refactor this, so we don't

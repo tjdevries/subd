@@ -262,9 +262,18 @@ pub async fn send_message<
 ) -> Result<()> {
     let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
     let str_msg = msg.into();
-    let err = client
+    // We don't know how to chunk without breaking out current program
+    // let chunk_size = 500;
+    // for chunk in chunk_string(&str_msg, chunk_size) {
+    //     let _ = client
+    //         .say(twitch_username.to_string(), chunk)
+    //         .await?;
+    // }
+    //
+
+    let _ = client
         .say(twitch_username.to_string(), str_msg.clone())
         .await?;
-    println!("Twitch Send Message err: {:?} - {:?}", err, str_msg);
+    println!("Twitch Send Message: {:?}", str_msg);
     Ok(())
 }
