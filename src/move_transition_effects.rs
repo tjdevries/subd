@@ -1,4 +1,5 @@
 use crate::move_transition;
+use crate::move_transition_bootstrap;
 use crate::obs;
 use crate::stream_fx;
 use anyhow::Result;
@@ -27,18 +28,93 @@ pub async fn top_right(
     .await
 }
 
+// This doesn't really "find"
+pub async fn find_or_create_filter(
+    scene: &str,
+    source: &str,
+    filter_name: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filters = match obs_client.filters().list(scene).await {
+        Ok(val) => val,
+        Err(e) => {
+            eprintln!("Error listing filters: {}", e);
+            return Ok(());
+        }
+    };
+
+    let mut filter_exists = false;
+    for filter in filters {
+        println!("Filter Name: {}", filter.name);
+        if filter.name == filter_name {
+            filter_exists = true
+        }
+    }
+
+    if !filter_exists {
+        move_transition_bootstrap::create_move_source_filters(
+            &scene,
+            &source,
+            &filter_name,
+            &obs_client,
+        )
+        .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn move_source_in_scene_x_and_y(
+    scene: &str,
+    source: &str,
+    x: f32,
+    y: f32,
+    duration: u64,
+    easing_function_index: i32,
+    easing_type_index: i32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Move_{}", source);
+
+    let _ =
+        find_or_create_filter(&scene, &source, &filter_name, obs_client).await;
+
+    let settings =
+        move_transition::fetch_source_settings(scene, &source, &obs_client)
+            .await?;
+    let mut new_settings =
+        move_transition::custom_filter_settings(settings, x, y);
+
+    new_settings.duration = Some(duration);
+    new_settings.easing_type = Some(easing_type_index);
+    new_settings.easing_function = Some(easing_function_index);
+
+    move_transition::move_with_move_source(
+        scene,
+        &filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await
+}
+
 pub async fn bottom_right(
     scene: &str,
     scene_item: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    let filter_name = format!("Move_{}", scene_item);
+
+    let _ =
+        find_or_create_filter(&scene, &scene_item, &filter_name, obs_client)
+            .await;
+
     let settings =
         move_transition::fetch_source_settings(scene, &scene_item, &obs_client)
             .await?;
-
     let new_settings =
         move_transition::custom_filter_settings(settings, 12.0, 878.0);
-    let filter_name = format!("Move_{}", scene_item);
+
     move_transition::move_with_move_source(
         scene,
         &filter_name,
@@ -103,6 +179,8 @@ pub async fn spin(
 
     Ok(())
 }
+
+// =============================================================================
 
 // TODO: This needs some heavy refactoring
 // This only affects 3D transforms

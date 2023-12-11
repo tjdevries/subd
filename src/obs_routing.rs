@@ -8,26 +8,20 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
-use crate::skybox::check_skybox_status_and_save;
-use crate::twitch_rewards;
-use rand::Rng;
-use std::env;
-use std::fs;
-use twitch_oauth2::UserToken;
-use uuid::Uuid;
-// use rand::{seq::SliceRandom, thread_rng};
-// use crate::openai;
-// use std::env;
 use crate::sdf_effects;
 use crate::skybox;
+use crate::skybox::check_skybox_status_and_save;
 use crate::stream_character;
+use crate::twitch_rewards;
 use crate::twitch_stream_state;
 use anyhow::{bail, Result};
 use obws;
 use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
+use rand::Rng;
 use std::collections::HashMap;
-use std::process::Command;
+use std::env;
+use std::fs;
 use std::thread;
 use std::time;
 use subd_twitch::rewards;
@@ -38,10 +32,14 @@ use twitch_chat::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-// use openai::{
-//     chat::{ ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole},
-//     set_key,
-// };
+use twitch_oauth2::UserToken;
+use uuid::Uuid;
+
+const PRIMARY_CAM_SCENE: &str = "SubBegin";
+const DEFAULT_DURATION: u32 = 9001;
+const DEFAULT_EASING_TYPE: &str = "ease-in";
+const DEFAULT_EASING_FUNCTION: &str = "cubic";
+// static BACKGROUND_MUSIC_SCENE: &str = "BackgroundMusic";
 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
@@ -55,7 +53,6 @@ pub async fn handle_obs_commands(
 
     let _is_mod = msg.roles.is_twitch_mod();
     let _is_vip = msg.roles.is_twitch_vip();
-    let _background_scene = "BackgroundMusic";
     let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
@@ -80,11 +77,8 @@ pub async fn handle_obs_commands(
     // This fails, and we stop
     // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
 
-    // NOTE: If we want to extract values like filter_setting_name and filter_value
-    //       we need to figure a way to look up the defaults per command
-    //       because they could be different types
-
     let command = splitmsg[0].as_str();
+
     let _ = match command {
         // Iterate through the json file
         // choose a random scene
@@ -594,12 +588,9 @@ pub async fn handle_obs_commands(
                 .and_then(|temp_y| temp_y.trim().parse().ok())
                 .unwrap_or(1.0);
 
-            let temp_scene = "Primary";
-
-            println!("\n\tkicking off grow!");
             // This is the real solo use of scale_source
             let res = obs_source::scale_source(
-                &temp_scene,
+                &PRIMARY_CAM_SCENE,
                 source,
                 x,
                 y,
@@ -619,16 +610,14 @@ pub async fn handle_obs_commands(
         // == Moving Sources
         // ===========================================
         "!move" => {
-            let temp_scene = "Primary";
-
-            println!("\n!move {} {}", temp_scene, source);
+            println!("\n!move {} {}", PRIMARY_CAM_SCENE, source);
 
             if splitmsg.len() > 3 {
                 let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
                 let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
 
                 let _ = obs_source::move_source(
-                    temp_scene,
+                    PRIMARY_CAM_SCENE,
                     source,
                     x,
                     y,
@@ -657,9 +646,8 @@ pub async fn handle_obs_commands(
                 y: Some(y),
             };
 
-            let temp_scene = "Primary";
             let res = obs_source::old_trigger_grow(
-                &temp_scene,
+                &PRIMARY_CAM_SCENE,
                 source,
                 &base_scale,
                 x,
@@ -678,14 +666,57 @@ pub async fn handle_obs_commands(
 
         // TODO: I'd like one-for every corner
         "!tr" => {
-            println!("Scene: {} | Source: {}", scene, source);
-            move_transition_effects::top_right(&scene, source, &obs_client)
-                .await
+            move_transition_effects::top_right(
+                &PRIMARY_CAM_SCENE,
+                source,
+                &obs_client,
+            )
+            .await
         }
 
-        "!bl" => {
-            move_transition_effects::bottom_right(&scene, source, &obs_client)
-                .await
+        "!br" => {
+            move_transition_effects::bottom_right(
+                &PRIMARY_CAM_SCENE,
+                source,
+                &obs_client,
+            )
+            .await
+        }
+
+        "!m" => {
+            let x: f32 = splitmsg
+                .get(1)
+                .unwrap_or(&"1111.0".to_string())
+                .parse()
+                .unwrap_or(1111.0);
+            let y: f32 = splitmsg
+                .get(2)
+                .unwrap_or(&"500.0".to_string())
+                .parse()
+                .unwrap_or(500.0);
+            let duration: u64 = splitmsg
+                .get(3)
+                .unwrap_or(&"3000".to_string())
+                .parse()
+                .unwrap_or(3000);
+
+            let (easing_function_index, easing_type_index) =
+                find_easing_indicies(splitmsg);
+
+            println!("!m {} {}", x, y);
+
+            let source = "begin";
+            move_transition_effects::move_source_in_scene_x_and_y(
+                &PRIMARY_CAM_SCENE,
+                source,
+                x,
+                y,
+                duration,
+                easing_function_index,
+                easing_type_index,
+                &obs_client,
+            )
+            .await
         }
 
         // ===========================================
@@ -770,18 +801,18 @@ pub async fn handle_obs_commands(
         }
 
         "!filter" => {
-            let default_filter_name =
-                "Move-3D-Transform-Orthographic".to_string();
+            let default_filter_name = "Move_begin".to_string();
+            // "Move-3D-Transform-Orthographic".to_string();
 
             let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
-                match obs_client.filters().get("begin", source).await {
+                match obs_client.filters().get("SubBegin", source).await {
                     Ok(val) => Ok(val),
                     Err(err) => Err(err),
                 }?;
 
             println!("------------------------");
-            println!("\n\tFilter ettings: {:?}", filter_details);
+            println!("\n\tFilter Settings: {:?}", filter_details);
             println!("------------------------");
             Ok(())
         }
@@ -815,20 +846,12 @@ pub async fn handle_obs_commands(
         //
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
-            let default_duration = 9001;
-            let default_easing_type = "ease-in".to_string();
-            let default_easing_function = "cubic".to_string();
-            let easing_functions = easing_function_match();
-            let easing_types = easing_match();
             let duration: u32 = splitmsg
                 .get(2)
-                .map_or(default_duration, |x| x.trim().parse().unwrap_or(3000));
-            let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
-            let easing_function =
-                splitmsg.get(4).unwrap_or(&default_easing_function);
-            let easing_function_index =
-                &easing_functions[easing_function.as_str()];
-            let easing_type_index = &easing_types[easing_type.as_str()];
+                .map_or(DEFAULT_DURATION, |x| x.trim().parse().unwrap_or(3000));
+
+            let (easing_function_index, easing_type_index) =
+                find_easing_indicies(splitmsg.clone());
 
             let default_spin_amount = 1080.0;
             let spin_amount: f32 =
@@ -840,19 +863,9 @@ pub async fn handle_obs_commands(
             let filter_name = "3D-Transform-Perspective";
 
             let new_settings = move_transition::MoveMultipleValuesSetting {
-                // filter: Some(filter_name.to_string()),
-                // scale_x: Some(217.0),
-                // scale_y: Some(200.0),
                 rotation_z: Some(spin_amount),
-
-                easing_function: Some(*easing_function_index),
-                easing_type: Some(*easing_type_index),
-
-                // field_of_view: Some(108.0),
-                //
-                // // If a previous Move_transition set this and you don't reset it, you're gonna hate
-                // // you life
-                // position_y: Some(0.0),
+                easing_function: Some(easing_function_index),
+                easing_type: Some(easing_type_index),
                 duration: Some(duration),
                 ..Default::default()
             };
@@ -1095,6 +1108,21 @@ fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     chunks
 }
 
+fn find_easing_indicies(splitmsg: Vec<String>) -> (i32, i32) {
+    let default_easing_type = DEFAULT_EASING_TYPE.to_string();
+    let default_easing_function = DEFAULT_EASING_FUNCTION.to_string();
+
+    let easing_functions = easing_function_match();
+    let easing_types = easing_match();
+
+    let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
+    let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
+
+    let easing_function_index = &easing_functions[easing_function.as_str()];
+    let easing_type_index = &easing_types[easing_type.as_str()];
+    (*easing_function_index, *easing_type_index)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1106,6 +1134,20 @@ mod tests {
         assert_eq!(strs[0], "hello,");
         assert_eq!(strs[1], " now");
         assert_eq!(strs.len(), 2);
+    }
+
+    // Now we can test
+    #[test]
+    fn test_easing_index() {
+        let splitmsg = vec![
+            "!m".to_string(),
+            "500".to_string(),
+            "300".to_string(),
+            "ease-in".to_string(),
+            "bounce".to_string(),
+        ];
+        let res = find_easing_indicies(splitmsg);
+        assert_eq!(res, (9, 1));
     }
 
     #[tokio::test]

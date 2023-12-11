@@ -41,6 +41,12 @@ pub struct MoveSourceFilterSettings {
     // How do we calculate the settings to this string
     //     "transform_text": "pos: x 83.0 y 763.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0",
     pub transform_text: Option<String>,
+
+    // "easing_function_match": Number(10), "easing_match": Number(2),
+    #[serde(rename = "easing_function_match")]
+    pub easing_function: Option<i32>,
+    #[serde(rename = "easing_match")]
+    pub easing_type: Option<i32>,
 }
 
 // This is kinda of internal only?
@@ -532,6 +538,7 @@ pub async fn fetch_source_settings(
             top: Some(settings.crop_top as f32),
         }),
         transform_text: Some(transform_text.to_string()),
+        ..Default::default()
     };
     return Ok(new_settings);
 }

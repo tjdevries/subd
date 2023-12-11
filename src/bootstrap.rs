@@ -7,6 +7,13 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
+// I don't know why it's 1 sometimes and it's 2 others
+// RENAME THESE ONCE you figure what they are for
+static MOVE_VALUE_TYPE_SINGLE: u32 = 1;
+static MOVE_VALUE_TYPE_ZERO: u32 = 0;
+
+static DEFAULT_DURATION: u32 = 7000;
+
 pub async fn create_outline_filter(
     source: &str,
     obs_client: &OBSClient,
@@ -42,9 +49,9 @@ pub async fn create_outline_filter(
     // I think this is fucking shit up
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(1),
+        move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(obs::SDF_EFFECTS_FILTER_NAME),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -77,9 +84,9 @@ pub async fn create_blur_filters(
 
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(0),
+        move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(obs::BLUR_FILTER_NAME),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -112,9 +119,9 @@ pub async fn create_scroll_filters(
 
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(0),
+        move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(&obs::SCROLL_FILTER_NAME.to_string()),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -151,9 +158,9 @@ pub async fn create_split_3d_transform_filters(
         let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
 
         let new_settings = move_transition::MoveSingleValueSetting {
-            move_value_type: Some(0),
+            move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
             filter: String::from(filter_name),
-            duration: Some(7000),
+            duration: Some(DEFAULT_DURATION),
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
@@ -169,7 +176,7 @@ pub async fn create_split_3d_transform_filters(
 
         let filter_name = format!("3D_{}", camera_type);
         let new_settings = move_transition::MoveSingleValueSetting {
-            move_value_type: Some(0),
+            move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
             filter: String::from(filter_name),
             duration: Some(3000),
             ..Default::default()
@@ -185,6 +192,7 @@ pub async fn create_split_3d_transform_filters(
 
     Ok(())
 }
+
 pub async fn create_3d_transform_filters(
     source: &str,
     obs_client: &OBSClient,
@@ -204,9 +212,9 @@ pub async fn create_3d_transform_filters(
 
     // Create Move-Value for 3D Transform Filter
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(0),
+        move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(obs::THE_3D_TRANSFORM_FILTER_NAME),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -220,12 +228,10 @@ pub async fn create_3d_transform_filters(
     Ok(())
 }
 
-pub async fn create_filters_for_source(
+pub async fn remove_all_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    println!("Creating Filters for Source: {}", source);
-
     let filters = match obs_client.filters().list(source).await {
         Ok(val) => val,
         Err(_) => return Ok(()),
@@ -242,6 +248,16 @@ pub async fn create_filters_for_source(
             .await
             .expect("Error Deleting Filter");
     }
+    Ok(())
+}
+
+pub async fn create_filters_for_source(
+    source: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!("Creating Filters for Source: {}", source);
+
+    let _ = remove_all_filters(source, &obs_client).await;
 
     let filter_name = format!("Move_Source_Home_{}", source);
     move_transition_bootstrap::create_move_source_filters(
@@ -259,10 +275,11 @@ pub async fn create_filters_for_source(
     create_blur_filters(source, &obs_client).await?;
     create_outline_filter(source, &obs_client).await?;
 
+    //
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(1),
+        move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(obs::THE_3D_TRANSFORM_FILTER_NAME),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -274,9 +291,9 @@ pub async fn create_filters_for_source(
     obs_client.filters().create(new_filter).await?;
 
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(1),
+        move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(&obs::SCROLL_FILTER_NAME.to_string()),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -289,11 +306,11 @@ pub async fn create_filters_for_source(
 
     // This is For Blur
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(1),
+        move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(obs::BLUR_FILTER_NAME),
         filter_blur_size: Some(1.0),
         setting_float: 0.0,
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -306,9 +323,9 @@ pub async fn create_filters_for_source(
 
     // This is for SDF Effects
     let new_settings = move_transition::MoveSingleValueSetting {
-        move_value_type: Some(1),
+        move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(obs::SDF_EFFECTS_FILTER_NAME),
-        duration: Some(7000),
+        duration: Some(DEFAULT_DURATION),
         glow_inner: Some(false),
         glow_outer: Some(false),
         shadow_outer: Some(false),
