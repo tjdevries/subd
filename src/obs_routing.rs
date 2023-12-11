@@ -683,6 +683,42 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        "!alex" => {
+            let x: f32 = splitmsg
+                .get(1)
+                .unwrap_or(&"1111.0".to_string())
+                .parse()
+                .unwrap_or(1111.0);
+            let y: f32 = splitmsg
+                .get(2)
+                .unwrap_or(&"500.0".to_string())
+                .parse()
+                .unwrap_or(500.0);
+            let duration: u64 = splitmsg
+                .get(3)
+                .unwrap_or(&"3000".to_string())
+                .parse()
+                .unwrap_or(3000);
+
+            let (easing_type_index, easing_function_index) =
+                find_easing_indicies(splitmsg);
+
+            println!("!m {} {}", x, y);
+
+            let source = "alex";
+            move_transition_effects::move_source_in_scene_x_and_y(
+                "memes",
+                source,
+                x,
+                y,
+                duration,
+                easing_function_index,
+                easing_type_index,
+                &obs_client,
+            )
+            .await
+        }
+
         "!m" => {
             let x: f32 = splitmsg
                 .get(1)
@@ -700,7 +736,7 @@ pub async fn handle_obs_commands(
                 .parse()
                 .unwrap_or(3000);
 
-            let (easing_function_index, easing_type_index) =
+            let (easing_type_index, easing_function_index) =
                 find_easing_indicies(splitmsg);
 
             println!("!m {} {}", x, y);
@@ -1112,15 +1148,19 @@ fn find_easing_indicies(splitmsg: Vec<String>) -> (i32, i32) {
     let default_easing_type = DEFAULT_EASING_TYPE.to_string();
     let default_easing_function = DEFAULT_EASING_FUNCTION.to_string();
 
-    let easing_functions = easing_function_match();
     let easing_types = easing_match();
+    let easing_functions = easing_function_match();
 
+    // let easing_type_index = &easing_types[easing_type.as_str()];
+    // let easing_function_index = &easing_functions[easing_function.as_str()];
+    
     let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
     let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
 
-    let easing_function_index = &easing_functions[easing_function.as_str()];
-    let easing_type_index = &easing_types[easing_type.as_str()];
-    (*easing_function_index, *easing_type_index)
+    let easing_type_index = easing_types.get(easing_type.clone().as_str()).unwrap_or(&1);
+    let easing_function_index = easing_functions.get(easing_function.clone().as_str()).unwrap_or(&1);
+    
+    (*easing_type_index, *easing_function_index)
 }
 
 #[cfg(test)]
@@ -1147,7 +1187,7 @@ mod tests {
             "bounce".to_string(),
         ];
         let res = find_easing_indicies(splitmsg);
-        assert_eq!(res, (9, 1));
+        assert_eq!(res, (1, 9));
     }
 
     #[tokio::test]
