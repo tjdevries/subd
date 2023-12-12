@@ -16,7 +16,6 @@ use crate::twitch_rewards;
 use crate::twitch_stream_state;
 use anyhow::{bail, Result};
 use obws;
-use obws::requests::scene_items::Scale;
 use obws::Client as OBSClient;
 use rand::Rng;
 use std::collections::HashMap;
@@ -37,9 +36,11 @@ use uuid::Uuid;
 
 const PRIMARY_CAM_SCENE: &str = "SubBegin";
 const DEFAULT_DURATION: u32 = 9001;
-const DEFAULT_EASING_TYPE: &str = "ease-in";
-const DEFAULT_EASING_FUNCTION: &str = "cubic";
+
+// const DEFAULT_EASING_TYPE: &str = "ease-in";
+// const DEFAULT_EASING_FUNCTION: &str = "cubic";
 // static BACKGROUND_MUSIC_SCENE: &str = "BackgroundMusic";
+// use obws::requests::scene_items::Scale;
 
 pub async fn handle_obs_commands(
     tx: &broadcast::Sender<Event>,
@@ -609,60 +610,6 @@ pub async fn handle_obs_commands(
         // ===========================================
         // == Moving Sources
         // ===========================================
-        "!move" => {
-            println!("\n!move {} {}", PRIMARY_CAM_SCENE, source);
-
-            if splitmsg.len() > 3 {
-                let x: f32 = splitmsg[2].trim().parse().unwrap_or(0.0);
-                let y: f32 = splitmsg[3].trim().parse().unwrap_or(0.0);
-
-                let _ = obs_source::move_source(
-                    PRIMARY_CAM_SCENE,
-                    source,
-                    x,
-                    y,
-                    &obs_client,
-                )
-                .await;
-            } else {
-                send_message(twitch_client, "Missing X and Y").await?;
-            }
-
-            Ok(())
-        }
-
-        "!gg" => {
-            let x: f32 = splitmsg
-                .get(2)
-                .and_then(|temp_x| temp_x.trim().parse().ok())
-                .unwrap_or(1.0);
-            let y: f32 = splitmsg
-                .get(3)
-                .and_then(|temp_y| temp_y.trim().parse().ok())
-                .unwrap_or(1.0);
-
-            let base_scale = Scale {
-                x: Some(x),
-                y: Some(y),
-            };
-
-            let res = obs_source::old_trigger_grow(
-                &PRIMARY_CAM_SCENE,
-                source,
-                &base_scale,
-                x,
-                y,
-                &obs_client,
-            )
-            .await;
-
-            if let Err(e) = res {
-                let err_msg = format!("Error Scaling {:?}", e);
-                send_message(twitch_client, err_msg).await?;
-            }
-
-            Ok(())
-        }
 
         // TODO: I'd like one-for every corner
         "!tr" => {
@@ -684,72 +631,85 @@ pub async fn handle_obs_commands(
         }
 
         "!alex" => {
-            let x: f32 = splitmsg
-                .get(1)
-                .unwrap_or(&"1111.0".to_string())
-                .parse()
-                .unwrap_or(1111.0);
-            let y: f32 = splitmsg
-                .get(2)
-                .unwrap_or(&"500.0".to_string())
-                .parse()
-                .unwrap_or(500.0);
-            let duration: u64 = splitmsg
-                .get(3)
-                .unwrap_or(&"3000".to_string())
-                .parse()
-                .unwrap_or(3000);
-
-            let (easing_type_index, easing_function_index) =
-                find_easing_indicies(splitmsg);
-
-            println!("!m {} {}", x, y);
-
             let source = "alex";
+            let scene = "memes";
+
+            let arg_positions = vec![
+                ChatArgPosition::X(1111.0),
+                ChatArgPosition::Y(500.0),
+                ChatArgPosition::Duration(3000),
+                ChatArgPosition::EasingType("ease-in".to_string()),
+                ChatArgPosition::EasingFunction("bounce".to_string()),
+            ];
+            let req = build_chat_move_source_request(
+                splitmsg[1..].to_vec(),
+                arg_positions,
+            );
+
             move_transition_effects::move_source_in_scene_x_and_y(
-                "memes",
+                scene,
                 source,
-                x,
-                y,
-                duration,
-                easing_function_index,
-                easing_type_index,
+                req.x,
+                req.y,
+                req.duration,
+                req.easing_function_index,
+                req.easing_type_index,
                 &obs_client,
             )
             .await
         }
 
-        "!m" => {
-            let x: f32 = splitmsg
-                .get(1)
-                .unwrap_or(&"1111.0".to_string())
-                .parse()
-                .unwrap_or(1111.0);
-            let y: f32 = splitmsg
-                .get(2)
-                .unwrap_or(&"500.0".to_string())
-                .parse()
-                .unwrap_or(500.0);
-            let duration: u64 = splitmsg
-                .get(3)
-                .unwrap_or(&"3000".to_string())
-                .parse()
-                .unwrap_or(3000);
-
-            let (easing_type_index, easing_function_index) =
-                find_easing_indicies(splitmsg);
-
-            println!("!m {} {}", x, y);
-
+        "!begin" => {
             let source = "begin";
+            let scene = PRIMARY_CAM_SCENE;
+
+            let arg_positions = vec![
+                ChatArgPosition::X(1111.0),
+                ChatArgPosition::Y(500.0),
+                ChatArgPosition::Duration(3000),
+                ChatArgPosition::EasingType("ease-in".to_string()),
+                ChatArgPosition::EasingFunction("bounce".to_string()),
+            ];
+            let req = build_chat_move_source_request(
+                splitmsg[1..].to_vec(),
+                arg_positions,
+            );
+
             move_transition_effects::move_source_in_scene_x_and_y(
-                &PRIMARY_CAM_SCENE,
+                scene,
                 source,
-                x,
-                y,
-                duration,
-                easing_function_index,
-                easing_type_index,
+                req.x,
+                req.y,
+                req.duration,
+                req.easing_function_index,
+                req.easing_type_index,
+                &obs_client,
+            )
+            .await
+        }
+
+        // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
+        "!move" => {
+            let meat_of_message = splitmsg[1..].to_vec();
+            let arg_positions = vec![
+                ChatArgPosition::Source("beginbot".to_string()),
+                ChatArgPosition::X(500.0),
+                ChatArgPosition::Y(500.0),
+                ChatArgPosition::Duration(3000),
+                ChatArgPosition::EasingType("ease-in".to_string()),
+                ChatArgPosition::EasingFunction("bounce".to_string()),
+            ];
+            let req =
+                build_chat_move_source_request(meat_of_message, arg_positions);
+
+            move_transition_effects::move_source_in_scene_x_and_y(
+                &req.scene,
+                &req.source,
+                req.x,
+                req.y,
+                req.duration as u64,
+                req.easing_function_index,
+                req.easing_type_index,
                 &obs_client,
             )
             .await
@@ -886,8 +846,10 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map_or(DEFAULT_DURATION, |x| x.trim().parse().unwrap_or(3000));
 
-            let (easing_function_index, easing_type_index) =
-                find_easing_indicies(splitmsg.clone());
+            // TODO: Not sure if these are the correct indexes to pass in
+            // let (easing_function_index, easing_type_index) =
+            //     find_easing_indicies(splitmsg.clone(), 4, 5);
+            let (easing_type_index, easing_function_index) = (1, 1);
 
             let default_spin_amount = 1080.0;
             let spin_amount: f32 =
@@ -1144,23 +1106,134 @@ fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     chunks
 }
 
-fn find_easing_indicies(splitmsg: Vec<String>) -> (i32, i32) {
-    let default_easing_type = DEFAULT_EASING_TYPE.to_string();
-    let default_easing_function = DEFAULT_EASING_FUNCTION.to_string();
-
+fn find_easing_indicies(
+    easing_type: String,
+    easing_function: String,
+) -> (i32, i32) {
     let easing_types = easing_match();
     let easing_functions = easing_function_match();
+    let easing_type_index =
+        easing_types.get(easing_type.clone().as_str()).unwrap_or(&1);
+    let easing_function_index = easing_functions
+        .get(easing_function.clone().as_str())
+        .unwrap_or(&1);
 
-    // let easing_type_index = &easing_types[easing_type.as_str()];
-    // let easing_function_index = &easing_functions[easing_function.as_str()];
-    
-    let easing_type = splitmsg.get(3).unwrap_or(&default_easing_type);
-    let easing_function = splitmsg.get(4).unwrap_or(&default_easing_function);
-
-    let easing_type_index = easing_types.get(easing_type.clone().as_str()).unwrap_or(&1);
-    let easing_function_index = easing_functions.get(easing_function.clone().as_str()).unwrap_or(&1);
-    
     (*easing_type_index, *easing_function_index)
+}
+
+#[derive(Default)]
+struct ChatMoveSourceRequest {
+    source: String,
+    scene: String,
+    x: f32,
+    y: f32,
+    duration: u64,
+    easing_type: String,
+    easing_function: String,
+    easing_type_index: i32,
+    easing_function_index: i32,
+}
+
+/* impl ChatMoveSourceRequest {
+    fn new(
+        source: String,
+        scene: String,
+        x: f32,
+        y: f32,
+        duration: u64,
+        easing_type: String,
+        easing_function: String,
+        easing_type_index: i32,
+        easing_function_index: i32,
+    ) -> Self {
+        Self {
+            source,
+            scene,
+            x,
+            y,
+            duration,
+            easing_type,
+            easing_function,
+            easing_type_index,
+            easing_function_index,
+        }
+    }
+} */
+
+enum ChatArgPosition {
+    Source(String),
+    X(f32),
+    Y(f32),
+    Duration(u64),
+    EasingType(String),
+    EasingFunction(String),
+}
+
+fn build_chat_move_source_request(
+    splitmsg: Vec<String>,
+    arg_positions: Vec<ChatArgPosition>,
+) -> ChatMoveSourceRequest {
+    let default_source = "begin".to_string();
+    let default_scene = PRIMARY_CAM_SCENE.to_string();
+
+    let mut req = ChatMoveSourceRequest {
+        ..Default::default()
+    };
+
+    for (index, arg) in arg_positions.iter().enumerate() {
+        match arg {
+            ChatArgPosition::Source(source) => {
+                req.source = splitmsg.get(index).unwrap_or(source).to_string();
+            }
+            ChatArgPosition::X(x) => {
+                let str_x = format!("{}", x);
+                req.x =
+                    splitmsg.get(index).unwrap_or(&str_x).parse().unwrap_or(*x);
+            }
+            ChatArgPosition::Y(y) => {
+                let str_y = format!("{}", y);
+                req.y = splitmsg
+                    .get(index)
+                    .unwrap_or(&str_y)
+                    .to_string()
+                    .parse()
+                    .unwrap_or(*y);
+            }
+            ChatArgPosition::Duration(duration) => {
+                let str_duration = format!("{}", duration);
+                req.duration = splitmsg
+                    .get(index)
+                    .unwrap_or(&str_duration)
+                    .to_string()
+                    .parse()
+                    .unwrap_or(*duration);
+            }
+            ChatArgPosition::EasingType(easing_type) => {
+                req.easing_type =
+                    splitmsg.get(index).unwrap_or(easing_type).to_string()
+            }
+            ChatArgPosition::EasingFunction(easing_function) => {
+                req.easing_function =
+                    splitmsg.get(index).unwrap_or(easing_function).to_string()
+            }
+        }
+    }
+
+    let (easing_type_index, easing_function_index) = find_easing_indicies(
+        req.easing_type.clone(),
+        req.easing_function.clone(),
+    );
+
+    req.easing_type_index = easing_type_index;
+    req.easing_function_index = easing_function_index;
+
+    if req.source == default_source {
+        req.scene = default_scene;
+    } else {
+        req.scene = "memes".to_string();
+    };
+
+    return req;
 }
 
 #[cfg(test)]
@@ -1179,14 +1252,8 @@ mod tests {
     // Now we can test
     #[test]
     fn test_easing_index() {
-        let splitmsg = vec![
-            "!m".to_string(),
-            "500".to_string(),
-            "300".to_string(),
-            "ease-in".to_string(),
-            "bounce".to_string(),
-        ];
-        let res = find_easing_indicies(splitmsg);
+        let res =
+            find_easing_indicies("ease-in".to_string(), "bounce".to_string());
         assert_eq!(res, (1, 9));
     }
 

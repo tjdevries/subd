@@ -2,6 +2,9 @@
 
 - Fix Easing
 - Make Memes around More
+- Update hotkeys
+- quick make certain scenes !flash_sale NAME
+- Make beginbotbot, be the same as beginbot in chat
 
 ## TODO
 
@@ -25,10 +28,7 @@
 
 - Twitch User Access Token Updating
 - Modes to turn off various features
-- Update hotkeys
-- quick make certain scenes !flash_sale NAME
 - Figure out getting Messages from Twitch into Neovim
-- Make beginbotbot, be the same as beginbot in chat
 - Way for being to toggle the permissions of every single command
 
 ### Choosing Voices Improvements
