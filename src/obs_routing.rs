@@ -580,31 +580,31 @@ pub async fn handle_obs_commands(
         // == Scaling Sources
         // ===========================================
         "!grow" | "!scale" => {
-            let x: f32 = splitmsg
-                .get(2)
-                .and_then(|temp_x| temp_x.trim().parse().ok())
-                .unwrap_or(1.0);
-            let y: f32 = splitmsg
-                .get(3)
-                .and_then(|temp_y| temp_y.trim().parse().ok())
-                .unwrap_or(1.0);
+            let meat_of_message = splitmsg[1..].to_vec();
+            let arg_positions = vec![
+                ChatArgPosition::Source("beginbot".to_string()),
+                ChatArgPosition::X(500.0),
+                ChatArgPosition::Y(500.0),
+                ChatArgPosition::Duration(3000),
+                ChatArgPosition::EasingType("ease-in".to_string()),
+                ChatArgPosition::EasingFunction("bounce".to_string()),
+            ];
+            let req =
+                build_chat_move_source_request(meat_of_message, arg_positions);
 
-            // This is the real solo use of scale_source
-            let res = obs_source::scale_source(
-                &PRIMARY_CAM_SCENE,
-                source,
-                x,
-                y,
+            dbg!(&req);
+
+            move_transition_effects::scale_source(
+                &req.scene,
+                &req.source,
+                req.x,
+                req.y,
+                req.duration as u64,
+                req.easing_function_index,
+                req.easing_type_index,
                 &obs_client,
             )
-            .await;
-
-            if let Err(e) = res {
-                let err_msg = format!("Error Scaling {:?}", e);
-                send_message(twitch_client, err_msg).await?;
-            }
-
-            Ok(())
+            .await
         }
 
         // ===========================================
@@ -780,13 +780,21 @@ pub async fn handle_obs_commands(
         }
 
         "!create_3d_filters" => {
-            bootstrap::create_split_3d_transform_filters(source, &obs_client)
-                .await
+            Ok(())
+            // bootstrap::create_split_3d_transform_filters(source, &obs_client)
+            //     .await
         }
 
         // This sets up OBS for Begin's current setup
         "!create_filters_for_source" => {
-            bootstrap::create_filters_for_source(source, &obs_client).await
+            if not_beginbot {
+                return Ok(());
+            }
+            let default = "alex".to_string();
+            let source: &str = splitmsg.get(1).unwrap_or(&default);
+            _ = bootstrap::remove_all_filters(source, &obs_client).await;
+            bootstrap::create_split_3d_transform_filters(source, &obs_client)
+                .await
         }
 
         // ===========================================
@@ -842,45 +850,29 @@ pub async fn handle_obs_commands(
         //
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
-            let duration: u32 = splitmsg
-                .get(2)
-                .map_or(DEFAULT_DURATION, |x| x.trim().parse().unwrap_or(3000));
+            let arg_positions = vec![
+                ChatArgPosition::Source("beginbot".to_string()),
+                ChatArgPosition::RotationZ(1080.0),
+                ChatArgPosition::Duration(3000),
+                ChatArgPosition::EasingType("ease-in-and-out".to_string()),
+                ChatArgPosition::EasingFunction("sine".to_string()),
+            ];
+            let req = build_chat_move_source_request(
+                splitmsg[1..].to_vec(),
+                arg_positions,
+            );
 
-            // TODO: Not sure if these are the correct indexes to pass in
-            // let (easing_function_index, easing_type_index) =
-            //     find_easing_indicies(splitmsg.clone(), 4, 5);
-            let (easing_type_index, easing_function_index) = (1, 1);
+            dbg!(&req);
 
-            let default_spin_amount = 1080.0;
-            let spin_amount: f32 =
-                splitmsg.get(1).map_or(default_spin_amount, |x| {
-                    x.trim().parse().unwrap_or(default_spin_amount)
-                });
-
-            let source = "begin";
-            let filter_name = "3D-Transform-Perspective";
-
-            let new_settings = move_transition::MoveMultipleValuesSetting {
-                rotation_z: Some(spin_amount),
-                easing_function: Some(easing_function_index),
-                easing_type: Some(easing_type_index),
-                duration: Some(duration),
-                ..Default::default()
-            };
-
-            dbg!(&new_settings);
-            let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name =
-                format!("Move_{}", three_d_transform_filter_name);
-
-            _ = move_transition::update_and_trigger_move_values_filter(
-                source,
-                &move_transition_filter_name,
-                new_settings,
+            move_transition_effects::spin_source(
+                &req.source,
+                req.rotation_z,
+                req.duration,
+                req.easing_function_index,
+                req.easing_type_index,
                 &obs_client,
             )
-            .await;
-            Ok(())
+            .await
         }
 
         // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
@@ -1121,12 +1113,13 @@ fn find_easing_indicies(
     (*easing_type_index, *easing_function_index)
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct ChatMoveSourceRequest {
     source: String,
     scene: String,
     x: f32,
     y: f32,
+    rotation_z: f32,
     duration: u64,
     easing_type: String,
     easing_function: String,
@@ -1164,6 +1157,7 @@ enum ChatArgPosition {
     Source(String),
     X(f32),
     Y(f32),
+    RotationZ(f32),
     Duration(u64),
     EasingType(String),
     EasingFunction(String),
@@ -1184,6 +1178,11 @@ fn build_chat_move_source_request(
         match arg {
             ChatArgPosition::Source(source) => {
                 req.source = splitmsg.get(index).unwrap_or(source).to_string();
+            }
+            ChatArgPosition::RotationZ(z) => {
+                let str_z = format!("{}", z);
+                req.rotation_z =
+                    splitmsg.get(index).unwrap_or(&str_z).parse().unwrap_or(*z);
             }
             ChatArgPosition::X(x) => {
                 let str_x = format!("{}", x);

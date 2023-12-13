@@ -64,6 +64,97 @@ pub async fn find_or_create_filter(
     Ok(())
 }
 
+pub async fn spin_source(
+    source: &str,
+    rotation_z: f32,
+    duration: u64,
+    easing_function_index: i32,
+    easing_type_index: i32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = "3D-Transform-Perspective";
+
+    let new_settings = move_transition::MoveMultipleValuesSetting {
+        rotation_z: Some(rotation_z),
+        easing_function: Some(easing_function_index),
+        easing_type: Some(easing_type_index),
+        duration: Some(duration as u32),
+        ..Default::default()
+    };
+
+    let three_d_transform_filter_name = filter_name;
+    let move_transition_filter_name =
+        format!("Move_{}", three_d_transform_filter_name);
+
+    _ = move_transition::update_and_trigger_move_values_filter(
+        source,
+        &move_transition_filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await;
+    Ok(())
+}
+
+
+pub async fn scale_source(
+    scene: &str,
+    source: &str,
+    x: f32,
+    y: f32,
+    duration: u64,
+    easing_function_index: i32,
+    easing_type_index: i32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Move_{}", source);
+    let mut settings =
+        move_transition::fetch_source_settings(scene, &source, &obs_client)
+            .await?;
+
+    settings.scale = Some(move_transition::Coordinates {
+        x: Some(x),
+        y: Some(y),
+    });
+    settings.bounds = Some(move_transition::Coordinates {
+        x: Some(x),
+        y: Some(y),
+    });
+
+    settings.duration = Some(duration);
+    settings.easing_type = Some(easing_type_index);
+    settings.easing_function = Some(easing_function_index);
+
+    move_transition::move_with_move_source(
+        scene,
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
+pub async fn move_source_with_custom_settings(
+    scene: &str,
+    source: &str,
+    custom_settings: move_transition::MoveSourceFilterSettings,
+
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Move_{}", source);
+
+    let _ =
+        find_or_create_filter(&scene, &source, &filter_name, obs_client).await;
+
+    move_transition::move_with_move_source(
+        scene,
+        &filter_name,
+        custom_settings,
+        &obs_client,
+    )
+    .await
+}
+
 pub async fn move_source_in_scene_x_and_y(
     scene: &str,
     source: &str,

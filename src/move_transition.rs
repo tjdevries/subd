@@ -33,6 +33,9 @@ pub struct MoveSourceFilterSettings {
 
     pub scale: Option<Coordinates>,
 
+    #[serde(rename = "Rotation.Z")]
+    pub rotation_z: Option<f32>,
+
     pub duration: Option<u64>,
 
     pub source: Option<String>,
@@ -358,7 +361,8 @@ pub async fn update_and_trigger_move_value_filter(
     Ok(())
 }
 
-pub async fn update_and_trigger_move_values_filter(
+
+pub async fn update_and_trigger_move_values_filter_plus_cache(
     source: &str,
     filter_name: &str,
     mut new_settings: MoveMultipleValuesSetting,
@@ -451,6 +455,33 @@ pub async fn update_and_trigger_move_values_filter(
     Ok(())
 }
 
+pub async fn update_and_trigger_move_values_filter(
+    source: &str,
+    filter_name: &str,
+    mut new_settings: MoveMultipleValuesSetting,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    new_settings.move_value_type = 1;
+    new_settings.value_type = 1;
+    let settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: None,
+    };
+    let _ = obs_client.filters().set_settings(settings).await;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    thread::sleep(Duration::from_millis(400));
+    Ok(())
+}
+
 // ====================================================================
 // == LOWER LEVEL???? =================================================
 // ====================================================================
@@ -462,6 +493,7 @@ async fn update_move_source_filters(
     new_settings: MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
+    // What ever this serializes too, ain't right for Move Multiple Settings
     let new_filter = obws::requests::filters::SetSettings {
         source,
         filter: filter_name,

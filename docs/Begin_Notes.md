@@ -1,15 +1,59 @@
 ## Today
 
-- Fix Easing
-- Make Memes around More
-- Update hotkeys
+
+
+
+https://platform.openai.com/docs/guides/vision?lang=curl
+
+```
+
+curl https://api.openai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+    "model": "gpt-4-vision-preview",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "text",
+            "text": "What’s in this image?"
+          },
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            }
+          }
+        ]
+      }
+    ],
+    "max_tokens": 300
+  }'
+```
+
+------
+
+## Movement features
+
+- !left ALEX 300
+- !right ALEX 300
+- !up
+- !down
+
+------
+
+## TODOs
+
 - quick make certain scenes !flash_sale NAME
+- Update hotkeys
 - Make beginbotbot, be the same as beginbot in chat
 
 ## TODO
 
-- Polls
 - Make skybox chat interface more fun and flexible
+- Polls
 - Automate Creation of AI Scenes
 - More channel points economy features
 - How do allow Subs to have default TTS?

@@ -140,9 +140,10 @@ pub async fn create_split_3d_transform_filters(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let camera_types = vec!["Orthographic", "Perspective", "CornerPin"];
+    // let camera_types = vec![ "Perspective", "CornerPin"];
 
     for (i, camera_type) in camera_types.iter().enumerate() {
-        let filter_name = format!("3D_{}", camera_type);
+        let filter_name = format!("3D-Transform-{}", camera_type);
         let stream_fx_settings = stream_fx::StreamFXSettings {
             camera_mode: Some(i as i32),
             ..Default::default()
@@ -155,11 +156,11 @@ pub async fn create_split_3d_transform_filters(
         };
         obs_client.filters().create(new_filter).await?;
 
-        let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
+        let stream_fx_filter_name = format!("Move_{}", filter_name.clone());
 
         let new_settings = move_transition::MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-            filter: String::from(filter_name),
+            filter: String::from(filter_name.clone()),
             duration: Some(DEFAULT_DURATION),
             ..Default::default()
         };
@@ -169,15 +170,15 @@ pub async fn create_split_3d_transform_filters(
             kind: obs::MOVE_VALUE_INTERNAL_FILTER_NAME,
             settings: Some(new_settings),
         };
-        obs_client.filters().create(new_filter).await?;
+        let _ = obs_client.filters().create(new_filter).await;
 
         // Create Default Move-Value for 3D Transform Filter
-        let stream_fx_filter_name = format!("Move_3D_{}", camera_type);
+        let stream_fx_filter_name = format!("Default_{}", filter_name.clone());
 
         let filter_name = format!("3D_{}", camera_type);
         let new_settings = move_transition::MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-            filter: String::from(filter_name),
+            filter: String::from(filter_name.clone()),
             duration: Some(3000),
             ..Default::default()
         };
@@ -187,7 +188,7 @@ pub async fn create_split_3d_transform_filters(
             kind: obs::MOVE_VALUE_INTERNAL_FILTER_NAME,
             settings: Some(new_settings),
         };
-        obs_client.filters().create(new_filter).await?;
+        let _ = obs_client.filters().create(new_filter).await;
     }
 
     Ok(())
