@@ -1,38 +1,5 @@
 ## Today
 
-
-
-
-https://platform.openai.com/docs/guides/vision?lang=curl
-
-```
-
-curl https://api.openai.com/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $OPENAI_API_KEY" \
-  -d '{
-    "model": "gpt-4-vision-preview",
-    "messages": [
-      {
-        "role": "user",
-        "content": [
-          {
-            "type": "text",
-            "text": "What’s in this image?"
-          },
-          {
-            "type": "image_url",
-            "image_url": {
-              "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-            }
-          }
-        ]
-      }
-    ],
-    "max_tokens": 300
-  }'
-```
-
 ------
 
 ## Movement features
@@ -112,6 +79,10 @@ curl https://api.openai.com/v1/chat/completions \
     - Dalle Prompt dumb dog stupid keyboard
     - Personality Prompt obssesed with jane street shilling languages to the highest bidder
         - Music
+- Goodfellas intro style -
+  - https://www.youtube.com/watch?v=I7OimVJLzSI
+
+        
 ### Bugs
 
 - We can't edit sounds, without the voices.json being fucked up

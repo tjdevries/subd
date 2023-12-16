@@ -96,7 +96,6 @@ pub async fn spin_source(
     Ok(())
 }
 
-
 pub async fn scale_source(
     scene: &str,
     source: &str,

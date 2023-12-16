@@ -24,7 +24,7 @@ pub async fn dalle_time(
     contents: String,
     username: String,
     amount: i32,
-) -> Result<(), reqwest::Error> {
+) -> Result<String, reqwest::Error> {
     let api_key = env::var("OPENAI_API_KEY").unwrap();
 
     // TODO: This was supposed to be for saving to the file
@@ -75,18 +75,27 @@ pub async fn dalle_time(
                 let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
                 let unique_identifier =
                     format!("{}_{}_{}", timestamp, index, username);
-                let archive_file =
-                    format!("./archive/{}.png", unique_identifier);
+                let archive_file = format!(
+                    "/home/begin/code/subd/archive/{}.png",
+                    unique_identifier
+                );
 
-                let mut file = File::create(archive_file).unwrap();
+                let mut file = File::create(archive_file.clone()).unwrap();
                 file.write_all(&image_data).unwrap();
 
                 writeln!(csv_file, "{},{}", unique_identifier, contents)
                     .unwrap();
 
-                let filename = format!("./tmp/dalle-{}.png", index + 1);
-                let mut file = File::create(filename).unwrap();
+                // how do you get it to return a full path
+
+                let filename = format!(
+                    "/home/begin/code/subd/tmp/dalle-{}.png",
+                    index + 1
+                );
+                let mut file = File::create(filename.clone()).unwrap();
                 file.write_all(&image_data).unwrap();
+
+                return Ok(archive_file);
             }
         }
         Err(e) => {
@@ -94,7 +103,8 @@ pub async fn dalle_time(
         }
     }
 
-    Ok(())
+    // TODO: Consider where we went wrong in life
+    Ok("".to_string())
 }
 
 // let prompt = "A majestic dog sitting on a throne, wearing a crown.";
@@ -107,7 +117,7 @@ pub async fn dalle_time(
 pub async fn generate_image(
     prompt: String,
     username: String,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let url = env::var("STABLE_DIFFUSION_URL")
         .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")?;
 
@@ -128,11 +138,11 @@ pub async fn generate_image(
     let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
     let archive_file = format!("./archive/{}.png", unique_identifier);
 
-    let mut file = File::create(archive_file).unwrap();
+    let mut file = File::create(archive_file.clone()).unwrap();
     file.write_all(&image_data).unwrap();
 
     let filename = format!("./tmp/dalle-{}.png", index);
     let mut file = File::create(filename).unwrap();
     file.write_all(&image_data).unwrap();
-    Ok(())
+    Ok(archive_file)
 }

@@ -361,7 +361,6 @@ pub async fn update_and_trigger_move_value_filter(
     Ok(())
 }
 
-
 pub async fn update_and_trigger_move_values_filter_plus_cache(
     source: &str,
     filter_name: &str,

@@ -63,10 +63,12 @@ libc = "0.2.150"
 futures-util = "0.3.29"
 actix = "0.13.1"
 warp = "0.3.6"
-openai = "1.0.0-alpha.13"
+# openai = "1.0.0-alpha.13"
+openai = { path = "../openai" }
 twitch_api = "0.7.0-rc.7"
 twitch_oauth2 = "0.12.7"
 askama = "0.12.1"
+base64 = "0.21.5"
 
 [workspace]
 members = ["crates/*"]

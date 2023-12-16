@@ -101,6 +101,7 @@ impl EventHandler for SkyboxStatusHandler {
                             )
                             .await;
                             sleep(Duration::from_secs(1)).await;
+
                             let _ = obs_source::show_source(
                                 SKYBOX_SCENE,
                                 SKYBOX_SOURCE,

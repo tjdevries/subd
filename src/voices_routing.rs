@@ -331,7 +331,8 @@ pub async fn handle_voices_commands(
                     );
                 }
 
-                let vec: Vec<String> = mp3s.into_iter().collect();
+                // How do we only grab the first 10?
+                let vec: Vec<String> = mp3s.into_iter().take(10).collect();
                 let voice_clone = VoiceClone {
                     name: name.to_string(),
                     description: "a cloned voice".to_string(),
@@ -416,6 +417,10 @@ pub async fn handle_voices_commands(
 
                 // // So we need to actually get all the files matching a pattern
                 for (index, url) in urls.iter().enumerate() {
+                    if index > 15 {
+                        continue;
+                    }
+
                     println!("{index} URL {url}");
                     let cloned_mp3 = format!(
                         "/home/begin/code/subd/tmp/cloned/{}-{}.wav",
@@ -472,10 +477,15 @@ pub async fn handle_voices_commands(
 
                 let api_base_url_v1 = "https://api.elevenlabs.io/v1";
                 let result = from_clone(voice_clone, api_base_url_v1).await;
-                println!("Result: {:?}", result);
 
                 // We want the ID to not be escapae
-                let voice_id = result.unwrap();
+                let voice_id = match result {
+                    Ok(id) => id,
+                    Err(err) => {
+                        eprintln!("Error Cloning: {:?}", err);
+                        return Ok(());
+                    }
+                };
                 println!("Result: {:?}", voice_id);
 
                 // We save the JSON

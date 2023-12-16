@@ -394,7 +394,31 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
 
             // let content = chat_response.unwrap().content.unwrap().to_string();
             let content = match chat_response {
-                Ok(response) => response.content.unwrap(),
+                Ok(response) => {
+                    match response.content {
+                        Some(content) => {
+                            match content {
+                                ::openai::chat::ChatCompletionContent::Message(message) => {
+                                    message.unwrap()
+                                }
+                                ::openai::chat::ChatCompletionContent::VisionMessage(message) => {
+                                    let first_msg = message.get(1).unwrap();
+                                    match first_msg {
+                                        ::openai::chat::VisionMessage::Text { content_type, text } => {
+                                            text.to_owned()
+                                        }
+                                        ::openai::chat::VisionMessage::Image { content_type, image_url } => {
+                                            image_url.url.to_owned()
+                                        }
+                                    }
+                                }
+                            }
+                            // Some(content) => content,
+                            // None => "Error Unwrapping Content".to_string(),
+                        }
+                        None => "Error Unwrapping Content".to_string(),
+                    }
+                }
                 Err(e) => {
                     eprintln!("Error occurred: {:?}", e); // Example error logging
                     "Error response".to_string() // Example default value

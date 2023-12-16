@@ -8,6 +8,7 @@ use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
 use crate::obs_source;
+use crate::openai;
 use crate::sdf_effects;
 use crate::skybox;
 use crate::skybox::check_skybox_status_and_save;
@@ -15,6 +16,7 @@ use crate::stream_character;
 use crate::twitch_rewards;
 use crate::twitch_stream_state;
 use anyhow::{bail, Result};
+use chrono::Utc;
 use obws;
 use obws::Client as OBSClient;
 use rand::Rng;
@@ -688,6 +690,29 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        // So we save a source
+        // Lets add a timestamp
+        "!save" => {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+            let filename = format!(
+                "/home/begin/code/subd/tmp/screenshots/{}",
+                unique_identifier
+            );
+            let _ =
+                openai::save_screenshot(&obs_client, "begin", &filename).await;
+
+            // WHAT
+            let res = openai::ask_gpt_vision2(&filename, None).await.unwrap();
+
+            dbg!(&res);
+
+            // so we describe it now
+            // We can ask openai now
+            // Now we can resave it
+            Ok(())
+        }
+
         // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
         "!move" => {
             let meat_of_message = splitmsg[1..].to_vec();
@@ -897,6 +922,37 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        "!carlphone" => {
+            // It shouldn't run if we don't have a URL
+            let default = "".to_string();
+            let image_url = splitmsg.get(1).unwrap_or(&default);
+            // Crash if we don't have a prompt
+            let prompt = splitmsg[2..].to_vec().join(" ");
+            println!("Telephone Prompt: {} ", prompt.clone());
+            let res = openai::telephone2(image_url.to_string(), prompt, 5)
+                .await
+                .unwrap();
+            // Can I kick this off in a seperate thread?
+            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
+            Ok(())
+        }
+
+        "!telephone" => {
+            // It shouldn't run if we don't have a URL
+            let default = "".to_string();
+            let image_url = splitmsg.get(1).unwrap_or(&default);
+            // Crash if we don't have a prompt
+            let prompt = splitmsg[2..].to_vec().join(" ");
+
+            println!("Telephone Prompt: {} ", prompt.clone());
+            let res = openai::telephone(image_url.to_string(), prompt, 5)
+                .await
+                .unwrap();
+            // Can I kick this off in a seperate thread?
+            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
+            Ok(())
+        }
+
         // ===========================================
         // == Skybox
         // ===========================================
@@ -961,6 +1017,7 @@ pub async fn handle_obs_commands(
                     .join(" ")
             };
 
+            println!("Sending Skybox Request: {}", skybox_info.clone());
             let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest {
                 msg: skybox_info,
                 style_id,
@@ -1048,7 +1105,7 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
 fn find_style_id(splitmsg: Vec<String>) -> i32 {
     println!("\t Splitmsg: {:?}", splitmsg);
     // TODO: Do a search on Blockade ID for the values
-    let range = 1..47;
+    let range = 1..=47;
     let default_style_id = 1;
 
     match splitmsg.get(1) {
