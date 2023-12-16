@@ -922,37 +922,6 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        "!carlphone" => {
-            // It shouldn't run if we don't have a URL
-            let default = "".to_string();
-            let image_url = splitmsg.get(1).unwrap_or(&default);
-            // Crash if we don't have a prompt
-            let prompt = splitmsg[2..].to_vec().join(" ");
-            println!("Telephone Prompt: {} ", prompt.clone());
-            let res = openai::telephone2(image_url.to_string(), prompt, 5)
-                .await
-                .unwrap();
-            // Can I kick this off in a seperate thread?
-            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
-            Ok(())
-        }
-
-        "!telephone" => {
-            // It shouldn't run if we don't have a URL
-            let default = "".to_string();
-            let image_url = splitmsg.get(1).unwrap_or(&default);
-            // Crash if we don't have a prompt
-            let prompt = splitmsg[2..].to_vec().join(" ");
-
-            println!("Telephone Prompt: {} ", prompt.clone());
-            let res = openai::telephone(image_url.to_string(), prompt, 5)
-                .await
-                .unwrap();
-            // Can I kick this off in a seperate thread?
-            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
-            Ok(())
-        }
-
         // ===========================================
         // == Skybox
         // ===========================================

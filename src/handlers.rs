@@ -11,3 +11,4 @@ pub mod transform_obs_test;
 pub mod trigger_obs_hotkey;
 pub mod twitch_eventsub_handler;
 pub mod voices_handler;
+pub mod ai_telephone;

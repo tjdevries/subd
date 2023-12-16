@@ -210,6 +210,18 @@ async fn main() -> Result<()> {
         obs_client,
         pool: pool.clone(),
     });
+    
+    let obs_client = server::obs::create_obs_client().await?;
+    let twitch_config = get_chat_config();
+    let (_, twitch_client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(twitch_config);
+    event_loop.push(handlers::ai_telephone::AiTelephoneHandler {
+        obs_client,
+        pool: pool.clone(),
+        twitch_client,
+    });
 
     // This checks if Skyboxes are done, every 60 seconds
     let obs_client = server::obs::create_obs_client().await?;
