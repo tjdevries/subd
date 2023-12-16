@@ -1,3 +1,4 @@
+pub mod ai_telephone;
 pub mod chatgpt_response_handler;
 pub mod music_scenes_handler;
 pub mod obs_messages;
@@ -11,4 +12,3 @@ pub mod transform_obs_test;
 pub mod trigger_obs_hotkey;
 pub mod twitch_eventsub_handler;
 pub mod voices_handler;
-pub mod ai_telephone;

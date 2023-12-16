@@ -210,7 +210,7 @@ async fn main() -> Result<()> {
         obs_client,
         pool: pool.clone(),
     });
-    
+
     let obs_client = server::obs::create_obs_client().await?;
     let twitch_config = get_chat_config();
     let (_, twitch_client) = TwitchIRCClient::<

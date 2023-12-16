@@ -1,16 +1,16 @@
+use crate::openai;
 use anyhow::Result;
-use twitch_irc::{
-    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
-};
-use subd_types::{Event, UserMessage};
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use serde;
 use serde::{Deserialize, Serialize};
+use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
-use crate::openai;
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
+};
 
 pub struct AiTelephoneHandler {
     pub obs_client: OBSClient,
@@ -18,7 +18,6 @@ pub struct AiTelephoneHandler {
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
-
 
 #[async_trait]
 #[allow(unused_variables)]
@@ -34,7 +33,7 @@ impl EventHandler for AiTelephoneHandler {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
             };
-            
+
             let splitmsg = msg
                 .contents
                 .split(" ")
@@ -65,7 +64,10 @@ impl EventHandler for AiTelephoneHandler {
 pub async fn handle_telephone_requests(
     _tx: &broadcast::Sender<Event>,
     _obs_client: &OBSClient,
-    _twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
     _pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -76,22 +78,25 @@ pub async fn handle_telephone_requests(
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     let command = splitmsg[0].as_str();
+    // It shouldn't run if we don't have a URL
+    let default = "".to_string();
+    let image_url = splitmsg.get(1).unwrap_or(&default);
+    // Crash if we don't have a prompt
+    let prompt = splitmsg[2..].to_vec().join(" ");
 
     match command {
-
         "!carlphone" => {
-            // It shouldn't run if we don't have a URL
-            let default = "".to_string();
-            let image_url = splitmsg.get(1).unwrap_or(&default);
-            // Crash if we don't have a prompt
-            let prompt = splitmsg[2..].to_vec().join(" ");
             println!("Telephone Prompt: {} ", prompt.clone());
-            let _res = openai::telephone2(image_url.to_string(), prompt, 5)
-                .await
-                .unwrap();
-            // Can I kick this off in a seperate thread?
-            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
-            return Ok(());
+
+            match openai::telephone2(image_url.to_string(), prompt, 5).await {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!("Error Telephone Prompt: {}", e);
+                    return Ok(());
+                }
+            }
         }
 
         "!telephone" => {
@@ -102,12 +107,17 @@ pub async fn handle_telephone_requests(
             let prompt = splitmsg[2..].to_vec().join(" ");
 
             println!("Telephone Prompt: {} ", prompt.clone());
-            let _res = openai::telephone(image_url.to_string(), prompt, 5)
-                .await
-                .unwrap();
+            match openai::telephone(image_url.to_string(), prompt, 5).await {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!("Error Telephone Prompt: {}", e);
+                    return Ok(());
+                }
+            }
             // Can I kick this off in a seperate thread?
             // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
-            return Ok(());
         }
 
         _ => {

@@ -1,5 +1,6 @@
 use crate::ai_scenes;
 use crate::bootstrap;
+use crate::dalle;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -659,6 +660,43 @@ pub async fn handle_obs_commands(
                 &obs_client,
             )
             .await
+        }
+
+        "!new_begin" => {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+            let filename = format!(
+                "/home/begin/code/subd/tmp/screenshots/{}",
+                unique_identifier
+            );
+
+            let prompt = if splitmsg.len() > 1 {
+                splitmsg[1..].to_vec().join(" ")
+            } else {
+                "coolest programmer ever".to_string()
+            };
+
+            let _ =
+                openai::save_screenshot(&obs_client, "begin", &filename).await;
+
+            let description =
+                openai::ask_gpt_vision2(&filename, None).await.unwrap();
+
+            let new_description = format!(
+                "{} {} . The most important thing to focus on is: {}",
+                prompt, description, prompt
+            );
+
+            println!("Generating Dalle Image: {}", new_description.clone());
+
+            let dalle_path =
+                dalle::dalle_time(new_description, "beginbot".to_string(), 1)
+                    .await
+                    .unwrap();
+
+            println!("Dalle Path: {}", dalle_path);
+
+            Ok(())
         }
 
         "!begin" => {

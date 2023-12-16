@@ -275,10 +275,10 @@ pub async fn ask_gpt_vision2(
         match serde_json::from_str(&response_json.to_string()) {
             Ok(res) => res,
             Err(e) => {
-            println!("Error parsing JSON: {}", e);
-            return Err(e.into());
-        }
-    };
+                println!("Error parsing JSON: {}", e);
+                return Err(e.into());
+            }
+        };
     let content = &vision_res.choices[0].message.content;
     Ok(content.to_string())
 }
@@ -326,12 +326,21 @@ pub async fn telephone2(
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
-        dalle_path = dalle::generate_image(
+        println!("Generating Dalle Image: {}", description);
+
+        dalle_path = match dalle::generate_image(
             format!("{} {}", description, prompt),
             "beginbot".to_string(),
         )
         .await
-        .unwrap();
+        {
+            Ok(path) => path,
+            Err(e) => {
+                eprintln!("Error generating Dalle: {}", e);
+                // Does this leave the full loop?
+                continue;
+            }
+        }
     }
     Ok(dalle_path)
 }
@@ -340,7 +349,7 @@ pub async fn telephone(
     url: String,
     prompt: String,
     num_connections: u8,
-) -> Result<String> {
+) -> Result<String, anyhow::Error> {
     let first_description = match ask_gpt_vision2("", Some(&url)).await {
         Ok(description) => description,
         Err(e) => {
@@ -348,7 +357,7 @@ pub async fn telephone(
             return Err(e.into());
         }
     };
-    
+
     let description = format!("{} {}", first_description, prompt);
     let mut dalle_path =
         dalle::dalle_time(description, "beginbot".to_string(), 1)
@@ -357,13 +366,20 @@ pub async fn telephone(
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
-        dalle_path = dalle::dalle_time(
+        dalle_path = match dalle::dalle_time(
             format!("{} {}", description, prompt),
             "beginbot".to_string(),
             1,
         )
         .await
-        .unwrap();
+        {
+            Ok(path) => path,
+            Err(e) => {
+                eprintln!("Error generating Dalle: {}", e);
+                // Does this leave the full loop?
+                continue;
+            }
+        };
     }
     Ok(dalle_path)
 }
