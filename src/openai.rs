@@ -207,7 +207,7 @@ fn encode_image(image_path: &str) -> io::Result<String> {
 pub async fn ask_gpt_vision2(
     image_path: &str,
     image_url: Option<&str>,
-) -> Result<String, reqwest::Error> {
+) -> Result<String, anyhow::Error> {
     let api_key = env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
 
     let full_path = match image_url {
@@ -272,7 +272,13 @@ pub async fn ask_gpt_vision2(
 
     //
     let vision_res: VisionResponse =
-        serde_json::from_str(&response_json.to_string()).unwrap();
+        match serde_json::from_str(&response_json.to_string()) {
+            Ok(res) => res,
+            Err(e) => {
+            println!("Error parsing JSON: {}", e);
+            return Err(e.into());
+        }
+    };
     let content = &vision_res.choices[0].message.content;
     Ok(content.to_string())
 }
@@ -304,8 +310,14 @@ pub async fn telephone2(
     url: String,
     prompt: String,
     num_connections: u8,
-) -> Result<String> {
-    let first_description = ask_gpt_vision2("", Some(&url)).await.unwrap();
+) -> Result<String, anyhow::Error> {
+    let first_description = match ask_gpt_vision2("", Some(&url)).await {
+        Ok(description) => description,
+        Err(e) => {
+            eprintln!("Error asking GPT Vision for description: {}", e);
+            return Err(e.into());
+        }
+    };
     let description = format!("{} {}", first_description, prompt);
     let mut dalle_path =
         dalle::generate_image(description, "beginbot".to_string())
@@ -329,8 +341,14 @@ pub async fn telephone(
     prompt: String,
     num_connections: u8,
 ) -> Result<String> {
-    //
-    let first_description = ask_gpt_vision2("", Some(&url)).await.unwrap();
+    let first_description = match ask_gpt_vision2("", Some(&url)).await {
+        Ok(description) => description,
+        Err(e) => {
+            eprintln!("Error asking GPT Vision for description: {}", e);
+            return Err(e.into());
+        }
+    };
+    
     let description = format!("{} {}", first_description, prompt);
     let mut dalle_path =
         dalle::dalle_time(description, "beginbot".to_string(), 1)
