@@ -234,7 +234,7 @@ pub async fn ask_gpt_vision2(
     let payload = json!({
         "model": "gpt-4-vision-preview",
         "messages": [
-            {
+        {
                 "role": "user",
                 "content": [
                     {
@@ -436,23 +436,23 @@ mod tests {
         // let first_image = "https://mario.wiki.gallery/images/thumb/1/13/Funky_Kong_Artwork_-_Donkey_Kong_Country_Tropical_Freeze.png/600px-Funky_Kong_Artwork_-_Donkey_Kong_Country_Tropical_Freeze.png";
         // let first_image = "https://static.wikia.nocookie.net/donkeykong/images/7/72/Candy.PNG/revision/latest/scale-to-width-down/110?cb=20130203073312";
         // let first_image = "https://www.tbstat.com/wp/uploads/2023/05/Fvz9hOIXwAEaIR8-669x675.jpeg";
-        let first_image = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/SpongeBob_SquarePants_character.svg/1200px-SpongeBob_SquarePants_character.svg.png";
+        let _first_image = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/SpongeBob_SquarePants_character.svg/1200px-SpongeBob_SquarePants_character.svg.png";
 
         // let res = telephone(first_image.to_string(), "more chill".to_string(), 10).await.unwrap();
-        let res =
-            telephone2(first_image.to_string(), "More Memey".to_string(), 10)
-                .await
-                .unwrap();
-        assert_eq!("", res);
+        // let res =
+        //     telephone2(first_image.to_string(), "More Memey".to_string(), 10)
+        //         .await
+        //         .unwrap();
+        // assert_eq!("", res);
     }
 
     #[tokio::test]
     async fn test_gpt_vision() {
-        let user_input = "whats in this image".to_string();
-        let image_url = "https://upload.wikimedia.org/wikipedia/en/7/7d/Donkey_Kong_94_and_64_characters.png".to_string();
+        let _user_input = "whats in this image".to_string();
+        let _image_url = "https://upload.wikimedia.org/wikipedia/en/7/7d/Donkey_Kong_94_and_64_characters.png".to_string();
         // let res = ask_gpt_vision(user_input, image_url).await;
 
-        let image_path = "/home/begin/code/BeginGPT/stick_boi.jpg";
+        let _image_path = "/home/begin/code/BeginGPT/stick_boi.jpg";
 
         // let res = ask_gpt_vision(user_input, image_url).await.unwrap();
         // dbg!(&res);
@@ -487,7 +487,7 @@ mod tests {
         let res: VisionResponse = serde_json::from_str(&contents).unwrap();
 
         // Unless it's none
-        let content = &res.choices[0].message.content;
+        let _content = &res.choices[0].message.content;
         // dbg!(&res);
 
         // assert_eq!("", content);

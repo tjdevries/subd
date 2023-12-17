@@ -1,4 +1,5 @@
 use crate::obs_routing;
+use rodio::*;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -14,6 +15,7 @@ use twitch_irc::{
 pub struct OBSMessageHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
+    pub sink: Sink,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
@@ -43,6 +45,7 @@ impl EventHandler for OBSMessageHandler {
                 &self.obs_client,
                 &self.twitch_client,
                 &self.pool,
+                &self.sink,
                 splitmsg,
                 msg,
             )

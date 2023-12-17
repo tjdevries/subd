@@ -405,9 +405,11 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
                                     let first_msg = message.get(1).unwrap();
                                     match first_msg {
                                         ::openai::chat::VisionMessage::Text { content_type, text } => {
+                                            println!("Content Type: {:?}", content_type);
                                             text.to_owned()
                                         }
                                         ::openai::chat::VisionMessage::Image { content_type, image_url } => {
+                                            println!("Content Type: {:?}", content_type);
                                             image_url.url.to_owned()
                                         }
                                     }

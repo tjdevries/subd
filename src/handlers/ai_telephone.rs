@@ -3,6 +3,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
+use rodio::*;
 use serde;
 use serde::{Deserialize, Serialize};
 use subd_types::{Event, UserMessage};
@@ -13,6 +14,7 @@ use twitch_irc::{
 };
 
 pub struct AiTelephoneHandler {
+    pub sink: Sink,
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
     pub twitch_client:
@@ -78,14 +80,17 @@ pub async fn handle_telephone_requests(
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     let command = splitmsg[0].as_str();
-    // It shouldn't run if we don't have a URL
-    let default = "".to_string();
-    let image_url = splitmsg.get(1).unwrap_or(&default);
-    // Crash if we don't have a prompt
-    let prompt = splitmsg[2..].to_vec().join(" ");
 
     match command {
         "!carlphone" => {
+            let default = "".to_string();
+            let image_url = splitmsg.get(1).unwrap_or(&default);
+            let prompt = if splitmsg.len() > 1 {
+                splitmsg[2..].to_vec().join(" ")
+            } else {
+                "".to_string()
+            };
+
             println!("Telephone Prompt: {} ", prompt.clone());
 
             match openai::telephone2(image_url.to_string(), prompt, 5).await {
@@ -116,8 +121,6 @@ pub async fn handle_telephone_requests(
                     return Ok(());
                 }
             }
-            // Can I kick this off in a seperate thread?
-            // let res = openai::telephone2(image_url.to_string(), "More Memey".to_string(), 10).await.unwrap();
         }
 
         _ => {

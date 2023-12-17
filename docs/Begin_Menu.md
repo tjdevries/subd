@@ -2,7 +2,37 @@
 
 ### New Commands!
 
-ADMIN ONLY
+!begin_variation dalle
+!scene_variation sd
+
+!new_begin
+!new_scene
+
+!begin-dalle
+!begin-sd
+!scene-dalle
+!scene-sd
+
+!
+
+!variation
+
+!new_begin_with_dalle
+!new_begin_with_sd
+!new_scene_with_dalle
+!new_scene_with_sd
+
+!new_begin PROMPT
+!edit_begin PROMPT
+!new_begin2 PROMPT
+!edit_begin2 PROMPT
+
+!edit_scene PROMPT
+!new_scene PROMPT
+!edit_scene PROMPT
+!new_scene PROMPT
+
+## ADMIN ONLY
 
 !clone NAME_OF_VOICE URL URL URL
 

@@ -118,10 +118,15 @@ async fn main() -> Result<()> {
     // and it's also earlier in the program
     // but it takes an obs_client and pool none-the-less
     let obs_client = server::obs::create_obs_client().await?;
+    // Do we need to duplicate this?
+    let (_stream, stream_handle) =
+        audio::get_output_stream("pulse").expect("stream handle");
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(handlers::obs_messages::OBSMessageHandler {
         obs_client,
         twitch_client,
         pool: pool.clone(),
+        sink,
     });
 
     // TODO: This should be abstracted
@@ -217,8 +222,10 @@ async fn main() -> Result<()> {
         SecureTCPTransport,
         StaticLoginCredentials,
     >::new(twitch_config);
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
     event_loop.push(handlers::ai_telephone::AiTelephoneHandler {
         obs_client,
+        sink,
         pool: pool.clone(),
         twitch_client,
     });

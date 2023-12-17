@@ -21,9 +21,13 @@ use chrono::Utc;
 use obws;
 use obws::Client as OBSClient;
 use rand::Rng;
+use rodio::Decoder;
+use rodio::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
+use std::fs::File;
+use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_twitch::rewards;
@@ -38,7 +42,7 @@ use twitch_oauth2::UserToken;
 use uuid::Uuid;
 
 const PRIMARY_CAM_SCENE: &str = "SubBegin";
-const DEFAULT_DURATION: u32 = 9001;
+const _DEFAULT_DURATION: u32 = 9001;
 
 // const DEFAULT_EASING_TYPE: &str = "ease-in";
 // const DEFAULT_EASING_FUNCTION: &str = "cubic";
@@ -50,6 +54,7 @@ pub async fn handle_obs_commands(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
+    sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -662,6 +667,104 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        "!edit_scene" => {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+            let filename = format!(
+                "/home/begin/code/subd/tmp/screenshots/{}",
+                unique_identifier
+            );
+
+            let prompt = if splitmsg.len() > 1 {
+                splitmsg[1..].to_vec().join(" ")
+            } else {
+                "coolest programmer ever".to_string()
+            };
+
+            let file = BufReader::new(
+                File::open(format!("./MP3s/{}.mp3", "aim")).unwrap(),
+            );
+
+            // To tell me a screen sho is coming
+            sink.set_volume(0.3);
+            let sleep_time = time::Duration::from_millis(1000);
+            thread::sleep(sleep_time);
+
+            sink.append(Decoder::new(BufReader::new(file)).unwrap());
+            sink.sleep_until_end();
+
+            let _ = openai::save_screenshot(&obs_client, "Primary", &filename)
+                .await;
+
+            let description =
+                openai::ask_gpt_vision2(&filename, None).await.unwrap();
+
+            let new_description = format!(
+                "{} {} . The most important thing to focus on is: {}",
+                prompt, description, prompt
+            );
+
+            println!("Generating Dalle Image: {}", new_description.clone());
+
+            let dalle_path =
+                dalle::generate_image(new_description, "beginbot".to_string())
+                    .await
+                    .unwrap();
+
+            println!("Dalle Path: {}", dalle_path);
+
+            Ok(())
+        }
+
+        "!new_begin2" => {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+            let filename = format!(
+                "/home/begin/code/subd/tmp/screenshots/{}",
+                unique_identifier
+            );
+
+            let prompt = if splitmsg.len() > 1 {
+                splitmsg[1..].to_vec().join(" ")
+            } else {
+                "coolest programmer ever".to_string()
+            };
+
+            let file = BufReader::new(
+                File::open(format!("./MP3s/{}.mp3", "aim")).unwrap(),
+            );
+
+            // To tell me a screen sho is coming
+            sink.set_volume(0.3);
+            let sleep_time = time::Duration::from_millis(1000);
+            thread::sleep(sleep_time);
+
+            sink.append(Decoder::new(BufReader::new(file)).unwrap());
+            sink.sleep_until_end();
+
+            let _ =
+                openai::save_screenshot(&obs_client, "begin", &filename).await;
+
+            let description =
+                openai::ask_gpt_vision2(&filename, None).await.unwrap();
+
+            let new_description = format!(
+                "{} {} . The most important thing to focus on is: {}",
+                prompt, description, prompt
+            );
+
+            println!("Generating Dalle Image: {}", new_description.clone());
+
+            let dalle_path =
+                dalle::generate_image(new_description, "beginbot".to_string())
+                    .await
+                    .unwrap();
+
+            println!("Dalle Path: {}", dalle_path);
+
+            Ok(())
+        }
+
         "!new_begin" => {
             let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
             let unique_identifier = format!("{}_screenshot.png", timestamp);
@@ -676,6 +779,8 @@ pub async fn handle_obs_commands(
                 "coolest programmer ever".to_string()
             };
 
+            // Play a sound
+            // wait 300 ms
             let _ =
                 openai::save_screenshot(&obs_client, "begin", &filename).await;
 
@@ -1302,6 +1407,20 @@ fn build_chat_move_source_request(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_screenshotting() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_screenshot.png", timestamp);
+        let filename = format!(
+            "/home/begin/code/subd/tmp/screenshots/fake/{}",
+            unique_identifier
+        );
+        let _ =
+            openai::save_screenshot(&obs_client, "Primary", &filename).await;
+    }
 
     #[test]
     fn test_chunk_string() {

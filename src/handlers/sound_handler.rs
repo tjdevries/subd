@@ -106,9 +106,7 @@ impl EventHandler for ExplicitSoundHandler {
                 self.sink.set_volume(0.5);
                 self.sink
                     .append(Decoder::new(BufReader::new(file)).unwrap());
-
                 self.sink.sleep_until_end();
-
                 let sleep_time = time::Duration::from_millis(100);
                 thread::sleep(sleep_time);
             }
