@@ -137,7 +137,7 @@ async fn create_screenshot_variation(
     prompt: String,
     source: String,
 ) -> Result<String> {
-    let _ = play_sound(&sink).await;
+    // let _ = play_sound(&sink).await;
 
     let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
 
