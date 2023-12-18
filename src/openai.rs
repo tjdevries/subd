@@ -1,5 +1,6 @@
 // use anyhow::Error;
 use crate::dalle;
+use crate::dalle::GenerateImage;
 use anyhow::Result;
 use base64;
 use base64::engine::general_purpose;
@@ -318,29 +319,28 @@ pub async fn telephone2(
             return Err(e.into());
         }
     };
+
     let description = format!("{} {}", first_description, prompt);
+    let request = dalle::StableDiffusionRequest {
+        username: "beginbot".to_string(),
+        prompt: description,
+    };
+    
     let mut dalle_path =
-        dalle::generate_image(description, "beginbot".to_string())
-            .await
-            .unwrap();
+        request.generate_image()
+            .await;
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
         println!("Generating Dalle Image: {}", description);
 
-        dalle_path = match dalle::generate_image(
-            format!("{} {}", description, prompt),
-            "beginbot".to_string(),
-        )
-        .await
-        {
-            Ok(path) => path,
-            Err(e) => {
-                eprintln!("Error generating Dalle: {}", e);
-                // Does this leave the full loop?
-                continue;
-            }
-        }
+        let request = dalle::DalleRequest{
+            prompt: format!("{} {}", description, prompt),
+            username: "beginbot".to_string(),
+            amount: 1,
+        };
+
+        dalle_path = request.generate_image().await
     }
     Ok(dalle_path)
 }
@@ -359,27 +359,25 @@ pub async fn telephone(
     };
 
     let description = format!("{} {}", first_description, prompt);
-    let mut dalle_path =
-        dalle::dalle_time(description, "beginbot".to_string(), 1)
-            .await
-            .unwrap();
+
+    let req = dalle::DalleRequest {
+        prompt: description,
+        username: "beginbot".to_string(),
+        amount: 1,
+    };
+    
+    let mut dalle_path = req.generate_image().await;
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
-        dalle_path = match dalle::dalle_time(
-            format!("{} {}", description, prompt),
-            "beginbot".to_string(),
-            1,
-        )
-        .await
-        {
-            Ok(path) => path,
-            Err(e) => {
-                eprintln!("Error generating Dalle: {}", e);
-                // Does this leave the full loop?
-                continue;
-            }
+        let req = dalle::DalleRequest {
+            prompt: format!("{} {}", description, prompt),
+            username: "beginbot".to_string(),
+            amount: 1,
         };
+        
+        // I'm afraid this crashes somehow
+        dalle_path = req.generate_image().await;
     }
     Ok(dalle_path)
 }

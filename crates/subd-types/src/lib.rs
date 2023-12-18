@@ -96,6 +96,13 @@ pub struct SourceVisibilityRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiScreenshotsRequest {
+    // pub msg: String,
+    // pub style_id: i32,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiTelephoneRequest {
     // pub msg: String,
     // pub style_id: i32,
@@ -115,6 +122,7 @@ pub enum Event {
     ElevenLabsRequest(ElevenLabsRequest),
     AiScenesRequest(AiScenesRequest),
     AiTelephoneRequest(AiTelephoneRequest),
+    AiScreenshotsRequest(AiScreenshotsRequest),
     TransformOBSTextRequest(TransformOBSTextRequest),
     StreamCharacterRequest(StreamCharacterRequest),
     SourceVisibilityRequest(SourceVisibilityRequest),

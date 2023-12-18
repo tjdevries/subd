@@ -1,4 +1,5 @@
 use crate::audio;
+use crate::dalle::GenerateImage;
 use crate::dalle;
 use crate::obs;
 use crate::obs_scenes;
@@ -150,7 +151,7 @@ impl EventHandler for AiScenesHandler {
             )
             .await;
 
-            let final_voice = match msg.voice {
+            let final_voice = match msg.voice.clone() {
                 Some(voice) => voice,
                 None => {
                     if is_global_voice_enabled {
@@ -173,7 +174,7 @@ impl EventHandler for AiScenesHandler {
             // so we can inform them on screen
             let mut is_random = false;
 
-            let voice_data = find_voice_id_by_name(&final_voice);
+            let voice_data = find_voice_id_by_name(&final_voice.clone());
             let (voice_id, voice_name) = match voice_data {
                 Some((id, name)) => (id, name),
                 None => {
@@ -285,31 +286,38 @@ impl EventHandler for AiScenesHandler {
                                 eprintln!(
                                     "Error fetching twitch_stream_state: {:?}",
                                     err
-                                );
-                                (false, false)
+                            );
+                            (false, false)
                             }
                         };
 
                     if stable_diffusion_enabled {
                         println!("Attempting to Generate Stable Diffusion");
-                        let _ = dalle::generate_image(
-                            dalle_prompt.clone(),
-                            msg.username.clone(),
-                        )
-                        .await;
+                        let request: dalle::StableDiffusionRequest = dalle::StableDiffusionRequest {
+                            prompt: dalle_prompt.clone(),
+                            username: msg.username.clone(),
+                        };
+                        let _ = request.generate_image().await;
+                        // generate_image().await;
+                        // let _ = dalle::generate_image(
+                        //     dalle_prompt.clone(),
+                        //     msg.username.clone(),
+                        // )
+                        // .await;
                         println!("Done Generating Stable Diffusion");
                     };
 
                     if dalle_enabled {
                         println!("Attempting to Generate Dalle");
-                        let _ = dalle::dalle_time(
-                            dalle_prompt.clone(),
-                            msg.username.clone(),
-                            1,
-                        )
-                        .await;
-                        println!("Done Attempting to Generate Dalle");
-                    };
+
+                        let req = dalle::DalleRequest {
+                            prompt: dalle_prompt.clone(),
+                            username: msg.username.clone(),
+                            amount: 1,
+                        };
+                    let _ = req.generate_image().await;
+                    println!("Done Attempting to Generate Dalle");
+                };
 
                     let _ = obs_scenes::change_scene(
                         &locked_obs_client,

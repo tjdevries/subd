@@ -1,5 +1,6 @@
 use crate::art_blocks;
 use crate::dalle;
+use crate::dalle::GenerateImage;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use subd_types::{Event, UserMessage};
@@ -176,8 +177,12 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
 
+            let req = dalle::StableDiffusionRequest {
+                prompt,
+                username: msg.user_name,
+            };
             // We need to finish the code though
-            let _ = dalle::generate_image(prompt, msg.user_name).await;
+            let _ = req.generate_image().await;
             Ok(())
         }
 
@@ -192,7 +197,14 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
             println!("Dalle Time!");
-            let _ = dalle::dalle_time(prompt, msg.user_name, 1).await;
+            
+            let req = dalle::DalleRequest {
+                prompt,
+                username: msg.user_name,
+                amount: 1,
+            };
+    
+            let _ = req.generate_image().await;
             Ok(())
         }
         _ => Ok(()),

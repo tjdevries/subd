@@ -1,5 +1,34 @@
 ## Tonight's Menu of Commands
 
+!new_begin PROMPT
+
+!move alex 300 300
+
+!move SOURCE X Y DURATION
+!scale SOURCE X Y DURATION
+!spin DEGREES DURATION
+
+----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### New Commands!
 
 !begin_variation dalle
