@@ -13,8 +13,8 @@ use twitch_irc::TwitchIRCClient;
 // use server::uberduck;
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
-let twitch_username = subd_types::consts::get_twitch_bot_username();
-ClientConfig::new_simple(StaticLoginCredentials::new(
+    let twitch_username = subd_types::consts::get_twitch_bot_username();
+    ClientConfig::new_simple(StaticLoginCredentials::new(
         twitch_username,
         Some(subd_types::consts::get_twitch_bot_oauth()),
     ))
@@ -66,8 +66,8 @@ async fn main() -> Result<()> {
         // You must take care not to call these when the crate is being
         // used in any other way (to avoid concurrent mutation).
         unsafe {
-        add_word(format!("vs{}", "code").as_str(), Type::PROFANE);
-        add_word("vsc*de", Type::SAFE);
+            add_word(format!("vs{}", "code").as_str(), Type::PROFANE);
+            add_word("vsc*de", Type::SAFE);
         }
     }
 
@@ -229,7 +229,7 @@ async fn main() -> Result<()> {
         pool: pool.clone(),
         twitch_client,
     });
-    
+
     let obs_client = server::obs::create_obs_client().await?;
     let twitch_config = get_chat_config();
     let (_, twitch_client) = TwitchIRCClient::<
@@ -243,7 +243,6 @@ async fn main() -> Result<()> {
         pool: pool.clone(),
         twitch_client,
     });
-
 
     // This checks if Skyboxes are done, every 60 seconds
     let obs_client = server::obs::create_obs_client().await?;

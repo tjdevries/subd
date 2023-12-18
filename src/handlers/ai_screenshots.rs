@@ -1,17 +1,16 @@
-use crate::openai;
 use crate::dalle;
 use crate::dalle::GenerateImage;
-use std::time;
-use std::fs::File;
-use std::io::BufReader;
-use chrono::Utc;
+use crate::openai;
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
-use serde;
+use std::fs::File;
+use std::io::BufReader;
 use std::thread;
+use std::time;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
@@ -27,7 +26,6 @@ pub struct AiScreenshotsHandler {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
-
 #[async_trait]
 #[allow(unused_variables)]
 impl EventHandler for AiScreenshotsHandler {
@@ -40,8 +38,8 @@ impl EventHandler for AiScreenshotsHandler {
             let event = rx.recv().await?;
             let msg = match event {
                 Event::UserMessage(msg) => msg,
-            _ => continue,
-        };
+                _ => continue,
+            };
 
             let splitmsg = msg
                 .contents
@@ -74,9 +72,8 @@ impl EventHandler for AiScreenshotsHandler {
 // This also has a pause in it,
 // we might want to take that in as a variable
 async fn play_sound(sink: &Sink) -> Result<()> {
-    let file = BufReader::new(
-        File::open(format!("./MP3s/{}.mp3", "aim")).unwrap(),
-    );
+    let file =
+        BufReader::new(File::open(format!("./MP3s/{}.mp3", "aim")).unwrap());
     let sleep_time = time::Duration::from_millis(1000);
     thread::sleep(sleep_time);
     // To tell me a screen shot is coming
@@ -110,101 +107,131 @@ pub async fn handle_ai_screenshots(
         "/home/begin/code/subd/tmp/screenshots/{}",
         unique_identifier
     );
+
+    // I need a list of all models
+    let models = vec!["dalle".to_string(), "sd".to_string()];
+    let default_model = "dalle".to_string();
+    let model = splitmsg.get(1).unwrap_or(&default_model);
+
     let prompt = if splitmsg.len() > 1 {
-        splitmsg[1..].to_vec().join(" ")
+        if models.contains(splitmsg.get(1).unwrap_or(&"".to_string())) {
+            splitmsg[2..].to_vec().join(" ")
+        } else {
+            splitmsg[1..].to_vec().join(" ")
+        }
     } else {
-        "coolest programmer ever".to_string()
+        "coolest programmer ever. Super stylish".to_string()
     };
 
+    let model = model.clone();
+
     match command {
-        "!edit_scene" => {
-            let _ = play_sound(&sink).await;
-
-            let _ = openai::save_screenshot(&obs_client, "Primary", &filename)
-                .await;
-
-            let description =
-                openai::ask_gpt_vision2(&filename, None).await.unwrap();
-
-            let new_description = format!(
-                "{} {} . The most important thing to focus on is: {}",
-                prompt, description, prompt
-            );
-
-            println!("Generating Dalle Image: {}", new_description.clone());
-
-            let req = dalle::DalleRequest {
-                prompt: new_description,
-                username: "beginbot".to_string(),
-                amount: 1,
-            };
-
-            let dalle_path = req.generate_image().await;
-
-            println!("Dalle Path: {}", dalle_path);
-
-            return Ok(())
-        }
-
-        "!new_begin2" => {
-            let _ = play_sound(&sink).await;
-
-            let _ =
-                openai::save_screenshot(&obs_client, "begin", &filename).await;
-
-            let description =
-                openai::ask_gpt_vision2(&filename, None).await.unwrap();
-
-            let new_description = format!(
-                "{} {} . The most important thing to focus on is: {}",
-                prompt, description, prompt
-            );
-
-            println!("Generating Dalle Image: {}", new_description.clone());
-
-            let stable_diffusion_req = dalle::StableDiffusionRequest{
-                prompt: new_description,
-                username: "beginbot".to_string(),
-            };
-
-            let dalle_path = stable_diffusion_req.generate_image().await;
-
-            println!("Dalle Path: {}", dalle_path);
-
+        "!new_alex" | "edit_alex" | "!ai_alex" => {
+            let screenshot_source = "alex".to_string();
+            let _ = screenshot_routing(
+                sink,
+                obs_client,
+                filename,
+                prompt,
+                model,
+                screenshot_source,
+            )
+            .await;
             return Ok(());
         }
 
-        "!new_begin" => {
-            let _ = play_sound(&sink).await;
-            
-            let _ =
-                openai::save_screenshot(&obs_client, "begin", &filename).await;
-
-            let description =
-                openai::ask_gpt_vision2(&filename, None).await.unwrap();
-
-            let new_description = format!(
-                "{} {} . The most important thing to focus on is: {}",
-                prompt, description, prompt
-            );
-
-            println!("Generating Dalle Image: {}", new_description.clone());
-
-            let req = dalle::DalleRequest{
-                prompt: new_description,
-                username: "beginbot".to_string(),
-                amount: 1,
-            };
-
-            let dalle_path =
-                req.generate_image().await;
-
-            println!("Dalle Path: {}", dalle_path);
-
+        "!new_scene" | "edit_scene" | "!ai_scene" => {
+            let screenshot_source = "Primary".to_string();
+            let _ = screenshot_routing(
+                sink,
+                obs_client,
+                filename,
+                prompt,
+                model,
+                screenshot_source,
+            )
+            .await;
             return Ok(());
         }
+
+        "!new_begin" | "edit_begin" | "!ai_begin" => {
+            let screenshot_source = "begin".to_string();
+            let _ = screenshot_routing(
+                sink,
+                obs_client,
+                filename,
+                prompt,
+                model,
+                screenshot_source,
+            )
+            .await;
+            return Ok(());
+        }
+
         _ => {
             return Ok(());
         }
     };
+}
+
+async fn screenshot_routing(
+    sink: &Sink,
+    obs_client: &OBSClient,
+    filename: String,
+    prompt: String,
+    model: String,
+    source: String,
+) -> Result<()> {
+    if model == "dalle" {
+        let req = dalle::DalleRequest {
+            prompt: prompt.clone(),
+            username: "beginbot".to_string(),
+            amount: 1,
+        };
+        let _ = create_screenshot_variation(
+            sink, obs_client, filename, &req, prompt, source,
+        )
+        .await;
+    } else {
+        let req = dalle::StableDiffusionRequest {
+            prompt: prompt.clone(),
+            username: "beginbot".to_string(),
+            amount: 1,
+        };
+        let _ = create_screenshot_variation(
+            sink, obs_client, filename, &req, prompt, source,
+        )
+        .await;
+    };
+
+    Ok(())
+}
+
+// TODO: I don't like the name
+async fn create_screenshot_variation(
+    sink: &Sink,
+    obs_client: &OBSClient,
+    filename: String,
+    ai_image_req: &impl GenerateImage,
+    prompt: String,
+    source: String,
+) -> Result<String> {
+    let _ = play_sound(&sink).await;
+
+    let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
+
+    let description = openai::ask_gpt_vision2(&filename, None).await.unwrap();
+
+    let new_description = format!(
+        "{} {} . The most important thing to focus on is: {}",
+        prompt, description, prompt
+    );
+
+    println!("Generating Dalle Image: {}", new_description.clone());
+
+    let dalle_path = ai_image_req.generate_image().await;
+
+    println!("Dalle Path: {}", dalle_path);
+
+    Ok(dalle_path)
 }

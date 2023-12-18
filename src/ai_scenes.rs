@@ -1,6 +1,6 @@
 use crate::audio;
-use crate::dalle::GenerateImage;
 use crate::dalle;
+use crate::dalle::GenerateImage;
 use crate::obs;
 use crate::obs_scenes;
 use crate::redirect;
@@ -286,17 +286,19 @@ impl EventHandler for AiScenesHandler {
                                 eprintln!(
                                     "Error fetching twitch_stream_state: {:?}",
                                     err
-                            );
-                            (false, false)
+                                );
+                                (false, false)
                             }
                         };
 
                     if stable_diffusion_enabled {
                         println!("Attempting to Generate Stable Diffusion");
-                        let request: dalle::StableDiffusionRequest = dalle::StableDiffusionRequest {
-                            prompt: dalle_prompt.clone(),
-                            username: msg.username.clone(),
-                        };
+                        let request: dalle::StableDiffusionRequest =
+                            dalle::StableDiffusionRequest {
+                                prompt: dalle_prompt.clone(),
+                                username: msg.username.clone(),
+                                amount: 1,
+                            };
                         let _ = request.generate_image().await;
                         // generate_image().await;
                         // let _ = dalle::generate_image(
@@ -315,9 +317,9 @@ impl EventHandler for AiScenesHandler {
                             username: msg.username.clone(),
                             amount: 1,
                         };
-                    let _ = req.generate_image().await;
-                    println!("Done Attempting to Generate Dalle");
-                };
+                        let _ = req.generate_image().await;
+                        println!("Done Attempting to Generate Dalle");
+                    };
 
                     let _ = obs_scenes::change_scene(
                         &locked_obs_client,

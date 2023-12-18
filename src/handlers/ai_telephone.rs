@@ -4,7 +4,6 @@ use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
-use serde;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
@@ -89,9 +88,7 @@ pub async fn handle_telephone_requests(
             } else {
                 "".to_string()
             };
-
             println!("Telephone Prompt: {} ", prompt.clone());
-
             match openai::telephone2(image_url.to_string(), prompt, 5).await {
                 Ok(_) => {
                     return Ok(());
@@ -109,7 +106,6 @@ pub async fn handle_telephone_requests(
             let image_url = splitmsg.get(1).unwrap_or(&default);
             // Crash if we don't have a prompt
             let prompt = splitmsg[2..].to_vec().join(" ");
-
             println!("Telephone Prompt: {} ", prompt.clone());
             match openai::telephone(image_url.to_string(), prompt, 5).await {
                 Ok(_) => {

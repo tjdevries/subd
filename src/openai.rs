@@ -324,17 +324,16 @@ pub async fn telephone2(
     let request = dalle::StableDiffusionRequest {
         username: "beginbot".to_string(),
         prompt: description,
+        amount: 1,
     };
-    
-    let mut dalle_path =
-        request.generate_image()
-            .await;
+
+    let mut dalle_path = request.generate_image().await;
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
         println!("Generating Dalle Image: {}", description);
 
-        let request = dalle::DalleRequest{
+        let request = dalle::DalleRequest {
             prompt: format!("{} {}", description, prompt),
             username: "beginbot".to_string(),
             amount: 1,
@@ -365,7 +364,7 @@ pub async fn telephone(
         username: "beginbot".to_string(),
         amount: 1,
     };
-    
+
     let mut dalle_path = req.generate_image().await;
 
     for _ in 0..num_connections {
@@ -375,7 +374,7 @@ pub async fn telephone(
             username: "beginbot".to_string(),
             amount: 1,
         };
-        
+
         // I'm afraid this crashes somehow
         dalle_path = req.generate_image().await;
     }

@@ -1,6 +1,6 @@
 use anyhow::Result;
-use core::pin::Pin;
 use chrono::Utc;
+use core::pin::Pin;
 use reqwest;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,6 @@ use std::env;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -22,9 +21,24 @@ struct ImageData {
     url: String,
 }
 
-
 // ===============================================
 
+pub enum AiImageRequests {
+    DalleRequest,
+    StableDiffusionRequest,
+}
+
+impl GenerateImage for AiImageRequests {
+    fn generate_image(
+        &self,
+    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
+    {
+        let res = async move { "".to_string() };
+        Box::pin(res)
+    }
+}
+
+// pub struct DalleRequest  = AiImageRequest;
 pub struct DalleRequest {
     pub prompt: String,
     pub username: String,
@@ -34,21 +48,23 @@ pub struct DalleRequest {
 pub struct StableDiffusionRequest {
     pub prompt: String,
     pub username: String,
+    pub amount: i32,
 }
 
 pub trait GenerateImage {
-    // async fn generate_image(&self);
-    fn generate_image(&self) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>;
+    fn generate_image(
+        &self,
+    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>;
 }
 
 impl GenerateImage for StableDiffusionRequest {
-    fn generate_image (
-    &self,
-) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>> {
-    // ) -> Result<String, reqwest::Error> {
-        
+    fn generate_image(
+        &self,
+    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
+    {
         let url = env::var("STABLE_DIFFUSION_URL")
-            .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set").unwrap();
+            .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")
+            .unwrap();
 
         let client = Client::new();
         let req = client
@@ -56,7 +72,7 @@ impl GenerateImage for StableDiffusionRequest {
             .header("Content-Type", "application/json")
             .json(&json!({"prompt": self.prompt}))
             .send();
-        
+
         let res = async move {
             let response = req.await.unwrap();
 
@@ -66,7 +82,8 @@ impl GenerateImage for StableDiffusionRequest {
             let index = 1;
             // TODO: move this to a function
             let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-            let unique_identifier = format!("{}_{}_{}", timestamp, index, self.username);
+            let unique_identifier =
+                format!("{}_{}_{}", timestamp, index, self.username);
             let archive_file = format!("./archive/{}.png", unique_identifier);
 
             let mut file = File::create(archive_file.clone()).unwrap();
@@ -79,27 +96,26 @@ impl GenerateImage for StableDiffusionRequest {
         };
         Box::pin(res)
     }
-    
 }
-
 
 impl GenerateImage for DalleRequest {
     fn generate_image(
         &self,
-    // ) -> Result<String, reqwest::Error> {
-    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>> {
+    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
+    {
         let api_key = env::var("OPENAI_API_KEY").unwrap();
 
         // TODO: This was supposed to be for saving to the file
         // which we aren't doing yet
-        let _truncated_prompt = self.prompt.chars().take(80).collect::<String>();
+        let _truncated_prompt =
+            self.prompt.chars().take(80).collect::<String>();
         let client = reqwest::Client::new();
 
         // TODO: read from the database
         let size = "1024x1024";
         let model = "dall-e-3";
 
-        let req  = client
+        let req = client
             .post("https://api.openai.com/v1/images/generations")
             .header("Content-Type", "application/json")
             .header("Authorization", format!("Bearer {}", api_key))
@@ -110,11 +126,10 @@ impl GenerateImage for DalleRequest {
                 "size": size,
             }))
             .send();
-            
 
         let res = async move {
             let response = req.await.unwrap();
-        
+
             let dalle_response_text = response.text().await.unwrap();
 
             let mut csv_file = OpenOptions::new()
@@ -126,12 +141,13 @@ impl GenerateImage for DalleRequest {
 
             let image_response: Result<ImageResponse, _> =
                 serde_json::from_str(&dalle_response_text);
-            
+
             let mut archive_file = "".to_string();
-            
+
             match image_response {
                 Ok(response) => {
-                    for (index, image_data) in response.data.iter().enumerate() {
+                    for (index, image_data) in response.data.iter().enumerate()
+                    {
                         println!("Image URL: {} | ", image_data.url.clone());
                         let image_data = reqwest::get(image_data.url.clone())
                             .await
@@ -143,19 +159,27 @@ impl GenerateImage for DalleRequest {
 
                         // "id": 9612607,
                         // request for AI_image_filename
-                        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-                        let unique_identifier =
-                            format!("{}_{}_{}", timestamp, index, self.username);
+                        let timestamp =
+                            Utc::now().format("%Y%m%d%H%M%S").to_string();
+                        let unique_identifier = format!(
+                            "{}_{}_{}",
+                            timestamp, index, self.username
+                        );
                         archive_file = format!(
                             "/home/begin/code/subd/archive/{}.png",
                             unique_identifier
                         );
 
-                        let mut file = File::create(archive_file.clone()).unwrap();
+                        let mut file =
+                            File::create(archive_file.clone()).unwrap();
                         file.write_all(&image_data).unwrap();
 
-                        writeln!(csv_file, "{},{}", unique_identifier, self.prompt)
-                            .unwrap();
+                        writeln!(
+                            csv_file,
+                            "{},{}",
+                            unique_identifier, self.prompt
+                        )
+                        .unwrap();
 
                         // how do you get it to return a full path
 
@@ -175,9 +199,40 @@ impl GenerateImage for DalleRequest {
             }
         };
 
-        return Box::pin(res)
+        return Box::pin(res);
     }
 }
+
+// macro_rules! new_request_type {
+//     ($name:ident) => {
+//         struct $name {
+//             field1: i32,
+//             field2: String,
+//         }
+//
+//         impl $name {
+//             fn new(field1: i32, field2: String) -> Self {
+//                 $name { field1, field2 }
+//             }
+//
+//             fn field1(self) -> i32 {
+//                 self.field1
+//             }
+//         }
+//     };
+// }
+//
+// new_request_type!(StableDiffusionRequest);
+// new_request_type!(AiImageRequest);
+//
+// fn main() {
+//     let a = StableDiffusionRequest::new(10, "Hello".to_string());
+//     let b = AiImageRequest::new(20, "World".to_string());
+//
+//     println!("{}", b.field1());
+//
+// }
+
 //
 //
 // pub async fn dalle_time(

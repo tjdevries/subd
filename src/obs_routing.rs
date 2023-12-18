@@ -1,6 +1,5 @@
 use crate::ai_scenes;
 use crate::bootstrap;
-use crate::dalle;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
@@ -21,13 +20,10 @@ use chrono::Utc;
 use obws;
 use obws::Client as OBSClient;
 use rand::Rng;
-use rodio::Decoder;
 use rodio::*;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::fs::File;
-use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_twitch::rewards;
@@ -40,6 +36,10 @@ use twitch_irc::{
 };
 use twitch_oauth2::UserToken;
 use uuid::Uuid;
+// use rodio::Decoder;
+// use std::fs::File;
+// use std::io::BufReader;
+// use crate::dalle;
 
 const PRIMARY_CAM_SCENE: &str = "SubBegin";
 const _DEFAULT_DURATION: u32 = 9001;
@@ -54,7 +54,7 @@ pub async fn handle_obs_commands(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
-    sink: &Sink,
+    _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {

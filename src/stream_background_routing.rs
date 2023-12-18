@@ -180,6 +180,7 @@ pub async fn handle_stream_background_commands(
             let req = dalle::StableDiffusionRequest {
                 prompt,
                 username: msg.user_name,
+                amount: 1,
             };
             // We need to finish the code though
             let _ = req.generate_image().await;
@@ -197,13 +198,13 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
             println!("Dalle Time!");
-            
+
             let req = dalle::DalleRequest {
                 prompt,
                 username: msg.user_name,
                 amount: 1,
             };
-    
+
             let _ = req.generate_image().await;
             Ok(())
         }
