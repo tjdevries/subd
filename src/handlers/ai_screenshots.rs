@@ -212,10 +212,11 @@ async fn create_screenshot_variation(
         "{} {} . The most important thing to focus on is: {}",
         prompt, description, prompt
     );
-
     println!("Generating Dalle Image: {}", new_description.clone());
 
-    let dalle_path = ai_image_req.generate_image(None, false).await;
+    let dalle_path = ai_image_req
+        .generate_image(new_description, None, false)
+        .await;
 
     println!("Dalle Path: {}", dalle_path);
 

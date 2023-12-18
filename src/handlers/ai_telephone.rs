@@ -1,3 +1,4 @@
+use crate::dalle;
 use crate::openai;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -78,18 +79,30 @@ pub async fn handle_telephone_requests(
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
     let command = splitmsg[0].as_str();
+    let default = "".to_string();
+    let image_url = splitmsg.get(1).unwrap_or(&default);
+    let prompt = if splitmsg.len() > 1 {
+        splitmsg[2..].to_vec().join(" ")
+    } else {
+        "".to_string()
+    };
 
     match command {
         "!carlphone" => {
-            let default = "".to_string();
-            let image_url = splitmsg.get(1).unwrap_or(&default);
-            let prompt = if splitmsg.len() > 1 {
-                splitmsg[2..].to_vec().join(" ")
-            } else {
-                "".to_string()
+            let req = dalle::StableDiffusionRequest {
+                username: "beginbot".to_string(),
+                prompt: prompt.clone(),
+                amount: 1,
             };
-            println!("Telephone Prompt: {} ", prompt.clone());
-            match openai::telephone2(image_url.to_string(), prompt, 5).await {
+
+            match openai::telephone(
+                image_url.to_string(),
+                prompt.clone(),
+                5,
+                &req,
+            )
+            .await
+            {
                 Ok(_) => {
                     return Ok(());
                 }
@@ -101,13 +114,20 @@ pub async fn handle_telephone_requests(
         }
 
         "!telephone" => {
-            // It shouldn't run if we don't have a URL
-            let default = "".to_string();
-            let image_url = splitmsg.get(1).unwrap_or(&default);
-            // Crash if we don't have a prompt
-            let prompt = splitmsg[2..].to_vec().join(" ");
-            println!("Telephone Prompt: {} ", prompt.clone());
-            match openai::telephone(image_url.to_string(), prompt, 5).await {
+            let req = dalle::DalleRequest {
+                prompt: prompt.clone(),
+                username: msg.user_name,
+                amount: 1,
+            };
+
+            match openai::telephone(
+                image_url.to_string(),
+                prompt.clone(),
+                5,
+                &req,
+            )
+            .await
+            {
                 Ok(_) => {
                     return Ok(());
                 }

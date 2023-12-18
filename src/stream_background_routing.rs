@@ -178,12 +178,12 @@ pub async fn handle_stream_background_commands(
                 .join(" ");
 
             let req = dalle::StableDiffusionRequest {
-                prompt,
+                prompt: prompt.clone(),
                 username: msg.user_name,
                 amount: 1,
             };
             // We need to finish the code though
-            let _ = req.generate_image(None, true).await;
+            let _ = req.generate_image(prompt, None, true).await;
             Ok(())
         }
 
@@ -200,13 +200,13 @@ pub async fn handle_stream_background_commands(
             println!("Dalle Time!");
 
             let req = dalle::DalleRequest {
-                prompt,
+                prompt: prompt.clone(),
                 username: msg.user_name,
                 amount: 1,
             };
 
-            let _ = req.generate_image(None, true).await;
-        Ok(())
+            let _ = req.generate_image(prompt, None, true).await;
+            Ok(())
         }
         _ => Ok(()),
     }

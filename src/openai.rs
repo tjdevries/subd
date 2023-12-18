@@ -21,64 +21,38 @@ use openai::{
         ChatCompletion, ChatCompletionContent, ChatCompletionMessage,
         ChatCompletionMessageRole, ImageUrl, VisionMessage,
     },
-    completions::Completion,
     set_key,
 };
 use std::env;
 
-pub async fn ask_gpt_vision(
-    user_input: String,
-    image_url: String,
-) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-    set_key(env::var("OPENAI_API_KEY").unwrap());
-    // set_key(env::var("OPENAI_KEY").unwrap());
+#[derive(Debug, Serialize, Deserialize)]
+struct VisionResponse {
+    choices: Vec<VisionChoice>,
+    id: String,
+    model: String,
+    usage: OpenAIUsage,
+    //     "created": 1702696712,
+    //     "object": "chat.completion",
+}
 
-    let text_content = VisionMessage::Text {
-        content_type: "text".to_string(),
-        text: user_input,
-    };
+#[derive(Debug, Serialize, Deserialize)]
+struct OpenAIUsage {
+    completion_tokens: u32,
+    prompt_tokens: u32,
+    total_tokens: u32,
+}
 
-    let image_content = VisionMessage::Image {
-        content_type: "image_url".to_string(),
-        image_url: ImageUrl { url: image_url },
-    };
-    let new_content =
-        ChatCompletionContent::VisionMessage(vec![text_content, image_content]);
+#[derive(Debug, Serialize, Deserialize)]
+struct VisionChoice {
+    fininsh_reason: Option<String>,
+    index: u8,
+    message: VisionChoiceContent,
+}
 
-    // panic!("STOP");
-    //
-    let messages = vec![ChatCompletionMessage {
-        role: ChatCompletionMessageRole::System,
-        content: Some(new_content),
-        name: None,
-        function_call: None,
-    }];
-
-    println!("JSON:\n\n {}", serde_json::to_string(&messages).unwrap());
-    let model = "gpt-4-vision-preview";
-
-    let chat_completion =
-        match ChatCompletion::builder(model.clone(), messages.clone())
-            .create()
-            .await
-        {
-            Ok(completion) => completion,
-            Err(e) => {
-                println!("\n\tChat GPT error occurred: {}", e);
-                return Err(e);
-            }
-        };
-
-    let returned_message =
-        chat_completion.choices.first().unwrap().message.clone();
-
-    // TODO: fix
-    // println!(
-    //     "Chat GPT Response {:#?}: {}",
-    //     &returned_message.role,
-    //     &returned_message.content.clone().unwrap().trim()
-    // );
-    Ok(returned_message)
+#[derive(Debug, Serialize, Deserialize)]
+struct VisionChoiceContent {
+    content: String,
+    role: String,
 }
 
 // I want this to exist somewhere else
@@ -87,11 +61,7 @@ pub async fn ask_chat_gpt(
     user_input: String,
     base_content: String,
 ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-    // I use this key
     set_key(env::var("OPENAI_API_KEY").unwrap());
-
-    // but this lib wanted this key
-    // set_key(env::var("OPENAI_KEY").unwrap());
 
     let base_message = ChatCompletionMessage {
         role: ChatCompletionMessageRole::System,
@@ -104,7 +74,6 @@ pub async fn ask_chat_gpt(
         "JSON:\n\n {}",
         serde_json::to_string(&base_message).unwrap()
     );
-    // panic!("STOP");
 
     let mut messages = vec![base_message];
 
@@ -133,76 +102,7 @@ pub async fn ask_chat_gpt(
 
     let returned_message =
         chat_completion.choices.first().unwrap().message.clone();
-
-    // TODO: unwrap match for enum
-    // &returned_message.content.clone().unwrap()
-    // println!(
-    //     "Chat GPT Response {:#?}: {}",
-    //     &returned_message.role,
-    //     &returned_message.content.clone().unwrap()
-    // );
     Ok(returned_message)
-}
-
-// I want this to exist somewhere else
-pub async fn ask_davinci(
-    user_input: String,
-    base_content: String,
-) -> Result<String, anyhow::Error> {
-    // ) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-    // I use this key
-    set_key(env::var("OPENAI_API_KEY").unwrap());
-
-    // but this lib wanted this key
-    set_key(env::var("OPENAI_KEY").unwrap());
-
-    // let mut messages = vec![ChatCompletionMessage {
-    //     role: ChatCompletionMessageRole::System,
-    //     content: Some(base_content),
-    //     name: None,
-    //     function_call: None,
-    // }];
-    //
-    // messages.push(ChatCompletionMessage {
-    //     role: ChatCompletionMessageRole::User,
-    //     content: Some(user_input),
-    //     name: None,
-    //     function_call: None,
-    // });
-
-    let prompt = format!("{} {}", base_content, user_input);
-
-    // whats the diff in completion VS  chat completion
-    // this is where we pause????
-    println!("pre ask_chat_gpt completion");
-    // let model = "gpt-4";
-    // let model = "gpt-3.5-turbo";
-    let model = "text-davinci-003";
-
-    let chat_completion = Completion::builder(model.clone())
-        .prompt(prompt)
-        .create()
-        .await;
-
-    println!("post ask_chat_gpt completion");
-    // return chat_completion;
-    match chat_completion {
-        Ok(chat) => {
-            let response = &chat.choices.first().unwrap().text;
-            return Ok(response.to_string());
-        }
-        Err(e) => Err(e.into()),
-    }
-}
-
-fn encode_image(image_path: &str) -> io::Result<String> {
-    let mut file = File::open(image_path)?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-    let b64 = general_purpose::STANDARD.encode(&buffer);
-    Ok(b64)
-    // This is deprecated
-    // Ok(Engine::new().encode(&buffer))
 }
 
 pub async fn ask_gpt_vision2(
@@ -284,6 +184,38 @@ pub async fn ask_gpt_vision2(
     Ok(content.to_string())
 }
 
+pub async fn telephone(
+    url: String,
+    prompt: String,
+    num_connections: u8,
+    ai_image_req: &impl GenerateImage,
+) -> Result<String, anyhow::Error> {
+    let first_description = match ask_gpt_vision2("", Some(&url)).await {
+        Ok(description) => description,
+        Err(e) => {
+            eprintln!("Error asking GPT Vision for description: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    let description = format!("{} {}", first_description, prompt);
+    let mut dalle_path =
+        ai_image_req.generate_image(description, None, false).await;
+
+    for _ in 0..num_connections {
+        let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
+        let prompt = format!("{} {}", description, prompt);
+        let req = dalle::DalleRequest {
+            prompt: prompt.clone(),
+            username: "beginbot".to_string(),
+            amount: 1,
+        };
+        dalle_path = req.generate_image(prompt, None, false).await;
+    }
+    Ok(dalle_path)
+}
+
+// This doesn't go here
 pub async fn save_screenshot(
     client: &Client,
     source_name: &str,
@@ -307,126 +239,18 @@ pub async fn save_screenshot(
     Ok(())
 }
 
-pub async fn telephone2(
-    url: String,
-    prompt: String,
-    num_connections: u8,
-) -> Result<String, anyhow::Error> {
-    let first_description = match ask_gpt_vision2("", Some(&url)).await {
-        Ok(description) => description,
-        Err(e) => {
-            eprintln!("Error asking GPT Vision for description: {}", e);
-            return Err(e.into());
-        }
-    };
-
-    let description = format!("{} {}", first_description, prompt);
-    let request = dalle::StableDiffusionRequest {
-        username: "beginbot".to_string(),
-        prompt: description,
-        amount: 1,
-    };
-
-
-    let mut dalle_path = request.generate_image(None, false).await;
-
-    for _ in 0..num_connections {
-        let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
-        println!("Generating Dalle Image: {}", description);
-
-        let request = dalle::DalleRequest {
-            prompt: format!("{} {}", description, prompt),
-            username: "beginbot".to_string(),
-            amount: 1,
-        };
-
-        dalle_path = request.generate_image(None, false).await
-    }
-    Ok(dalle_path)
-}
-
-pub async fn telephone(
-    url: String,
-    prompt: String,
-    num_connections: u8,
-) -> Result<String, anyhow::Error> {
-    let first_description = match ask_gpt_vision2("", Some(&url)).await {
-        Ok(description) => description,
-        Err(e) => {
-            eprintln!("Error asking GPT Vision for description: {}", e);
-            return Err(e.into());
-        }
-    };
-
-    let description = format!("{} {}", first_description, prompt);
-
-    let req = dalle::DalleRequest {
-        prompt: description,
-        username: "beginbot".to_string(),
-        amount: 1,
-    };
-
-    let mut dalle_path = req.generate_image(None, false).await;
-
-    for _ in 0..num_connections {
-        let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
-        let req = dalle::DalleRequest {
-            prompt: format!("{} {}", description, prompt),
-            username: "beginbot".to_string(),
-            amount: 1,
-        };
-
-        // I'm afraid this crashes somehow
-        dalle_path = req.generate_image(None, false).await;
-    }
-    Ok(dalle_path)
-}
-
-#[allow(dead_code)]
-struct GPTVisionRequest {
-    image_urls: Vec<String>,
-    // TODO: This should maybe be a Path object
-    image_paths: Vec<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct VisionResponse {
-    choices: Vec<VisionChoice>,
-    id: String,
-    model: String,
-    usage: OpenAIUsage,
-    //     "created": 1702696712,
-    //     "object": "chat.completion",
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct OpenAIUsage {
-    completion_tokens: u32,
-    prompt_tokens: u32,
-    total_tokens: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct VisionChoice {
-    fininsh_reason: Option<String>,
-    index: u8,
-    message: VisionChoiceContent,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct VisionChoiceContent {
-    content: String,
-    role: String,
+// This doesn't belong here
+fn encode_image(image_path: &str) -> io::Result<String> {
+    let mut file = File::open(image_path)?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)?;
+    let b64 = general_purpose::STANDARD.encode(&buffer);
+    Ok(b64)
 }
 
 #[cfg(test)]
 mod tests {
-    // use super::VisionResponse;
-    // use std::fs::File;
-    // use std::io::{self, Read};
     use super::*;
-
-    // "{\"id\": \"chatcmpl-8VVAXjOsn23rcTjScv7Z0dhXVc18e\", \"object\": \"chat.completion\", \"created\": 1702518673, \"model\": \"gpt-4-1106-vision-preview\", \"usage\": {\"prompt_tokens\": 16, \"completion_tokens\": 16, \"total_tokens\": 32}, \"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"I'm sorry, but you haven't provided an image to analyze. Please provide\"}, \"finish_details\": {\"type\": \"max_tokens\"}, \"index\": 0}]}"
 
     #[tokio::test]
     async fn test_telephone() {
@@ -490,4 +314,57 @@ mod tests {
 
         // assert_eq!("", content);
     }
+}
+
+// TODO: This requires more updates to the openai Rust library to get the Vision Portion working
+pub async fn ask_gpt_vision(
+    user_input: String,
+    image_url: String,
+) -> Result<ChatCompletionMessage, openai::OpenAiError> {
+    set_key(env::var("OPENAI_API_KEY").unwrap());
+
+    let text_content = VisionMessage::Text {
+        content_type: "text".to_string(),
+        text: user_input,
+    };
+
+    let image_content = VisionMessage::Image {
+        content_type: "image_url".to_string(),
+        image_url: ImageUrl { url: image_url },
+    };
+    let new_content =
+        ChatCompletionContent::VisionMessage(vec![text_content, image_content]);
+
+    let messages = vec![ChatCompletionMessage {
+        role: ChatCompletionMessageRole::System,
+        content: Some(new_content),
+        name: None,
+        function_call: None,
+    }];
+
+    println!("JSON:\n\n {}", serde_json::to_string(&messages).unwrap());
+    let model = "gpt-4-vision-preview";
+
+    let chat_completion =
+        match ChatCompletion::builder(model.clone(), messages.clone())
+            .create()
+            .await
+        {
+            Ok(completion) => completion,
+            Err(e) => {
+                println!("\n\tChat GPT error occurred: {}", e);
+                return Err(e);
+            }
+        };
+
+    let returned_message =
+        chat_completion.choices.first().unwrap().message.clone();
+
+    // TODO: fix
+    // println!(
+    //     "Chat GPT Response {:#?}: {}",
+    //     &returned_message.role,
+    //     &returned_message.content.clone().unwrap().trim()
+    // );
+    Ok(returned_message)
 }

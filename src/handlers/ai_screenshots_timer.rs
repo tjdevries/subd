@@ -91,6 +91,8 @@ pub async fn handle_ai_screenshots(
         "begin".to_string(),
     )
     .await
+
+    // We need to save this!
 }
 
 // This is key
@@ -129,10 +131,13 @@ async fn create_screenshot_variation(
         "{} {} . The most important thing to focus on is: {}",
         prompt, description, prompt
     );
+    // ai_image_req.prompt = new_description;
 
-    println!("Generating Dalle Image: {}", new_description.clone());
+    // println!("Generating Dalle Image: {}", new_description.clone());
 
-    let dalle_path = ai_image_req.generate_image(None, false).await;
+    let dalle_path = ai_image_req
+        .generate_image(new_description, Some("timelapse".to_string()), false)
+        .await;
 
     println!("Dalle Path: {}", dalle_path);
 
@@ -142,7 +147,7 @@ async fn create_screenshot_variation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_screenshot_variation() {
         let screenshot_prompt = generate_random_prompt();

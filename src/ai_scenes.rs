@@ -299,13 +299,9 @@ impl EventHandler for AiScenesHandler {
                                 username: msg.username.clone(),
                                 amount: 1,
                             };
-                        let _ = request.generate_image(None, true).await;
-                        // generate_image().await;
-                        // let _ = dalle::generate_image(
-                        //     dalle_prompt.clone(),
-                        //     msg.username.clone(),
-                        // )
-                        // .await;
+                        let _ = request
+                            .generate_image(dalle_prompt.clone(), None, true)
+                            .await;
                         println!("Done Generating Stable Diffusion");
                     };
 
@@ -317,7 +313,9 @@ impl EventHandler for AiScenesHandler {
                             username: msg.username.clone(),
                             amount: 1,
                         };
-                        let _ = req.generate_image(None, true).await;
+                        let _ = req
+                            .generate_image(dalle_prompt.clone(), None, true)
+                            .await;
                         println!("Done Attempting to Generate Dalle");
                     };
 
