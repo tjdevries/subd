@@ -327,7 +327,8 @@ pub async fn telephone2(
         amount: 1,
     };
 
-    let mut dalle_path = request.generate_image().await;
+
+    let mut dalle_path = request.generate_image(None, false).await;
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
@@ -339,7 +340,7 @@ pub async fn telephone2(
             amount: 1,
         };
 
-        dalle_path = request.generate_image().await
+        dalle_path = request.generate_image(None, false).await
     }
     Ok(dalle_path)
 }
@@ -365,7 +366,7 @@ pub async fn telephone(
         amount: 1,
     };
 
-    let mut dalle_path = req.generate_image().await;
+    let mut dalle_path = req.generate_image(None, false).await;
 
     for _ in 0..num_connections {
         let description = ask_gpt_vision2(&dalle_path, None).await.unwrap();
@@ -376,7 +377,7 @@ pub async fn telephone(
         };
 
         // I'm afraid this crashes somehow
-        dalle_path = req.generate_image().await;
+        dalle_path = req.generate_image(None, false).await;
     }
     Ok(dalle_path)
 }

@@ -33,28 +33,15 @@ impl EventHandler for AiScreenshotsTimerHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
-        mut rx: broadcast::Receiver<Event>,
+        rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::UserMessage(msg) => msg,
-                _ => continue,
-            };
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-
-            // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_ai_screenshots(
                 &tx,
                 &self.obs_client,
                 &self.twitch_client,
                 &self.pool,
                 &self.sink,
-                msg,
             )
             .await
             {
@@ -80,15 +67,7 @@ pub async fn handle_ai_screenshots(
     >,
     _pool: &sqlx::PgPool,
     sink: &Sink,
-    msg: UserMessage,
 ) -> Result<String> {
-    let _is_mod = msg.roles.is_twitch_mod();
-    let _is_vip = msg.roles.is_twitch_vip();
-    let _not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-
-    let source = "begin".to_string();
-
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
 
@@ -109,7 +88,7 @@ pub async fn handle_ai_screenshots(
         filename,
         &req,
         random_prompt,
-        source,
+        "begin".to_string(),
     )
     .await
 }
@@ -117,11 +96,14 @@ pub async fn handle_ai_screenshots(
 // This is key
 pub fn generate_random_prompt() -> String {
     let choices = vec![
-        "a cartoon frog that could go by Pepe".to_string(),
         "an 80's anime".to_string(),
+        "as a Pepe the frog".to_string(),
         "album cover".to_string(),
         "newspaper".to_string(),
         "fun".to_string(),
+        "beginbot as a service".to_string(),
+        "in a jail line up".to_string(),
+        "in an elon musk rocket ship on his way to mars".to_string(),
     ];
     let mut rng = rand::thread_rng();
     let selected_choice = choices.choose(&mut rng).unwrap();
@@ -150,23 +132,20 @@ async fn create_screenshot_variation(
 
     println!("Generating Dalle Image: {}", new_description.clone());
 
-    let dalle_path = ai_image_req.generate_image().await;
+    let dalle_path = ai_image_req.generate_image(None, false).await;
 
     println!("Dalle Path: {}", dalle_path);
 
     Ok(dalle_path)
 }
 
-// This also has a pause in it,
-// we might want to take that in as a variable
-async fn play_sound(sink: &Sink) -> Result<()> {
-    let file =
-        BufReader::new(File::open(format!("./MP3s/{}.mp3", "aim")).unwrap());
-    let sleep_time = time::Duration::from_millis(1000);
-    thread::sleep(sleep_time);
-    // To tell me a screen shot is coming
-    sink.set_volume(0.3);
-    sink.append(Decoder::new(BufReader::new(file)).unwrap());
-    sink.sleep_until_end();
-    Ok(())
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_screenshot_variation() {
+        let screenshot_prompt = generate_random_prompt();
+        //assert_eq!(screenshot_prompt,"");
+    }
 }

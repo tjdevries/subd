@@ -299,7 +299,7 @@ impl EventHandler for AiScenesHandler {
                                 username: msg.username.clone(),
                                 amount: 1,
                             };
-                        let _ = request.generate_image().await;
+                        let _ = request.generate_image(None, true).await;
                         // generate_image().await;
                         // let _ = dalle::generate_image(
                         //     dalle_prompt.clone(),
@@ -317,7 +317,7 @@ impl EventHandler for AiScenesHandler {
                             username: msg.username.clone(),
                             amount: 1,
                         };
-                        let _ = req.generate_image().await;
+                        let _ = req.generate_image(None, true).await;
                         println!("Done Attempting to Generate Dalle");
                     };
 

@@ -1,6 +1,18 @@
 ## Tonight's Menu of Commands
 
+## Generate AI variations of what you See on screen!
+
+!new_scene PROMPT
 !new_begin PROMPT
+
+Examples:
+
+!new_begin Anime Girl
+
+"This will take a screenshot of Begin, and use GPT-Vision to describe what he
+looks like, then generate an Anime variation based on that description".
+
+---
 
 !move alex 300 300
 

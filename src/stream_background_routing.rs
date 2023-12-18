@@ -183,7 +183,7 @@ pub async fn handle_stream_background_commands(
                 amount: 1,
             };
             // We need to finish the code though
-            let _ = req.generate_image().await;
+            let _ = req.generate_image(None, true).await;
             Ok(())
         }
 
@@ -205,8 +205,8 @@ pub async fn handle_stream_background_commands(
                 amount: 1,
             };
 
-            let _ = req.generate_image().await;
-            Ok(())
+            let _ = req.generate_image(None, true).await;
+        Ok(())
         }
         _ => Ok(()),
     }

@@ -31,6 +31,8 @@ pub enum AiImageRequests {
 impl GenerateImage for AiImageRequests {
     fn generate_image(
         &self,
+        save_folder: Option<String>,
+        set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
         let res = async move { "".to_string() };
@@ -54,12 +56,16 @@ pub struct StableDiffusionRequest {
 pub trait GenerateImage {
     fn generate_image(
         &self,
+        save_folder: Option<String>,
+        set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>;
 }
 
 impl GenerateImage for StableDiffusionRequest {
     fn generate_image(
         &self,
+        save_folder: Option<String>,
+        set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
         let url = env::var("STABLE_DIFFUSION_URL")
@@ -84,23 +90,38 @@ impl GenerateImage for StableDiffusionRequest {
             let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
             let unique_identifier =
                 format!("{}_{}_{}", timestamp, index, self.username);
-            let archive_file = format!("./archive/{}.png", unique_identifier);
+            
+            match save_folder {
+                Some(fld) => {
+                    let archive_file = format!("./archive/timelapse/{}/{}.png", fld.clone(), unique_identifier);
+                    let mut file = File::create(archive_file.clone()).unwrap();
+                    file.write_all(&image_data).unwrap();
+                },
+                None => {
+                },
+            }
+            
+        let archive_file = format!("./archive/{}.png", unique_identifier);
+        let mut file = File::create(archive_file.clone()).unwrap();
+        file.write_all(&image_data).unwrap();
 
-            let mut file = File::create(archive_file.clone()).unwrap();
-            file.write_all(&image_data).unwrap();
-
+        if set_as_obs_bg {
             let filename = format!("./tmp/dalle-{}.png", index);
             let mut file = File::create(filename).unwrap();
             file.write_all(&image_data).unwrap();
-            archive_file
-        };
-        Box::pin(res)
+        }
+        
+        archive_file
+    };
+    Box::pin(res)
     }
 }
 
 impl GenerateImage for DalleRequest {
     fn generate_image(
         &self,
+        save_folder: Option<String>,
+        set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
         let api_key = env::var("OPENAI_API_KEY").unwrap();
@@ -174,6 +195,18 @@ impl GenerateImage for DalleRequest {
                             File::create(archive_file.clone()).unwrap();
                         file.write_all(&image_data).unwrap();
 
+                            
+                        match save_folder.as_ref() {
+                            Some(fld) => {
+                                let archive_file = format!("./archive/timelapse/{}/{}.png", fld, unique_identifier);
+                                let mut file = File::create(archive_file.clone()).unwrap();
+                                file.write_all(&image_data).unwrap();
+                            },
+                            None => {
+                            },
+                        }
+                        
+
                         writeln!(
                             csv_file,
                             "{},{}",
@@ -181,14 +214,14 @@ impl GenerateImage for DalleRequest {
                         )
                         .unwrap();
 
-                        // how do you get it to return a full path
-
-                        let filename = format!(
-                            "/home/begin/code/subd/tmp/dalle-{}.png",
-                            index + 1
-                        );
-                        let mut file = File::create(filename.clone()).unwrap();
-                        file.write_all(&image_data).unwrap();
+                        if set_as_obs_bg {
+                            let filename = format!(
+                                "/home/begin/code/subd/tmp/dalle-{}.png",
+                                index + 1
+                            );
+                            let mut file = File::create(filename.clone()).unwrap();
+                            file.write_all(&image_data).unwrap();
+                        }
                     }
                     archive_file
                 }

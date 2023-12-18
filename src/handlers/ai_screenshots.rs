@@ -215,7 +215,7 @@ async fn create_screenshot_variation(
 
     println!("Generating Dalle Image: {}", new_description.clone());
 
-    let dalle_path = ai_image_req.generate_image().await;
+    let dalle_path = ai_image_req.generate_image(None, false).await;
 
     println!("Dalle Path: {}", dalle_path);
 
