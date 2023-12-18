@@ -5,7 +5,6 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
 use serde;
-use serde::{Deserialize, Serialize};
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
