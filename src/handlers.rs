@@ -1,4 +1,5 @@
 pub mod ai_screenshots;
+pub mod ai_screenshots_timer;
 pub mod ai_telephone;
 pub mod chatgpt_response_handler;
 pub mod music_scenes_handler;

@@ -244,6 +244,22 @@ async fn main() -> Result<()> {
         twitch_client,
     });
 
+    let obs_client = server::obs::create_obs_client().await?;
+    let twitch_config = get_chat_config();
+    let (_, twitch_client) = TwitchIRCClient::<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >::new(twitch_config);
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    event_loop.push(
+        handlers::ai_screenshots_timer::AiScreenshotsTimerHandler {
+            obs_client,
+            sink,
+            pool: pool.clone(),
+            twitch_client,
+        },
+    );
+
     // This checks if Skyboxes are done, every 60 seconds
     let obs_client = server::obs::create_obs_client().await?;
     event_loop.push(handlers::skybox_status::SkyboxStatusHandler {

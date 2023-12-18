@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
+use rand::seq::SliceRandom;
 use rodio::*;
 use std::fs::File;
 use std::io::BufReader;
@@ -18,7 +19,7 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-pub struct AiScreenshotsHandler {
+pub struct AiScreenshotsTimerHandler {
     pub sink: Sink,
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
@@ -28,7 +29,7 @@ pub struct AiScreenshotsHandler {
 
 #[async_trait]
 #[allow(unused_variables)]
-impl EventHandler for AiScreenshotsHandler {
+impl EventHandler for AiScreenshotsTimerHandler {
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -40,7 +41,6 @@ impl EventHandler for AiScreenshotsHandler {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
             };
-
             let splitmsg = msg
                 .contents
                 .split(" ")
@@ -54,7 +54,6 @@ impl EventHandler for AiScreenshotsHandler {
                 &self.twitch_client,
                 &self.pool,
                 &self.sink,
-                splitmsg,
                 msg,
             )
             .await
@@ -65,6 +64,9 @@ impl EventHandler for AiScreenshotsHandler {
                     continue;
                 }
             }
+
+            let t = time::Duration::from_millis(3000);
+            thread::sleep(t);
         }
     }
 }
@@ -78,119 +80,52 @@ pub async fn handle_ai_screenshots(
     >,
     _pool: &sqlx::PgPool,
     sink: &Sink,
-    splitmsg: Vec<String>,
     msg: UserMessage,
-) -> Result<()> {
+) -> Result<String> {
     let _is_mod = msg.roles.is_twitch_mod();
     let _is_vip = msg.roles.is_twitch_vip();
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
-    let command = splitmsg[0].as_str();
+    let source = "begin".to_string();
+
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
+
     let filename = format!(
-        "/home/begin/code/subd/tmp/screenshots/{}",
+        "/home/begin/code/subd/tmp/screenshots/timelapse/{}",
         unique_identifier
     );
 
-    // I need a list of all models
-    let models = vec!["dalle".to_string(), "sd".to_string()];
-    let default_model = "dalle".to_string();
-    let model = splitmsg.get(1).unwrap_or(&default_model);
-
-    let prompt = if splitmsg.len() > 1 {
-        if models.contains(splitmsg.get(1).unwrap_or(&"".to_string())) {
-            splitmsg[2..].to_vec().join(" ")
-        } else {
-            splitmsg[1..].to_vec().join(" ")
-        }
-    } else {
-        "coolest programmer ever. Super stylish".to_string()
+    let random_prompt = generate_random_prompt();
+    let req = dalle::DalleRequest {
+        prompt: random_prompt.clone(),
+        username: "beginbot".to_string(),
+        amount: 1,
     };
-
-    let model = model.clone();
-
-    match command {
-        "!new_alex" | "edit_alex" | "!ai_alex" => {
-            let screenshot_source = "alex".to_string();
-            let _ = screenshot_routing(
-                sink,
-                obs_client,
-                filename,
-                prompt,
-                model,
-                screenshot_source,
-            )
-            .await;
-            return Ok(());
-        }
-
-        "!new_scene" | "edit_scene" | "!ai_scene" => {
-            let screenshot_source = "Primary".to_string();
-            let _ = screenshot_routing(
-                sink,
-                obs_client,
-                filename,
-                prompt,
-                model,
-                screenshot_source,
-            )
-            .await;
-            return Ok(());
-        }
-
-        "!new_begin" | "edit_begin" | "!ai_begin" => {
-            let screenshot_source = "begin".to_string();
-            let _ = screenshot_routing(
-                sink,
-                obs_client,
-                filename,
-                prompt,
-                model,
-                screenshot_source,
-            )
-            .await;
-            return Ok(());
-        }
-
-        _ => {
-            return Ok(());
-        }
-    };
+    create_screenshot_variation(
+        sink,
+        obs_client,
+        filename,
+        &req,
+        random_prompt,
+        source,
+    )
+    .await
 }
 
-async fn screenshot_routing(
-    sink: &Sink,
-    obs_client: &OBSClient,
-    filename: String,
-    prompt: String,
-    model: String,
-    source: String,
-) -> Result<()> {
-    if model == "dalle" {
-        let req = dalle::DalleRequest {
-            prompt: prompt.clone(),
-            username: "beginbot".to_string(),
-            amount: 1,
-        };
-        let _ = create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source,
-        )
-        .await;
-    } else {
-        let req = dalle::StableDiffusionRequest {
-            prompt: prompt.clone(),
-            username: "beginbot".to_string(),
-            amount: 1,
-        };
-        let _ = create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source,
-        )
-        .await;
-    };
-
-    Ok(())
+// This is key
+pub fn generate_random_prompt() -> String {
+    let choices = vec![
+        "a cartoon frog that could go by Pepe".to_string(),
+        "an 80's anime".to_string(),
+        "album cover".to_string(),
+        "newspaper".to_string(),
+        "fun".to_string(),
+    ];
+    let mut rng = rand::thread_rng();
+    let selected_choice = choices.choose(&mut rng).unwrap();
+    selected_choice.to_string()
 }
 
 // TODO: I don't like the name
