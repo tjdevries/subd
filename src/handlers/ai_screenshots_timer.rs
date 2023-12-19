@@ -1,7 +1,7 @@
 use crate::dalle;
-use crate::telephone;
 use crate::dalle::GenerateImage;
 use crate::openai;
+use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -95,8 +95,6 @@ pub async fn handle_ai_screenshots(
     .await
 }
 
-
-
 // This is key
 pub fn generate_random_prompt() -> String {
     let choices = vec![
@@ -124,4 +122,3 @@ mod tests {
         //assert_eq!(screenshot_prompt,"");
     }
 }
-

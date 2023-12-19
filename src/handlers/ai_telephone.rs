@@ -1,5 +1,6 @@
 use crate::dalle;
 use crate::openai;
+use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -97,7 +98,7 @@ pub async fn handle_telephone_requests(
                 amount: 1,
             };
 
-            match openai::telephone(
+            match telephone::telephone(
                 &obs_client,
                 sink,
                 image_url.to_string(),
@@ -124,12 +125,12 @@ pub async fn handle_telephone_requests(
                 amount: 1,
             };
 
-            match openai::telephone(
+            match telephone::telephone(
                 &obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
-                5,
+                2,
                 &req,
             )
             .await

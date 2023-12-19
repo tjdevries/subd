@@ -1,9 +1,36 @@
 use crate::obs;
+use obws::requests::sources::SaveScreenshot;
+use std::path::Path;
 use anyhow::Result;
 use obws::requests::scene_items::{
     Position, Scale, SceneItemTransform, SetTransform,
 };
 use obws::Client as OBSClient;
+
+
+// This doesn't go here
+pub async fn save_screenshot(
+    client: &OBSClient,
+    source_name: &str,
+    file_path: &str,
+) -> Result<()> {
+    let p = Path::new(file_path);
+
+    client
+        .sources()
+        .save_screenshot(SaveScreenshot {
+            source: &source_name.to_string(),
+            format: "png",
+            file_path: p,
+            width: None,
+            height: None,
+            compression_quality: None,
+        })
+        .await?;
+
+    Ok(())
+}
+
 
 // ==================================================
 // == Scaling Sources
