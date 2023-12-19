@@ -1,3 +1,4 @@
+use crate::audio;
 use crate::dalle;
 use crate::dalle::GenerateImage;
 use crate::openai;
@@ -7,10 +8,6 @@ use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
-use std::fs::File;
-use std::io::BufReader;
-use std::thread;
-use std::time;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
@@ -202,7 +199,7 @@ async fn create_screenshot_variation(
     prompt: String,
     source: String,
 ) -> Result<String> {
-    let _ = play_sound(&sink).await;
+    let _ = audio::play_sound(&sink, "aim".to_string()).await;
 
     let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
 
@@ -215,24 +212,14 @@ async fn create_screenshot_variation(
     println!("Generating Dalle Image: {}", new_description.clone());
 
     let dalle_path = ai_image_req
-        .generate_image(new_description, None, false)
+        .generate_image(new_description, None, true)
         .await;
+
+    if dalle_path == "".to_string() {
+        return Err(anyhow::anyhow!("Dalle Path is empty"));
+    }
 
     println!("Dalle Path: {}", dalle_path);
 
     Ok(dalle_path)
-}
-
-// This also has a pause in it,
-// we might want to take that in as a variable
-async fn play_sound(sink: &Sink) -> Result<()> {
-    let file =
-        BufReader::new(File::open(format!("./MP3s/{}.mp3", "aim")).unwrap());
-    let sleep_time = time::Duration::from_millis(1000);
-    thread::sleep(sleep_time);
-    // To tell me a screen shot is coming
-    sink.set_volume(0.3);
-    sink.append(Decoder::new(BufReader::new(file)).unwrap());
-    sink.sleep_until_end();
-    Ok(())
 }

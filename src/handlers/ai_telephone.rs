@@ -45,6 +45,7 @@ impl EventHandler for AiTelephoneHandler {
             match handle_telephone_requests(
                 &tx,
                 &self.obs_client,
+                &self.sink,
                 &self.twitch_client,
                 &self.pool,
                 splitmsg,
@@ -64,7 +65,8 @@ impl EventHandler for AiTelephoneHandler {
 
 pub async fn handle_telephone_requests(
     _tx: &broadcast::Sender<Event>,
-    _obs_client: &OBSClient,
+    obs_client: &OBSClient,
+    sink: &Sink,
     _twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
         StaticLoginCredentials,
@@ -96,6 +98,8 @@ pub async fn handle_telephone_requests(
             };
 
             match openai::telephone(
+                &obs_client,
+                sink,
                 image_url.to_string(),
                 prompt.clone(),
                 5,
@@ -121,6 +125,8 @@ pub async fn handle_telephone_requests(
             };
 
             match openai::telephone(
+                &obs_client,
+                sink,
                 image_url.to_string(),
                 prompt.clone(),
                 5,

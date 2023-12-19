@@ -52,7 +52,8 @@ impl EventHandler for AiScreenshotsTimerHandler {
                 }
             }
 
-            let t = time::Duration::from_millis(3000);
+            // let t = time::Duration::from_millis(3000);
+            let t = time::Duration::from_millis(30000);
             thread::sleep(t);
         }
     }
@@ -67,7 +68,7 @@ pub async fn handle_ai_screenshots(
     >,
     _pool: &sqlx::PgPool,
     sink: &Sink,
-) -> Result<String> {
+) -> Result<String, String> {
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
 
@@ -120,27 +121,29 @@ async fn create_screenshot_variation(
     ai_image_req: &impl GenerateImage,
     prompt: String,
     source: String,
-) -> Result<String> {
-    // let _ = play_sound(&sink).await;
+) -> Result<String, String> {
+    // let _ = audio::play_sound(&sink).await;
 
     let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
 
-    let description = openai::ask_gpt_vision2(&filename, None).await.unwrap();
+    let description = openai::ask_gpt_vision2(&filename, None)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let new_description = format!(
         "{} {} . The most important thing to focus on is: {}",
         prompt, description, prompt
     );
-    // ai_image_req.prompt = new_description;
-
-    // println!("Generating Dalle Image: {}", new_description.clone());
 
     let dalle_path = ai_image_req
         .generate_image(new_description, Some("timelapse".to_string()), false)
         .await;
 
-    println!("Dalle Path: {}", dalle_path);
+    if dalle_path == "".to_string() {
+        return Err("Dalle Path is empty".to_string());
+    }
 
+    println!("Dalle Path: {}", dalle_path);
     Ok(dalle_path)
 }
 

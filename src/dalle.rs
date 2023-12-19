@@ -1,3 +1,4 @@
+use crate::images;
 use anyhow::Result;
 use chrono::Utc;
 use core::pin::Pin;
@@ -12,7 +13,8 @@ use std::io::Write;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
-    created: i64,
+    created: Option<i64>,
+    // created: i64,
     data: Vec<ImageData>,
 }
 
@@ -28,20 +30,6 @@ pub enum AiImageRequests {
     StableDiffusionRequest,
 }
 
-impl GenerateImage for AiImageRequests {
-    fn generate_image(
-        &self,
-        prompt: String,
-        save_folder: Option<String>,
-        set_as_obs_bg: bool,
-    ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
-    {
-        let res = async move { "".to_string() };
-        Box::pin(res)
-    }
-}
-
-// pub struct DalleRequest  = AiImageRequest;
 pub struct DalleRequest {
     pub prompt: String,
     pub username: String,
@@ -84,8 +72,7 @@ impl GenerateImage for StableDiffusionRequest {
 
         let res = async move {
             let response = req.await.unwrap();
-
-            let image_data = response.bytes().await.unwrap();
+            let mut image_data = response.bytes().await.unwrap();
 
             // We aren't currently able to generate more than image
             let index = 1;
@@ -123,6 +110,37 @@ impl GenerateImage for StableDiffusionRequest {
     }
 }
 
+async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
+    let api_key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
+
+    let client = reqwest::Client::new();
+
+    // TODO: read from the database
+    let size = "1024x1024";
+    let model = "dall-e-3";
+
+    let req = client
+        .post("https://api.openai.com/v1/images/generations")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "prompt": prompt,
+            "n": 1,
+            "model": model,
+            "size": size,
+        }))
+        .send();
+
+    let response = req.await.map_err(|e| e.to_string())?;
+
+    let dalle_response_text =
+        response.text().await.map_err(|e| e.to_string())?;
+
+    let image_response: Result<ImageResponse, String> =
+        serde_json::from_str(&dalle_response_text).map_err(|e| e.to_string());
+    image_response
+}
+
 impl GenerateImage for DalleRequest {
     fn generate_image(
         &self,
@@ -131,107 +149,74 @@ impl GenerateImage for DalleRequest {
         set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
-        let api_key = env::var("OPENAI_API_KEY").unwrap();
-
-        // TODO: This was supposed to be for saving to the file
-        // which we aren't doing yet
-        let _truncated_prompt =
-            self.prompt.chars().take(80).collect::<String>();
-        let client = reqwest::Client::new();
-
-        // TODO: read from the database
-        let size = "1024x1024";
-        let model = "dall-e-3";
-
-        let req = client
-            .post("https://api.openai.com/v1/images/generations")
-            .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", api_key))
-            .json(&serde_json::json!({
-                "prompt": self.prompt,
-                "n": self.amount,
-                "model": model,
-                "size": size,
-            }))
-            .send();
-
         let res = async move {
-            let response = req.await.unwrap();
-
-            let dalle_response_text = response.text().await.unwrap();
-
-            let mut csv_file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .create(true) // This will create the file if it doesn't exist
-                .open("output.csv")
-                .unwrap();
-
-            let image_response: Result<ImageResponse, _> =
-                serde_json::from_str(&dalle_response_text);
-
             let mut archive_file = "".to_string();
 
-            match image_response {
-                Ok(response) => {
-                    for (index, image_data) in response.data.iter().enumerate()
+            match dalle_request(self.prompt.clone()).await {
+                Ok(response) => 'label: {
+                    for (index, download_resp) in
+                        response.data.iter().enumerate()
                     {
-                        println!("Image URL: {} | ", image_data.url.clone());
-                        let image_data = reqwest::get(image_data.url.clone())
-                            .await
-                            .unwrap()
-                            .bytes()
-                            .await
-                            .unwrap()
-                            .to_vec();
+                        println!("Image URL: {} | ", download_resp.url.clone());
 
-                        // "id": 9612607,
-                        // request for AI_image_filename
                         let timestamp =
                             Utc::now().format("%Y%m%d%H%M%S").to_string();
                         let unique_identifier = format!(
                             "{}_{}_{}",
                             timestamp, index, self.username
                         );
-                        archive_file = format!(
+                        let file = format!(
                             "/home/begin/code/subd/archive/{}.png",
                             unique_identifier
                         );
-
-                        let mut file =
-                            File::create(archive_file.clone()).unwrap();
-                        file.write_all(&image_data).unwrap();
-
-                        match save_folder.as_ref() {
-                            Some(fld) => {
-                                let archive_file = format!(
-                                    "./archive/{}/{}.png",
-                                    fld, unique_identifier
-                                );
-                                let mut file =
-                                    File::create(archive_file.clone()).unwrap();
-                                file.write_all(&image_data).unwrap();
+                        let mut image_data = match images::download_image(
+                            download_resp.url.clone(),
+                            file.clone(),
+                        )
+                        .await
+                        {
+                            Ok(val) => {
+                                archive_file = file;
+                                val
                             }
-                            None => {}
+                            Err(e) => {
+                                eprintln!("\nError downloading image: {}", e);
+                                break 'label "".to_string();
+                            }
+                        };
+
+                        if let Some(fld) = save_folder.as_ref() {
+                            let f = format!(
+                                "./archive/{}/{}.png",
+                                fld, unique_identifier
+                            );
+                            let _ = File::create(f.clone())
+                                .map(|mut f| f.write_all(&mut image_data));
                         }
 
-                        writeln!(csv_file, "{},{}", unique_identifier, prompt,)
-                            .unwrap();
-
                         if set_as_obs_bg {
-                            let filename = format!(
+                            let file = format!(
                                 "/home/begin/code/subd/tmp/dalle-{}.png",
                                 index + 1
                             );
-                            let mut file =
-                                File::create(filename.clone()).unwrap();
-                            file.write_all(&image_data).unwrap();
+                            let _ = File::create(file.clone())
+                                .map(|mut f| f.write_all(&mut image_data));
+                        }
+
+                        let csv_file = OpenOptions::new()
+                            .write(true)
+                            .append(true)
+                            .create(true)
+                            .open("output.csv");
+                        if let Ok(mut f) = csv_file {
+                            let _ =
+                                writeln!(f, "{},{}", unique_identifier, prompt);
                         }
                     }
                     archive_file
                 }
                 Err(e) => {
-                    eprintln!("Error deserializing response: {}", e);
+                    eprintln!("Error With Dalle response: {}", e);
                     "".to_string()
                 }
             }

@@ -5,6 +5,7 @@ pub mod bootstrap;
 pub mod commands;
 pub mod dalle;
 pub mod handlers;
+pub mod images;
 pub mod move_transition;
 pub mod move_transition_bootstrap;
 pub mod move_transition_effects;
