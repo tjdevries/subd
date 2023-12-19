@@ -88,7 +88,9 @@ pub async fn handle_telephone_requests(
         "!old_telephone" => {
             // we need to take an ID
             let id = splitmsg.get(1).unwrap();
-            
+            let _ =
+                telephone::old_obs_telephone_scene(obs_client, id.to_string())
+                    .await;
             return Ok(());
         }
         "!carlphone" => {

@@ -326,9 +326,7 @@ pub async fn handle_voices_commands(
                 let soundeffect_files = fs::read_dir(split_mp3_folder)?;
                 for split_file in soundeffect_files {
                     // we can filter by
-                    mp3s.insert(
-                        split_file?.path().display().to_string(),
-                    );
+                    mp3s.insert(split_file?.path().display().to_string());
                 }
 
                 // How do we only grab the first 10?

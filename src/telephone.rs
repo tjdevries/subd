@@ -1,5 +1,4 @@
 use crate::audio;
-use std::fs;
 use crate::dalle::GenerateImage;
 use crate::images;
 use crate::obs_scenes;
@@ -10,6 +9,7 @@ use chrono::{DateTime, Utc};
 use obws::requests::custom::source_settings::SlideshowFile;
 use obws::Client as OBSClient;
 use rodio::*;
+use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;
 
@@ -37,7 +37,7 @@ pub async fn telephone(
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
-    
+
     let mut dalle_path = ai_image_req
         .generate_image(description, Some(folder.clone()), false)
         .await;
@@ -59,7 +59,7 @@ pub async fn telephone(
 
         let prompt = format!("{} {}", description, prompt);
         println!("\n\tSaving Image to: {}", folder.clone());
-        dalle_path = ai_image_req 
+        dalle_path = ai_image_req
             .generate_image(prompt, Some(folder.clone()), false)
             .await;
         if dalle_path != "".to_string() {
@@ -133,12 +133,11 @@ pub async fn update_obs_telephone_scene(
         obs_source::update_slideshow_source(obs_client, source, files).await;
 
     let source = "OG-Telephone-Image".to_string();
-    let _ = obs_source::update_image_source(obs_client, source, og_image)
-        .await;
+    let _ = obs_source::update_image_source(obs_client, source, og_image).await;
 
     let scene = "TelephoneScene";
     let _ = obs_scenes::change_scene(&obs_client, scene).await;
-    
+
     Ok(())
 }
 
@@ -146,54 +145,47 @@ pub async fn old_obs_telephone_scene(
     obs_client: &OBSClient,
     id: String,
 ) -> Result<()> {
-    
-    let image_path = format!("/home/begin/code/subd/archive/telephone/{}", id);
-    let paths = fs::read_dir(image_path)?;
-    let mut files: Vec<SlideshowFile> = vec![];
-    
+    let image_path = format!("/home/begin/code/subd/archive/telephone/{}/", id);
+    let og_image = format!(
+        "/home/begin/code/subd/archive/telephone/{}/original.png",
+        id
+    );
+
+    let mut files: Vec<PathBuf> = vec![];
+    for entry in fs::read_dir(image_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        files.push(path);
+    }
+
+    let slideshow_files: Vec<SlideshowFile> = files
+        .iter()
+        .map(|path_string| SlideshowFile {
+            value: &path_string.as_path(),
+            hidden: false,
+            selected: false,
+        })
+        .collect();
+
+    let source = "Telephone-Slideshow".to_string();
+    let _ = obs_source::update_slideshow_source(
+        obs_client,
+        source,
+        slideshow_files,
+    )
+    .await;
+
+    let source = "OG-Telephone-Image".to_string();
+    let _ = obs_source::update_image_source(obs_client, source, og_image).await;
+
+    let scene = "TelephoneScene";
+    let _ = obs_scenes::change_scene(&obs_client, scene).await;
     return Ok(());
-    
-    // for path in paths {
-    //     let p = path?.path();
-    //     
-    //     let f = SlideshowFile {
-    //         value: &p,
-    //         hidden: false,
-    //         selected: false,
-    //     };
-    //     files.push(f)
-    //     
-    //     //     let _ = obs_source::save_screenshot(obs_client, "OG-Telephone-Image", &path_string).await;
-    // }
-    
-    // let mut files: Vec<SlideshowFile> = vec![];
-    // let mut slideshow_files: Vec<SlideshowFile> = image_variations
-    //     .iter()
-    //     .map(|path_string| SlideshowFile {
-    //         value: &path_string,
-    //         hidden: false,
-    //         selected: false,
-    //     })
-    //     .collect();
-    // files.append(&mut slideshow_files);
-    //
-    // let source = "Telephone-Slideshow".to_string();
-    // let _ =
-    //     obs_source::update_slideshow_source(obs_client, source, files).await;
-    //
-    // let source = "OG-Telephone-Image".to_string();
-    // let _ = obs_source::update_image_source(obs_client, source, og_image)
-    //     .await;
-    //
-    // let scene = "TelephoneScene";
-    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
 }
 
 #[cfg(test)]
 mod tests {
 
     #[test]
-    fn test_past_telephone() {
-        
-    }
+    fn test_past_telephone() {}
 }
