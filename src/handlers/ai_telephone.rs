@@ -1,5 +1,4 @@
 use crate::dalle;
-use crate::openai;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -76,11 +75,6 @@ pub async fn handle_telephone_requests(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let _is_mod = msg.roles.is_twitch_mod();
-    let _is_vip = msg.roles.is_twitch_vip();
-    let _not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-
     let command = splitmsg[0].as_str();
     let default = "".to_string();
     let image_url = splitmsg.get(1).unwrap_or(&default);
@@ -91,6 +85,12 @@ pub async fn handle_telephone_requests(
     };
 
     match command {
+        "!old_telephone" => {
+            // we need to take an ID
+            let id = splitmsg.get(1).unwrap();
+            
+            return Ok(());
+        }
         "!carlphone" => {
             let req = dalle::StableDiffusionRequest {
                 username: "beginbot".to_string(),

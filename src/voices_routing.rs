@@ -317,17 +317,17 @@ pub async fn handle_voices_commands(
             if splitmsg.len() == 2 {
                 println!("We are going for it");
 
+                // Just Raw indexing
                 let name = &splitmsg[1];
-
-                let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+                let mut mp3s: HashSet<String> = HashSet::new();
 
                 let split_mp3_folder =
                     format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
-                let soundeffect_files = fs::read_dir(split_mp3_folder).unwrap();
+                let soundeffect_files = fs::read_dir(split_mp3_folder)?;
                 for split_file in soundeffect_files {
                     // we can filter by
                     mp3s.insert(
-                        split_file.unwrap().path().display().to_string(),
+                        split_file?.path().display().to_string(),
                     );
                 }
 

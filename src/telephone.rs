@@ -1,5 +1,5 @@
 use crate::audio;
-use crate::dalle;
+use std::fs;
 use crate::dalle::GenerateImage;
 use crate::images;
 use crate::obs_scenes;
@@ -7,12 +7,10 @@ use crate::obs_source;
 use crate::openai;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::SlideshowFile;
 use obws::Client as OBSClient;
 use rodio::*;
 use std::fs::create_dir;
-use std::path::Path;
 use std::path::PathBuf;
 
 pub async fn telephone(
@@ -39,13 +37,13 @@ pub async fn telephone(
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
+    
     let mut dalle_path = ai_image_req
         .generate_image(description, Some(folder.clone()), false)
         .await;
     if dalle_path == "".to_string() {
         return Err(anyhow::anyhow!("Dalle Path is empty"));
     }
-    let og_dalle_path = dalle_path.clone();
 
     let mut dalle_path_bufs = vec![];
     for _ in 1..num_connections {
@@ -60,14 +58,8 @@ pub async fn telephone(
         };
 
         let prompt = format!("{} {}", description, prompt);
-        let req = dalle::DalleRequest {
-            prompt: prompt.clone(),
-            username: "beginbot".to_string(),
-            amount: 1,
-        };
         println!("\n\tSaving Image to: {}", folder.clone());
-
-        dalle_path = req
+        dalle_path = ai_image_req 
             .generate_image(prompt, Some(folder.clone()), false)
             .await;
         if dalle_path != "".to_string() {
@@ -76,49 +68,12 @@ pub async fn telephone(
         }
     }
 
+    // We take in an ID
     let _ =
         update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
     let _ = audio::play_sound(&sink, "8bitmackintro".to_string()).await;
 
     Ok(dalle_path)
-}
-
-pub async fn update_obs_telephone_scene(
-    obs_client: &OBSClient,
-    og_dalle_path: String,
-    dalle_path_bufs: Vec<PathBuf>,
-) -> Result<()> {
-    // Create our list of files for the slideshow
-    let dp = og_dalle_path.clone();
-    let fp = Path::new(&dp);
-    let slideshow_file = SlideshowFile {
-        value: fp,
-        hidden: false,
-        selected: true,
-    };
-    let mut files: Vec<SlideshowFile> = vec![slideshow_file];
-
-    let mut slideshow_files: Vec<SlideshowFile> = dalle_path_bufs
-        .iter()
-        .map(|path_string| SlideshowFile {
-            value: &path_string,
-            hidden: false,
-            selected: false,
-        })
-        .collect();
-    files.append(&mut slideshow_files);
-
-    let source = "Telephone-Slideshow".to_string();
-    let _ =
-        obs_source::update_slideshow_source(obs_client, source, files).await;
-
-    let source = "OG-Telephone-Image".to_string();
-    let _ = obs_source::update_image_source(obs_client, source, og_dalle_path)
-        .await;
-
-    let scene = "TelephoneScene";
-    let _ = obs_scenes::change_scene(&obs_client, scene).await;
-    Ok(())
 }
 
 // TODO: I don't like the name
@@ -153,4 +108,92 @@ pub async fn create_screenshot_variation(
 
     println!("Dalle Path: {}", dalle_path);
     Ok(dalle_path)
+}
+
+// Read in all files from DIR
+// Exclude the
+pub async fn update_obs_telephone_scene(
+    obs_client: &OBSClient,
+    og_image: String,
+    image_variations: Vec<PathBuf>,
+) -> Result<()> {
+    let mut files: Vec<SlideshowFile> = vec![];
+    let mut slideshow_files: Vec<SlideshowFile> = image_variations
+        .iter()
+        .map(|path_string| SlideshowFile {
+            value: &path_string,
+            hidden: false,
+            selected: false,
+        })
+        .collect();
+    files.append(&mut slideshow_files);
+
+    let source = "Telephone-Slideshow".to_string();
+    let _ =
+        obs_source::update_slideshow_source(obs_client, source, files).await;
+
+    let source = "OG-Telephone-Image".to_string();
+    let _ = obs_source::update_image_source(obs_client, source, og_image)
+        .await;
+
+    let scene = "TelephoneScene";
+    let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    
+    Ok(())
+}
+
+pub async fn old_obs_telephone_scene(
+    obs_client: &OBSClient,
+    id: String,
+) -> Result<()> {
+    
+    let image_path = format!("/home/begin/code/subd/archive/telephone/{}", id);
+    let paths = fs::read_dir(image_path)?;
+    let mut files: Vec<SlideshowFile> = vec![];
+    
+    return Ok(());
+    
+    // for path in paths {
+    //     let p = path?.path();
+    //     
+    //     let f = SlideshowFile {
+    //         value: &p,
+    //         hidden: false,
+    //         selected: false,
+    //     };
+    //     files.push(f)
+    //     
+    //     //     let _ = obs_source::save_screenshot(obs_client, "OG-Telephone-Image", &path_string).await;
+    // }
+    
+    // let mut files: Vec<SlideshowFile> = vec![];
+    // let mut slideshow_files: Vec<SlideshowFile> = image_variations
+    //     .iter()
+    //     .map(|path_string| SlideshowFile {
+    //         value: &path_string,
+    //         hidden: false,
+    //         selected: false,
+    //     })
+    //     .collect();
+    // files.append(&mut slideshow_files);
+    //
+    // let source = "Telephone-Slideshow".to_string();
+    // let _ =
+    //     obs_source::update_slideshow_source(obs_client, source, files).await;
+    //
+    // let source = "OG-Telephone-Image".to_string();
+    // let _ = obs_source::update_image_source(obs_client, source, og_image)
+    //     .await;
+    //
+    // let scene = "TelephoneScene";
+    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_past_telephone() {
+        
+    }
 }
