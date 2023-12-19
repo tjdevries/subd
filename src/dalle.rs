@@ -110,38 +110,6 @@ impl GenerateImage for StableDiffusionRequest {
     }
 }
 
-async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
-    let api_key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
-
-    let client = reqwest::Client::new();
-
-    // TODO: read from the database
-    let size = "1024x1024";
-    let model = "dall-e-3";
-
-    println!("\n\tCalling to DAlle w/ {}", prompt.clone());
-    let req = client
-        .post("https://api.openai.com/v1/images/generations")
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .json(&serde_json::json!({
-            "prompt": prompt,
-            "n": 1,
-            "model": model,
-            "size": size,
-        }))
-        .send();
-
-    let response = req.await.map_err(|e| e.to_string())?;
-
-    let dalle_response_text =
-        response.text().await.map_err(|e| e.to_string())?;
-
-    let image_response: Result<ImageResponse, String> =
-        serde_json::from_str(&dalle_response_text).map_err(|e| e.to_string());
-    image_response
-}
-
 impl GenerateImage for DalleRequest {
     fn generate_image(
         &self,
@@ -188,7 +156,7 @@ impl GenerateImage for DalleRequest {
 
                         if let Some(fld) = save_folder.as_ref() {
                             let f = format!(
-                                "./archive/{}/{}.png",
+                                "/home/begin/code/subd/archive/{}/{}.png",
                                 fld, unique_identifier
                             );
                             let _ = File::create(f.clone())
@@ -225,4 +193,36 @@ impl GenerateImage for DalleRequest {
 
         return Box::pin(res);
     }
+}
+
+async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
+    let api_key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
+
+    let client = reqwest::Client::new();
+
+    // TODO: read from the database
+    let size = "1024x1024";
+    let model = "dall-e-3";
+
+    println!("\n\tCalling to DAlle w/ {}", prompt.clone());
+    let req = client
+        .post("https://api.openai.com/v1/images/generations")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "prompt": prompt,
+            "n": 1,
+            "model": model,
+            "size": size,
+        }))
+        .send();
+
+    let response = req.await.map_err(|e| e.to_string())?;
+
+    let dalle_response_text =
+        response.text().await.map_err(|e| e.to_string())?;
+
+    let image_response: Result<ImageResponse, String> =
+        serde_json::from_str(&dalle_response_text).map_err(|e| e.to_string());
+    image_response
 }

@@ -6,6 +6,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs::File;
+use std::io::Read;
 use std::io::Write;
 
 use openai::{
@@ -106,8 +107,7 @@ pub async fn ask_gpt_vision2(
     let full_path = match image_url {
         Some(url) => url.to_string(),
         None => {
-            let base64_image = images::encode_image(image_path)
-                .expect("Failed to encode image");
+            let base64_image = images::encode_image(image_path)?;
             format!("data:image/jpeg;base64,{}", base64_image)
         }
     };
@@ -159,11 +159,10 @@ pub async fn ask_gpt_vision2(
     let filename = format!("{}.json", now.timestamp());
     let filepath =
         format!("/home/begin/code/subd/tmp/Archive/vision/{}", filename);
-    let mut file = File::create(filepath).unwrap();
+    let mut file = File::create(filepath).map(|m| m)?;
     file.write_all(response_json.to_string().as_bytes())
-        .unwrap();
+        .map(|m| m)?;
 
-    //
     let vision_res: VisionResponse =
         match serde_json::from_str(&response_json.to_string()) {
             Ok(res) => res,
@@ -174,6 +173,60 @@ pub async fn ask_gpt_vision2(
         };
     let content = &vision_res.choices[0].message.content;
     Ok(content.to_string())
+}
+
+// TODO: This requires more updates to the openai Rust library to get the Vision Portion working
+pub async fn ask_gpt_vision(
+    user_input: String,
+    image_url: String,
+) -> Result<ChatCompletionMessage, String> {
+    let key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
+    set_key(key);
+
+    let text_content = VisionMessage::Text {
+        content_type: "text".to_string(),
+        text: user_input,
+    };
+
+    let image_content = VisionMessage::Image {
+        content_type: "image_url".to_string(),
+        image_url: ImageUrl { url: image_url },
+    };
+    let new_content =
+        ChatCompletionContent::VisionMessage(vec![text_content, image_content]);
+
+    let messages = vec![ChatCompletionMessage {
+        role: ChatCompletionMessageRole::System,
+        content: Some(new_content),
+        name: None,
+        function_call: None,
+    }];
+
+    println!("JSON:\n\n {}", serde_json::to_string(&messages).unwrap());
+    let model = "gpt-4-vision-preview";
+
+    let chat_completion =
+        match ChatCompletion::builder(model.clone(), messages.clone())
+            .create()
+            .await
+        {
+            Ok(completion) => completion,
+            Err(e) => {
+                println!("\n\tChat GPT error occurred: {}", e);
+                return Err(e.to_string());
+            }
+        };
+
+    let returned_message =
+        chat_completion.choices.first().unwrap().message.clone();
+
+    // TODO: fix
+    // println!(
+    //     "Chat GPT Response {:#?}: {}",
+    //     &returned_message.role,
+    //     &returned_message.content.clone().unwrap().trim()
+    // );
+    Ok(returned_message)
 }
 
 #[cfg(test)]
@@ -242,57 +295,4 @@ mod tests {
 
         // assert_eq!("", content);
     }
-}
-
-// TODO: This requires more updates to the openai Rust library to get the Vision Portion working
-pub async fn ask_gpt_vision(
-    user_input: String,
-    image_url: String,
-) -> Result<ChatCompletionMessage, openai::OpenAiError> {
-    set_key(env::var("OPENAI_API_KEY").unwrap());
-
-    let text_content = VisionMessage::Text {
-        content_type: "text".to_string(),
-        text: user_input,
-    };
-
-    let image_content = VisionMessage::Image {
-        content_type: "image_url".to_string(),
-        image_url: ImageUrl { url: image_url },
-    };
-    let new_content =
-        ChatCompletionContent::VisionMessage(vec![text_content, image_content]);
-
-    let messages = vec![ChatCompletionMessage {
-        role: ChatCompletionMessageRole::System,
-        content: Some(new_content),
-        name: None,
-        function_call: None,
-    }];
-
-    println!("JSON:\n\n {}", serde_json::to_string(&messages).unwrap());
-    let model = "gpt-4-vision-preview";
-
-    let chat_completion =
-        match ChatCompletion::builder(model.clone(), messages.clone())
-            .create()
-            .await
-        {
-            Ok(completion) => completion,
-            Err(e) => {
-                println!("\n\tChat GPT error occurred: {}", e);
-                return Err(e);
-            }
-        };
-
-    let returned_message =
-        chat_completion.choices.first().unwrap().message.clone();
-
-    // TODO: fix
-    // println!(
-    //     "Chat GPT Response {:#?}: {}",
-    //     &returned_message.role,
-    //     &returned_message.content.clone().unwrap().trim()
-    // );
-    Ok(returned_message)
 }

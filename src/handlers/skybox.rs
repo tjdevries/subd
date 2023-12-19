@@ -45,22 +45,19 @@ impl EventHandler for SkyboxHandler {
                 _ => continue,
             };
 
-            // We don't just need to call request here
-            // this event isn't just pure request
-            // we need to start somewhere else
             println!("Attempting to Skybox");
-            skybox::request_skybox(
+            match skybox::request_skybox(
                 self.pool.clone(),
                 request.msg,
                 request.style_id,
             )
-            .await?;
-
-            // Can I kick off another loop???
-
-            // TODO: we will need to trigger the skybox OBS source
-            // to refresh, after we get an updated Skybox
-            // AND generate a fresh HTML page using pannellum
+            .await
+            {
+                Ok(v) => {
+                    // What
+                }
+                Err(e) => continue,
+            };
         }
     }
 }

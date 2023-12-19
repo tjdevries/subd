@@ -155,7 +155,7 @@ pub async fn check_styles() -> Result<Vec<SkyboxStyle>> {
     let requests_url =
         format!("{}?api_key={}", SKYBOX_STYLES_URL, skybox_api_key);
     let client = Client::new();
-    let resp = client.get(&requests_url).send().await.unwrap();
+    let resp = client.get(&requests_url).send().await?;
 
     println!("Skybox Styles: {:?}", resp.status());
 
@@ -192,12 +192,12 @@ pub async fn styles_for_chat() -> String {
 
 // TODO: refactor this, so we don't
 pub async fn check_skybox_status(id: i32) -> Result<SkyboxStatusResponse> {
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    let skybox_api_key = env::var("SKYBOX_API_KEY")?;
 
     let requests_url =
         format!("{}/{}?api_key={}", SKYBOX_STATUS_URL, id, skybox_api_key);
     let client = Client::new();
-    let resp = client.get(&requests_url).send().await.unwrap();
+    let resp = client.get(&requests_url).send().await?;
 
     println!("Skybox Status: {:?}", resp.status());
     let body = resp.json::<OuterSkyboxStatusResponse>().await?;
@@ -229,14 +229,14 @@ pub async fn check_skybox_status_and_save(id: i32) -> Result<()> {
         let archive_file =
             format!("./archive/skybox/{}.png", unique_identifier);
 
-        let mut file = File::create(archive_file).unwrap();
-        file.write_all(&image_data).unwrap();
+        let mut file = File::create(archive_file)?;
+        file.write_all(&image_data)?;
 
         let skybox_template = SkyboxTemplate { url: &file_url };
         let new_skybox = "./build/skybox.html";
-        let mut file = File::create(new_skybox).unwrap();
-        let render = skybox_template.render().unwrap();
-        file.write_all(render.as_bytes()).unwrap();
+        let mut file = File::create(new_skybox)?;
+        let render = skybox_template.render()?;
+        file.write_all(render.as_bytes())?;
 
         // we need to save to the DB
         // We need to trigger OBS
@@ -248,7 +248,7 @@ pub async fn request_skybox(
     pool: sqlx::PgPool,
     prompt: String,
     style_id: i32,
-) -> io::Result<String> {
+) -> Result<String, String> {
     let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
 
     // https://backend.blockadelabs.com/api/v1/skybox
@@ -269,30 +269,31 @@ pub async fn request_skybox(
         .json(&post_body)
         .send()
         .await
-        .unwrap();
+        .map_err(|e| e.to_string())?;
 
-    let body = resp.text().await.unwrap();
+    let body = resp.text().await.map_err(|e| e.to_string())?;
     let bytes = body.as_bytes();
 
     let skybox_request: SkyboxStatusResponse =
-        serde_json::from_str(&body).unwrap();
+        serde_json::from_str(&body).map_err(|e| e.to_string())?;
 
     let t = Utc::now();
     let response_filepath = format!("./tmp/skybox_{}.json", t);
 
-    let mut file = File::create(response_filepath.clone())?;
-    file.write_all(bytes)?;
+    if let Ok(mut file) = File::create(response_filepath.clone()) {
+        file.write_all(bytes);
+        let _ = skybox_requests::save_skybox_request(
+            &pool,
+            skybox_request.id,
+            prompt,
+            style_id,
+            skybox_request.username,
+        )
+        .await;
+        return Ok(response_filepath);
+    };
 
-    let _ = skybox_requests::save_skybox_request(
-        &pool,
-        skybox_request.id,
-        prompt,
-        style_id,
-        skybox_request.username,
-    )
-    .await;
-
-    Ok(response_filepath)
+    return Err("Invalid skybox response".to_string());
 }
 
 #[cfg(test)]

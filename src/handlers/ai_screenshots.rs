@@ -1,7 +1,6 @@
-use crate::audio;
 use crate::dalle;
-use crate::dalle::GenerateImage;
-use crate::openai;
+use crate::obs_scenes;
+use crate::obs_source;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -94,7 +93,7 @@ pub async fn handle_ai_screenshots(
 
     // I need a list of all models
     let models = vec!["dalle".to_string(), "sd".to_string()];
-    let default_model = "sd".to_string();
+    let default_model = "dalle".to_string();
     let model = splitmsg.get(1).unwrap_or(&default_model);
 
     let prompt = if splitmsg.len() > 1 {
@@ -165,7 +164,7 @@ async fn screenshot_routing(
     prompt: String,
     model: String,
     source: String,
-) -> Result<()> {
+) -> Result<(), String> {
     if model == "dalle" {
         let req = dalle::DalleRequest {
             prompt: prompt.clone(),
@@ -182,10 +181,16 @@ async fn screenshot_routing(
             username: "beginbot".to_string(),
             amount: 1,
         };
-        let _ = telephone::create_screenshot_variation(
+        let path = telephone::create_screenshot_variation(
             sink, obs_client, filename, &req, prompt, source,
         )
-        .await;
+        .await?;
+
+        let source = "NewBeginSource".to_string();
+        let _ = obs_source::update_image_source(obs_client, source, path).await;
+
+        let scene = "NewBeginScene";
+        let _ = obs_scenes::change_scene(&obs_client, scene).await;
     };
 
     Ok(())

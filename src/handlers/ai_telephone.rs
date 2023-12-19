@@ -75,6 +75,8 @@ pub async fn handle_telephone_requests(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
+    let not_beginbot =
+        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
     let default = "".to_string();
     let image_url = splitmsg.get(1).unwrap_or(&default);
@@ -106,6 +108,37 @@ pub async fn handle_telephone_requests(
                 image_url.to_string(),
                 prompt.clone(),
                 5,
+                &req,
+            )
+            .await
+            {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!("Error Telephone Prompt: {}", e);
+                    return Ok(());
+                }
+            }
+        }
+
+        "!begin_telephone" => {
+            if not_beginbot {
+                return Ok(());
+            }
+
+            let req = dalle::DalleRequest {
+                prompt: prompt.clone(),
+                username: msg.user_name,
+                amount: 1,
+            };
+
+            match telephone::telephone(
+                &obs_client,
+                sink,
+                image_url.to_string(),
+                prompt.clone(),
+                13,
                 &req,
             )
             .await
