@@ -1,4 +1,5 @@
 use crate::dalle;
+use crate::telephone;
 use crate::dalle::GenerateImage;
 use crate::openai;
 use anyhow::Result;
@@ -83,7 +84,7 @@ pub async fn handle_ai_screenshots(
         username: "beginbot".to_string(),
         amount: 1,
     };
-    create_screenshot_variation(
+    telephone::create_screenshot_variation(
         sink,
         obs_client,
         filename,
@@ -92,9 +93,9 @@ pub async fn handle_ai_screenshots(
         "begin".to_string(),
     )
     .await
-
-    // We need to save this!
 }
+
+
 
 // This is key
 pub fn generate_random_prompt() -> String {
@@ -113,40 +114,6 @@ pub fn generate_random_prompt() -> String {
     selected_choice.to_string()
 }
 
-// TODO: I don't like the name
-async fn create_screenshot_variation(
-    sink: &Sink,
-    obs_client: &OBSClient,
-    filename: String,
-    ai_image_req: &impl GenerateImage,
-    prompt: String,
-    source: String,
-) -> Result<String, String> {
-    // let _ = audio::play_sound(&sink).await;
-
-    let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
-
-    let description = openai::ask_gpt_vision2(&filename, None)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let new_description = format!(
-        "{} {} . The most important thing to focus on is: {}",
-        prompt, description, prompt
-    );
-
-    let dalle_path = ai_image_req
-        .generate_image(new_description, Some("timelapse".to_string()), false)
-        .await;
-
-    if dalle_path == "".to_string() {
-        return Err("Dalle Path is empty".to_string());
-    }
-
-    println!("Dalle Path: {}", dalle_path);
-    Ok(dalle_path)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,3 +124,4 @@ mod tests {
         //assert_eq!(screenshot_prompt,"");
     }
 }
+

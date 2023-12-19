@@ -1,4 +1,5 @@
 use crate::audio;
+use crate::telephone;
 use crate::dalle;
 use crate::dalle::GenerateImage;
 use crate::openai;
@@ -171,7 +172,7 @@ async fn screenshot_routing(
             username: "beginbot".to_string(),
             amount: 1,
         };
-        let _ = create_screenshot_variation(
+        let _ = telephone::create_screenshot_variation(
             sink, obs_client, filename, &req, prompt, source,
         )
         .await;
@@ -181,45 +182,11 @@ async fn screenshot_routing(
             username: "beginbot".to_string(),
             amount: 1,
         };
-        let _ = create_screenshot_variation(
+        let _ = telephone::create_screenshot_variation(
             sink, obs_client, filename, &req, prompt, source,
         )
         .await;
     };
 
     Ok(())
-}
-
-// TODO: I don't like the name
-async fn create_screenshot_variation(
-    sink: &Sink,
-    obs_client: &OBSClient,
-    filename: String,
-    ai_image_req: &impl GenerateImage,
-    prompt: String,
-    source: String,
-) -> Result<String> {
-    let _ = audio::play_sound(&sink, "aim".to_string()).await;
-
-    let _ = openai::save_screenshot(&obs_client, &source, &filename).await;
-
-    let description = openai::ask_gpt_vision2(&filename, None).await.unwrap();
-
-    let new_description = format!(
-        "{} {} . The most important thing to focus on is: {}",
-        prompt, description, prompt
-    );
-    println!("Generating Dalle Image: {}", new_description.clone());
-
-    let dalle_path = ai_image_req
-        .generate_image(new_description, None, true)
-        .await;
-
-    if dalle_path == "".to_string() {
-        return Err(anyhow::anyhow!("Dalle Path is empty"));
-    }
-
-    println!("Dalle Path: {}", dalle_path);
-
-    Ok(dalle_path)
 }

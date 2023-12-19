@@ -33,3 +33,4 @@ pub mod uberduck;
 pub mod user_messages;
 pub mod users;
 pub mod voices_routing;
+pub mod telephone;
