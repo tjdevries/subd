@@ -119,6 +119,7 @@ async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
     let size = "1024x1024";
     let model = "dall-e-3";
 
+    println!("\n\tCalling to DAlle w/ {}", prompt.clone());
     let req = client
         .post("https://api.openai.com/v1/images/generations")
         .header("Content-Type", "application/json")
@@ -152,7 +153,7 @@ impl GenerateImage for DalleRequest {
         let res = async move {
             let mut archive_file = "".to_string();
 
-            match dalle_request(self.prompt.clone()).await {
+            match dalle_request(prompt.clone()).await {
                 Ok(response) => 'label: {
                     for (index, download_resp) in
                         response.data.iter().enumerate()

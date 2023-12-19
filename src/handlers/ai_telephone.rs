@@ -130,7 +130,7 @@ pub async fn handle_telephone_requests(
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
-                2,
+                5,
                 &req,
             )
             .await

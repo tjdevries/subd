@@ -1,12 +1,11 @@
 use crate::obs;
-use obws::requests::sources::SaveScreenshot;
-use std::path::Path;
 use anyhow::Result;
 use obws::requests::scene_items::{
     Position, Scale, SceneItemTransform, SetTransform,
 };
+use obws::requests::sources::SaveScreenshot;
 use obws::Client as OBSClient;
-
+use std::path::Path;
 
 // This doesn't go here
 pub async fn save_screenshot(
@@ -30,7 +29,6 @@ pub async fn save_screenshot(
 
     Ok(())
 }
-
 
 // ==================================================
 // == Scaling Sources

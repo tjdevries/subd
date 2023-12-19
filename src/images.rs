@@ -1,12 +1,11 @@
 use anyhow::Result;
+use base64::engine::general_purpose;
+use base64::Engine;
 use reqwest;
+use reqwest::redirect::Policy;
 use std::fs::File;
 use std::io::Write;
 use std::io::{self, Read};
-use base64::engine::general_purpose;
-use base64::Engine;
-use reqwest::redirect::Policy;
-
 
 pub async fn download_image(
     url: String,
@@ -16,8 +15,9 @@ pub async fn download_image(
         .redirect(Policy::default())
         .build()
         .expect("Failed to create client");
-    
-    let image_data = client.get(url.clone())
+
+    let image_data = client
+        .get(url.clone())
         .send()
         .await
         .map_err(|e| e.to_string())?
@@ -40,4 +40,3 @@ pub fn encode_image(image_path: &str) -> io::Result<String> {
     let b64 = general_purpose::STANDARD.encode(&buffer);
     Ok(b64)
 }
-

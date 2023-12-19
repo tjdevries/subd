@@ -1,19 +1,19 @@
-use anyhow::Result;
-use std::path::PathBuf;
-use std::path::Path;
-use crate::images;
-use crate::openai;
-use chrono::{DateTime, Utc};
 use crate::audio;
-use crate::dalle::GenerateImage;
 use crate::dalle;
+use crate::dalle::GenerateImage;
+use crate::images;
 use crate::obs_scenes;
 use crate::obs_source;
-use obws::Client as OBSClient;
-use obws::requests::custom::source_settings::SlideshowFile;
+use crate::openai;
+use anyhow::Result;
+use chrono::{DateTime, Utc};
 use obws::requests::custom::source_settings::ImageSource;
-use std::fs::create_dir;
+use obws::requests::custom::source_settings::SlideshowFile;
+use obws::Client as OBSClient;
 use rodio::*;
+use std::fs::create_dir;
+use std::path::Path;
+use std::path::PathBuf;
 
 pub async fn telephone(
     obs_client: &OBSClient,
@@ -32,29 +32,14 @@ pub async fn telephone(
 
     let og_file =
         format!("/home/begin/code/subd/archive/{}/original.png", folder);
-    if let Err(e) =
-        images::download_image(url.clone(), og_file.clone()).await
-    {
-        println!(
-            "Error Downloading Image: {} | {:?}",
-            og_file.clone(),
-            e
-        );
+    if let Err(e) = images::download_image(url.clone(), og_file.clone()).await {
+        println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }
-    let image_settings = ImageSource {
-        file: &Path::new(&og_file),
-        unload: true,
-    };
-    let set_settings = obws::requests::inputs::SetSettings {
-        settings: &image_settings,
-        input: "OG-Telephone-Image",
-        overlay: Some(true),
-    };
-    let _ = obs_client.inputs().set_settings(set_settings).await;
 
     // let first_description = match ask_gpt_vision2(&archive_file, None).await {
-    let first_description = match openai::ask_gpt_vision2("", Some(&url)).await {
-        Ok(description) => description,
+    let first_description = match openai::ask_gpt_vision2("", Some(&url)).await
+    {
+        Ok(desc) => desc,
         Err(e) => {
             eprintln!("Error asking GPT Vision for description: {}", e);
             return Err(e.into());
@@ -62,7 +47,7 @@ pub async fn telephone(
     };
 
     let description = format!("{} {}", first_description, prompt);
-    println!("First Telescope: {}", description);
+    println!("First GPT Vision Description: {}", description);
     let mut dalle_path = ai_image_req
         .generate_image(description, Some(folder.clone()), false)
         .await;
@@ -84,8 +69,9 @@ pub async fn telephone(
 
     for _ in 1..num_connections {
         println!("\n\tAsking GPT VISION: {}", dalle_path.clone());
-        let description = match openai::ask_gpt_vision2(&dalle_path, None).await {
-            Ok(description) => description,
+        let description = match openai::ask_gpt_vision2(&dalle_path, None).await
+        {
+            Ok(desc) => desc,
             Err(e) => {
                 eprintln!("Error asking GPT Vision: {}", e);
                 continue;
@@ -133,12 +119,21 @@ pub async fn telephone(
     };
     let _ = obs_client.inputs().set_settings(set_settings).await;
 
+    let image_settings = ImageSource {
+        file: &Path::new(&og_file),
+        unload: true,
+    };
+    let set_settings = obws::requests::inputs::SetSettings {
+        settings: &image_settings,
+        input: "OG-Telephone-Image",
+        overlay: Some(true),
+    };
+    let _ = obs_client.inputs().set_settings(set_settings).await;
 
     let _ = obs_scenes::change_scene(&obs_client, "TelephoneScene").await;
     let _ = audio::play_sound(&sink, "8bitmackintro".to_string()).await;
     Ok(dalle_path)
 }
-
 
 // TODO: I don't like the name
 pub async fn create_screenshot_variation(

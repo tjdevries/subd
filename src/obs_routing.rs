@@ -706,7 +706,8 @@ pub async fn handle_obs_commands(
                 unique_identifier
             );
             let _ =
-                obs_source::save_screenshot(&obs_client, "begin", &filename).await;
+                obs_source::save_screenshot(&obs_client, "begin", &filename)
+                    .await;
 
             // WHAT
             let res = openai::ask_gpt_vision2(&filename, None).await.unwrap();
@@ -1281,8 +1282,8 @@ mod tests {
             "/home/begin/code/subd/tmp/screenshots/fake/{}",
             unique_identifier
         );
-        let _ =
-            obs_source::save_screenshot(&obs_client, "Primary", &filename).await;
+        let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
+            .await;
     }
 
     #[test]

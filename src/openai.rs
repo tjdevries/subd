@@ -106,8 +106,8 @@ pub async fn ask_gpt_vision2(
     let full_path = match image_url {
         Some(url) => url.to_string(),
         None => {
-            let base64_image =
-                images::encode_image(image_path).expect("Failed to encode image");
+            let base64_image = images::encode_image(image_path)
+                .expect("Failed to encode image");
             format!("data:image/jpeg;base64,{}", base64_image)
         }
     };
@@ -175,7 +175,6 @@ pub async fn ask_gpt_vision2(
     let content = &vision_res.choices[0].message.content;
     Ok(content.to_string())
 }
-
 
 #[cfg(test)]
 mod tests {
