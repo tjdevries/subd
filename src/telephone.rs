@@ -28,23 +28,14 @@ pub async fn telephone(
     let new_tele_folder = format!("./archive/{}", folder);
     let _ = create_dir(new_tele_folder.clone());
 
-    println!("new_dir: {:?}", new_tele_folder.clone());
-
     let og_file =
         format!("/home/begin/code/subd/archive/{}/original.png", folder);
     if let Err(e) = images::download_image(url.clone(), og_file.clone()).await {
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }
 
-    // let first_description = match ask_gpt_vision2(&archive_file, None).await {
-    let first_description = match openai::ask_gpt_vision2("", Some(&url)).await
-    {
-        Ok(desc) => desc,
-        Err(e) => {
-            eprintln!("Error asking GPT Vision for description: {}", e);
-            return Err(e.into());
-        }
-    };
+    let first_description =
+        openai::ask_gpt_vision2("", Some(&url)).await.map(|m| m)?;
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
@@ -54,19 +45,9 @@ pub async fn telephone(
     if dalle_path == "".to_string() {
         return Err(anyhow::anyhow!("Dalle Path is empty"));
     }
-
-    // Create our list of files for the slideshow
-    let dp = dalle_path.clone();
-    let fp = Path::new(&dp);
-    let slideshow_file = SlideshowFile {
-        value: fp,
-        hidden: false,
-        selected: true,
-    };
-    let mut files: Vec<SlideshowFile> = vec![slideshow_file];
+    let og_dalle_path = dalle_path.clone();
 
     let mut dalle_path_bufs = vec![];
-
     for _ in 1..num_connections {
         println!("\n\tAsking GPT VISION: {}", dalle_path.clone());
         let description = match openai::ask_gpt_vision2(&dalle_path, None).await
@@ -89,12 +70,33 @@ pub async fn telephone(
         dalle_path = req
             .generate_image(prompt, Some(folder.clone()), false)
             .await;
-        // Do we need to add information here?
         if dalle_path != "".to_string() {
             let dp = dalle_path.clone();
             dalle_path_bufs.push(PathBuf::from(dp))
         }
     }
+
+    let _ =
+        update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
+    let _ = audio::play_sound(&sink, "8bitmackintro".to_string()).await;
+
+    Ok(dalle_path)
+}
+
+pub async fn update_obs_telephone_scene(
+    obs_client: &OBSClient,
+    og_dalle_path: String,
+    dalle_path_bufs: Vec<PathBuf>,
+) -> Result<()> {
+    // Create our list of files for the slideshow
+    let dp = og_dalle_path.clone();
+    let fp = Path::new(&dp);
+    let slideshow_file = SlideshowFile {
+        value: fp,
+        hidden: false,
+        selected: true,
+    };
+    let mut files: Vec<SlideshowFile> = vec![slideshow_file];
 
     let mut slideshow_files: Vec<SlideshowFile> = dalle_path_bufs
         .iter()
@@ -104,35 +106,19 @@ pub async fn telephone(
             selected: false,
         })
         .collect();
-
     files.append(&mut slideshow_files);
 
-    let slideshow_settings =
-        obws::requests::custom::source_settings::Slideshow {
-            files: &files,
-            ..Default::default()
-        };
-    let set_settings = obws::requests::inputs::SetSettings {
-        settings: &slideshow_settings,
-        input: "Telephone-Slideshow",
-        overlay: Some(true),
-    };
-    let _ = obs_client.inputs().set_settings(set_settings).await;
+    let source = "Telephone-Slideshow".to_string();
+    let _ =
+        obs_source::update_slideshow_source(obs_client, source, files).await;
 
-    let image_settings = ImageSource {
-        file: &Path::new(&og_file),
-        unload: true,
-    };
-    let set_settings = obws::requests::inputs::SetSettings {
-        settings: &image_settings,
-        input: "OG-Telephone-Image",
-        overlay: Some(true),
-    };
-    let _ = obs_client.inputs().set_settings(set_settings).await;
+    let source = "OG-Telephone-Image".to_string();
+    let _ = obs_source::update_image_source(obs_client, source, og_dalle_path)
+        .await;
 
-    let _ = obs_scenes::change_scene(&obs_client, "TelephoneScene").await;
-    let _ = audio::play_sound(&sink, "8bitmackintro".to_string()).await;
-    Ok(dalle_path)
+    let scene = "TelephoneScene";
+    let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    Ok(())
 }
 
 // TODO: I don't like the name

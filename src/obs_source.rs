@@ -1,11 +1,52 @@
 use crate::obs;
 use anyhow::Result;
+use obws::requests::custom::source_settings::ImageSource;
+use obws::requests::custom::source_settings::Slideshow;
+use obws::requests::custom::source_settings::SlideshowFile;
+use obws::requests::inputs::SetSettings;
 use obws::requests::scene_items::{
     Position, Scale, SceneItemTransform, SetTransform,
 };
 use obws::requests::sources::SaveScreenshot;
 use obws::Client as OBSClient;
 use std::path::Path;
+
+pub async fn update_slideshow_source(
+    obs_client: &OBSClient,
+    source: String,
+    files: Vec<SlideshowFile<'_>>,
+) -> Result<()> {
+    let slideshow_settings =
+        obws::requests::custom::source_settings::Slideshow {
+            files: &files,
+            ..Default::default()
+        };
+    let set_settings = SetSettings {
+        settings: &slideshow_settings,
+        input: &source,
+        overlay: Some(true),
+    };
+    let _ = obs_client.inputs().set_settings(set_settings).await;
+    Ok(())
+}
+
+pub async fn update_image_source(
+    obs_client: &OBSClient,
+    source: String,
+    filename: String,
+) -> Result<()> {
+    let image_settings = ImageSource {
+        file: &Path::new(&filename),
+        unload: true,
+    };
+    let set_settings = SetSettings {
+        settings: &image_settings,
+        input: &source,
+        overlay: Some(true),
+    };
+    let _ = obs_client.inputs().set_settings(set_settings).await;
+    Ok(())
+}
 
 // This doesn't go here
 pub async fn save_screenshot(
@@ -30,8 +71,7 @@ pub async fn save_screenshot(
     Ok(())
 }
 
-// ==================================================
-// == Scaling Sources
+// ================================================== == Scaling Sources
 // ==================================================
 
 // This takes in x & y
