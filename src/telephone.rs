@@ -78,7 +78,7 @@ pub async fn telephone(
 
 // TODO: I don't like the name
 pub async fn create_screenshot_variation(
-    sink: &Sink,
+    _sink: &Sink,
     obs_client: &OBSClient,
     filename: String,
     ai_image_req: &impl GenerateImage,

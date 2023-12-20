@@ -165,33 +165,38 @@ async fn screenshot_routing(
     model: String,
     source: String,
 ) -> Result<(), String> {
-    if model == "dalle" {
+
+    let path = if model == "dalle" {
         let req = dalle::DalleRequest {
             prompt: prompt.clone(),
             username: "beginbot".to_string(),
             amount: 1,
         };
-        let _ = telephone::create_screenshot_variation(
+
+        println!("\n\tDALLE: NEW BEGIN: {}", prompt);
+        telephone::create_screenshot_variation(
             sink, obs_client, filename, &req, prompt, source,
         )
-        .await;
+        .await?
     } else {
+        println!("\n\tSD: NEW BEGIN: {}", prompt);
         let req = dalle::StableDiffusionRequest {
             prompt: prompt.clone(),
             username: "beginbot".to_string(),
             amount: 1,
         };
-        let path = telephone::create_screenshot_variation(
+        telephone::create_screenshot_variation(
             sink, obs_client, filename, &req, prompt, source,
         )
-        .await?;
-
-        let source = "NewBeginSource".to_string();
-        let _ = obs_source::update_image_source(obs_client, source, path).await;
-
-        let scene = "NewBeginScene";
-        let _ = obs_scenes::change_scene(&obs_client, scene).await;
+        .await?
     };
 
+    //
+
+    let source = "NewBeginSource".to_string();
+    let _ = obs_source::update_image_source(obs_client, source, path).await;
+
+    let scene = "NewBeginScene";
+    let _ = obs_scenes::change_scene(&obs_client, scene).await;
     Ok(())
 }

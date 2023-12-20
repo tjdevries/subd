@@ -101,11 +101,12 @@ pub fn generate_random_prompt() -> String {
         "an 80's anime".to_string(),
         "as a Pepe the frog".to_string(),
         "album cover".to_string(),
-        "newspaper".to_string(),
-        "fun".to_string(),
-        "beginbot as a service".to_string(),
-        "in a jail line up".to_string(),
-        "in an elon musk rocket ship on his way to mars".to_string(),
+        
+        // "newspaper".to_string(),
+        // "fun".to_string(),
+        // "beginbot as a service".to_string(),
+        // "in a jail line up".to_string(),
+        // "in an elon musk rocket ship on his way to mars".to_string(),
     ];
     let mut rng = rand::thread_rng();
     let selected_choice = choices.choose(&mut rng).unwrap();

@@ -72,7 +72,7 @@ impl GenerateImage for StableDiffusionRequest {
 
         let res = async move {
             let response = req.await.unwrap();
-            let mut image_data = response.bytes().await.unwrap();
+            let image_data = response.bytes().await.unwrap();
 
             // We aren't currently able to generate more than image
             let index = 1;
@@ -84,7 +84,7 @@ impl GenerateImage for StableDiffusionRequest {
             match save_folder {
                 Some(fld) => {
                     let archive_file = format!(
-                        "./archive/{}/{}.png",
+                        "/home/begin/code/subd/archive/{}/{}.png",
                         fld.clone(),
                         unique_identifier
                     );
@@ -94,12 +94,12 @@ impl GenerateImage for StableDiffusionRequest {
                 None => {}
             }
 
-            let archive_file = format!("./archive/{}.png", unique_identifier);
+            let archive_file = format!("/home/begin/code/subd/archive/{}.png", unique_identifier);
             let mut file = File::create(archive_file.clone()).unwrap();
             file.write_all(&image_data).unwrap();
 
             if set_as_obs_bg {
-                let filename = format!("./tmp/dalle-{}.png", index);
+                let filename = format!("/home/begin/code/subd/tmp/dalle-{}.png", index);
                 let mut file = File::create(filename).unwrap();
                 file.write_all(&image_data).unwrap();
             }

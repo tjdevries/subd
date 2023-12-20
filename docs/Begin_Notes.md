@@ -148,6 +148,17 @@ https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=db7477cd
 
 ### API-Explorations
 
-VALL-E for voice cloning
-https://github.com/facebookresearch/llama/issues/425
-Replicate
+- VALL-E for voice cloning
+- https://github.com/facebookresearch/llama/issues/425
+- Replicate
+- https://www.move.ai/
+- https://api-docs.runway.team/#tag/release/operation/updateReleaseById
+
+### Semantic Dimensions
+
+- Filter to all things in the stream:
+  - we hit 1800's mode
+    - all images generated are more 1800's like
+    - the voices have filters on them to make them sound more old-timey
+    - all music is more old-timey
+    - my scene layout is more old-timey
