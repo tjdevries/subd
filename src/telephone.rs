@@ -84,6 +84,7 @@ pub async fn create_screenshot_variation(
     ai_image_req: &impl GenerateImage,
     prompt: String,
     source: String,
+    archive_dir: Option<String>,
 ) -> Result<String, String> {
     // let _ = audio::play_sound(&sink).await;
 
@@ -99,7 +100,7 @@ pub async fn create_screenshot_variation(
     );
 
     let dalle_path = ai_image_req
-        .generate_image(new_description, Some("timelapse".to_string()), false)
+        .generate_image(new_description, archive_dir, false)
         .await;
 
     if dalle_path == "".to_string() {

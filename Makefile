@@ -11,6 +11,16 @@ fix:
 
 chat:
 	cargo run --bin chat
+	
+tts:
+	cargo run --bin begin -- --enable tts twitch_chat_saving implict_soundeffects
+	# cargo run --bin begin -- --enable tts --enable twitch_chat_saving implict_soundeffects
+
+screenshots_timer:
+	cargo run --bin begin -- --enable ai_screenshots_timer
+
+small:
+	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving
 
 begin:
 	cargo run --bin begin

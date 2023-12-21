@@ -94,12 +94,16 @@ impl GenerateImage for StableDiffusionRequest {
                 None => {}
             }
 
-            let archive_file = format!("/home/begin/code/subd/archive/{}.png", unique_identifier);
+            let archive_file = format!(
+                "/home/begin/code/subd/archive/{}.png",
+                unique_identifier
+            );
             let mut file = File::create(archive_file.clone()).unwrap();
             file.write_all(&image_data).unwrap();
 
             if set_as_obs_bg {
-                let filename = format!("/home/begin/code/subd/tmp/dalle-{}.png", index);
+                let filename =
+                    format!("/home/begin/code/subd/tmp/dalle-{}.png", index);
                 let mut file = File::create(filename).unwrap();
                 file.write_all(&image_data).unwrap();
             }

@@ -165,7 +165,6 @@ async fn screenshot_routing(
     model: String,
     source: String,
 ) -> Result<(), String> {
-
     let path = if model == "dalle" {
         let req = dalle::DalleRequest {
             prompt: prompt.clone(),
@@ -175,7 +174,7 @@ async fn screenshot_routing(
 
         println!("\n\tDALLE: NEW BEGIN: {}", prompt);
         telephone::create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source,
+            sink, obs_client, filename, &req, prompt, source, None,
         )
         .await?
     } else {
@@ -186,7 +185,7 @@ async fn screenshot_routing(
             amount: 1,
         };
         telephone::create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source,
+            sink, obs_client, filename, &req, prompt, source, None,
         )
         .await?
     };

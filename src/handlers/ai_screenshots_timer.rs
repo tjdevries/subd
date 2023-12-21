@@ -54,7 +54,7 @@ impl EventHandler for AiScreenshotsTimerHandler {
             }
 
             // let t = time::Duration::from_millis(3000);
-            let t = time::Duration::from_millis(30000);
+            let t = time::Duration::from_millis(1000);
             thread::sleep(t);
         }
     }
@@ -91,6 +91,7 @@ pub async fn handle_ai_screenshots(
         &req,
         random_prompt,
         "begin".to_string(),
+        Some("timelapse".to_string()),
     )
     .await
 }
@@ -99,14 +100,21 @@ pub async fn handle_ai_screenshots(
 pub fn generate_random_prompt() -> String {
     let choices = vec![
         "an 80's anime".to_string(),
-        "as a Pepe the frog".to_string(),
-        "album cover".to_string(),
-        
-        // "newspaper".to_string(),
-        // "fun".to_string(),
-        // "beginbot as a service".to_string(),
-        // "in a jail line up".to_string(),
-        // "in an elon musk rocket ship on his way to mars".to_string(),
+        // "as a Pepe the frog".to_string(),
+        // "album cover".to_string(),
+        "as a ripped dude".to_string(),
+        "as a crazy Bitcoin laser maxi".to_string(),
+        "as a Ape".to_string(),
+        "as SNES Pixel Art".to_string(),
+        "as Modern Art Painting".to_string(),
+        "anthropomorphic animals".to_string(),
+        "rap album cover".to_string(),
+        "outrun synthwave".to_string(),
+        "propaganda poster".to_string(), // "newspaper".to_string(),
+                                         // "fun".to_string(),
+                                         // "beginbot as a service".to_string(),
+                                         // "in a jail line up".to_string(),
+                                         // "in an elon musk rocket ship on his way to mars".to_string(),
     ];
     let mut rng = rand::thread_rng();
     let selected_choice = choices.choose(&mut rng).unwrap();
