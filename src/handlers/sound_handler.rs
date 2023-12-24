@@ -40,6 +40,7 @@ struct Record {
     field_1: String,
     field_2: String,
 }
+
 #[async_trait]
 impl EventHandler for ExplicitSoundHandler {
     async fn handle(
@@ -90,34 +91,49 @@ impl EventHandler for ExplicitSoundHandler {
 
             let sanitized_word = word.to_lowercase();
             let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+            println!("full_name: {}", full_name);
 
-            if mp3s.contains(&full_name) {
-                let _ = tx.send(Event::TransformOBSTextRequest(
-                    TransformOBSTextRequest {
-                        message: sanitized_word.clone(),
-                        text_source: text_source.to_string(),
-                    },
-                ));
-
-                let file = BufReader::new(
-                    File::open(format!("./MP3s/{}.mp3", sanitized_word))
-                        .unwrap(),
-                );
-                self.sink.set_volume(0.5);
-                self.sink
-                    .append(Decoder::new(BufReader::new(file)).unwrap());
-                self.sink.sleep_until_end();
-                let sleep_time = time::Duration::from_millis(100);
-                thread::sleep(sleep_time);
+            if !mp3s.contains(&full_name) {
+                continue;
             }
-
-            // This clears the OBS Text
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
-                    message: "".to_string(),
+                    message: sanitized_word.clone(),
                     text_source: text_source.to_string(),
                 },
             ));
+
+            let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word)) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error opening sound file: {}", e);
+                    continue
+                }
+            };
+            
+            let file = BufReader::new(mp3);
+            self.sink.set_volume(0.5);
+            let sound = match Decoder::new(BufReader::new(file)) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error decoding sound file: {}", e);
+                    continue
+                }
+            };
+            
+            self.sink.append(sound);
+            self.sink.sleep_until_end();
+            let sleep_time = time::Duration::from_millis(100);
+            thread::sleep(sleep_time);
+
+            // TODO: Look at bringing this back
+            // This clears the OBS Text
+            // let _ = tx.send(Event::TransformOBSTextRequest(
+            //     TransformOBSTextRequest {
+            //         message: "".to_string(),
+            //         text_source: text_source.to_string(),
+            //     },
+            // ));
         }
     }
 }

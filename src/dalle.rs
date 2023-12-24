@@ -10,6 +10,11 @@ use std::env;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::io::Read;
+use std::fs;
+use std::path::PathBuf;
+use base64::decode;
+use base64::{Engine as _, alphabet, engine::{self, general_purpose}};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
@@ -20,7 +25,7 @@ struct ImageResponse {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageData {
-    url: String,
+url: String,
 }
 
 // ===============================================
@@ -51,6 +56,19 @@ pub trait GenerateImage {
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>;
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SDResponse {
+    data: Vec<SDResponseData>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SDResponseData {
+    b64_json: String,
+    revised_prompt: String,
+}
+
+
 impl GenerateImage for StableDiffusionRequest {
     fn generate_image(
         &self,
@@ -71,8 +89,20 @@ impl GenerateImage for StableDiffusionRequest {
             .send();
 
         let res = async move {
+
+            // Get ridd of the unwraps
+            // Then we need to parse to new structure
             let response = req.await.unwrap();
             let image_data = response.bytes().await.unwrap();
+
+            let res: SDResponse = serde_json::from_slice(&image_data).unwrap();
+            let base64 = &res.data[0].b64_json;
+            // We rename it image_data because that is what it was origianlly
+            let image_data = general_purpose::STANDARD .decode(base64).unwrap();
+
+            // // We need a good name for this
+            // let mut file = File::create("durf2.png").expect("Failed to create file");
+            // file.write_all(&bytes).expect("Failed to write to file");
 
             // We aren't currently able to generate more than image
             let index = 1;
@@ -81,6 +111,7 @@ impl GenerateImage for StableDiffusionRequest {
             let unique_identifier =
                 format!("{}_{}_{}", timestamp, index, self.username);
 
+            // 
             match save_folder {
                 Some(fld) => {
                     let archive_file = format!(
@@ -94,6 +125,7 @@ impl GenerateImage for StableDiffusionRequest {
                 None => {}
             }
 
+            // TODO: get rid of this hardcoded path 
             let archive_file = format!(
                 "/home/begin/code/subd/archive/{}.png",
                 unique_identifier
@@ -191,8 +223,8 @@ impl GenerateImage for DalleRequest {
                 Err(e) => {
                     eprintln!("Error With Dalle response: {}", e);
                     "".to_string()
-                }
             }
+        }
         };
 
         return Box::pin(res);
@@ -205,8 +237,8 @@ async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
     let client = reqwest::Client::new();
 
     // TODO: read from the database
-    // let size = "1024x1024";
-    let size = "1280x720";
+    let size = "1024x1024";
+    // let size = "1280x720";
     // 1280 pixels wide by 720
     let model = "dall-e-3";
 
@@ -231,4 +263,34 @@ async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
     let image_response: Result<ImageResponse, String> =
         serde_json::from_str(&dalle_response_text).map_err(|e| e.to_string());
     image_response
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_parsing_carls_images() {
+        let filepath = "./archive/b.json";
+        let srcdir = PathBuf::from(filepath);
+        let f= fs::canonicalize(srcdir).unwrap();
+        
+        let mut file = File::open(f).unwrap();
+        let mut contents = String::new();
+        let _ = file.read_to_string(&mut contents);
+
+        let res: SDResponse = serde_json::from_str(&contents).unwrap();
+        let base64 = &res.data[0].b64_json;
+        let bytes = general_purpose::STANDARD .decode(base64).unwrap();
+
+        // We need a good name for this
+        let mut file = File::create("durf2.png").expect("Failed to create file");
+        file.write_all(&bytes).expect("Failed to write to file");
+        //
+        // // Unless it's none
+        // let _content = &res.choices[0].message.content;
+
+        // assert_eq!(srcdir.to_string(), "".to_string());
+    
+    }
 }

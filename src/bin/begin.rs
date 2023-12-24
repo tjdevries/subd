@@ -98,7 +98,7 @@ async fn main() -> Result<()> {
             "explicit_soundeffects".to_string(),
             "tts".to_string(),
             "ai_screenshots".to_string(),
-            "ai_screenshots_timer".to_string(),
+            // "ai_screenshots_timer".to_string(),
             "ai_telephone".to_string(),
             "ai_scenes".to_string(),
             "skybox".to_string(),
@@ -113,6 +113,8 @@ async fn main() -> Result<()> {
         args.enable
     };
 
+    let pool = subd_db::get_db_pool().await;
+
     for feature in features {
         match feature.as_ref() {
             // This might be named Wrong
@@ -123,7 +125,6 @@ async fn main() -> Result<()> {
                 // Works for Mac
                 // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let pool = subd_db::get_db_pool().await;
                 event_loop.push(handlers::sound_handler::SoundHandler {
                     sink,
                     pool: pool.clone(),
@@ -133,7 +134,6 @@ async fn main() -> Result<()> {
             "explicit_soundeffects" => {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
-                let pool = subd_db::get_db_pool().await;
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
@@ -147,7 +147,6 @@ async fn main() -> Result<()> {
                 println!("Enabling TTS");
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
-                let pool = get_db_pool().await;
 
                 // Elevenlabs/Uberduck handles voice messages
                 let elevenlabs_auth = Auth::from_env().unwrap();
@@ -170,7 +169,6 @@ async fn main() -> Result<()> {
                     elevenlabs,
                 });
 
-                let pool = subd_db::get_db_pool().await;
                 let obs_client = server::obs::create_obs_client().await?;
                 event_loop.push(handlers::voices_handler::VoicesHandler {
                     pool: pool.clone(),
@@ -182,7 +180,6 @@ async fn main() -> Result<()> {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
                 let obs_client = server::obs::create_obs_client().await?;
-                let pool = subd_db::get_db_pool().await;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -202,7 +199,6 @@ async fn main() -> Result<()> {
             "ai_screenshots_timer" => {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
-                let pool = subd_db::get_db_pool().await;
                 let obs_client = server::obs::create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -223,7 +219,6 @@ async fn main() -> Result<()> {
             "ai_telephone" => {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
-                let pool = subd_db::get_db_pool().await;
                 let obs_client = server::obs::create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -242,7 +237,6 @@ async fn main() -> Result<()> {
             "ai_scenes" => {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
-                let pool = subd_db::get_db_pool().await;
                 let elevenlabs_auth = Auth::from_env().unwrap();
                 let elevenlabs = Elevenlabs::new(
                     elevenlabs_auth,
@@ -273,7 +267,6 @@ async fn main() -> Result<()> {
             }
 
             "skybox" => {
-                let pool = subd_db::get_db_pool().await;
                 let obs_client = server::obs::create_obs_client().await?;
                 event_loop.push(handlers::skybox::SkyboxHandler {
                     obs_client,
@@ -298,7 +291,6 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                let pool = subd_db::get_db_pool().await;
                 let obs_client = server::obs::create_obs_client().await?;
                 // Do we need to duplicate this?
                 let (_stream, stream_handle) =
@@ -339,7 +331,6 @@ async fn main() -> Result<()> {
 
             "twitch_chat_saving" => {
                 println!("Enabling Twitch Chat Saving");
-                let pool = subd_db::get_db_pool().await;
                 event_loop.push(twitch_chat::TwitchChat::new(
                     pool.clone(),
                     "beginbot".to_string(),
@@ -384,7 +375,6 @@ async fn main() -> Result<()> {
 
             "twitch_eventsub" => {
                 // Twitch EventSub Events
-                let pool = subd_db::get_db_pool().await;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
