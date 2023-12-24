@@ -45,7 +45,6 @@ pub async fn find_or_create_filter(
 
     let mut filter_exists = false;
     for filter in filters {
-        println!("Filter Name: {}", filter.name);
         if filter.name == filter_name {
             filter_exists = true
         }

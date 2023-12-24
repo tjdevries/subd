@@ -51,9 +51,9 @@ struct VisionChoiceContent {
 // I want this to exist somewhere else
 // probably in a Crate
 pub async fn ask_chat_gpt(
-    user_input: String,
-    base_content: String,
-) -> Result<ChatCompletionMessage, openai::OpenAiError> {
+user_input: String,
+base_content: String,
+) -> Result<ChatCompletionMessage, String> {
     set_key(env::var("OPENAI_API_KEY").unwrap());
 
     let base_message = ChatCompletionMessage {
@@ -62,11 +62,6 @@ pub async fn ask_chat_gpt(
         name: None,
         function_call: None,
     };
-
-    println!(
-        "JSON:\n\n {}",
-        serde_json::to_string(&base_message).unwrap()
-    );
 
     let mut messages = vec![base_message];
 
@@ -89,13 +84,15 @@ pub async fn ask_chat_gpt(
             Ok(completion) => completion,
             Err(e) => {
                 println!("\n\tChat GPT error occurred: {}", e);
-                return Err(e);
+                return Err(e.to_string());
             }
         };
 
-    let returned_message =
-        chat_completion.choices.first().unwrap().message.clone();
-    Ok(returned_message)
+    chat_completion
+        .choices
+        .first()
+        .ok_or("Error Finding first Chat GPT response".to_string())
+        .map(|m| m.message.clone())
 }
 
 pub async fn ask_gpt_vision2(
@@ -113,17 +110,22 @@ pub async fn ask_gpt_vision2(
     };
 
     let client = reqwest::Client::new();
-    let headers = reqwest::header::HeaderMap::from_iter(vec![
+    
+    let content_type = "application/json".parse()?;
+    let auth = format!("Bearer {}", api_key).parse()?;
+    let h = vec![
         (
             reqwest::header::CONTENT_TYPE,
-            "application/json".parse().unwrap(),
+            content_type,
         ),
         (
             reqwest::header::AUTHORIZATION,
-            format!("Bearer {}", api_key).parse().unwrap(),
+            auth,
         ),
-    ]);
-
+    ];
+    
+    let headers = reqwest::header::HeaderMap::from_iter(h);
+    
     let payload = json!({
         "model": "gpt-4-vision-preview",
         "messages": [
@@ -202,7 +204,9 @@ pub async fn ask_gpt_vision(
         function_call: None,
     }];
 
-    println!("JSON:\n\n {}", serde_json::to_string(&messages).unwrap());
+    let debug = serde_json::to_string(&messages)
+        .unwrap_or("Couldn't parse gpt vision message".to_string());
+    println!("GPT Vision:\n\n {}", debug);
     let model = "gpt-4-vision-preview";
 
     let chat_completion =
@@ -217,16 +221,11 @@ pub async fn ask_gpt_vision(
             }
         };
 
-    let returned_message =
-        chat_completion.choices.first().unwrap().message.clone();
-
-    // TODO: fix
-    // println!(
-    //     "Chat GPT Response {:#?}: {}",
-    //     &returned_message.role,
-    //     &returned_message.content.clone().unwrap().trim()
-    // );
-    Ok(returned_message)
+    chat_completion
+            .choices
+            .first()
+            .ok_or("Error finding GPT Vision first response".to_string())
+            .map(|m| m.message.clone())
 }
 
 #[cfg(test)]
