@@ -93,13 +93,38 @@ impl GenerateImage for StableDiffusionRequest {
         let res = async move {
             // Get ridd of the unwraps
             // Then we need to parse to new structure
-            let response = req.await.unwrap();
-            let image_data = response.bytes().await.unwrap();
+            let response = match req.await {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error with Stable Diffusion response: {}", e);
+                    return "".to_string();
+                }
+            };
 
-            let res: SDResponse = serde_json::from_slice(&image_data).unwrap();
+            let image_data = match response.bytes().await {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error with Stable Diffusion image_data: {}", e);
+                    return "".to_string();
+                }
+            };
+
+            let res: SDResponse = match serde_json::from_slice(&image_data) {
+                Ok(res) => res,
+                Err(e) => {
+                    eprintln!("Error parsing SD response: {}", e);
+                    return "".to_string();
+                }
+            };
             let base64 = &res.data[0].b64_json;
             // We rename it image_data because that is what it was origianlly
-            let image_data = general_purpose::STANDARD.decode(base64).unwrap();
+            let image_data = match general_purpose::STANDARD.decode(base64) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error base64 decoding SD response: {}", e);
+                    return "".to_string();
+                }
+            };
 
             // // We need a good name for this
             // let mut file = File::create("durf2.png").expect("Failed to create file");
@@ -120,8 +145,11 @@ impl GenerateImage for StableDiffusionRequest {
                         fld.clone(),
                         unique_identifier
                     );
-                    let mut file = File::create(archive_file.clone()).unwrap();
-                    file.write_all(&image_data).unwrap();
+                    if let Ok(mut file) = File::create(archive_file.clone()) {
+                        if let Err(e) = file.write_all(&image_data) {
+                            eprintln!("Error writing to file: {}", e);
+                        }
+                    };
                 }
                 None => {}
             }
@@ -131,14 +159,20 @@ impl GenerateImage for StableDiffusionRequest {
                 "/home/begin/code/subd/archive/{}.png",
                 unique_identifier
             );
-            let mut file = File::create(archive_file.clone()).unwrap();
-            file.write_all(&image_data).unwrap();
+            if let Ok(mut file) = File::create(archive_file.clone()) {
+                if let Err(e) = file.write_all(&image_data) {
+                    eprintln!("Error writing to file: {}", e);
+                }
+            };
 
             if set_as_obs_bg {
                 let filename =
                     format!("/home/begin/code/subd/tmp/dalle-{}.png", index);
-                let mut file = File::create(filename).unwrap();
-                file.write_all(&image_data).unwrap();
+                if let Ok(mut file) = File::create(filename) {
+                    if let Err(e) = file.write_all(&image_data) {
+                        eprintln!("Error writing to file: {}", e);
+                    }
+                };
             }
 
             archive_file
