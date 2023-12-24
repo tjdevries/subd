@@ -41,7 +41,7 @@ use uuid::Uuid;
 // use std::io::BufReader;
 // use crate::dalle;
 
-const PRIMARY_CAM_SCENE: &str = "SubBegin";
+const PRIMARY_CAM_SCENE: &str = "Begin";
 const _DEFAULT_DURATION: u32 = 9001;
 
 // const DEFAULT_EASING_TYPE: &str = "ease-in";
@@ -842,7 +842,7 @@ pub async fn handle_obs_commands(
 
             let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
-                match obs_client.filters().get("SubBegin", source).await {
+                match obs_client.filters().get("Begin", source).await {
                     Ok(val) => Ok(val),
                     Err(err) => Err(err),
                 }?;
@@ -1262,7 +1262,7 @@ fn build_chat_move_source_request(
     if req.source == default_source {
         req.scene = default_scene;
     } else {
-        req.scene = "memes".to_string();
+        req.scene = "Memes".to_string();
     };
 
     return req;

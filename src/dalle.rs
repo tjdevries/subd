@@ -205,7 +205,9 @@ async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
     let client = reqwest::Client::new();
 
     // TODO: read from the database
-    let size = "1024x1024";
+    // let size = "1024x1024";
+    let size = "1280x720";
+    // 1280 pixels wide by 720
     let model = "dall-e-3";
 
     println!("\n\tCalling to DAlle w/ {}", prompt.clone());

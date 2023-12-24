@@ -23,7 +23,7 @@ small:
 	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving
 
 begin:
-	cargo run --bin begin
+	cargo run --bin begin -- --enable-all
 
 resetdb:
 	sqlx db drop -y

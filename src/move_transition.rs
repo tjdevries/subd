@@ -370,6 +370,7 @@ pub async fn update_and_trigger_move_values_filter_plus_cache(
     new_settings.move_value_type = 1;
     new_settings.value_type = 1;
 
+    // This all needs to be customizable for names of filters
     // First we get all the values from the current Move filters
     let og_filter_settings =
         match obs_client.filters().get(&source, &filter_name).await {

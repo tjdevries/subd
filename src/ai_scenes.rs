@@ -319,6 +319,7 @@ impl EventHandler for AiScenesHandler {
                         println!("Done Attempting to Generate Dalle");
                     };
 
+                    // instead this should just hide Screen and AB-Browser
                     let _ = obs_scenes::change_scene(
                         &locked_obs_client,
                         "art_gallery",

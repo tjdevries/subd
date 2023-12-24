@@ -135,9 +135,10 @@ pub async fn update_obs_telephone_scene(
 
     let source = "OG-Telephone-Image".to_string();
     let _ = obs_source::update_image_source(obs_client, source, og_image).await;
+    // TODO: Show the Telephoe-Image!
 
-    let scene = "TelephoneScene";
-    let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    // let scene = "TelephoneScene";
+    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
 
     Ok(())
 }
@@ -179,8 +180,9 @@ pub async fn old_obs_telephone_scene(
     let source = "OG-Telephone-Image".to_string();
     let _ = obs_source::update_image_source(obs_client, source, og_image).await;
 
-    let scene = "TelephoneScene";
-    let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    // TODO: Show the Telephoe-Image!
+    // let scene = "TelephoneScene";
+    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
     return Ok(());
 }
 

@@ -195,7 +195,8 @@ async fn screenshot_routing(
     let source = "NewBeginSource".to_string();
     let _ = obs_source::update_image_source(obs_client, source, path).await;
 
-    let scene = "NewBeginScene";
-    let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    // TODO: We need to enable visibility of NewBeginSource!
+    // let scene = "NewBeginScene";
+    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
     Ok(())
 }
