@@ -103,24 +103,25 @@ impl EventHandler for ExplicitSoundHandler {
                 },
             ));
 
-            let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word)) {
+            let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word))
+            {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!("Error opening sound file: {}", e);
-                    continue
+                    continue;
                 }
             };
-            
+
             let file = BufReader::new(mp3);
             self.sink.set_volume(0.5);
             let sound = match Decoder::new(BufReader::new(file)) {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!("Error decoding sound file: {}", e);
-                    continue
+                    continue;
                 }
             };
-            
+
             self.sink.append(sound);
             self.sink.sleep_until_end();
             let sleep_time = time::Duration::from_millis(100);
