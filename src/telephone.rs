@@ -129,16 +129,18 @@ pub async fn update_obs_telephone_scene(
         .collect();
     files.append(&mut slideshow_files);
 
-    let source = "Telephone-Slideshow".to_string();
+    let scene = "AIAssets".to_string();
+    let source = "TelephoneSlideshow".to_string();
     let _ =
-        obs_source::update_slideshow_source(obs_client, source, files).await;
+        obs_source::update_slideshow_source(obs_client, source.clone(), files)
+            .await;
+    let _ = obs_source::set_enabled(&scene, &source, true, &obs_client).await;
 
-    let source = "OG-Telephone-Image".to_string();
-    let _ = obs_source::update_image_source(obs_client, source, og_image).await;
-    // TODO: Show the Telephoe-Image!
-
-    // let scene = "TelephoneScene";
-    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    let source = "OGTelephoneImage".to_string();
+    let _ =
+        obs_source::update_image_source(obs_client, source.clone(), og_image)
+            .await;
+    let _ = obs_source::set_enabled(&scene, &source, true, &obs_client).await;
 
     Ok(())
 }

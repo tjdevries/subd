@@ -191,13 +191,11 @@ async fn screenshot_routing(
         .await?
     };
 
-    //
-
     let source = "NewBeginSource".to_string();
-    let _ = obs_source::update_image_source(obs_client, source, path).await;
-
-    // TODO: We need to enable visibility of NewBeginSource!
-    // let scene = "NewBeginScene";
-    // let _ = obs_scenes::change_scene(&obs_client, scene).await;
+    let res =
+        obs_source::update_image_source(obs_client, source.clone(), path).await;
+    if let Err(e) = res {
+        eprintln!("Error Updating OBS Source: {} - {}", source, e);
+    };
     Ok(())
 }
