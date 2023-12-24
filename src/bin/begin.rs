@@ -114,14 +114,14 @@ async fn main() -> Result<()> {
     };
 
     let pool = subd_db::get_db_pool().await;
+    let (_stream, stream_handle) =
+        audio::get_output_stream("pulse").expect("stream handle");
 
     for feature in features {
         match feature.as_ref() {
             // This might be named Wrong
             "implict_soundeffects" => {
                 // TODO: This should be abstracted, Works for Arch Linux
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 // Works for Mac
                 // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -132,8 +132,6 @@ async fn main() -> Result<()> {
             }
 
             "explicit_soundeffects" => {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
@@ -145,9 +143,6 @@ async fn main() -> Result<()> {
 
             "tts" => {
                 println!("Enabling TTS");
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
-
                 // Elevenlabs/Uberduck handles voice messages
                 let elevenlabs_auth = Auth::from_env().unwrap();
                 let elevenlabs = Elevenlabs::new(
@@ -177,8 +172,6 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots" => {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let obs_client = server::obs::create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -197,8 +190,6 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots_timer" => {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let obs_client = server::obs::create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -217,8 +208,6 @@ async fn main() -> Result<()> {
             }
 
             "ai_telephone" => {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let obs_client = server::obs::create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -235,8 +224,6 @@ async fn main() -> Result<()> {
             }
 
             "ai_scenes" => {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let elevenlabs_auth = Auth::from_env().unwrap();
                 let elevenlabs = Elevenlabs::new(
                     elevenlabs_auth,
@@ -293,8 +280,6 @@ async fn main() -> Result<()> {
                 >::new(twitch_config);
                 let obs_client = server::obs::create_obs_client().await?;
                 // Do we need to duplicate this?
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(handlers::obs_messages::OBSMessageHandler {
                     obs_client,

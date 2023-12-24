@@ -87,21 +87,23 @@ impl EventHandler for ExplicitSoundHandler {
             }
             let word = potential_sound;
 
-            let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
-
             let sanitized_word = word.to_lowercase();
             let full_name = format!("./MP3s/{}.mp3", sanitized_word);
             println!("full_name: {}", full_name);
 
             if !mp3s.contains(&full_name) {
+                println!("Didn't Find SFX: {}", full_name);
                 continue;
-            }
-            let _ = tx.send(Event::TransformOBSTextRequest(
-                TransformOBSTextRequest {
-                    message: sanitized_word.clone(),
-                    text_source: text_source.to_string(),
-                },
-            ));
+            };
+
+            // let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+            // We are not showing next of SFXs right now
+            // let _ = tx.send(Event::TransformOBSTextRequest(
+            //     TransformOBSTextRequest {
+            //         message: sanitized_word.clone(),
+            //         text_source: text_source.to_string(),
+            //     },
+            // ));
 
             let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word))
             {
