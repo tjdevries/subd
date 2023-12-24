@@ -57,7 +57,7 @@ pub async fn handle_obs_commands(
     _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
-) -> Result<()> {
+) -> Result<(), String> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
 
     let _is_mod = msg.roles.is_twitch_mod();
@@ -106,14 +106,18 @@ pub async fn handle_obs_commands(
             let contents =
                 fs::read_to_string(file_path).expect("Can read file");
             let ai_scenes: ai_scenes::AIScenes =
-                serde_json::from_str(&contents.clone()).unwrap();
+                serde_json::from_str(&contents.clone())
+                    .map_err(|e| e.to_string())?;
 
+            // Why aren't we passing this in?
             // This is need to create Reward Manager
+            // TODO: Hook this up to regenrating on expirartion
             let twitch_user_access_token =
                 env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
             let reqwest = reqwest::Client::builder()
                 .redirect(reqwest::redirect::Policy::none())
-                .build()?;
+                .build()
+                .map_err(|e| e.to_string())?;
             let twitch_reward_client: HelixClient<reqwest::Client> =
                 HelixClient::new();
             let token = UserToken::from_existing(
@@ -122,7 +126,8 @@ pub async fn handle_obs_commands(
                 None,
                 None,
             )
-            .await?;
+            .await
+            .map_err(|e| e.to_string())?;
             let reward_manager = rewards::RewardManager::new(
                 &twitch_reward_client,
                 &token,
@@ -151,14 +156,7 @@ pub async fn handle_obs_commands(
             let reward_res =
                 twitch_rewards::find_by_title(&pool, title.to_string())
                     .await
-                    .unwrap();
-
-            // // let _ = reward_manager.update_all(4200).await;
-            // for scene in ai_scenes.scenes {
-            //     scene.id,,
-            //     // We need to choose a random
-            //     println!("Scene: {:?}", scene);
-            // }
+                    .map_err(|e| e.to_string())?;
 
             let flash_cost = 100;
             let _ = reward_manager
@@ -171,7 +169,7 @@ pub async fn handle_obs_commands(
                 flash_cost as i32,
             )
             .await
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
             println!("Update: {:?}", update);
 
@@ -223,14 +221,15 @@ pub async fn handle_obs_commands(
             let contents =
                 fs::read_to_string(file_path).expect("Can read file");
             let ai_scenes: ai_scenes::AIScenes =
-                serde_json::from_str(&contents).unwrap();
+                serde_json::from_str(&contents).map_err(|e| e.to_string())?;
 
             // This is need to create Reward Manager
             let twitch_user_access_token =
                 env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
             let reqwest = reqwest::Client::builder()
                 .redirect(reqwest::redirect::Policy::none())
-                .build()?;
+                .build()
+                .map_err(|e| e.to_string())?;
             let twitch_reward_client: HelixClient<reqwest::Client> =
                 HelixClient::new();
             let token = UserToken::from_existing(
@@ -239,7 +238,8 @@ pub async fn handle_obs_commands(
                 None,
                 None,
             )
-            .await?;
+            .await
+            .map_err(|e| e.to_string())?;
 
             let broadcaster_id = "424038378";
             let reward_manager = rewards::RewardManager::new(
@@ -254,10 +254,12 @@ pub async fn handle_obs_commands(
                     let cost = scene.cost * 10;
                     let res = reward_manager
                         .create_reward(&scene.reward_title, cost)
-                        .await?;
+                        .await
+                        .map_err(|e| e.to_string())?;
 
                     let reward_id = res.as_str();
-                    let reward_id = Uuid::parse_str(reward_id)?;
+                    let reward_id = Uuid::parse_str(reward_id)
+                        .map_err(|e| e.to_string())?;
 
                     let _ = twitch_rewards::save_twitch_rewards(
                         &pool.clone(),
@@ -273,32 +275,6 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
-        //
-        // let ai_scenes_map: HashMap<String, &AIScene> = ai_scenes
-        //     .scenes
-        //     .iter()
-        //     .map(|scene| (scene.reward_title.clone(), scene))
-        //     .collect();
-        "!test" => {
-            // let contents = &splitmsg[1..].join(" ");
-            // println!("contents: {}", contents);
-            // let res = openai::ask_chat_gpt(
-            //     "Description the following".to_string(),
-            //     contents.to_string(),
-            // )
-            // .await;
-            // let content = res.unwrap().content.unwrap().to_string();
-            //
-            // let dalle_res = openai::ask_chat_gpt(
-            //     "Turn this into a Dalle prompt: ".to_string(),
-            //     content,
-            // )
-            // .await;
-            //
-            // let nice_res = dalle_res.unwrap().content.unwrap().to_string();
-            // println!("\n\tNice Res: {:?}", nice_res);
-            Ok(())
-        }
         // =================== //
         // === Experiments === //
         // =================== //
@@ -333,7 +309,11 @@ pub async fn handle_obs_commands(
                 filter: &filter_name,
                 enabled: true,
             };
-            obs_client.filters().set_enabled(filter_enabled).await?;
+            obs_client
+                .filters()
+                .set_enabled(filter_enabled)
+                .await
+                .map_err(|e| e.to_string())?;
 
             let filter_name = "Default_3D-Transform-Orthographic";
             let filter_enabled = obws::requests::filters::SetEnabled {
@@ -341,7 +321,11 @@ pub async fn handle_obs_commands(
                 filter: &filter_name,
                 enabled: true,
             };
-            obs_client.filters().set_enabled(filter_enabled).await?;
+            obs_client
+                .filters()
+                .set_enabled(filter_enabled)
+                .await
+                .map_err(|e| e.to_string())?;
 
             let filter_name = "Default_3D-Transform-CornerPin";
             let filter_enabled = obws::requests::filters::SetEnabled {
@@ -349,7 +333,11 @@ pub async fn handle_obs_commands(
                 filter: &filter_name,
                 enabled: true,
             };
-            obs_client.filters().set_enabled(filter_enabled).await?;
+            obs_client
+                .filters()
+                .set_enabled(filter_enabled)
+                .await
+                .map_err(|e| e.to_string())?;
 
             Ok(())
         }
@@ -487,20 +475,25 @@ pub async fn handle_obs_commands(
         // ===========================================
         "!implicit" | "!peace" => {
             twitch_stream_state::update_implicit_soundeffects(&pool.clone())
-                .await?;
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(())
         }
         "!explicit" => {
             twitch_stream_state::update_explicit_soundeffects(&pool.clone())
-                .await?;
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(())
         }
         // returns the current state of stream
         "!state" => {
-            let state =
-                twitch_stream_state::get_twitch_state(&pool.clone()).await?;
+            let state = twitch_stream_state::get_twitch_state(&pool.clone())
+                .await
+                .map_err(|e| e.to_string())?;
             let msg = format!("Twitch State! {:?}", state);
-            send_message(twitch_client, msg).await?;
+            send_message(twitch_client, msg)
+                .await
+                .map_err(|e| e.to_string())?;
             // send_message(format!("Twitch State! {:?}", state));
             // twitch_stream_state::update_implicit_soundeffects(false, &pool)
             //     .await?;
@@ -710,13 +703,10 @@ pub async fn handle_obs_commands(
                     .await;
 
             // WHAT
-            let res = openai::ask_gpt_vision2(&filename, None).await.unwrap();
+            if let Ok(res) = openai::ask_gpt_vision2(&filename, None).await {
+                dbg!(&res);
+            }
 
-            dbg!(&res);
-
-            // so we describe it now
-            // We can ask openai now
-            // Now we can resave it
             Ok(())
         }
 
@@ -807,7 +797,11 @@ pub async fn handle_obs_commands(
                     enabled: Some(true),
                 };
 
-            obs_client.scene_items().create(new_scene).await?;
+            obs_client
+                .scene_items()
+                .create(new_scene)
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(())
         }
 
@@ -845,7 +839,8 @@ pub async fn handle_obs_commands(
                 match obs_client.filters().get("Begin", source).await {
                     Ok(val) => Ok(val),
                     Err(err) => Err(err),
-                }?;
+                }
+                .map_err(|e| e.to_string())?;
 
             println!("------------------------");
             println!("\n\tFilter Settings: {:?}", filter_details);
@@ -907,28 +902,6 @@ pub async fn handle_obs_commands(
             .await
         }
 
-        // !3d SOURCE FILTER_NAME FILTER_VALUE DURATION
-        // !3d begin Rotation.Z 3600 5000
-        "!3d" => {
-            // If we don't at least have a filter_name, we can't proceed
-            if splitmsg.len() < 3 {
-                bail!("We don't have a filter name, can't proceed");
-            }
-
-            // TODO: This should be done with unwrap
-            // What is the default???
-            let filter_setting_name = &splitmsg[2];
-
-            move_transition_effects::trigger_3d(
-                source,
-                filter_setting_name,
-                filter_value,
-                duration,
-                &obs_client,
-            )
-            .await
-        }
-
         // ===========================================
         // == Skybox
         // ===========================================
@@ -954,7 +927,9 @@ pub async fn handle_obs_commands(
             let chunks = chunk_string(&styles, 500);
             for chunk in chunks {
                 println!("Chunk: {}", chunk);
-                send_message(twitch_client, chunk).await?;
+                send_message(twitch_client, chunk)
+                    .await
+                    .map_err(|e| e.to_string())?;
             }
             Ok(())
         }
@@ -1044,7 +1019,8 @@ pub async fn handle_obs_commands(
 
         "!character" => {
             stream_character::create_new_obs_character(source, obs_client)
-                .await?;
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(())
         }
 

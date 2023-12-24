@@ -29,6 +29,7 @@ impl EventHandler for OBSMessageHandler {
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
+            // let event = rx.recv().await.map_err(|e| e.to_string())?;
             let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,

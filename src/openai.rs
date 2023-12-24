@@ -51,8 +51,8 @@ struct VisionChoiceContent {
 // I want this to exist somewhere else
 // probably in a Crate
 pub async fn ask_chat_gpt(
-user_input: String,
-base_content: String,
+    user_input: String,
+    base_content: String,
 ) -> Result<ChatCompletionMessage, String> {
     set_key(env::var("OPENAI_API_KEY").unwrap());
 
@@ -110,22 +110,16 @@ pub async fn ask_gpt_vision2(
     };
 
     let client = reqwest::Client::new();
-    
+
     let content_type = "application/json".parse()?;
     let auth = format!("Bearer {}", api_key).parse()?;
     let h = vec![
-        (
-            reqwest::header::CONTENT_TYPE,
-            content_type,
-        ),
-        (
-            reqwest::header::AUTHORIZATION,
-            auth,
-        ),
+        (reqwest::header::CONTENT_TYPE, content_type),
+        (reqwest::header::AUTHORIZATION, auth),
     ];
-    
+
     let headers = reqwest::header::HeaderMap::from_iter(h);
-    
+
     let payload = json!({
         "model": "gpt-4-vision-preview",
         "messages": [
@@ -222,10 +216,10 @@ pub async fn ask_gpt_vision(
         };
 
     chat_completion
-            .choices
-            .first()
-            .ok_or("Error finding GPT Vision first response".to_string())
-            .map(|m| m.message.clone())
+        .choices
+        .first()
+        .ok_or("Error finding GPT Vision first response".to_string())
+        .map(|m| m.message.clone())
 }
 
 #[cfg(test)]
@@ -240,7 +234,7 @@ mod tests {
         // let first_image = "https://www.tbstat.com/wp/uploads/2023/05/Fvz9hOIXwAEaIR8-669x675.jpeg";
         let _first_image = "https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/SpongeBob_SquarePants_character.svg/1200px-SpongeBob_SquarePants_character.svg.png";
 
-        // let res = telephone(first_image.to_string(), "more chill".to_string(), 10).await.unwrap();
+        // let res = telephone(first_image.to_string(), "more chill".to_string(), 10).await.unwrapa);
         // let res =
         //     telephone2(first_image.to_string(), "More Memey".to_string(), 10)
         //         .await
