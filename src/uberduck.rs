@@ -95,6 +95,8 @@ impl EventHandler for ElevenLabsHandler {
         let _locked_obs_client = obs_client_clone.lock().await;
 
         loop {
+            // This feels dumb
+            let default_global_voice = "ethan".to_string();
             let event = rx.recv().await?;
 
             let msg = match event {
@@ -125,11 +127,12 @@ impl EventHandler for ElevenLabsHandler {
                     false
                 }
             };
+
             let global_voice = stream_character::get_voice_from_username(
                 &self.pool, "beginbot",
             )
             .await
-            .unwrap();
+            .unwrap_or(default_global_voice);
 
             let user_voice_opt = stream_character::get_voice_from_username(
                 &self.pool,
@@ -176,7 +179,13 @@ impl EventHandler for ElevenLabsHandler {
                 voice_settings: None,
             };
             let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
-            let bytes = tts_result.unwrap();
+            let bytes = match tts_result {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("ElevenLabs TTS Error: {:?}", e);
+                    continue;
+                }
+            };
 
             // w/ Extension
             let full_filename = format!("{}.wav", filename);
@@ -184,58 +193,64 @@ impl EventHandler for ElevenLabsHandler {
             let mut local_audio_path =
                 format!("{}/{}", tts_folder, full_filename);
 
-            std::fs::write(local_audio_path.clone(), bytes).unwrap();
+            if let Err(e) = std::fs::write(local_audio_path.clone(), bytes) {
+                eprintln!("Error writing tts file: {:?}", e);
+                continue;
+            }
 
             if msg.reverb {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| add_reverb(audio_path.clone()));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
             }
 
-            match msg.stretch {
-                Some(stretch) => {
-                    local_audio_path =
-                        normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path =
-                        stretch_audio(local_audio_path, stretch).unwrap();
-                }
-                None => {}
+            if let Some(stretch) = msg.stretch {
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| stretch_audio(audio_path, stretch));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
             }
 
-            match msg.pitch {
-                Some(pitch) => {
-                    local_audio_path =
-                        normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path =
-                        change_pitch(local_audio_path, pitch).unwrap();
-                }
-                None => {}
-            }
+            if let Some(pitch) = msg.pitch {
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| change_pitch(audio_path, pitch));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
+            };
 
             if final_voice == "evil_pokimane" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    change_pitch(local_audio_path, "-200".to_string()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| {
+                        change_pitch(audio_path, "-200".to_string())
+                    })
+                    .and_then(|audio_path| add_reverb(audio_path));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
             }
 
             if final_voice == "satan" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    change_pitch(local_audio_path, "-350".to_string()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| {
+                        change_pitch(audio_path, "-350".to_string())
+                    })
+                    .and_then(|audio_path| add_reverb(audio_path));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
             }
 
             // What is the difference
             if final_voice == "god" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path = add_reverb(local_audio_path).unwrap();
+                let res = normalize_tts_file(local_audio_path.clone())
+                    .and_then(|audio_path| add_reverb(audio_path));
+                if let Ok(audio_path) = res {
+                    local_audio_path = audio_path
+                };
             }
 
             // =====================================================
@@ -274,10 +289,16 @@ impl EventHandler for ElevenLabsHandler {
                     sink.set_volume(0.5);
                 }
             };
-
-            let file = BufReader::new(File::open(local_audio_path).unwrap());
-
+            let f = match File::open(local_audio_path) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error opening tts file: {:?}", e);
+                    continue;
+                }
+            };
+            let file = BufReader::new(f);
             sink.append(Decoder::new(BufReader::new(file)).unwrap());
+
             sink.sleep_until_end();
 
             redirect::restore_stderr(backup);
