@@ -2,6 +2,7 @@ use crate::skybox_requests;
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
+use obws;
 use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -10,7 +11,6 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::fs::File;
-use std::io;
 use std::io::Write;
 
 static SKYBOX_STATUS_URL: &str =
@@ -281,7 +281,7 @@ pub async fn request_skybox(
     let response_filepath = format!("./tmp/skybox_{}.json", t);
 
     if let Ok(mut file) = File::create(response_filepath.clone()) {
-        file.write_all(bytes);
+        let _ = file.write_all(bytes);
         let _ = skybox_requests::save_skybox_request(
             &pool,
             skybox_request.id,
@@ -294,16 +294,4 @@ pub async fn request_skybox(
     };
 
     return Err("Invalid skybox response".to_string());
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::skybox;
-
-    #[tokio::test]
-    async fn test_time() {
-        // let _ = skybox::check_skybox_status(9612607).await;
-        // let _ =
-        //     skybox::request_skybox("a lush magical castle".to_string()).await;
-    }
 }

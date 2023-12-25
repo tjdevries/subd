@@ -13,6 +13,7 @@ pub struct TwitchMessageHandler {
     twitch: twitch_service::Service,
 }
 
+// Save to DB or Not
 impl TwitchMessageHandler {
     pub fn new(pool: sqlx::PgPool, twitch: twitch_service::Service) -> Self {
         Self { pool, twitch }
@@ -57,13 +58,13 @@ impl EventHandler for TwitchMessageHandler {
                 _ => continue,
             };
 
+            // If we enable DB save
             let user_id = model::upsert_twitch_user(
                 &self.pool,
                 &msg.sender.id,
                 &msg.sender.login,
             )
             .await?;
-
             save_twitch_message(
                 &self.pool,
                 &user_id,
@@ -71,9 +72,9 @@ impl EventHandler for TwitchMessageHandler {
                 &msg.text,
             )
             .await?;
-
             let user_roles =
                 self.twitch.update_user_roles(&user_id, &msg.roles).await?;
+            // this needs to read from DB to find roles
 
             // After update the state of the database, we can go ahead
             // and send the user message to the rest of the system.

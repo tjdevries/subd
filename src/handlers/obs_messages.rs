@@ -10,11 +10,10 @@ use crate::obs_scenes;
 use crate::obs_source;
 use crate::openai;
 use crate::sdf_effects;
-use crate::skybox;
-use crate::skybox::check_skybox_status_and_save;
 use crate::stream_character;
 use crate::twitch_rewards;
 use crate::twitch_stream_state;
+
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -963,100 +962,6 @@ pub async fn handle_obs_commands(
         }
 
         // ===========================================
-        // == Skybox
-        // ===========================================
-        "!previous" => {
-            let default_skybox_id = String::from("2449796");
-            let skybox_id: &str = splitmsg.get(1).unwrap_or(&default_skybox_id);
-            let file_path =
-                "/home/begin/code/BeginGPT/tmp/current/previous.txt";
-            if let Err(e) = skybox::write_to_file(file_path, &skybox_id) {
-                eprintln!("Error writing to file: {}", e);
-            }
-
-            println!("Attempting to Return to previous Skybox! {}", skybox_id);
-            Ok(())
-        }
-
-        // This needs to take an ID
-        "!skybox_styles" => {
-            let styles = skybox::styles_for_chat().await;
-            println!("\n\nStyles Time: {:?}", styles);
-
-            // So we think this code isn't returning all chunks
-            let chunks = chunk_string(&styles, 500);
-            for chunk in chunks {
-                println!("Chunk: {}", chunk);
-                send_message(twitch_client, chunk)
-                    .await
-                    .map_err(|e| e.to_string())?;
-            }
-            Ok(())
-        }
-
-        "!check_skybox" => {
-            if not_beginbot {
-                return Ok(());
-            }
-
-            // obs_client
-            let _ = check_skybox_status_and_save(9612607).await;
-            Ok(())
-        }
-
-        // We need to eventually take in style IDs
-        "!skybox" => {
-            // if not_beginbot {
-            //     return Ok(());
-            // }
-            let style_id = find_style_id(splitmsg.clone());
-            println!("\tStyle ID: {}", style_id);
-
-            let skybox_info = if style_id == 1 {
-                splitmsg
-                    .clone()
-                    .into_iter()
-                    .skip(1)
-                    .collect::<Vec<String>>()
-                    .join(" ")
-            } else {
-                splitmsg
-                    .clone()
-                    .into_iter()
-                    .skip(2)
-                    .collect::<Vec<String>>()
-                    .join(" ")
-            };
-
-            println!("Sending Skybox Request: {}", skybox_info.clone());
-            let _ = tx.send(Event::SkyboxRequest(subd_types::SkyboxRequest {
-                msg: skybox_info,
-                style_id,
-            }));
-
-            Ok(())
-        }
-
-        "!remix" => {
-            let remix_info = splitmsg
-                .clone()
-                .into_iter()
-                .skip(1)
-                .collect::<Vec<String>>()
-                .join(" ");
-            let file_path = "/home/begin/code/BeginGPT/tmp/current/remix.txt";
-            if let Err(e) = skybox::write_to_file(file_path, &remix_info) {
-                eprintln!("Error writing to file: {}", e);
-            }
-
-            println!("Attempting to  Remix! {}", remix_info);
-
-            // OK NOw
-            // Just save this
-            Ok(())
-        }
-
-        // ===========================================
         // == Characters
         // ===========================================
         "!talk" => {
@@ -1186,31 +1091,6 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
     ])
 }
 
-pub fn find_style_id(splitmsg: Vec<String>) -> i32 {
-    println!("\t Splitmsg: {:?}", splitmsg);
-    // TODO: Do a search on Blockade ID for the values
-    let range = 1..=47;
-    let default_style_id = 1;
-
-    match splitmsg.get(1) {
-        Some(val) => match val.parse::<i32>() {
-            Ok(iv) => {
-                if range.contains(&iv) {
-                    return iv;
-                } else {
-                    return default_style_id;
-                }
-            }
-            Err(_) => {
-                return default_style_id;
-            }
-        },
-        None => {
-            return default_style_id;
-        }
-    }
-}
-
 pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     let mut chunks = Vec::new();
     let mut last_split = 0;
@@ -1287,30 +1167,5 @@ mod tests {
         let res =
             find_easing_indicies("ease-in".to_string(), "bounce".to_string());
         assert_eq!(res, (1, 9));
-    }
-
-    #[tokio::test]
-    async fn test_find_style_id() {
-        // We want the style_id returned
-        let splitmsg: Vec<String> = vec![
-            "!skybox".to_string(),
-            "3".to_string(),
-            "A Cool House".to_string(),
-        ];
-        let res = find_style_id(splitmsg);
-        assert_eq!(res, 3);
-
-        let splitmsg: Vec<String> =
-            vec!["!skybox".to_string(), "A Cool House".to_string()];
-        let res = find_style_id(splitmsg);
-        assert_eq!(res, 1);
-
-        let splitmsg: Vec<String> = vec![
-            "!skybox".to_string(),
-            "69".to_string(),
-            "A Cool House".to_string(),
-        ];
-        let res = find_style_id(splitmsg);
-        assert_eq!(res, 1);
     }
 }
