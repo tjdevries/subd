@@ -32,7 +32,7 @@ use subd_twitch::rewards;
 use subd_types::{Event, TransformOBSTextRequest, UserMessage};
 use tokio::sync::broadcast;
 use twitch_api::HelixClient;
-use twitch_chat::model::send_message;
+use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };

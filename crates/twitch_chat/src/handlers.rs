@@ -1,7 +1,6 @@
 use crate::client::TwitchChat;
 use crate::model;
 use crate::model::save_twitch_message;
-
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;

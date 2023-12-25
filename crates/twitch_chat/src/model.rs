@@ -3,7 +3,6 @@ use reqwest::Client as ReqwestClient;
 use subd_types::{UserID, UserPlatform};
 use twitch_api::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
 use twitch_api::helix::HelixClient;
-use twitch_irc::TwitchIRCClient;
 use twitch_oauth2::UserToken;
 
 pub async fn save_twitch_message(
@@ -82,29 +81,4 @@ pub async fn create_new_user(conn: &sqlx::PgPool) -> Result<UserID> {
         .await?;
 
     Ok(UserID(x.user_id))
-}
-
-pub async fn send_message<
-    T: twitch_irc::transport::Transport,
-    L: twitch_irc::login::LoginCredentials,
->(
-    client: &TwitchIRCClient<T, L>,
-    msg: impl Into<String>,
-) -> Result<()> {
-    let twitch_username = subd_types::consts::get_twitch_broadcaster_username();
-    let str_msg = msg.into();
-    // We don't know how to chunk without breaking out current program
-    // let chunk_size = 500;
-    // for chunk in chunk_string(&str_msg, chunk_size) {
-    //     let _ = client
-    //         .say(twitch_username.to_string(), chunk)
-    //         .await?;
-    // }
-    //
-
-    let _ = client
-        .say(twitch_username.to_string(), str_msg.clone())
-        .await?;
-    println!("Twitch Send Message: {:?}", str_msg);
-    Ok(())
 }

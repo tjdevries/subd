@@ -10,15 +10,7 @@ use serde_json;
 use subd_types::Event;
 use tokio;
 use tokio::sync::broadcast;
-// use chrono::prelude::*;
-// use reqwest::Client;
-// use serde_json::json;
-// use std::env;
-// use std::fs::File;
-// use std::io::prelude::*;
-// use std::io;
 
-// TODO: is this dead????
 #[allow(dead_code)]
 pub struct Skybox {
     pub name: String,
@@ -45,19 +37,19 @@ impl EventHandler for SkyboxHandler {
                 _ => continue,
             };
 
-            println!("Attempting to Skybox");
-            match skybox::request_skybox(
-                self.pool.clone(),
-                request.msg,
-                request.style_id,
-            )
-            .await
-            {
-                Ok(v) => {
-                    // What
-                }
-                Err(e) => continue,
-            };
+            // println!("Attempting to Skybox");
+            // match skybox::request_skybox(
+            //     self.pool.clone(),
+            //     request.msg,
+            //     request.style_id,
+            // )
+            // .await
+            // {
+            //     Ok(v) => {
+            //         // What
+            //     }
+            //     Err(e) => continue,
+            // };
         }
     }
 }
