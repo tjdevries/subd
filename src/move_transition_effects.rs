@@ -153,6 +153,49 @@ pub async fn move_source_with_custom_settings(
     .await
 }
 
+pub async fn customize_wide(
+    scene: &str,
+    source: &str,
+    x: f32,
+    duration: u64,
+    easing_function_index: i32,
+    easing_type_index: i32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Move_{}", source);
+
+    let _ =
+        find_or_create_filter(&scene, &source, &filter_name, obs_client).await;
+
+    let mut new_settings =
+        move_transition::fetch_source_settings(scene, &source, &obs_client)
+            .await?;
+    // let mut new_settings =
+    //     move_transition::custom_filter_settings(settings, x, y);
+
+    new_settings.duration = Some(duration);
+    new_settings.easing_type = Some(easing_type_index);
+    new_settings.easing_function = Some(easing_function_index);
+
+    move_transition::move_with_move_source(
+        scene,
+        &filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await
+
+    // let _ = move_transition_effects::trigger_move_value_3d_transform(
+    //     source,
+    //     filter_name,
+    //     filter_setting_name,
+    //     filter_value,
+    //     duration,
+    //     obs_client,
+    // )
+    // .await;
+}
+
 pub async fn move_source_in_scene_x_and_y(
     scene: &str,
     source: &str,

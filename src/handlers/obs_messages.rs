@@ -13,7 +13,6 @@ use crate::sdf_effects;
 use crate::stream_character;
 use crate::twitch_rewards;
 use crate::twitch_stream_state;
-
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -41,6 +40,18 @@ use uuid::Uuid;
 const PRIMARY_CAM_SCENE: &str = "Begin";
 const _DEFAULT_DURATION: u32 = 9001;
 
+pub enum WideArgPosition {
+    Source(String),
+    X(f32),
+    Duration(u64),
+}
+
+// pub enum WideRequestPosition {
+//     Source(String),
+//     X(f32),
+//     Duration(u64),
+// }
+
 pub enum ChatArgPosition {
     Source(String),
     X(f32),
@@ -49,6 +60,14 @@ pub enum ChatArgPosition {
     Duration(u64),
     EasingType(String),
     EasingFunction(String),
+}
+
+#[derive(Default, Debug)]
+pub struct WideRequest {
+    source: String,
+    scene: String,
+    x: f32,
+    duration: u64,
 }
 
 #[derive(Default, Debug)]
@@ -147,14 +166,9 @@ pub async fn handle_obs_commands(
         Err(_) => obs::MEME_SCENE.to_string(),
     };
 
-    // This fails, and we stop
-    // let voice = stream_character::get_voice_from_username(pool, &msg.user_name).await?;
-
     let command = splitmsg[0].as_str();
 
     let _ = match command {
-        // This isn't an OBS Command
-        // Where does this go???
         "!flash_sale" => {
             if not_beginbot {
                 return Ok(());
@@ -193,17 +207,6 @@ pub async fn handle_obs_commands(
                 &broadcaster_id,
             );
 
-            // This returns the default cost to every reward to everyone
-            // let default_cost: i32 = 300;
-            // let ids = twitch_rewards::update_cost_of_all(pool, default_cost)
-            //     .await
-            //     .unwrap();
-            // for id in ids {
-            //     let _ =
-            //         reward_manager.update_reward(id, default_cost_usize).await;
-            // }
-
-            // https://stackoverflow.com/questions/67443847/how-to-generate-random-numbers-in-async-rust
             let random = {
                 let mut rng = rand::thread_rng();
                 rng.gen_range(0..ai_scenes.scenes.len())
@@ -232,40 +235,11 @@ pub async fn handle_obs_commands(
 
             println!("Update: {:?}", update);
 
-            // We need a Twitch update
-
             let msg = format!(
                 "Flash Sale! {} - New Low Price! {}",
                 reward_res.title, flash_cost
             );
             let _ = send_message(&twitch_client, msg).await;
-            // Use this to update
-            // reward_res.twitch_id
-
-            // let res = reward_res.unwrap();
-            // println!("Found Reward: {}", res.twitch_id);
-
-            // match reward_res {
-            //     Ok(res) => {
-            //         println!("Found Reward: {}", res.id);
-            //     },
-            //     Err(e) => {
-            //         println!("Error finding Reward: {}", e);
-            //     }
-            // };
-
-            // let scene_count
-
-            Ok(())
-        }
-
-        "da_faq" => {
-            // let random_index = rng.gen_range(0..ai_scenes.scenes.len());
-            // let random_scene = &ai_scenes.scenes[random_index];
-            // let title = &random_scene.reward_title;
-
-            // let mut rng = thread_rng();
-            // let reward_res = twitch_rewards::find_by_title(&pool.clone()).await;
             Ok(())
         }
 
@@ -274,8 +248,6 @@ pub async fn handle_obs_commands(
                 return Ok(());
             }
 
-            // bootstrap::bootstrap_rewards(&obs_client).await
-            // let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let file_path = "/home/begin/code/subd/data/AIScenes.json";
             let contents =
                 fs::read_to_string(file_path).expect("Can read file");
@@ -337,24 +309,58 @@ pub async fn handle_obs_commands(
         // =================== //
         // === Experiments === //
         // =================== //
+        // !wide SOURCE WIDTH DURATION
         "!wide" => {
+            let meat_of_message = splitmsg[1..].to_vec();
+            let arg_positions = vec![
+                WideArgPosition::Source("beginbot".to_string()),
+                WideArgPosition::X(500.0),
+                WideArgPosition::Duration(3000),
+            ];
+            let req = build_wide_request(meat_of_message, arg_positions)?;
+            // I want to unwrap or return the Error
+            // How do we return early?
+            // but check the kj
             println!("Wide TIME!");
 
-            let source = "begin";
-            let filter_name = "3D-Transform-Orthographic";
-            let duration = 5000;
-            let filter_setting_name = "Scale.X";
+            // let source = "begin";
+            // let duration = 5000;
             let filter_value = 300.0;
+
+            let filter_name = "3D-Transform-Orthographic";
+            let filter_setting_name = "Scale.X";
             let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
+                &req.source,
                 filter_name,
                 filter_setting_name,
                 filter_value,
-                duration,
+                req.duration as u32,
                 obs_client,
             )
             .await;
             Ok(())
+
+            // let meat_of_message = splitmsg[1..].to_vec();
+            // let arg_positions = vec![
+            //     ChatArgPosition::Source("beginbot".to_string()),
+            //     ChatArgPosition::X(500.0),
+            //     ChatArgPosition::Duration(3000),
+            //     ChatArgPosition::EasingType("ease-in".to_string()),
+            //     ChatArgPosition::EasingFunction("cubic".to_string()),
+            // ];
+            // let req =
+            //     build_chat_move_source_request(meat_of_message, arg_positions);
+            //
+            // move_transition_effects::customize_wide(
+            //     &req.scene,
+            //     &req.source,
+            //     req.x,
+            //     req.duration as u64,
+            //     req.easing_function_index,
+            //     req.easing_type_index,
+            //     &obs_client,
+            // )
+            // .await
         }
 
         "!normal" => {
@@ -1168,4 +1174,42 @@ mod tests {
             find_easing_indicies("ease-in".to_string(), "bounce".to_string());
         assert_eq!(res, (1, 9));
     }
+}
+
+pub fn build_wide_request(
+    splitmsg: Vec<String>,
+    arg_positions: Vec<WideArgPosition>,
+) -> Result<WideRequest, String> {
+    let default_source = "begin".to_string();
+    let default_scene = PRIMARY_CAM_SCENE.to_string();
+
+    let mut req = WideRequest {
+        ..Default::default()
+    };
+
+    for (index, arg) in arg_positions.iter().enumerate() {
+        match arg {
+            WideArgPosition::Source(source) => {
+                req.source = splitmsg.get(index).unwrap_or(source).to_string()
+            }
+            WideArgPosition::X(x) => {
+                if let Some(x) = splitmsg
+                    .get(index)
+                    .and_then(|m| Some(m.parse::<f32>().unwrap_or(100.0)))
+                {
+                    req.x = x
+                }
+            }
+            WideArgPosition::Duration(duration) => {
+                if let Some(duration) = splitmsg
+                    .get(index)
+                    .and_then(|m| Some(m.parse::<u64>().unwrap_or(3000)))
+                {
+                    req.duration = duration
+                }
+            }
+        }
+    }
+
+    return Ok(req);
 }
