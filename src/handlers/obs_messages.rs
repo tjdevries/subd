@@ -32,7 +32,7 @@ use subd_twitch::rewards;
 use subd_types::{Event, TransformOBSTextRequest, UserMessage};
 use tokio::sync::broadcast;
 use twitch_api::HelixClient;
-use twitch_chat::send_message;
+use twitch_chat::model::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -83,7 +83,6 @@ impl EventHandler for OBSMessageHandler {
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
-            // let event = rx.recv().await.map_err(|e| e.to_string())?;
             let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
@@ -94,7 +93,6 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_obs_commands(
                 &tx,
                 &self.obs_client,
@@ -156,13 +154,8 @@ pub async fn handle_obs_commands(
     let command = splitmsg[0].as_str();
 
     let _ = match command {
-        // Iterate through the json file
-        // choose a random scene
-        // look up the ID in the DB
-        //
-        // update the price to be 100
-        // post about the Sale in the Chat
-        // or go to a scene????KJ,,,
+        // This isn't an OBS Command
+        // Where does this go???
         "!flash_sale" => {
             if not_beginbot {
                 return Ok(());
@@ -1246,66 +1239,6 @@ pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     chunks
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[tokio::test]
-//     async fn test_screenshotting() {
-//         let obs_client = obs::create_obs_client().await.unwrap();
-//
-//         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-//         let unique_identifier = format!("{}_screenshot.png", timestamp);
-//         let filename = format!(
-//             "/home/begin/code/subd/tmp/screenshots/fake/{}",
-//             unique_identifier
-//         );
-//         let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
-//             .await;
-//     }
-//
-//     #[test]
-//     fn test_chunk_string() {
-//         let input = "hello, now";
-//         let strs = chunk_string(input, 4);
-//         assert_eq!(strs[0], "hello,");
-//         assert_eq!(strs[1], " now");
-//         assert_eq!(strs.len(), 2);
-//     }
-//
-//     // Now we can test
-//     #[test]
-//     fn test_easing_index() {
-//         let res =
-//             find_easing_indicies("ease-in".to_string(), "bounce".to_string());
-//         assert_eq!(res, (1, 9));
-//     }
-//
-//     #[tokio::test]
-//     async fn test_find_style_id() {
-//         // We want the style_id returned
-//         let splitmsg: Vec<String> = vec![
-//             "!skybox".to_string(),
-//             "3".to_string(),
-//             "A Cool House".to_string(),
-//         ];
-//         let res = find_style_id(splitmsg);
-//         assert_eq!(res, 3);
-//
-//         let splitmsg: Vec<String> =
-//             vec!["!skybox".to_string(), "A Cool House".to_string()];
-//         let res = find_style_id(splitmsg);
-//         assert_eq!(res, 1);
-//
-//         let splitmsg: Vec<String> = vec![
-//             "!skybox".to_string(),
-//             "69".to_string(),
-//             "A Cool House".to_string(),
-//         ];
-//         let res = find_style_id(splitmsg);
-//         assert_eq!(res, 1);
-//     }
-// }
 fn find_easing_indicies(
     easing_type: String,
     easing_function: String,
@@ -1319,4 +1252,65 @@ fn find_easing_indicies(
         .unwrap_or(&1);
 
     (*easing_type_index, *easing_function_index)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_screenshotting() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_screenshot.png", timestamp);
+        let filename = format!(
+            "/home/begin/code/subd/tmp/screenshots/fake/{}",
+            unique_identifier
+        );
+        let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
+            .await;
+    }
+
+    #[test]
+    fn test_chunk_string() {
+        let input = "hello, now";
+        let strs = chunk_string(input, 4);
+        assert_eq!(strs[0], "hello,");
+        assert_eq!(strs[1], " now");
+        assert_eq!(strs.len(), 2);
+    }
+
+    // Now we can test
+    #[test]
+    fn test_easing_index() {
+        let res =
+            find_easing_indicies("ease-in".to_string(), "bounce".to_string());
+        assert_eq!(res, (1, 9));
+    }
+
+    #[tokio::test]
+    async fn test_find_style_id() {
+        // We want the style_id returned
+        let splitmsg: Vec<String> = vec![
+            "!skybox".to_string(),
+            "3".to_string(),
+            "A Cool House".to_string(),
+        ];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 3);
+
+        let splitmsg: Vec<String> =
+            vec!["!skybox".to_string(), "A Cool House".to_string()];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 1);
+
+        let splitmsg: Vec<String> = vec![
+            "!skybox".to_string(),
+            "69".to_string(),
+            "A Cool House".to_string(),
+        ];
+        let res = find_style_id(splitmsg);
+        assert_eq!(res, 1);
+    }
 }

@@ -113,12 +113,34 @@ async fn main() -> Result<()> {
         args.enable
     };
 
-    let pool = subd_db::get_db_pool().await;
+    let pool = get_db_pool().await;
     let (_stream, stream_handle) =
         audio::get_output_stream("pulse").expect("stream handle");
 
     for feature in features {
         match feature.as_ref() {
+            "twitch_chat_saving" => {
+                println!("Enabling Twitch Chat Saving");
+                event_loop.push(twitch_chat::client::TwitchChat::new(
+                    pool.clone(),
+                    "beginbot".to_string(),
+                )?);
+
+                // TODO: Update this description to be more exact
+                // Saves the message and extracts out some information
+                // for easier routing
+                event_loop.push(
+                    twitch_chat::handlers::TwitchMessageHandler::new(
+                        pool.clone(),
+                        twitch_service::Service::new(
+                            pool.clone(),
+                            user_service::Service::new(pool.clone()).await,
+                        )
+                        .await,
+                    ),
+                );
+                continue;
+            }
             // This might be named Wrong
             "implict_soundeffects" => {
                 // TODO: This should be abstracted, Works for Arch Linux
@@ -311,27 +333,6 @@ async fn main() -> Result<()> {
                         obs_client,
                     },
                 );
-                continue;
-            }
-
-            "twitch_chat_saving" => {
-                println!("Enabling Twitch Chat Saving");
-                event_loop.push(twitch_chat::TwitchChat::new(
-                    pool.clone(),
-                    "beginbot".to_string(),
-                )?);
-
-                // TODO: Update this description to be more exact
-                // Saves the message and extracts out some information
-                // for easier routing
-                event_loop.push(twitch_chat::TwitchMessageHandler::new(
-                    pool.clone(),
-                    twitch_service::Service::new(
-                        pool.clone(),
-                        user_service::Service::new(pool.clone()).await,
-                    )
-                    .await,
-                ));
                 continue;
             }
 
