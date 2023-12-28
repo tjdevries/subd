@@ -191,6 +191,8 @@ impl GenerateImage for StableDiffusionRequest {
     }
 }
 
+// =========================================
+
 impl GenerateImage for DalleRequest {
     fn generate_image(
         &self,
@@ -256,8 +258,14 @@ impl GenerateImage for DalleRequest {
                             );
                             let filepath = Path::new(&f);
                             let pathbuf = PathBuf::from(filepath);
-                            let _ = fs::canonicalize(pathbuf);
-                            let file = File::create(file.clone())
+                            let file = match fs::canonicalize(pathbuf) {
+                                Ok(f) => f,
+                                Err(_) => {
+                                    // This sucks
+                                    break 'label "".to_string();
+                                }
+                            };
+                            let _ = File::create(file)
                                 .map(|mut f| f.write_all(&mut image_data));
                         }
 
@@ -267,7 +275,7 @@ impl GenerateImage for DalleRequest {
                             let filepath = Path::new(&filename);
                             let pathbuf = PathBuf::from(filepath);
                             if let Ok(file) = fs::canonicalize(pathbuf) {
-                                File::create(file.clone())
+                                let _ = File::create(file.clone())
                                     .map(|mut f| f.write_all(&mut image_data));
                             };
                         }
@@ -294,6 +302,8 @@ impl GenerateImage for DalleRequest {
         return Box::pin(res);
     }
 }
+
+// =========================================
 
 async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
     let api_key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
