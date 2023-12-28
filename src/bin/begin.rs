@@ -96,7 +96,7 @@ async fn main() -> Result<()> {
         vec![
             "implict_soundeffects".to_string(),
             "explicit_soundeffects".to_string(),
-            "tts".to_string(),
+            // "tts".to_string(),
             "ai_screenshots".to_string(),
             // "ai_screenshots_timer".to_string(),
             "ai_telephone".to_string(),

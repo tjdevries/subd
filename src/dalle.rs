@@ -1,11 +1,7 @@
 use crate::images;
 use anyhow::Result;
 use base64::decode;
-use base64::{
-    alphabet,
-    engine::{self, general_purpose},
-    Engine as _,
-};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use core::pin::Pin;
 use reqwest;
@@ -18,6 +14,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
+use std::path::Path;
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -139,13 +136,19 @@ impl GenerateImage for StableDiffusionRequest {
 
             //
             match save_folder {
-                Some(fld) => {
+                Some(fld) => 'label: {
                     let archive_file = format!(
-                        "/home/begin/code/subd/archive/{}/{}.png",
+                        "./archive/{}/{}.png",
                         fld.clone(),
                         unique_identifier
                     );
-                    if let Ok(mut file) = File::create(archive_file.clone()) {
+                    let filepath = Path::new(&archive_file);
+                    let pathbuf = PathBuf::from(filepath);
+                    let file = match fs::canonicalize(pathbuf) {
+                        Ok(f) => f,
+                        Err(e) => break 'label (),
+                    };
+                    if let Ok(mut file) = File::create(file) {
                         if let Err(e) = file.write_all(&image_data) {
                             eprintln!("Error writing to file: {}", e);
                         }
@@ -155,19 +158,26 @@ impl GenerateImage for StableDiffusionRequest {
             }
 
             // TODO: get rid of this hardcoded path
-            let archive_file = format!(
-                "/home/begin/code/subd/archive/{}.png",
-                unique_identifier
-            );
-            if let Ok(mut file) = File::create(archive_file.clone()) {
+            let archive_file = format!("./archive/{}.png", unique_identifier);
+            let filepath = Path::new(&archive_file);
+            let pathbuf = PathBuf::from(filepath);
+            let file = match fs::canonicalize(pathbuf) {
+                Ok(f) => f,
+                Err(e) => {
+                    return "".to_string();
+                }
+            };
+            if let Ok(mut file) = File::create(file) {
                 if let Err(e) = file.write_all(&image_data) {
                     eprintln!("Error writing to file: {}", e);
                 }
             };
 
             if set_as_obs_bg {
-                let filename =
-                    format!("/home/begin/code/subd/tmp/dalle-{}.png", index);
+                let filename = format!("./subd/tmp/dalle-{}.png", index);
+                let filepath = Path::new(&filename);
+                let pathbuf = PathBuf::from(filepath);
+                let file = fs::canonicalize(pathbuf);
                 if let Ok(mut file) = File::create(filename) {
                     if let Err(e) = file.write_all(&image_data) {
                         eprintln!("Error writing to file: {}", e);
@@ -205,18 +215,32 @@ impl GenerateImage for DalleRequest {
                             "{}_{}_{}",
                             timestamp, index, self.username
                         );
-                        let file = format!(
-                            "/home/begin/code/subd/archive/{}.png",
-                            unique_identifier
-                        );
+                        let filename =
+                            format!("./archive/{}.png", unique_identifier);
+                        let filepath = Path::new(&filename);
+                        let pathbuf = PathBuf::from(filepath);
+                        let file = match fs::canonicalize(pathbuf) {
+                            Ok(f) => f,
+                            Err(e) => {
+                                eprintln!("\nError with file: {}", e);
+                                break 'label "".to_string();
+                            }
+                        };
+
+                        let dl = match file.to_str() {
+                            Some(d) => d,
+                            None => {
+                                break 'label "".to_string();
+                            }
+                        };
                         let mut image_data = match images::download_image(
                             download_resp.url.clone(),
-                            file.clone(),
+                            dl.to_string(),
                         )
                         .await
                         {
                             Ok(val) => {
-                                archive_file = file;
+                                archive_file = dl.to_string();
                                 val
                             }
                             Err(e) => {
@@ -227,20 +251,25 @@ impl GenerateImage for DalleRequest {
 
                         if let Some(fld) = save_folder.as_ref() {
                             let f = format!(
-                                "/home/begin/code/subd/archive/{}/{}.png",
+                                "./subd/archive/{}/{}.png",
                                 fld, unique_identifier
                             );
-                            let _ = File::create(f.clone())
+                            let filepath = Path::new(&f);
+                            let pathbuf = PathBuf::from(filepath);
+                            let _ = fs::canonicalize(pathbuf);
+                            let file = File::create(file.clone())
                                 .map(|mut f| f.write_all(&mut image_data));
                         }
 
                         if set_as_obs_bg {
-                            let file = format!(
-                                "/home/begin/code/subd/tmp/dalle-{}.png",
-                                index + 1
-                            );
-                            let _ = File::create(file.clone())
-                                .map(|mut f| f.write_all(&mut image_data));
+                            let filename =
+                                format!("./tmp/dalle-{}.png", index + 1);
+                            let filepath = Path::new(&filename);
+                            let pathbuf = PathBuf::from(filepath);
+                            if let Ok(file) = fs::canonicalize(pathbuf) {
+                                File::create(file.clone())
+                                    .map(|mut f| f.write_all(&mut image_data));
+                            };
                         }
 
                         let csv_file = OpenOptions::new()

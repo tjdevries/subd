@@ -142,24 +142,12 @@ pub async fn handle_obs_commands(
     msg: UserMessage,
 ) -> Result<(), String> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
-
-    let _is_mod = msg.roles.is_twitch_mod();
-    let _is_vip = msg.roles.is_twitch_vip();
+    let source: &str = splitmsg.get(1).unwrap_or(&default_source);
     let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-
-    // We try and do some parsing on every command here
-    // These may not always be what we want, but they are sensible
-    // defaults used by many commands
-    let source: &str = splitmsg.get(1).unwrap_or(&default_source);
-
     let duration: u32 = splitmsg
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
-
-    let filter_value = splitmsg
-        .get(3)
-        .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
 
     let scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
@@ -173,74 +161,8 @@ pub async fn handle_obs_commands(
             if not_beginbot {
                 return Ok(());
             }
-            let broadcaster_id = "424038378";
-
-            let file_path = "/home/begin/code/subd/data/AIScenes.json";
-            let contents =
-                fs::read_to_string(file_path).expect("Can read file");
-            let ai_scenes: ai_scenes::AIScenes =
-                serde_json::from_str(&contents.clone())
-                    .map_err(|e| e.to_string())?;
-
-            // Why aren't we passing this in?
-            // This is need to create Reward Manager
-            // TODO: Hook this up to regenrating on expirartion
-            let twitch_user_access_token =
-                env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
-            let reqwest = reqwest::Client::builder()
-                .redirect(reqwest::redirect::Policy::none())
-                .build()
-                .map_err(|e| e.to_string())?;
-            let twitch_reward_client: HelixClient<reqwest::Client> =
-                HelixClient::new();
-            let token = UserToken::from_existing(
-                &reqwest,
-                twitch_user_access_token.into(),
-                None,
-                None,
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-            let reward_manager = rewards::RewardManager::new(
-                &twitch_reward_client,
-                &token,
-                &broadcaster_id,
-            );
-
-            let random = {
-                let mut rng = rand::thread_rng();
-                rng.gen_range(0..ai_scenes.scenes.len())
-            };
-            let random_scene = &ai_scenes.scenes[random];
-            let title = &random_scene.reward_title;
-
-            // If we don't have a reward for that Thang
-            let reward_res =
-                twitch_rewards::find_by_title(&pool, title.to_string())
-                    .await
-                    .map_err(|e| e.to_string())?;
-
-            let flash_cost = 100;
-            let _ = reward_manager
-                .update_reward(reward_res.twitch_id.to_string(), flash_cost)
-                .await;
-
-            let update = twitch_rewards::update_cost(
-                &pool,
-                reward_res.title.to_string(),
-                flash_cost as i32,
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-
-            println!("Update: {:?}", update);
-
-            let msg = format!(
-                "Flash Sale! {} - New Low Price! {}",
-                reward_res.title, flash_cost
-            );
-            let _ = send_message(&twitch_client, msg).await;
-            Ok(())
+            let res = flash_sale(pool, twitch_client).await;
+            return res;
         }
 
         "!bootstrap_rewards" => {
@@ -303,7 +225,7 @@ pub async fn handle_obs_commands(
                 }
             }
 
-            Ok(())
+            return Ok(());
         }
 
         // =================== //
@@ -318,15 +240,7 @@ pub async fn handle_obs_commands(
                 WideArgPosition::Duration(3000),
             ];
             let req = build_wide_request(meat_of_message, arg_positions)?;
-            // I want to unwrap or return the Error
-            // How do we return early?
-            // but check the kj
-            println!("Wide TIME!");
-
-            // let source = "begin";
-            // let duration = 5000;
             let filter_value = 300.0;
-
             let filter_name = "3D-Transform-Orthographic";
             let filter_setting_name = "Scale.X";
             let _ = move_transition_effects::trigger_move_value_3d_transform(
@@ -338,29 +252,8 @@ pub async fn handle_obs_commands(
                 obs_client,
             )
             .await;
-            Ok(())
 
-            // let meat_of_message = splitmsg[1..].to_vec();
-            // let arg_positions = vec![
-            //     ChatArgPosition::Source("beginbot".to_string()),
-            //     ChatArgPosition::X(500.0),
-            //     ChatArgPosition::Duration(3000),
-            //     ChatArgPosition::EasingType("ease-in".to_string()),
-            //     ChatArgPosition::EasingFunction("cubic".to_string()),
-            // ];
-            // let req =
-            //     build_chat_move_source_request(meat_of_message, arg_positions);
-            //
-            // move_transition_effects::customize_wide(
-            //     &req.scene,
-            //     &req.source,
-            //     req.x,
-            //     req.duration as u64,
-            //     req.easing_function_index,
-            //     req.easing_type_index,
-            //     &obs_client,
-            // )
-            // .await
+            return Ok(());
         }
 
         "!normal" => {
@@ -1212,4 +1105,71 @@ pub fn build_wide_request(
     }
 
     return Ok(req);
+}
+
+pub async fn flash_sale(
+    pool: &sqlx::PgPool,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+) -> Result<(), String> {
+    let broadcaster_id = "424038378";
+    let file_path = "/home/begin/code/subd/data/AIScenes.json";
+    let twitch_user_access_token =
+        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
+
+    let contents = fs::read_to_string(file_path).expect("Can read file");
+    let ai_scenes: ai_scenes::AIScenes =
+        serde_json::from_str(&contents.clone()).map_err(|e| e.to_string())?;
+    let reqwest = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .map_err(|e| e.to_string())?;
+    let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
+    let token = UserToken::from_existing(
+        &reqwest,
+        twitch_user_access_token.into(),
+        None,
+        None,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+    let reward_manager = rewards::RewardManager::new(
+        &twitch_reward_client,
+        &token,
+        &broadcaster_id,
+    );
+
+    let random = {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(0..ai_scenes.scenes.len())
+    };
+    let random_scene = &ai_scenes.scenes[random];
+    let title = &random_scene.reward_title;
+
+    // If we don't have a reward for that Thang
+    let reward_res = twitch_rewards::find_by_title(&pool, title.to_string())
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let flash_cost = 100;
+    let _ = reward_manager
+        .update_reward(reward_res.twitch_id.to_string(), flash_cost)
+        .await;
+
+    let update = twitch_rewards::update_cost(
+        &pool,
+        reward_res.title.to_string(),
+        flash_cost as i32,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
+
+    println!("Update: {:?}", update);
+
+    let msg = format!(
+        "Flask Sale! {} - New Low Price! {}",
+        reward_res.title, flash_cost
+    );
+    let _ = send_message(&twitch_client, msg).await;
+
+    Ok(())
 }
