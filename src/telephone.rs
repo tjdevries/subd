@@ -27,7 +27,7 @@ pub async fn telephone(
     let _ = create_dir(new_tele_folder.clone());
 
     let og_file =
-        format!("/home/begin/code/subd/archive/{}/original.png", folder);
+        format!("./archive/{}/original.png", folder);
     if let Err(e) = images::download_image(url.clone(), og_file.clone()).await {
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }

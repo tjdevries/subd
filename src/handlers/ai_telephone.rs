@@ -116,7 +116,7 @@ pub async fn handle_telephone_requests(
                     return Ok(());
                 }
                 Err(e) => {
-                    eprintln!("Error Telephone Prompt: {}", e);
+                    eprintln!("Error Carlphone Prompt: {}", e);
                     return Ok(());
                 }
             }
