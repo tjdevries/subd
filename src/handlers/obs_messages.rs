@@ -1166,7 +1166,7 @@ pub async fn flash_sale(
     println!("Update: {:?}", update);
 
     let msg = format!(
-        "Flask Sale! {} - New Low Price! {}",
+        "Flash Sale! {} - New Low Price! {}",
         reward_res.title, flash_cost
     );
     let _ = send_message(&twitch_client, msg).await;
