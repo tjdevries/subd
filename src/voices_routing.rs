@@ -217,31 +217,39 @@ pub async fn handle_voices_commands(
             if !is_mod && !is_vip {
                 return Ok(());
             }
+            println!("Time for !nothing");
 
             let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC
                 .iter()
                 .map(|(_, scene)| scene.music)
                 .collect();
             for source in music_list.iter() {
-                let _ = obs_source::hide_source(
+                if let Err(e) = obs_source::hide_source(
                     background_scene,
                     source,
                     obs_client,
                 )
-                .await;
+                .await
+                {
+                    eprintln!(
+                        "Error hiding source: {} {} | {:?}",
+                        background_scene, source, e
+                    );
+                };
             }
 
-            let filter_name = "3D Transform";
-            let filter_enabled = obws::requests::filters::SetEnabled {
-                // TODO: Find the const
-                source: "begin",
-                filter: &filter_name,
-                enabled: false,
-            };
-            obs_client.filters().set_enabled(filter_enabled).await?;
             // Disable Global Voice Mode
-            twitch_stream_state::turn_off_global_voice(&pool).await?;
-            Ok(())
+            twitch_stream_state::turn_off_global_voice(&pool).await
+
+            // Not sure if we want to do these things
+            // let filter_name = "3D Transform";
+            // let filter_enabled = obws::requests::filters::SetEnabled {
+            //     // TODO: Find the const
+            //     source: "begin",
+            //     filter: &filter_name,
+            //     enabled: false,
+            // };
+            // obs_client.filters().set_enabled(filter_enabled).await?;
         }
 
         "!random" => {

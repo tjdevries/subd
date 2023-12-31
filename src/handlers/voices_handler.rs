@@ -41,7 +41,7 @@ impl EventHandler for VoicesHandler {
             {
                 Ok(_) => {}
                 Err(err) => {
-                    eprintln!("Error: {err}");
+                    eprintln!("Error with handle_voices_command: {err}");
                     continue;
                 }
             }

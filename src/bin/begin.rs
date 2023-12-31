@@ -139,6 +139,13 @@ async fn main() -> Result<()> {
                         .await,
                     ),
                 );
+
+                // TODO: We want to reconsider our feature boundaries
+                let obs_client = server::obs::create_obs_client().await?;
+                event_loop.push(handlers::voices_handler::VoicesHandler {
+                    pool: pool.clone(),
+                    obs_client,
+                });
                 continue;
             }
             // This might be named Wrong
@@ -184,12 +191,6 @@ async fn main() -> Result<()> {
                     sink,
                     obs_client,
                     elevenlabs,
-                });
-
-                let obs_client = server::obs::create_obs_client().await?;
-                event_loop.push(handlers::voices_handler::VoicesHandler {
-                    pool: pool.clone(),
-                    obs_client,
                 });
             }
 
