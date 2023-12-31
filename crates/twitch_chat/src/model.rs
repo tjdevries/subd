@@ -43,16 +43,15 @@ pub async fn upsert_twitch_user(
             let user_id = create_new_user(pool).await?;
 
             sqlx::query!(
-            "INSERT INTO twitch_users (user_id, twitch_user_id, login, display_name)
-            VALUES($1, $2, $3, $4)",
-            user_id.0,
-            twitch_user_id.0,
-            twitch_user_login,
-            twitch_user_login
-        )
-        .execute(pool)
-        .await
-        .unwrap();
+                "INSERT INTO twitch_users (user_id, twitch_user_id, login, display_name)
+                VALUES($1, $2, $3, $4)",
+                user_id.0,
+                twitch_user_id.0,
+                twitch_user_login,
+                twitch_user_login
+            )
+            .execute(pool)
+            .await?;
 
             Ok(user_id)
         }

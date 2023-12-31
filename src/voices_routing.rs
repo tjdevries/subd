@@ -3,6 +3,7 @@ use crate::obs;
 use crate::obs_source;
 use crate::twitch_stream_state;
 use crate::uberduck;
+use anyhow::anyhow;
 use anyhow::Result;
 use dotenv::dotenv;
 use obws::Client as OBSClient;
@@ -73,7 +74,8 @@ pub async fn handle_voices_commands(
                 return Ok(());
             }
 
-            let transform_settings = &splitmsg.get(1).unwrap();
+            let transform_settings =
+                splitmsg.get(1).ok_or(anyhow!("No settings to transform"))?;
             let contents = &splitmsg[2..].join(" ");
             let word_count = &splitmsg[2..].len();
 
@@ -104,7 +106,9 @@ pub async fn handle_voices_commands(
                 return Ok(());
             }
 
-            let transform_settings = &splitmsg.get(1).unwrap();
+            // How do you go from Option to Result,
+            let transform_settings =
+                splitmsg.get(1).ok_or(anyhow!("No settings to transform"))?;
             let contents = &splitmsg[2..].join(" ");
             let word_count = &splitmsg[2..].len();
 
@@ -130,7 +134,8 @@ pub async fn handle_voices_commands(
         }
 
         "!stretch" => {
-            let stretch = &splitmsg.get(1).unwrap();
+            let stretch =
+                &splitmsg.get(1).ok_or(anyhow!("Nothing to !stretch"))?;
             let contents = &splitmsg[2..].join(" ");
 
             let _ = tx.send(Event::ElevenLabsRequest(
@@ -148,7 +153,7 @@ pub async fn handle_voices_commands(
         }
 
         "!pitch" => {
-            let pitch = &splitmsg.get(1).unwrap();
+            let pitch = &splitmsg.get(1).ok_or(anyhow!("Nothing to !pitch"))?;
             let contents = &splitmsg[2..].join(" ");
 
             let _ = tx.send(Event::ElevenLabsRequest(
@@ -345,12 +350,12 @@ pub async fn handle_voices_commands(
                 println!("Result: {:?}", result);
 
                 // We want the ID to not be escapae
-                let voice_id = result.unwrap();
+                let voice_id = result?;
                 println!("Result: {:?}", voice_id);
 
                 // We save the JSON
                 let filename = format!("/home/begin/code/subd/voices.json");
-                let mut file = fs::File::open(filename.clone()).unwrap();
+                let mut file = fs::File::open(filename.clone())?;
                 let mut data = String::new();
                 file.read_to_string(&mut data)?;
 
@@ -457,12 +462,10 @@ pub async fn handle_voices_commands(
                         .expect("Failed to execute ffmpeg");
                 }
 
-                let soundeffect_files = fs::read_dir(split_mp3_folder).unwrap();
+                let soundeffect_files = fs::read_dir(split_mp3_folder)?;
                 let mut mp3s: HashSet<String> = vec![].into_iter().collect();
                 for split_file in soundeffect_files {
-                    mp3s.insert(
-                        split_file.unwrap().path().display().to_string(),
-                    );
+                    mp3s.insert(split_file?.path().display().to_string());
                 }
 
                 let vec: Vec<String> = mp3s.into_iter().collect();
@@ -488,7 +491,7 @@ pub async fn handle_voices_commands(
 
                 // We save the JSON
                 let filename = format!("/home/begin/code/subd/voices.json");
-                let mut file = fs::File::open(filename.clone()).unwrap();
+                let mut file = fs::File::open(filename.clone())?;
                 let mut data = String::new();
                 file.read_to_string(&mut data)?;
 
@@ -567,7 +570,7 @@ fn parse_transform_settings(
 async fn from_clone(
     voice_clone: VoiceClone,
     api_base_url_v1: &str,
-) -> Result<String, Error> {
+) -> Result<String> {
     let api_key = env::var("ELEVENLABS_API_KEY")
         .expect("Expected ELEVENLABS_API_KEY in .env");
     let client = Client::new();
@@ -576,16 +579,13 @@ async fn from_clone(
     let mut form = Form::new()
         .text("name", voice_clone.name)
         .text("description", voice_clone.description)
-        .text(
-            "labels",
-            serde_json::to_string(&voice_clone.labels).unwrap(),
-        );
+        .text("labels", serde_json::to_string(&voice_clone.labels)?);
 
     for file_path in voice_clone.files {
         let path = Path::new(&file_path);
-        let mut file = File::open(path).unwrap();
+        let mut file = File::open(path)?;
         let mut contents = Vec::new();
-        file.read_to_end(&mut contents).unwrap();
+        file.read_to_end(&mut contents)?;
         let part = Part::bytes(contents)
             .file_name(file_path)
             .mime_str("audio/mpeg")?;
@@ -599,20 +599,14 @@ async fn from_clone(
         .send()
         .await?;
 
-    let status = response.status();
-    if status.is_success() {
-        let voice_id: String = response
-            .json::<serde_json::Value>()
-            .await?
-            .get("voice_id")
-            .unwrap()
-            .as_str()
-            .unwrap()
-            .to_string();
-        Ok(voice_id)
-    } else {
-        Err(response.error_for_status().unwrap_err())
-    }
+    response
+        .json::<serde_json::Value>()
+        .await?
+        .get("voice_id")
+        .ok_or(anyhow!("Couldn't find voice_id in response"))?
+        .as_str()
+        .ok_or(anyhow!("Couldn't convert voice_id to str"))
+        .map(|s| s.to_string())
 }
 
 // voice_id='45XeoJwbLhXJHjCXAi7q' name='owen' category='cloned' description='wow a cool guy' labels={} samples=[VoiceSample(sample_id='MtUrilOLqpnJeqxFuSn4', file_name='owen_140136286216160.mp3', mime_type='audio/mpeg', size_bytes=7167501, hash='e8130f475e206a3afb98443880a75aa4')] design=None preview_url=None settings=VoiceSettings(stability=0.5, similarity_boost=0.75, style=0.0, use_speaker_boost=True)
