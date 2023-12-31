@@ -77,7 +77,6 @@ async fn process_dalle_request(
     let (file_as_string, unique_identifier) =
         image_generation::unique_archive_filepath(index, username)
             .map_err(|e| e.to_string())?;
-
     let f = file_as_string
         .to_str()
         .ok_or("error converting archive path to str")?;

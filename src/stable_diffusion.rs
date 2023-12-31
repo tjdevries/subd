@@ -1,5 +1,6 @@
 use crate::image_generation;
 use crate::images;
+use anyhow::anyhow;
 use anyhow::Result;
 use base64::decode;
 use base64::{engine::general_purpose, Engine as _};
@@ -43,127 +44,145 @@ impl image_generation::GenerateImage for StableDiffusionRequest {
         set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
-        // let url = env::var("STABLE_DIFFUSION_URL_IMG")
-        let url = env::var("STABLE_DIFFUSION_URL")
-            .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")
-            .unwrap();
-
-        let client = Client::new();
-        let req = client
-            .post(&url)
-            .header("Content-Type", "application/json")
-            .json(&json!({"prompt": prompt}))
-            .send();
-
         let res = async move {
-            // Get ridd of the unwraps
-            // Then we need to parse to new structure
-            let response = match req.await {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error with Stable Diffusion response: {}", e);
-                    return "".to_string();
-                }
-            };
-
-            let image_data = match response.bytes().await {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error with Stable Diffusion image_data: {}", e);
-                    return "".to_string();
-                }
-            };
-
-            let res: SDResponse = match serde_json::from_slice(&image_data) {
-                Ok(res) => res,
-                Err(e) => {
-                    eprintln!("Error parsing SD response: {}", e);
-                    return "".to_string();
-                }
-            };
-            let base64 = &res.data[0].b64_json;
-            // We rename it image_data because that is what it was origianlly
-            let image_data = match general_purpose::STANDARD.decode(base64) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error base64 decoding SD response: {}", e);
-                    return "".to_string();
-                }
-            };
-
-            // // We need a good name for this
-            // let mut file = File::create("durf2.png").expect("Failed to create file");
-            // file.write_all(&bytes).expect("Failed to write to file");
-
-            // We aren't currently able to generate more than image
-            let index = 1;
-            // TODO: move this to a function
-            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-            let unique_identifier =
-                format!("{}_{}_{}", timestamp, index, self.username);
-
-            //
-            match save_folder {
-                Some(fld) => 'label: {
-                    let archive_file = format!(
-                        "./archive/{}/{}.png",
-                        fld.clone(),
-                        unique_identifier
-                    );
-                    let filepath = Path::new(&archive_file);
-                    let pathbuf = PathBuf::from(filepath);
-                    let file = match fs::canonicalize(pathbuf) {
-                        Ok(f) => f,
-                        Err(e) => break 'label (),
-                    };
-                    if let Ok(mut file) = File::create(file) {
-                        if let Err(e) = file.write_all(&image_data) {
-                            eprintln!("Error writing to file: {}", e);
-                        }
-                    };
-                }
-                None => {}
-            }
-
-            // TODO: get rid of this hardcoded path
-            let archive_file = format!("./archive/{}.png", unique_identifier);
-            let filepath = Path::new(&archive_file);
-            let pathbuf = PathBuf::from(filepath);
-            let file = match fs::canonicalize(pathbuf) {
-                Ok(f) => f,
-                Err(e) => {
-                    return "".to_string();
-                }
-            };
-            if let Ok(mut file) = File::create(file) {
-                if let Err(e) = file.write_all(&image_data) {
-                    eprintln!("Error writing to file: {}", e);
-                }
-            };
-
-            if set_as_obs_bg {
-                let filename = format!("./subd/tmp/dalle-{}.png", index);
-                let filepath = Path::new(&filename);
-                let pathbuf = PathBuf::from(filepath);
-                let file = fs::canonicalize(pathbuf);
-                if let Ok(mut file) = File::create(filename) {
-                    if let Err(e) = file.write_all(&image_data) {
-                        eprintln!("Error writing to file: {}", e);
+            let image_data = match download_stable_diffusion(prompt.clone())
+                .await
+            {
+                Ok(i) => match String::from_utf8(i) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        println!("Error downloading Stable Diffusion: {:?}", e);
+                        return "".to_string();
                     }
-                };
-            }
+                },
+                Err(e) => {
+                    eprintln!(
+                        "Error downloading stable diffusion image: {}",
+                        e
+                    );
+                    return "".to_string();
+                }
+            };
 
-            archive_file
+            let _ = process_stable_diffusion(
+                "beginbot".to_string(),
+                1,
+                image_data.clone().into(),
+                save_folder,
+                set_as_obs_bg,
+            )
+            .await;
+
+            image_data
         };
+
         Box::pin(res)
     }
 }
 
-// =========================================
+async fn process_stable_diffusion(
+    username: String,
+    index: usize,
+    image_data: Vec<u8>,
+    save_folder: Option<String>,
+    set_as_obs_bg: bool,
+) -> Result<String> {
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
+
+    println!("Processing Stable Diffusion: {}", unique_identifier);
+    if let Some(fld) = save_folder {
+        let archive_file =
+            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
+        let filepath = Path::new(&archive_file);
+        let pathbuf = PathBuf::from(filepath);
+        if let Err(e) =
+            File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
+        {
+            println!("Error writing to file: {}", e)
+        };
+    }
+
+    let archive_file = format!("./archive/{}.png", unique_identifier);
+    let filepath = Path::new(&archive_file);
+    let pathbuf = PathBuf::from(filepath);
+    if let Err(e) = File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
+    {
+        println!("Error writing to file: {}", e);
+    }
+
+    if let Ok(mut file) = File::create(pathbuf) {
+        if let Err(e) = file.write_all(&image_data) {
+            eprintln!("Error writing to file: {}", e);
+        }
+    };
+
+    if set_as_obs_bg {
+        let filename = format!("./subd/tmp/dalle-{}.png", index);
+        let filepath = Path::new(&filename);
+        let pathbuf = PathBuf::from(filepath);
+        if let Err(e) =
+            File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
+        {
+            eprintln!("Error writing to file: {}", e);
+        };
+    }
+
+    Ok("".to_string())
+}
+
+async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {
+    // let url = env::var("STABLE_DIFFUSION_URL_IMG")
+    let url = env::var("STABLE_DIFFUSION_URL")?;
+
+    let client = Client::new();
+    let req = client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .json(&json!({"prompt": prompt}))
+        .send();
+
+    // How would we use and_then
+    let res = req
+        .await?
+        .bytes()
+        .await
+        .map(|i| serde_json::from_slice::<SDResponse>(&i))??;
+
+    let base64 = &res.data[0].b64_json;
+
+    general_purpose::STANDARD
+        .decode(base64)
+        .map_err(|e| anyhow!(e.to_string()))
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::image_generation::GenerateImage;
+
+    #[tokio::test]
+    async fn test_stable_d() -> Result<()> {
+        let prompt = "beach sunset beautiful dank af frog time".to_string();
+        let username = "beginbot".to_string();
+        let req = StableDiffusionRequest {
+            prompt: prompt.clone(),
+            username,
+            amount: -2,
+        };
+
+        let image_data = download_stable_diffusion(req.prompt.clone()).await?;
+
+        let _ = process_stable_diffusion(
+            "beginbot".to_string(),
+            1,
+            image_data,
+            None,
+            false,
+        )
+        .await;
+        Ok(())
+    }
 
     #[test]
     fn test_parsing_carls_images() {
