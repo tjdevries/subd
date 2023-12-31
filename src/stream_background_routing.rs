@@ -1,19 +1,20 @@
 use crate::art_blocks;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
+use crate::move_transition;
+use crate::move_transition_effects;
 use crate::obs;
 use crate::obs_source;
 use crate::stable_diffusion;
-use crate::move_transition;
-use crate::move_transition_effects;
 use crate::stable_diffusion::StableDiffusionRequest;
+use anyhow::anyhow;
 use anyhow::Result;
 use chrono::Utc;
 use obws::Client as OBSClient;
-use subd_types::{Event, UserMessage};
-use tokio::sync::broadcast;
 use std::thread;
 use std::time::Duration;
+use subd_types::{Event, UserMessage};
+use tokio::sync::broadcast;
 
 pub async fn handle_stream_background_commands(
     _tx: &broadcast::Sender<Event>,
@@ -23,6 +24,8 @@ pub async fn handle_stream_background_commands(
 ) -> Result<()> {
     let _is_mod = msg.roles.is_twitch_mod();
     let _is_vip = msg.roles.is_twitch_vip();
+    let is_sub = msg.roles.is_twitch_sub();
+    
     let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
@@ -182,13 +185,22 @@ pub async fn handle_stream_background_commands(
         // - Play lightnting / thunder
         // - Trigger slow rise
 
+        // !bogan 0.77 A Description
+
+        // This uses Default strength
+        // !bogan A Description
         "!bogan" => {
+            if !is_sub {
+                return Ok(());
+            }
+            println!("Sub Time! {}", msg.user_name);
+
             let scene = "AIAssets";
             let source = "bogan";
             let req = move_transition::ChatMoveSourceRequest {
                 ..Default::default()
             };
-            
+
             let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
             let unique_identifier = format!("{}_screenshot.png", timestamp);
 
@@ -202,16 +214,29 @@ pub async fn handle_stream_background_commands(
 
             // TODO: Extract this OBS
             let screenshot_source = "begin-base";
-            if let Err(e) =
-                obs_source::save_screenshot(&obs_client, screenshot_source, &filename)
-                    .await
+            if let Err(e) = obs_source::save_screenshot(
+                &obs_client,
+                screenshot_source,
+                &filename,
+            )
+            .await
             {
                 eprintln!("Error Saving Screenshot: {}", e);
                 return Ok(());
             };
+            let strength =
+                splitmsg.get(1).ok_or(anyhow!("Nothing to modify!"))?;
+            // is this strength string parseable to a f32?
+            let parsed_strength = strength.parse::<f32>();
+
+            let (prompt_offset, strength) = match parsed_strength {
+                Ok(f) => (2, Some(f)),
+                Err(_) => (1, None),
+            };
+
             let prompt = splitmsg
                 .iter()
-                .skip(1)
+                .skip(prompt_offset)
                 .map(AsRef::as_ref)
                 .collect::<Vec<&str>>()
                 .join(" ");
@@ -222,16 +247,17 @@ pub async fn handle_stream_background_commands(
                 prompt
             };
 
-            
+            println!("Generating Screenshot Variation w/ {}", prompt);
             let path = stable_diffusion::create_image_variation(
                 prompt,
                 filename,
                 unique_identifier,
                 None,
                 false,
+                strength,
             )
             .await?;
-            
+
             // Hide the Last Bogan
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 scene,
@@ -257,7 +283,7 @@ pub async fn handle_stream_background_commands(
             if let Err(e) = res {
                 eprintln!("Error Updating OBS Source: {} - {}", source, e);
             };
-            
+
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 &scene,
                 &source,

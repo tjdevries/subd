@@ -62,6 +62,7 @@ impl image_generation::GenerateImage for StableDiffusionImg2ImgRequest {
                 unique_identifier,
                 save_folder,
                 set_as_obs_bg,
+                None,
             )
             .await;
 
@@ -113,6 +114,7 @@ pub async fn create_image_variation(
     unique_identifier: String,
     save_folder: Option<String>,
     set_as_obs_bg: bool,
+    strength: Option<f32>,
 ) -> Result<String> {
     let username = "beginbot".to_string();
     let index = 1;
@@ -120,6 +122,7 @@ pub async fn create_image_variation(
         prompt,
         filename,
         unique_identifier,
+        strength,
     )
     .await
     {
@@ -231,6 +234,7 @@ async fn download_stable_diffusion_img2img(
     prompt: String,
     filename: String,
     unique_identifier: String,
+    strength: Option<f32>,
 ) -> Result<(String, Vec<u8>)> {
     let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
     let client = Client::new();
@@ -253,12 +257,24 @@ async fn download_stable_diffusion_img2img(
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
 
+    let default_strength = 0.6;
+    let strength = match strength {
+        Some(s) => {
+            if s > 0.1 && s < 1.0 {
+                s
+            } else {
+                default_strength
+            }
+        }
+        None => default_strength,
+    };
     let p = Part::bytes(buffer)
         .mime_str("image/png")?
         .file_name(output_path.clone());
     let form = reqwest::multipart::Form::new()
         .part("file", p)
-        .text("prompt", prompt);
+        .text("prompt", prompt)
+        .text("strength", format!("{}", strength));
 
     // This one works
     // let image_url = "https://archives.bulbagarden.net/media/upload/thumb/3/3f/0143Snorlax.png/250px-0143Snorlax.png";
@@ -332,6 +348,7 @@ mod tests {
             req.prompt.clone(),
             filename,
             unique_identifier,
+            None,
         )
         .await?;
 

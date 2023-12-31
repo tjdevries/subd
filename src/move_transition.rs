@@ -21,7 +21,6 @@ pub struct ChatMoveSourceRequest {
     pub easing_function_index: i32,
 }
 
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveSourceCropSetting {
     #[serde(rename = "bottom")]
