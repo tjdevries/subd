@@ -70,20 +70,6 @@ pub struct WideRequest {
     duration: u64,
 }
 
-#[derive(Default, Debug)]
-pub struct ChatMoveSourceRequest {
-    source: String,
-    scene: String,
-    x: f32,
-    y: f32,
-    rotation_z: f32,
-    duration: u64,
-    easing_type: String,
-    easing_function: String,
-    easing_type_index: i32,
-    easing_function_index: i32,
-}
-
 pub struct OBSMessageHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
@@ -901,11 +887,11 @@ pub async fn handle_obs_commands(
 pub fn build_chat_move_source_request(
     splitmsg: Vec<String>,
     arg_positions: Vec<ChatArgPosition>,
-) -> ChatMoveSourceRequest {
+) -> move_transition::ChatMoveSourceRequest {
     let default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
 
-    let mut req = ChatMoveSourceRequest {
+    let mut req = move_transition::ChatMoveSourceRequest {
         ..Default::default()
     };
 

@@ -4,12 +4,16 @@ use crate::image_generation::GenerateImage;
 use crate::obs;
 use crate::obs_source;
 use crate::stable_diffusion;
+use crate::move_transition;
+use crate::move_transition_effects;
 use crate::stable_diffusion::StableDiffusionRequest;
 use anyhow::Result;
 use chrono::Utc;
 use obws::Client as OBSClient;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use std::thread;
+use std::time::Duration;
 
 pub async fn handle_stream_background_commands(
     _tx: &broadcast::Sender<Event>,
@@ -170,10 +174,25 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
+        // !move bogan -350 600 9000
+        // - Move current bogan down off screen
+        // - Hide cauldron
+        // - Wait for image to complete
+        // - Show cauldron
+        // - Play lightnting / thunder
+        // - Trigger slow rise
+
         "!bogan" => {
+            let scene = "AIAssets";
+            let source = "bogan";
+            let req = move_transition::ChatMoveSourceRequest {
+                ..Default::default()
+            };
+            
             let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
             let unique_identifier = format!("{}_screenshot.png", timestamp);
 
+            // TODO: Update this
             // This is wierd
             let filename = format!(
                 // "./tmp/screenshots/timelapse/{}",
@@ -181,9 +200,10 @@ pub async fn handle_stream_background_commands(
                 unique_identifier
             );
 
-            let source = "begin-base";
+            // TODO: Extract this OBS
+            let screenshot_source = "begin-base";
             if let Err(e) =
-                obs_source::save_screenshot(&obs_client, source, &filename)
+                obs_source::save_screenshot(&obs_client, screenshot_source, &filename)
                     .await
             {
                 eprintln!("Error Saving Screenshot: {}", e);
@@ -196,20 +216,13 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
 
-            let prompt = if source == "begin-base" {
+            let prompt = if screenshot_source == "begin-base" {
                 format!("{}. on a bright chroma key green background", prompt)
             } else {
                 prompt
             };
 
-            // If it's begin-base, we need to account for greenscreen
-
-            // let req = stable_diffusion::StableDiffusionImg2ImgRequest {
-            //     prompt: prompt.clone(),
-            //     filename: filename.clone(),
-            //     unique_identifier: unique_identifier.clone(),
-            // };
-
+            
             let path = stable_diffusion::create_image_variation(
                 prompt,
                 filename,
@@ -218,8 +231,21 @@ pub async fn handle_stream_background_commands(
                 false,
             )
             .await?;
-            // We need to finish the code though
-            // let path = req.generate_image(prompt, None, true).await;
+            
+            // Hide the Last Bogan
+            let _ = move_transition_effects::move_source_in_scene_x_and_y(
+                scene,
+                source,
+                -300.0,
+                1100.0,
+                0,
+                req.easing_function_index,
+                req.easing_type_index,
+                &obs_client,
+            )
+            .await;
+            // do we need to sleep here?
+            thread::sleep(Duration::from_millis(100));
 
             let source = obs::NEW_BEGIN_SOURCE.to_string();
             let res = obs_source::update_image_source(
@@ -231,6 +257,18 @@ pub async fn handle_stream_background_commands(
             if let Err(e) = res {
                 eprintln!("Error Updating OBS Source: {} - {}", source, e);
             };
+            
+            let _ = move_transition_effects::move_source_in_scene_x_and_y(
+                &scene,
+                &source,
+                -300.0,
+                600.0,
+                6000,
+                req.easing_function_index,
+                req.easing_type_index,
+                &obs_client,
+            )
+            .await;
             Ok(())
         }
 

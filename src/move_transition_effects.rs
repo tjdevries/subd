@@ -209,7 +209,7 @@ pub async fn move_source_in_scene_x_and_y(
     let filter_name = format!("Move_{}", source);
 
     let _ =
-        find_or_create_filter(&scene, &source, &filter_name, obs_client).await;
+        find_or_create_filter(&scene, &source, &filter_name, obs_client).await?;
 
     let settings =
         move_transition::fetch_source_settings(scene, &source, &obs_client)
