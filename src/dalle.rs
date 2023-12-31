@@ -76,6 +76,7 @@ impl GenerateImage for StableDiffusionRequest {
         set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
+        // let url = env::var("STABLE_DIFFUSION_URL_IMG")
         let url = env::var("STABLE_DIFFUSION_URL")
             .map_err(|_| "STABLE_DIFFUSION_URL environment variable not set")
             .unwrap();
@@ -193,69 +194,61 @@ impl GenerateImage for StableDiffusionRequest {
 
 // =========================================
 
+fn unique_archive_filepath(
+    index: usize,
+    username: String,
+) -> Result<(PathBuf, String), anyhow::Error> {
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
+    let filename = format!("./archive/{}.png", unique_identifier);
+    let filepath = Path::new(&filename);
+    let pathbuf = PathBuf::from(filepath);
+    fs::canonicalize(pathbuf)
+        .map_err(|e| anyhow::Error::msg(e.to_string()))
+        .map(|v| (v, unique_identifier))
+}
+
 async fn process_dalle_request(
     prompt: String,
     username: String,
-    index: i32,
+    index: usize,
     download_resp: &ImageData,
     save_folder: Option<String>,
     set_as_obs_bg: bool,
 ) -> Result<String, String> {
-    // process_dalle_request().await
-    println!("Image URL: {} | ", download_resp.url.clone());
-
-    let timestamp =
-        Utc::now().format("%Y%m%d%H%M%S").to_string();
-    let unique_identifier = format!(
-        "{}_{}_{}",
-        timestamp, index, username
+    println!(
+        "Processing Dalle Request:: {} | ",
+        download_resp.url.clone()
     );
-    let filename =
-        format!("./archive/{}.png", unique_identifier);
-    let filepath = Path::new(&filename);
-    let pathbuf = PathBuf::from(filepath);
-    let file = fs::canonicalize(pathbuf);
-    let file = file.map_err(|e| e.to_string())?;
-        // ok_or("Error on Archive File")?;
 
-    let dl = file.to_str().unwrap_o()
-    let mut image_data = match images::download_image(
-    download_resp.url.clone(),
-        dl.to_string(),
-    )
-    .await
-    {
-        Ok(val) => {
-            archive_file = dl.to_string();
-            val
-        }
-        Err(e) => {
-            eprintln!("\nError downloading image: {}", e);
-            break 'label "".to_string();
-        }
-    };
+    let (file_as_string, unique_identifier) =
+        unique_archive_filepath(index, username).map_err(|e| e.to_string())?;
 
-    if let Some(fld) = save_folder.as_ref() {
-        let f = format!(
-            "./subd/archive/{}/{}.png",
-            fld, unique_identifier
-        );
-        let filepath = Path::new(&f);
-        let pathbuf = PathBuf::from(filepath);
-        let file = match fs::canonicalize(pathbuf) {
-            Ok(f) => f,
-            Err(_) => {
-                // This sucks
-                break 'label "".to_string();
+    let f = file_as_string
+        .to_str()
+        .ok_or("error converting archive path to str")?;
+
+    let mut image_data =
+        match images::download_image(download_resp.url.clone(), f.to_string())
+            .await
+        {
+            Ok(val) => val,
+            Err(e) => {
+                eprintln!("\nError downloading image: {}", e);
+                return Err(e.to_string());
             }
         };
-        let _ = File::create(file)
-            .map(|mut f| f.write_all(&mut image_data));
+
+    if let Some(fld) = save_folder.clone().as_ref() {
+        let f = format!("./subd/archive/{}/{}.png", fld, unique_identifier);
+        let filepath = Path::new(&f);
+        let pathbuf = PathBuf::from(filepath);
+        let file = fs::canonicalize(pathbuf).map_err(|e| e.to_string())?;
+        let _ = File::create(file).map(|mut f| f.write_all(&mut image_data));
     }
 
     if set_as_obs_bg {
-        let filename =
-            format!("./tmp/dalle-{}.png", index + 1);
+        let filename = format!("./tmp/dalle-{}.png", index + 1);
         let filepath = Path::new(&filename);
         let pathbuf = PathBuf::from(filepath);
         if let Ok(file) = fs::canonicalize(pathbuf) {
@@ -264,16 +257,16 @@ async fn process_dalle_request(
         };
     }
 
+    // Why is this saving to CSV
     let csv_file = OpenOptions::new()
         .write(true)
         .append(true)
         .create(true)
         .open("output.csv");
     if let Ok(mut f) = csv_file {
-        let _ =
-            writeln!(f, "{},{}", unique_identifier, prompt);
+        let _ = writeln!(f, "{},{}", unique_identifier, prompt);
     }
-    Ok("")
+    Ok("".to_string())
 }
 
 impl GenerateImage for DalleRequest {
@@ -285,103 +278,21 @@ impl GenerateImage for DalleRequest {
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
         let res = async move {
-            let mut archive_file = "".to_string();
-
-            match dalle_request(prompt.clone()).await {
-                Ok(response) => 'label: {
-                    for (index, download_resp) in
-                        response.data.iter().enumerate()
-                    {
-                        
-                        // process_dalle_request(downloar_resp).await
-                        println!("Image URL: {} | ", download_resp.url.clone());
-
-                        let timestamp =
-                            Utc::now().format("%Y%m%d%H%M%S").to_string();
-                        let unique_identifier = format!(
-                            "{}_{}_{}",
-                            timestamp, index, self.username
-                        );
-                        let filename =
-                            format!("./archive/{}.png", unique_identifier);
-                        let filepath = Path::new(&filename);
-                        let pathbuf = PathBuf::from(filepath);
-                        let file = match fs::canonicalize(pathbuf) {
-                            Ok(f) => f,
-                            Err(e) => {
-                                eprintln!("\nError with file: {}", e);
-                                break 'label "".to_string();
-                            }
-                        };
-
-                        let dl = match file.to_str() {
-                            Some(d) => d,
-                            None => {
-                                break 'label "".to_string();
-                            }
-                        };
-                        let mut image_data = match images::download_image(
-                            download_resp.url.clone(),
-                            dl.to_string(),
-                        )
-                        .await
-                        {
-                            Ok(val) => {
-                                archive_file = dl.to_string();
-                                val
-                            }
-                            Err(e) => {
-                                eprintln!("\nError downloading image: {}", e);
-                                break 'label "".to_string();
-                            }
-                        };
-
-                        if let Some(fld) = save_folder.as_ref() {
-                            let f = format!(
-                                "./subd/archive/{}/{}.png",
-                                fld, unique_identifier
-                            );
-                            let filepath = Path::new(&f);
-                            let pathbuf = PathBuf::from(filepath);
-                            let file = match fs::canonicalize(pathbuf) {
-                                Ok(f) => f,
-                                Err(_) => {
-                                    // This sucks
-                                    break 'label "".to_string();
-                                }
-                            };
-                            let _ = File::create(file)
-                                .map(|mut f| f.write_all(&mut image_data));
-                        }
-
-                        if set_as_obs_bg {
-                            let filename =
-                                format!("./tmp/dalle-{}.png", index + 1);
-                            let filepath = Path::new(&filename);
-                            let pathbuf = PathBuf::from(filepath);
-                            if let Ok(file) = fs::canonicalize(pathbuf) {
-                                let _ = File::create(file.clone())
-                                    .map(|mut f| f.write_all(&mut image_data));
-                            };
-                        }
-
-                        let csv_file = OpenOptions::new()
-                            .write(true)
-                            .append(true)
-                            .create(true)
-                            .open("output.csv");
-                        if let Ok(mut f) = csv_file {
-                            let _ =
-                                writeln!(f, "{},{}", unique_identifier, prompt);
-                        }
-                    }
-                    archive_file
-                }
-                Err(e) => {
-                    eprintln!("Error With Dalle response: {}", e);
-                    "".to_string()
+            if let Ok(response) = dalle_request(prompt.clone()).await {
+                for (index, download_resp) in response.data.iter().enumerate() {
+                    let _ = process_dalle_request(
+                        prompt.clone(),
+                        self.username.clone(),
+                        index,
+                        download_resp,
+                        save_folder.clone(),
+                        set_as_obs_bg,
+                    )
+                    .await;
                 }
             }
+
+            return "".to_string();
         };
 
         return Box::pin(res);
