@@ -15,10 +15,10 @@ pub trait GenerateImage {
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>;
 }
 
-pub enum AiImageRequests {
-    DalleRequest,
-    StableDiffusionRequest,
-}
+// pub enum AiImageRequests {
+//     DalleRequest,
+//     StableDiffusionRequest,
+// }
 
 pub fn unique_archive_filepath(
     index: usize,

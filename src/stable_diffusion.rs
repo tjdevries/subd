@@ -35,10 +35,6 @@ struct SDResponseData {
     revised_prompt: String,
 }
 
-// ===============================================
-
-// ====================================================
-
 impl image_generation::GenerateImage for StableDiffusionRequest {
     fn generate_image(
         &self,

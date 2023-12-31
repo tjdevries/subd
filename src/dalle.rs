@@ -78,13 +78,10 @@ async fn process_dalle_request(
         image_generation::unique_archive_filepath(index, username)
             .map_err(|e| e.to_string())?;
 
-    println!("Unique Archive Filepath: {:?}", file_as_string);
-
     let f = file_as_string
         .to_str()
         .ok_or("error converting archive path to str")?;
 
-    println!("\tAbout to CAll download IMAGE");
     let mut image_data =
         match images::download_image(download_resp.url.clone(), f.to_string())
             .await
@@ -100,7 +97,6 @@ async fn process_dalle_request(
             }
         };
 
-    println!("Dalle Downloaded");
     if let Some(fld) = save_folder.clone().as_ref() {
         let f = format!("./archive/{}/{}.png", fld, unique_identifier);
         let filepath = Path::new(&f);

@@ -2,6 +2,7 @@ use crate::art_blocks;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::stable_diffusion;
+use crate::stable_diffusion::StableDiffusionRequest;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use subd_types::{Event, UserMessage};
