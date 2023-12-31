@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{self, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
 use reqwest;
@@ -10,26 +10,24 @@ use std::io::{self, Read};
 pub async fn download_image(
     url: String,
     download_path: String,
-) -> Result<Vec<u8>, String> {
+) -> Result<Vec<u8>> {
     let client = reqwest::Client::builder()
         .redirect(Policy::default())
         .build()
         .expect("Failed to create client");
 
+    println!("\tCalling Dalle: {}", download_path);
     let image_data = client
         .get(url.clone())
         .send()
-        .await
-        .map_err(|e| e.to_string())?
+        .await?
         .bytes()
-        .await
-        .map_err(|e| e.to_string())?
+        .await?
         .to_vec();
 
-    let _ = File::create(download_path.clone())
-        .map_err(|e| e.to_string())
-        .and_then(|mut f| f.write_all(&image_data).map_err(|e| e.to_string()));
-
+    println!("\tCreating File: {}", download_path);
+    File::create(download_path.clone())
+        .and_then(|mut f| f.write_all(&image_data))?;
     Ok(image_data)
 }
 

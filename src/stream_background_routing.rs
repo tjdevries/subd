@@ -192,12 +192,14 @@ pub async fn handle_stream_background_commands(
             if not_beginbot {
                 return Ok(());
             }
+
             let prompt = splitmsg
                 .iter()
                 .skip(1)
                 .map(AsRef::as_ref)
                 .collect::<Vec<&str>>()
                 .join(" ");
+
             println!("Dalle Time!");
 
             let req = dalle::DalleRequest {

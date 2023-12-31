@@ -27,6 +27,8 @@ use server::themesong;
 use server::user_messages;
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
+use twitch_chat::client::TwitchChat;
+use twitch_chat::handlers::TwitchMessageHandler;
 
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
@@ -545,13 +547,10 @@ async fn main() -> Result<()> {
     let pool = subd_db::get_db_pool().await;
 
     // Turns twitch IRC things into our message events
-    event_loop.push(twitch_chat::TwitchChat::new(
-        pool.clone(),
-        "teej_dv".to_string(),
-    )?);
+    event_loop.push(TwitchChat::new(pool.clone(), "teej_dv".to_string())?);
 
     // Does stuff with twitch messages
-    event_loop.push(twitch_chat::TwitchMessageHandler::new(
+    event_loop.push(TwitchMessageHandler::new(
         pool.clone(),
         twitch_service::Service::new(
             pool.clone(),

@@ -1,12 +1,8 @@
 use crate::image_generation;
 use crate::images;
-use anyhow::Result;
-use base64::decode;
-use base64::{engine::general_purpose, Engine as _};
-use chrono::Utc;
+use anyhow::{anyhow, Result};
 use core::pin::Pin;
 use reqwest;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::env;
@@ -18,10 +14,15 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
+pub struct DalleRequest {
+    pub prompt: String,
+    pub username: String,
+    pub amount: i32,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct ImageResponse {
     created: Option<i64>,
-    // created: i64,
     data: Vec<ImageData>,
 }
 
@@ -29,16 +30,6 @@ struct ImageResponse {
 struct ImageData {
     url: String,
 }
-
-// ===========================================
-
-pub struct DalleRequest {
-    pub prompt: String,
-    pub username: String,
-    pub amount: i32,
-}
-
-// =========================================
 
 impl image_generation::GenerateImage for DalleRequest {
     fn generate_image(
@@ -51,7 +42,7 @@ impl image_generation::GenerateImage for DalleRequest {
         let res = async move {
             if let Ok(response) = dalle_request(prompt.clone()).await {
                 for (index, download_resp) in response.data.iter().enumerate() {
-                    match process_dalle_request(
+                    if let Err(e) = process_dalle_request(
                         prompt.clone(),
                         self.username.clone(),
                         index,
@@ -61,10 +52,7 @@ impl image_generation::GenerateImage for DalleRequest {
                     )
                     .await
                     {
-                        Ok(_) => todo!(),
-                        Err(e) => {
-                            eprintln!("Error processing Dalle Request: {}", e);
-                        }
+                        eprintln!("Error processing Dalle Request: {}", e);
                     };
                 }
             }
@@ -76,42 +64,6 @@ impl image_generation::GenerateImage for DalleRequest {
     }
 }
 
-// =========================================
-
-async fn dalle_request(prompt: String) -> Result<ImageResponse, String> {
-    let api_key = env::var("OPENAI_API_KEY").map_err(|e| e.to_string())?;
-
-    let client = reqwest::Client::new();
-
-    // TODO: read from the database
-    let size = "1024x1024";
-    // let size = "1280x720";
-    // 1280 pixels wide by 720
-    let model = "dall-e-3";
-
-    println!("\n\tCalling to DAlle w/ {}", prompt.clone());
-    let req = client
-        .post("https://api.openai.com/v1/images/generations")
-        .header("Content-Type", "application/json")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .json(&serde_json::json!({
-            "prompt": prompt,
-            "n": 1,
-            "model": model,
-            "size": size,
-        }))
-        .send();
-
-    let response = req.await.map_err(|e| e.to_string())?;
-
-    let dalle_response_text =
-        response.text().await.map_err(|e| e.to_string())?;
-
-    let image_response: Result<ImageResponse, String> =
-        serde_json::from_str(&dalle_response_text).map_err(|e| e.to_string());
-    image_response
-}
-
 async fn process_dalle_request(
     prompt: String,
     username: String,
@@ -120,32 +72,37 @@ async fn process_dalle_request(
     save_folder: Option<String>,
     set_as_obs_bg: bool,
 ) -> Result<String, String> {
-    println!(
-        "Processing Dalle Request:: {} | ",
-        download_resp.url.clone()
-    );
+    println!("\nProcessing Dalle Request\n{}", download_resp.url.clone());
 
     let (file_as_string, unique_identifier) =
         image_generation::unique_archive_filepath(index, username)
             .map_err(|e| e.to_string())?;
 
+    println!("Unique Archive Filepath: {:?}", file_as_string);
+
     let f = file_as_string
         .to_str()
         .ok_or("error converting archive path to str")?;
 
+    println!("\tAbout to CAll download IMAGE");
     let mut image_data =
         match images::download_image(download_resp.url.clone(), f.to_string())
             .await
         {
             Ok(val) => val,
             Err(e) => {
-                eprintln!("\nError downloading image: {}", e);
-                return Err(e.to_string());
+                let error = format!(
+                    "\nError downloading image to {} : {}",
+                    f.to_string(),
+                    e
+                );
+                return Err(error);
             }
         };
 
+    println!("Dalle Downloaded");
     if let Some(fld) = save_folder.clone().as_ref() {
-        let f = format!("./subd/archive/{}/{}.png", fld, unique_identifier);
+        let f = format!("./archive/{}/{}.png", fld, unique_identifier);
         let filepath = Path::new(&f);
         let pathbuf = PathBuf::from(filepath);
         let file = fs::canonicalize(pathbuf).map_err(|e| e.to_string())?;
@@ -172,4 +129,37 @@ async fn process_dalle_request(
         let _ = writeln!(f, "{},{}", unique_identifier, prompt);
     }
     Ok("".to_string())
+}
+
+async fn dalle_request(prompt: String) -> Result<ImageResponse> {
+    // let api_key = env::var("OPENAI_API_KEY").map_err(|e| anyhow(e.to_string()))?;
+    let api_key = env::var("OPENAI_API_KEY")?;
+
+    let client = reqwest::Client::new();
+
+    // TODO: read from the database
+    let size = "1024x1024";
+    // let size = "1280x720";
+    // 1280 pixels wide by 720
+    let model = "dall-e-3";
+
+    println!("\n\tCalling to Dalle w/ {}", prompt.clone());
+    let req = client
+        .post("https://api.openai.com/v1/images/generations")
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&serde_json::json!({
+            "prompt": prompt,
+            "n": 1,
+            "model": model,
+            "size": size,
+        }))
+        .send();
+
+    let response = req.await?;
+
+    let dalle_response_text = response.text().await?;
+
+    serde_json::from_str(&dalle_response_text)
+        .map_err(|e| anyhow!("Couldn't Parse Dalle response: {}", e))
 }

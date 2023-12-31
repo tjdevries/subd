@@ -4,10 +4,6 @@ default:
 good:
 	RUSTFLAGS=-Awarnings cargo build --bin begin
 
-
-	# cargo build
-	# cargo check
-
 test:
 	cargo test
 
