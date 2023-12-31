@@ -1,9 +1,10 @@
 use crate::audio;
 use crate::dalle;
-use crate::dalle::GenerateImage;
+use crate::image_generation::GenerateImage;
 use crate::obs;
 use crate::obs_scenes;
 use crate::redirect;
+use crate::stable_diffusion;
 use crate::stream_character;
 use crate::twitch_stream_state;
 use anyhow::Result;
@@ -294,8 +295,8 @@ impl EventHandler for AiScenesHandler {
 
                     if stable_diffusion_enabled {
                         println!("Attempting to Generate Stable Diffusion");
-                        let request: dalle::StableDiffusionRequest =
-                            dalle::StableDiffusionRequest {
+                        let request: stable_diffusion::StableDiffusionRequest =
+                            stable_diffusion::StableDiffusionRequest {
                                 prompt: dalle_prompt.clone(),
                                 username: msg.username.clone(),
                                 amount: 1,

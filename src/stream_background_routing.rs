@@ -1,6 +1,7 @@
 use crate::art_blocks;
 use crate::dalle;
-use crate::dalle::GenerateImage;
+use crate::image_generation::GenerateImage;
+use crate::stable_diffusion;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use subd_types::{Event, UserMessage};
@@ -177,7 +178,7 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
 
-            let req = dalle::StableDiffusionRequest {
+            let req = stable_diffusion::StableDiffusionRequest {
                 prompt: prompt.clone(),
                 username: msg.user_name,
                 amount: 1,

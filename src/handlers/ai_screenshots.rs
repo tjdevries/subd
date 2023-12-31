@@ -1,6 +1,7 @@
 use crate::dalle;
 use crate::obs_scenes;
 use crate::obs_source;
+use crate::stable_diffusion;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -180,7 +181,7 @@ async fn screenshot_routing(
         .await?
     } else {
         println!("\n\tSD: NEW BEGIN: {}", prompt);
-        let req = dalle::StableDiffusionRequest {
+        let req = stable_diffusion::StableDiffusionRequest {
             prompt: prompt.clone(),
             username: "beginbot".to_string(),
             amount: 1,

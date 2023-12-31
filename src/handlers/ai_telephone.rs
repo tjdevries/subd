@@ -1,4 +1,5 @@
 use crate::dalle;
+use crate::stable_diffusion;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -96,7 +97,7 @@ pub async fn handle_telephone_requests(
             return Ok(());
         }
         "!carlphone" => {
-            let req = dalle::StableDiffusionRequest {
+            let req = stable_diffusion::StableDiffusionRequest {
                 username: "beginbot".to_string(),
                 prompt: prompt.clone(),
                 amount: 1,

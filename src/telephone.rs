@@ -1,5 +1,5 @@
 use crate::audio;
-use crate::dalle::GenerateImage;
+use crate::image_generation::GenerateImage;
 use crate::images;
 use crate::obs_scenes;
 use crate::obs_source;

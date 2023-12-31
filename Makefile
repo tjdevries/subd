@@ -1,5 +1,10 @@
 default:
 	RUST_BACKTRACE=1 cargo build --bin begin
+	
+good:
+	RUSTFLAGS=-Awarnings cargo build --bin begin
+
+
 	# cargo build
 	# cargo check
 

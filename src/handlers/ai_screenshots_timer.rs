@@ -1,5 +1,5 @@
 use crate::dalle;
-use crate::dalle::GenerateImage;
+use crate::image_generation::GenerateImage;
 use crate::openai;
 use crate::telephone;
 use anyhow::Result;
