@@ -1,4 +1,5 @@
 use crate::dalle;
+use crate::obs;
 use crate::obs_scenes;
 use crate::obs_source;
 use crate::stable_diffusion;
@@ -192,7 +193,7 @@ async fn screenshot_routing(
         .await?
     };
 
-    let source = "NewBeginSource".to_string();
+    let source = obs::NEW_BEGIN_SOURCE.to_string();
     let res =
         obs_source::update_image_source(obs_client, source.clone(), path).await;
     if let Err(e) = res {

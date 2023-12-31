@@ -656,9 +656,13 @@ pub async fn handle_obs_commands(
                 "/home/begin/code/subd/tmp/screenshots/{}",
                 unique_identifier
             );
-            let _ =
+            if let Err(e) =
                 obs_source::save_screenshot(&obs_client, "begin", &filename)
-                    .await;
+                    .await
+            {
+                eprintln!("Error Saving Screenshot: {}", e);
+                return Ok(());
+            };
 
             // WHAT
             if let Ok(res) = openai::ask_gpt_vision2(&filename, None).await {
@@ -957,11 +961,16 @@ pub fn build_chat_move_source_request(
     req.easing_type_index = easing_type_index;
     req.easing_function_index = easing_function_index;
 
-    if req.source == default_source {
-        req.scene = default_scene;
+    let new_begin_source = obs::NEW_BEGIN_SOURCE;
+    let scene = if req.source == "begin" {
+        default_scene
+    } else if req.source == new_begin_source {
+        "AIAssets".to_string()
     } else {
-        req.scene = "Memes".to_string();
+        "Memes".to_string()
     };
+
+    req.scene = scene;
 
     return req;
 }

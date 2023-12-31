@@ -4,6 +4,7 @@ use crate::images;
 use crate::obs_scenes;
 use crate::obs_source;
 use crate::openai;
+use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use obws::requests::custom::source_settings::SlideshowFile;
@@ -41,7 +42,7 @@ pub async fn telephone(
         .generate_image(description, Some(folder.clone()), false)
         .await;
     if dalle_path == "".to_string() {
-        return Err(anyhow::anyhow!("Dalle Path is empty"));
+        return Err(anyhow!("Dalle Path is empty"));
     }
 
     let mut dalle_path_bufs = vec![];
@@ -76,6 +77,34 @@ pub async fn telephone(
 }
 
 // TODO: I don't like the name
+pub async fn create_screenshot_img2img(
+    obs_client: &OBSClient,
+    filename: String,
+    ai_image_req: &impl GenerateImage,
+    prompt: String,
+    source: String,
+    archive_dir: Option<String>,
+) -> Result<String> {
+    let _ =
+        obs_source::save_screenshot(&obs_client, &source, &filename).await?;
+
+    // Do we want to add more???
+    let new_description = format!("{}", prompt);
+
+    let image_path = ai_image_req
+        .generate_image(new_description, archive_dir, false)
+        .await;
+
+    if image_path == "".to_string() {
+        return Err(anyhow!("Image Path is empty"));
+    }
+
+    // It's nice to print it off, to debug
+    println!("Image Path: {}", image_path);
+    Ok(image_path)
+}
+
+// TODO: I don't like the name
 pub async fn create_screenshot_variation(
     _sink: &Sink,
     obs_client: &OBSClient,
@@ -98,16 +127,17 @@ pub async fn create_screenshot_variation(
         prompt, description, prompt
     );
 
-    let dalle_path = ai_image_req
+    let image_path = ai_image_req
         .generate_image(new_description, archive_dir, false)
         .await;
 
-    if dalle_path == "".to_string() {
-        return Err("Dalle Path is empty".to_string());
+    if image_path == "".to_string() {
+        return Err("Image Path is empty".to_string());
     }
 
-    println!("Dalle Path: {}", dalle_path);
-    Ok(dalle_path)
+    // It's nice to print it off, to debug
+    println!("Image Path: {}", image_path);
+    Ok(image_path)
 }
 
 // Read in all files from DIR

@@ -54,24 +54,22 @@ pub async fn update_image_source(
 // This doesn't go here
 pub async fn save_screenshot(
     client: &OBSClient,
-    source_name: &str,
+    source: &str,
     file_path: &str,
 ) -> Result<()> {
     let p = Path::new(file_path);
 
-    client
+    Ok(client
         .sources()
         .save_screenshot(SaveScreenshot {
-            source: &source_name.to_string(),
+            source: &source.to_string(),
             format: "png",
             file_path: p,
             width: None,
             height: None,
             compression_quality: None,
         })
-        .await?;
-
-    Ok(())
+        .await?)
 }
 
 // ================================================== == Scaling Sources

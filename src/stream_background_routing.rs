@@ -1,9 +1,12 @@
 use crate::art_blocks;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
+use crate::obs;
+use crate::obs_source;
 use crate::stable_diffusion;
 use crate::stable_diffusion::StableDiffusionRequest;
 use anyhow::Result;
+use chrono::Utc;
 use obws::Client as OBSClient;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
@@ -167,10 +170,75 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
+        "!bogan" => {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+
+            // This is wierd
+            let filename = format!(
+                // "./tmp/screenshots/timelapse/{}",
+                "/home/begin/code/subd/tmp/screenshots/{}",
+                unique_identifier
+            );
+
+            let source = "begin-base";
+            if let Err(e) =
+                obs_source::save_screenshot(&obs_client, source, &filename)
+                    .await
+            {
+                eprintln!("Error Saving Screenshot: {}", e);
+                return Ok(());
+            };
+            let prompt = splitmsg
+                .iter()
+                .skip(1)
+                .map(AsRef::as_ref)
+                .collect::<Vec<&str>>()
+                .join(" ");
+
+            let prompt = if source == "begin-base" {
+                format!("{}. on a bright chroma key green background", prompt)
+            } else {
+                prompt
+            };
+
+            // If it's begin-base, we need to account for greenscreen
+
+            // let req = stable_diffusion::StableDiffusionImg2ImgRequest {
+            //     prompt: prompt.clone(),
+            //     filename: filename.clone(),
+            //     unique_identifier: unique_identifier.clone(),
+            // };
+
+            let path = stable_diffusion::create_image_variation(
+                prompt,
+                filename,
+                unique_identifier,
+                None,
+                false,
+            )
+            .await?;
+            // We need to finish the code though
+            // let path = req.generate_image(prompt, None, true).await;
+
+            let source = obs::NEW_BEGIN_SOURCE.to_string();
+            let res = obs_source::update_image_source(
+                obs_client,
+                source.clone(),
+                path,
+            )
+            .await;
+            if let Err(e) = res {
+                eprintln!("Error Updating OBS Source: {} - {}", source, e);
+            };
+            Ok(())
+        }
+
         "!picasso" | "!sd" => {
             // if not_beginbot {
             //     return Ok(());
             // }
+            //
             let prompt = splitmsg
                 .iter()
                 .skip(1)

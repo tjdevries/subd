@@ -13,6 +13,7 @@ pub const DEFAULT_SCENE: &str = "Primary";
 pub const MEME_SCENE: &str = "memes";
 
 // Sources
+pub const NEW_BEGIN_SOURCE: &str = "bogan";
 pub const DEFAULT_SOURCE: &str = "begin";
 pub const UBERDUCK_LOADING_SOURCE: &str = "loading_duck";
 

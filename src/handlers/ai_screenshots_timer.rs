@@ -72,11 +72,8 @@ pub async fn handle_ai_screenshots(
 ) -> Result<String, String> {
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
-
-    let filename = format!(
-        "/home/begin/code/subd/tmp/screenshots/timelapse/{}",
-        unique_identifier
-    );
+    let filename =
+        format!("../../tmp/screenshots/timelapse/{}", unique_identifier);
 
     let random_prompt = generate_random_prompt();
     let req = dalle::DalleRequest {
