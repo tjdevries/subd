@@ -167,11 +167,10 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
-        "!picasso" => {
-            if not_beginbot {
-                return Ok(());
-            }
-            println!("Picasso!");
+        "!picasso" | "!sd" => {
+            // if not_beginbot {
+            //     return Ok(());
+            // }
             let prompt = splitmsg
                 .iter()
                 .skip(1)

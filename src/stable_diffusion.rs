@@ -1,7 +1,7 @@
 use crate::image_generation;
 use crate::images;
 use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use base64::decode;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
@@ -36,6 +36,38 @@ struct SDResponseData {
     revised_prompt: String,
 }
 
+async fn generate_and_download_image(
+    prompt: String,
+    save_folder: Option<String>,
+    set_as_obs_bg: bool,
+) -> Result<()> {
+    let username = "beginbot".to_string();
+    let index = 1;
+    let image_data = match download_stable_diffusion(prompt).await {
+        Ok(i) => i,
+        Err(e) => {
+            println!("Error downloading stable diffusion: {}", e);
+            return Err(anyhow!("Error downloading stable diffusion"));
+        }
+    };
+
+    match process_stable_diffusion(
+        username,
+        index,
+        image_data.clone().into(),
+        save_folder,
+        set_as_obs_bg,
+    )
+    .await
+    {
+        Ok(_) => println!("Successfully processed stable diffusion request"),
+        Err(e) => println!("Error processing stable diffusion request: {}", e),
+    }
+
+    // If it fails at this point, whoops, not much we can do
+    Ok(())
+}
+
 impl image_generation::GenerateImage for StableDiffusionRequest {
     fn generate_image(
         &self,
@@ -45,35 +77,13 @@ impl image_generation::GenerateImage for StableDiffusionRequest {
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
         let res = async move {
-            let image_data = match download_stable_diffusion(prompt.clone())
-                .await
-            {
-                Ok(i) => match String::from_utf8(i) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        println!("Error downloading Stable Diffusion: {:?}", e);
-                        return "".to_string();
-                    }
-                },
-                Err(e) => {
-                    eprintln!(
-                        "Error downloading stable diffusion image: {}",
-                        e
-                    );
-                    return "".to_string();
-                }
-            };
+            let _ =
+                generate_and_download_image(prompt, save_folder, set_as_obs_bg)
+                    .await;
 
-            let _ = process_stable_diffusion(
-                "beginbot".to_string(),
-                1,
-                image_data.clone().into(),
-                save_folder,
-                set_as_obs_bg,
-            )
-            .await;
-
-            image_data
+            // We do this because of async traits, they ruined our life
+            // Why do we need to return a string
+            "".to_string()
         };
 
         Box::pin(res)
@@ -86,49 +96,39 @@ async fn process_stable_diffusion(
     image_data: Vec<u8>,
     save_folder: Option<String>,
     set_as_obs_bg: bool,
-) -> Result<String> {
+) -> Result<()> {
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
 
-    println!("Processing Stable Diffusion: {}", unique_identifier);
-    if let Some(fld) = save_folder {
-        let archive_file =
-            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
-        let filepath = Path::new(&archive_file);
-        let pathbuf = PathBuf::from(filepath);
-        if let Err(e) =
-            File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
-        {
-            println!("Error writing to file: {}", e)
-        };
-    }
-
+    println!("Creating Original Archive Image");
+    // This saves the original archive of the image
     let archive_file = format!("./archive/{}.png", unique_identifier);
-    let filepath = Path::new(&archive_file);
-    let pathbuf = PathBuf::from(filepath);
-    if let Err(e) = File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
-    {
-        println!("Error writing to file: {}", e);
+    let _ = File::create(&Path::new(&archive_file))
+        .map(|mut f| f.write_all(&image_data))
+        .with_context(|| format!("Error creating: {}", archive_file))?;
+
+    println!("Creating Extra Archive Image");
+    // This saves an extra copy of the image, into a folder
+    if let Some(fld) = save_folder {
+        let extra_archive_file =
+            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
+        let _ = File::create(&Path::new(&extra_archive_file))
+            .map(|mut f| f.write_all(&image_data))
+            .with_context(|| {
+                format!("Error creating: {}", extra_archive_file)
+            })?;
     }
 
-    if let Ok(mut file) = File::create(pathbuf) {
-        if let Err(e) = file.write_all(&image_data) {
-            eprintln!("Error writing to file: {}", e);
-        }
-    };
-
+    println!("Set OBS BG");
+    // If we write to this file, it's the background of OBS
     if set_as_obs_bg {
-        let filename = format!("./subd/tmp/dalle-{}.png", index);
-        let filepath = Path::new(&filename);
-        let pathbuf = PathBuf::from(filepath);
-        if let Err(e) =
-            File::create(&pathbuf).map(|mut f| f.write_all(&image_data))
-        {
-            eprintln!("Error writing to file: {}", e);
-        };
+        let filename = format!("./tmp/dalle-{}.png", index);
+        let _ = File::create(&Path::new(&filename))
+            .map(|mut f| f.write_all(&image_data))
+            .with_context(|| format!("Error creating: {}", filename))?;
     }
 
-    Ok("".to_string())
+    Ok(())
 }
 
 async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {

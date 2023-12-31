@@ -89,10 +89,8 @@ impl EventHandler for ExplicitSoundHandler {
 
             let sanitized_word = word.to_lowercase();
             let full_name = format!("./MP3s/{}.mp3", sanitized_word);
-            println!("full_name: {}", full_name);
 
             if !mp3s.contains(&full_name) {
-                println!("Didn't Find SFX: {}", full_name);
                 continue;
             };
 
@@ -205,8 +203,6 @@ impl EventHandler for SoundHandler {
                 ..Default::default()
             };
 
-            println!("\n\tcharacter: {:?}", character);
-
             // This is all about how to respond to messages from various types of users
             if msg.roles.is_twitch_staff() {
                 character.voice =
@@ -245,7 +241,6 @@ impl EventHandler for SoundHandler {
                     // write_records_to_csv(&csv_path, &records)?;
                     //
                     // At this point it's brock-sampson
-                    println!("\n\tvoice: {}", voice);
 
                     // The voice here isn't be respected
                     let _ = tx.send(Event::ElevenLabsRequest(

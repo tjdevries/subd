@@ -371,7 +371,6 @@ pub async fn talk_in_voice(
     let seal_text = chop_text(spoken_string.clone());
 
     let voice_text = spoken_string.clone();
-    println!("We trying for the voice: {} - {}", voice, voice_text);
     let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
         voice: Some(voice.to_string()),
         message: seal_text,
@@ -435,7 +434,6 @@ pub async fn build_stream_character(
         };
 
     let character = find_obs_character(&voice);
-    println!("Voice: {:?}", voice);
 
     Ok(StreamCharacter {
         username: username.to_string(),
