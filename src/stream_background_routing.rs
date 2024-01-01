@@ -182,7 +182,7 @@ pub async fn handle_stream_background_commands(
         // - Hide cauldron
         // - Wait for image to complete
         // - Show cauldron
-        // - Play lightnting / thunder
+        // - Play lightning / thunder
         // - Trigger slow rise
 
         // !bogan 0.77 A Description
@@ -192,7 +192,7 @@ pub async fn handle_stream_background_commands(
         "!bogan" => {
             if !is_sub {
                 return Ok(());
-        }
+            }
             // // Old END
             // 1100.0,
             // 500.0,
