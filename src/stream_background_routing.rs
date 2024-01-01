@@ -25,7 +25,7 @@ pub async fn handle_stream_background_commands(
     let _is_mod = msg.roles.is_twitch_mod();
     let _is_vip = msg.roles.is_twitch_vip();
     let is_sub = msg.roles.is_twitch_sub();
-    
+
     let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
@@ -248,7 +248,7 @@ pub async fn handle_stream_background_commands(
             };
 
             println!("Generating Screenshot Variation w/ {}", prompt);
-            let path = stable_diffusion::create_image_variation(
+            let path = stable_diffusion::stable_diffusion_from_image(
                 prompt,
                 filename,
                 unique_identifier,

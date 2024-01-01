@@ -20,7 +20,6 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
-use std::process::Command;
 
 pub struct StableDiffusionImg2ImgRequest {
     pub prompt: String,
@@ -45,6 +44,16 @@ struct SDResponseData {
     revised_prompt: String,
 }
 
+pub enum StableDiffusionRequests {
+    StableDiffusionImg2ImgRequest,
+    StableDiffusionRequest,
+}
+
+enum Img2ImgRequestType {
+    Image(String),
+    Url(String),
+}
+
 impl image_generation::GenerateImage for StableDiffusionImg2ImgRequest {
     fn generate_image(
         &self,
@@ -56,7 +65,7 @@ impl image_generation::GenerateImage for StableDiffusionImg2ImgRequest {
         let res = async move {
             let filename = self.filename.clone();
             let unique_identifier = self.unique_identifier.clone();
-            let _ = create_image_variation(
+            let _ = stable_diffusion_from_image(
                 prompt,
                 filename,
                 unique_identifier,
@@ -83,12 +92,16 @@ impl image_generation::GenerateImage for StableDiffusionRequest {
         set_as_obs_bg: bool,
     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
     {
+        let username = "beginbot".to_string();
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_{}", timestamp, username);
+
         let res = async move {
-            let _ = generate_and_download_image(
+            let _ = stable_diffusion_from_prompt(
+                unique_identifier,
                 prompt,
                 save_folder,
                 set_as_obs_bg,
-                StableDiffusionRequests::StableDiffusionRequest,
             )
             .await;
 
@@ -101,14 +114,7 @@ impl image_generation::GenerateImage for StableDiffusionRequest {
     }
 }
 
-// ============================================================================
-
-pub enum StableDiffusionRequests {
-    StableDiffusionImg2ImgRequest,
-    StableDiffusionRequest,
-}
-
-pub async fn create_image_variation(
+pub async fn stable_diffusion_from_image(
     prompt: String,
     filename: String,
     unique_identifier: String,
@@ -116,26 +122,16 @@ pub async fn create_image_variation(
     set_as_obs_bg: bool,
     strength: Option<f32>,
 ) -> Result<String> {
-    let username = "beginbot".to_string();
-    let index = 1;
-    let (_path, image_data) = match download_stable_diffusion_img2img(
+    let image_data = download_stable_diffusion_img2img(
         prompt,
-        filename,
-        unique_identifier,
+        unique_identifier.clone(),
         strength,
+        Img2ImgRequestType::Image(filename),
     )
-    .await
-    {
-        Ok(i) => i,
-        Err(e) => {
-            println!("Error downloading stable diffusion: {}", e);
-            return Err(anyhow!("Error downloading stable diffusion"));
-        }
-    };
+    .await?;
 
     process_stable_diffusion(
-        username,
-        index,
+        unique_identifier,
         image_data.clone().into(),
         save_folder,
         set_as_obs_bg,
@@ -143,33 +139,19 @@ pub async fn create_image_variation(
     .await
 }
 
-pub async fn generate_and_download_image(
+pub async fn stable_diffusion_from_prompt(
     prompt: String,
+    filename: String,
     save_folder: Option<String>,
     set_as_obs_bg: bool,
-    request_type: StableDiffusionRequests,
 ) -> Result<()> {
-    let url = match request_type {
-        StableDiffusionRequests::StableDiffusionImg2ImgRequest => {
-            env::var("STABLE_DIFFUSION_IMG_URL")?
-        }
-        StableDiffusionRequests::StableDiffusionRequest => {
-            env::var("STABLE_DIFFUSION_URL")?
-        }
-    };
-    let username = "beginbot".to_string();
-    let index = 1;
-    let image_data = match download_stable_diffusion(prompt, url).await {
-        Ok(i) => i,
-        Err(e) => {
-            println!("Error downloading stable diffusion: {}", e);
-            return Err(anyhow!("Error downloading stable diffusion"));
-        }
-    };
+    let url = env::var("STABLE_DIFFUSION_URL")?;
+    let image_data = download_stable_diffusion(prompt, url)
+        .await
+        .with_context(|| "Error downloading stable diffusion")?;
 
     match process_stable_diffusion(
-        username,
-        index,
+        filename,
         image_data.clone().into(),
         save_folder,
         set_as_obs_bg,
@@ -184,104 +166,43 @@ pub async fn generate_and_download_image(
     Ok(())
 }
 
-async fn process_stable_diffusion(
-    username: String,
-    index: usize,
-    image_data: Vec<u8>,
-    save_folder: Option<String>,
-    set_as_obs_bg: bool,
-) -> Result<String> {
-    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-    let unique_identifier = format!("{}_{}_{}", timestamp, index, username);
-
-    println!("Creating Original Archive Image");
-    // This saves the original archive of the image
-    let archive_file = format!("./archive/{}.png", unique_identifier);
-    let _ = File::create(&Path::new(&archive_file))
-        .map(|mut f| f.write_all(&image_data))
-        .with_context(|| format!("Error creating: {}", archive_file))?;
-
-    println!("Creating Extra Archive Image");
-    // This saves an extra copy of the image, into a folder
-    if let Some(fld) = save_folder {
-        let extra_archive_file =
-            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
-        let _ = File::create(&Path::new(&extra_archive_file))
-            .map(|mut f| f.write_all(&image_data))
-            .with_context(|| {
-                format!("Error creating: {}", extra_archive_file)
-            })?;
-    }
-
-    println!("Set OBS BG");
-    // If we write to this file, it's the background of OBS
-    if set_as_obs_bg {
-        let filename = format!("./tmp/dalle-{}.png", index);
-        let _ = File::create(&Path::new(&filename))
-            .map(|mut f| f.write_all(&image_data))
-            .with_context(|| format!("Error creating: {}", filename))?;
-    }
-
-    let string_path = fs::canonicalize(archive_file)?
-        .as_os_str()
-        .to_str()
-        .ok_or(anyhow!("Error converting archive_file to str"))?
-        .to_string();
-    Ok(string_path)
-}
-
 async fn download_stable_diffusion_img2img(
     prompt: String,
-    filename: String,
     unique_identifier: String,
     strength: Option<f32>,
-) -> Result<(String, Vec<u8>)> {
+    request_type: Img2ImgRequestType,
+) -> Result<Vec<u8>> {
+    let default_strength = 0.6;
+    let strength = strength.map_or(default_strength, |s| {
+        if s > 0.1 && s < 1.0 {
+            s
+        } else {
+            default_strength
+        }
+    });
+
+    let form = reqwest::multipart::Form::new()
+        .text("strength", format!("{}", strength))
+        .text("prompt", prompt);
+
+    let form = match request_type {
+        Img2ImgRequestType::Image(filename) => {
+            let (path, buffer) = images::resize_image(
+                unique_identifier.clone(),
+                filename.clone(),
+            )?;
+
+            let p = Part::bytes(buffer)
+                .mime_str("image/png")?
+                .file_name(path.clone());
+            form.part("file", p)
+        }
+        Img2ImgRequestType::Url(url) => form.text("image_url", url),
+    };
+
+    // Call and parse stable
     let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
     let client = Client::new();
-
-    let output_path = format!(
-        "/home/begin/code/subd/tmp/screenshots/resized/{}",
-        unique_identifier
-    );
-    Command::new("convert")
-        .args(&[
-            filename,
-            "-resize".to_string(),
-            "1280x720".to_string(),
-            output_path.clone(),
-        ])
-        .status()
-        .expect("Failed to execute convert");
-
-    let mut file = File::open(output_path.clone())?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-
-    let default_strength = 0.6;
-    let strength = match strength {
-        Some(s) => {
-            if s > 0.1 && s < 1.0 {
-                s
-            } else {
-                default_strength
-            }
-        }
-        None => default_strength,
-    };
-    let p = Part::bytes(buffer)
-        .mime_str("image/png")?
-        .file_name(output_path.clone());
-    let form = reqwest::multipart::Form::new()
-        .part("file", p)
-        .text("prompt", prompt)
-        .text("strength", format!("{}", strength));
-
-    // This one works
-    // let image_url = "https://archives.bulbagarden.net/media/upload/thumb/3/3f/0143Snorlax.png/250px-0143Snorlax.png";
-    // let form = reqwest::multipart::Form::new()
-    //     .text("image_url", image_url)
-    //     .text("prompt", "Cooler, Danker, Hotter");
-
     let res = client
         .post(url)
         .multipart(form)
@@ -298,7 +219,7 @@ async fn download_stable_diffusion_img2img(
     general_purpose::STANDARD
         .decode(base64)
         .map_err(|e| anyhow!(e.to_string()))
-        .and_then(|v| Ok((output_path, v)))
+        .and_then(|v| Ok(v))
 }
 
 async fn download_stable_diffusion(
@@ -312,18 +233,56 @@ async fn download_stable_diffusion(
         .json(&json!({"prompt": prompt}))
         .send();
 
-    // How would we use and_then
     let res = req
         .await?
         .bytes()
         .await
-        .map(|i| serde_json::from_slice::<SDResponse>(&i))??;
+        .map(|i| serde_json::from_slice::<SDResponse>(&i))
+        .with_context(|| {
+            "Couldn't parse Stable Diffusion response into SDResponse"
+        })??;
 
     let base64 = &res.data[0].b64_json;
 
     general_purpose::STANDARD
         .decode(base64)
         .map_err(|e| anyhow!(e.to_string()))
+}
+
+async fn process_stable_diffusion(
+    unique_identifier: String,
+    image_data: Vec<u8>,
+    save_folder: Option<String>,
+    set_as_obs_bg: bool,
+) -> Result<String> {
+    let archive_file = format!("./archive/{}.png", unique_identifier);
+    let _ = File::create(&Path::new(&archive_file))
+        .map(|mut f| f.write_all(&image_data))
+        .with_context(|| format!("Error creating: {}", archive_file))?;
+
+    if let Some(fld) = save_folder {
+        let extra_archive_file =
+            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
+        let _ = File::create(&Path::new(&extra_archive_file))
+            .map(|mut f| f.write_all(&image_data))
+            .with_context(|| {
+                format!("Error creating: {}", extra_archive_file)
+            })?;
+    }
+
+    if set_as_obs_bg {
+        let filename = format!("./tmp/dalle-1.png");
+        let _ = File::create(&Path::new(&filename))
+            .map(|mut f| f.write_all(&image_data))
+            .with_context(|| format!("Error creating: {}", filename))?;
+    }
+
+    let string_path = fs::canonicalize(archive_file)?
+        .as_os_str()
+        .to_str()
+        .ok_or(anyhow!("Error converting archive_file to str"))?
+        .to_string();
+    Ok(string_path)
 }
 
 #[cfg(test)]
@@ -344,17 +303,18 @@ mod tests {
         let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
         let filename = "".to_string();
         let unique_identifier = "".to_string();
-        let (_path, image_data) = download_stable_diffusion_img2img(
+        let image_data = download_stable_diffusion_img2img(
             req.prompt.clone(),
-            filename,
             unique_identifier,
             None,
+            Img2ImgRequestType::Image(filename),
         )
         .await?;
 
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_{}", timestamp, username);
         let _ = process_stable_diffusion(
-            "beginbot".to_string(),
-            1,
+            unique_identifier,
             image_data,
             None,
             false,
