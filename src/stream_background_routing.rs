@@ -192,7 +192,11 @@ pub async fn handle_stream_background_commands(
         "!bogan" => {
             if !is_sub {
                 return Ok(());
-            }
+        }
+            // // Old END
+            // 1100.0,
+            // 500.0,
+            let end_pos = (1958.0, 479.0);
             println!("Sub Time! {}", msg.user_name);
 
             let scene = "AIAssets";
@@ -261,24 +265,11 @@ pub async fn handle_stream_background_commands(
             )
             .await?;
 
-            // Hide the Last Bogan
-            // let _ = move_transition_effects::move_source_in_scene_x_and_y(
-            //     scene,
-            //     source,
-            //     -300.0,
-            //     1100.0,
-            //     0,
-            //     req.easing_function_index,
-            //     req.easing_type_index,
-            //     &obs_client,
-            // )
-            // .await;
-
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 scene,
                 source,
-                1100.0,
-                1100.0,
+                end_pos.0,
+                end_pos.1 + 500.0,
                 0,
                 req.easing_function_index,
                 req.easing_type_index,
@@ -298,23 +289,11 @@ pub async fn handle_stream_background_commands(
             if let Err(e) = res {
                 eprintln!("Error Updating OBS Source: {} - {}", source, e);
             };
-
-            // let _ = move_transition_effects::move_source_in_scene_x_and_y(
-            //     &scene,
-            //     &source,
-            //     -300.0,
-            //     600.0,
-            //     6000,
-            //     req.easing_function_index,
-            //     req.easing_type_index,
-            //     &obs_client,
-            // )
-            // .await;
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 &scene,
                 &source,
-                1100.0,
-                500.0,
+                end_pos.0,
+                end_pos.1,
                 6000,
                 req.easing_function_index,
                 req.easing_type_index,
