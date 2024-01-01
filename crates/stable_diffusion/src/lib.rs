@@ -8,23 +8,6 @@ mod models;
 mod service;
 mod utils;
 
-pub enum RequestType {
-    Img2ImgFile(String),
-    Img2ImgURL(String),
-    Prompt2Img(),
-}
-
-// Filename
-// Unique Identifier
-struct GenerateAndArchiveRequest {
-    prompt: String,
-    unique_identifier: String,
-    request_type: RequestType,
-    set_as_obs_bg: bool,
-    additional_archive_dir: Option<String>,
-    strength: Option<f32>,
-}
-
 // 3 Types of Requests:
 //   Give me an image based on this prompt
 //
@@ -34,7 +17,7 @@ struct GenerateAndArchiveRequest {
 
 pub async fn stable_diffusion_from_image(
     prompt: String,
-    request_type: RequestType,
+    request_type: models::RequestType,
     unique_identifier: String,
     set_as_obs_bg: bool,
     additional_archive_dir: Option<String>,

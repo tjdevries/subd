@@ -1,23 +1,19 @@
-use crate::request;
-use crate::response;
+use crate::models;
 use crate::utils;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest;
-use reqwest::blocking::multipart;
 use reqwest::multipart::Part;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
-use std::io::Read;
 
-// Do we want to resize here
 pub async fn download_stable_diffusion_img2img(
     prompt: String,
     unique_identifier: String,
     strength: Option<f32>,
-    request_type: request::Img2ImgRequestType,
+    models_type: models::RequestType,
 ) -> Result<Vec<u8>> {
     let default_strength = 0.6;
     let strength = strength.map_or(default_strength, |s| {
@@ -32,8 +28,8 @@ pub async fn download_stable_diffusion_img2img(
         .text("strength", format!("{}", strength))
         .text("prompt", prompt);
 
-    let form = match request_type {
-        request::Img2ImgRequestType::Image(filename) => {
+    let form = match models_type {
+        models::RequestType::Img2ImgFile(filename) => {
             let (path, buffer) = utils::resize_image(
                 unique_identifier.clone(),
                 filename.clone(),
@@ -44,7 +40,12 @@ pub async fn download_stable_diffusion_img2img(
                 .file_name(path.clone());
             form.part("file", p)
         }
-        request::Img2ImgRequestType::Url(url) => form.text("image_url", url),
+        models::RequestType::Img2ImgURL(url) => form.text("image_url", url),
+
+        // we can't handle the prompt with our current setup
+        models::RequestType::Prompt2Img() => {
+            return Err(anyhow!("Img2Img not implemented"));
+        }
     };
 
     // Call and parse stable
@@ -58,7 +59,7 @@ pub async fn download_stable_diffusion_img2img(
         .bytes()
         .await?;
 
-    let b = serde_json::from_slice::<response::SDResponse>(&res)
+    let b = serde_json::from_slice::<models::SDResponse>(&res)
         .with_context(|| format!("Erroring Parsing Dalle img2img"))?;
 
     let base64 = &b.data[0].b64_json;
@@ -82,7 +83,7 @@ pub async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {
         .await?
         .bytes()
         .await
-        .map(|i| serde_json::from_slice::<response::SDResponse>(&i))
+        .map(|i| serde_json::from_slice::<models::SDResponse>(&i))
         .with_context(|| {
             "Couldn't parse Stable Diffusion response into SDResponse"
         })??;
@@ -92,45 +93,4 @@ pub async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {
     general_purpose::STANDARD
         .decode(base64)
         .map_err(|e| anyhow!(e.to_string()))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use chrono::Utc;
-
-    #[tokio::test]
-    async fn test_stable_d() -> Result<()> {
-        let prompt = "batman".to_string();
-        let username = "beginbot".to_string();
-        let req = request::StableDiffusionRequest {
-            prompt: prompt.clone(),
-            username: username.clone(),
-            amount: -2,
-        };
-
-        let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
-        let filename = "".to_string();
-        let unique_identifier = "".to_string();
-        let image_data = download_stable_diffusion_img2img(
-            req.prompt.clone(),
-            unique_identifier,
-            None,
-            request::Img2ImgRequestType::Image(filename),
-        )
-        .await?;
-        Ok(())
-
-        // This needs to be moved back to libs
-        // let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-        // let unique_identifier = format!("{}_{}", timestamp, username);
-        // let _ = process_stable_diffusion(
-        //     unique_identifier,
-        //     image_data,
-        //     None,
-        //     false,
-        // )
-        // .await;
-        // Ok(())
-    }
 }
