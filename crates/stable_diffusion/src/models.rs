@@ -1,13 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-pub enum RequestType {
-    Img2ImgFile(String),
-    Img2ImgURL(String),
-    Prompt2Img(),
-}
-
-// Filename
-// Unique Identifier
+#[derive(Serialize, Deserialize, Debug, Default)]
 struct GenerateAndArchiveRequest {
     prompt: String,
     unique_identifier: String,
@@ -17,23 +10,18 @@ struct GenerateAndArchiveRequest {
     strength: Option<f32>,
 }
 
-
-pub enum StableDiffusionRequests {
-    StableDiffusionImg2ImgRequest,
-    StableDiffusionRequest,
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub enum RequestType {
+    Img2ImgFile(String),
+    Img2ImgURL(String),
+    
+    #[default]
+    Prompt2Img,
 }
 
-pub struct StableDiffusionImg2ImgRequest {
-    pub prompt: String,
-    pub filename: String,
-    pub unique_identifier: String,
-}
-
-pub struct StableDiffusionRequest {
-    pub prompt: String,
-    pub username: String,
-    pub amount: i32,
-}
+// impl Default for RequestType {
+//     fn default() -> Self { RequestType::Prompt2Img }
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SDResponse {

@@ -43,7 +43,7 @@ pub async fn download_stable_diffusion_img2img(
         models::RequestType::Img2ImgURL(url) => form.text("image_url", url),
 
         // we can't handle the prompt with our current setup
-        models::RequestType::Prompt2Img() => {
+        models::RequestType::Prompt2Img => {
             return Err(anyhow!("Img2Img not implemented"));
         }
     };
