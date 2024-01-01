@@ -12,6 +12,12 @@ mod tests {
     
     #[tokio::test]
     async fn test_process_stable_diffusion() -> Result<()> {
+        let req = models::GenerateAndArchiveRequest {
+            ..Default::default()
+            // prompt: "batman".to_string(),
+            // username: "beginbot".to_string(),
+            // amount: -2,
+        };
        Ok(()) 
     }
 

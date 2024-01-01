@@ -5,33 +5,34 @@ use anyhow::{Context, Result};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest;
 use reqwest::multipart::Part;
+use reqwest::multipart::Form;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
 
-pub async fn download_stable_diffusion_img2img(
-    prompt: String,
-    unique_identifier: String,
-    strength: Option<f32>,
-    models_type: models::RequestType,
+enum RequestDataType {
+    Prompt(String),
+    Img(Form),
+}
+
+pub async fn run_stable_diffusion(
+    request: &models::GenerateAndArchiveRequest,
 ) -> Result<Vec<u8>> {
-    let default_strength = 0.6;
-    let strength = strength.map_or(default_strength, |s| {
-        if s > 0.1 && s < 1.0 {
-            s
-        } else {
-            default_strength
-        }
-    });
+    let form = form_builder(request)?;
+    let request = RequestDataType::Img(form);
+    Ok(call_prompt_api(request).await?)
+}
 
+fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
+    let default_strength = 0.4;
     let form = reqwest::multipart::Form::new()
-        .text("strength", format!("{}", strength))
-        .text("prompt", prompt);
+        .text("strength", format!("{}", request.strength.unwrap_or(default_strength)))
+        .text("prompt", request.prompt.clone());
 
-    let form = match models_type {
+    let form = match &request.request_type {
         models::RequestType::Img2ImgFile(filename) => {
             let (path, buffer) = utils::resize_image(
-                unique_identifier.clone(),
+                request.unique_identifier.clone(),
                 filename.clone(),
             )?;
 
@@ -40,7 +41,7 @@ pub async fn download_stable_diffusion_img2img(
                 .file_name(path.clone());
             form.part("file", p)
         }
-        models::RequestType::Img2ImgURL(url) => form.text("image_url", url),
+        models::RequestType::Img2ImgURL(url) => form.text("image_url", url.clone()),
 
         // we can't handle the prompt with our current setup
         models::RequestType::Prompt2Img => {
@@ -48,38 +49,28 @@ pub async fn download_stable_diffusion_img2img(
         }
     };
 
-    // Call and parse stable
-    let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
-    let client = Client::new();
-    let res = client
-        .post(url)
-        .multipart(form)
-        .send()
-        .await?
-        .bytes()
-        .await?;
-
-    let b = serde_json::from_slice::<models::SDResponse>(&res)
-        .with_context(|| format!("Erroring Parsing Dalle img2img"))?;
-
-    let base64 = &b.data[0].b64_json;
-
-    general_purpose::STANDARD
-        .decode(base64)
-        .map_err(|e| anyhow!(e.to_string()))
-        .and_then(|v| Ok(v))
+    Ok(form)
 }
 
-pub async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {
-    let url = env::var("STABLE_DIFFUSION_URL")?;
-    let client = Client::new();
-    let req = client
-        .post(&url)
-        .header("Content-Type", "application/json")
-        .json(&json!({"prompt": prompt}))
-        .send();
-
+async fn call_prompt_api(request_type: RequestDataType) -> Result<Vec<u8>> {
+    let req = match request_type {
+        RequestDataType::Prompt(prompt) => {
+            let url = env::var("STABLE_DIFFUSION_URL")?;
+            Client::new()
+                .post(url)
+                .header("Content-Type", "application/json")
+                .json(&json!({"prompt": prompt}))
+        }
+        RequestDataType::Img(form) => {
+            let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
+            Client::new()
+                .post(url)
+                .multipart(form)
+        }
+    };
+        
     let res = req
+        .send()
         .await?
         .bytes()
         .await
@@ -87,10 +78,10 @@ pub async fn download_stable_diffusion(prompt: String) -> Result<Vec<u8>> {
         .with_context(|| {
             "Couldn't parse Stable Diffusion response into SDResponse"
         })??;
-
+    
     let base64 = &res.data[0].b64_json;
-
     general_purpose::STANDARD
         .decode(base64)
         .map_err(|e| anyhow!(e.to_string()))
+        .and_then(|v| Ok(v))
 }

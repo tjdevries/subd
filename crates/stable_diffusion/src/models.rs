@@ -1,27 +1,22 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct GenerateAndArchiveRequest {
-    prompt: String,
-    unique_identifier: String,
-    request_type: RequestType,
-    set_as_obs_bg: bool,
-    additional_archive_dir: Option<String>,
-    strength: Option<f32>,
+pub struct GenerateAndArchiveRequest {
+    pub prompt: String,
+    pub unique_identifier: String,
+    pub request_type: RequestType,
+    pub set_as_obs_bg: bool,
+    pub additional_archive_dir: Option<String>,
+    pub strength: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub enum RequestType {
-    Img2ImgFile(String),
-    Img2ImgURL(String),
-    
     #[default]
     Prompt2Img,
+    Img2ImgFile(String),
+    Img2ImgURL(String),
 }
-
-// impl Default for RequestType {
-//     fn default() -> Self { RequestType::Prompt2Img }
-// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SDResponse {

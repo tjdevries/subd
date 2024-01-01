@@ -14,75 +14,37 @@ mod utils;
 //   Give me an image based on this URL that points to an image AND this prompt
 //
 //   Give me an image based on this image data AND a prompt
-
 pub async fn stable_diffusion_from_image(
-    prompt: String,
-    request_type: models::RequestType,
-    unique_identifier: String,
-    set_as_obs_bg: bool,
-    additional_archive_dir: Option<String>,
-    strength: Option<f32>,
+    request: models::GenerateAndArchiveRequest,
 ) -> Result<String> {
-    let image_data = service::download_stable_diffusion_img2img(
-        prompt,
-        unique_identifier.clone(),
-        strength,
-        request_type,
-    )
-    .await?;
-
-    process_stable_diffusion(
-        unique_identifier,
-        image_data.clone().into(),
-        additional_archive_dir,
-        set_as_obs_bg,
-    )
-    .await
+    let image_data = service::run_stable_diffusion(&request)
+        .await?;
+    process_stable_diffusion(image_data, request).await
 }
 
 pub async fn stable_diffusion_from_prompt(
-    prompt: String,
-    filename: String,
-    set_as_obs_bg: bool,
-    additional_archive_dir: Option<String>,
-) -> Result<()> {
-    let image_data = service::download_stable_diffusion(prompt)
-        .await
-        .with_context(|| "Error downloading stable diffusion")?;
-
-    match process_stable_diffusion(
-        filename,
-        image_data.clone().into(),
-        additional_archive_dir,
-        set_as_obs_bg,
-    )
-    .await
-    {
-        Ok(_) => println!("Successfully processed stable diffusion request"),
-        Err(e) => println!("Error processing stable diffusion request: {}", e),
-    }
-
-    // If it fails at this point, whoops, not much we can do
-    Ok(())
+    request: models::GenerateAndArchiveRequest,
+) -> Result<String> {
+    let image_data = service::run_stable_diffusion(&request)
+        .await?;
+    process_stable_diffusion(image_data, request).await
 }
 
 // This handles saving the file
 // ==============================================================
 
 async fn process_stable_diffusion(
-    unique_identifier: String,
     image_data: Vec<u8>,
-    save_folder: Option<String>,
-    set_as_obs_bg: bool,
+    request: models::GenerateAndArchiveRequest,
 ) -> Result<String> {
-    let archive_file = format!("./archive/{}.png", unique_identifier);
+    let archive_file = format!("./archive/{}.png", request.unique_identifier);
     let _ = File::create(&Path::new(&archive_file))
         .map(|mut f| f.write_all(&image_data))
         .with_context(|| format!("Error creating: {}", archive_file))?;
 
-    if let Some(fld) = save_folder {
+    if let Some(fld) = request.additional_archive_dir {
         let extra_archive_file =
-            format!("./archive/{}/{}.png", fld.clone(), unique_identifier);
+            format!("./archive/{}/{}.png", fld.clone(), request.unique_identifier);
         let _ = File::create(&Path::new(&extra_archive_file))
             .map(|mut f| f.write_all(&image_data))
             .with_context(|| {
@@ -90,7 +52,7 @@ async fn process_stable_diffusion(
             })?;
     }
 
-    if set_as_obs_bg {
+    if request.set_as_obs_bg {
         let filename = format!("./tmp/dalle-1.png");
         let _ = File::create(&Path::new(&filename))
             .map(|mut f| f.write_all(&image_data))
