@@ -242,7 +242,10 @@ pub async fn handle_stream_background_commands(
                 .join(" ");
 
             let prompt = if screenshot_source == "begin-base" {
-                format!("{}. on a bright chroma key green background", prompt)
+                format!(
+                    "{}. on a bright chroma key green screen background",
+                    prompt
+                )
             } else {
                 prompt
             };
@@ -259,10 +262,22 @@ pub async fn handle_stream_background_commands(
             .await?;
 
             // Hide the Last Bogan
+            // let _ = move_transition_effects::move_source_in_scene_x_and_y(
+            //     scene,
+            //     source,
+            //     -300.0,
+            //     1100.0,
+            //     0,
+            //     req.easing_function_index,
+            //     req.easing_type_index,
+            //     &obs_client,
+            // )
+            // .await;
+
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 scene,
                 source,
-                -300.0,
+                1100.0,
                 1100.0,
                 0,
                 req.easing_function_index,
@@ -284,11 +299,22 @@ pub async fn handle_stream_background_commands(
                 eprintln!("Error Updating OBS Source: {} - {}", source, e);
             };
 
+            // let _ = move_transition_effects::move_source_in_scene_x_and_y(
+            //     &scene,
+            //     &source,
+            //     -300.0,
+            //     600.0,
+            //     6000,
+            //     req.easing_function_index,
+            //     req.easing_type_index,
+            //     &obs_client,
+            // )
+            // .await;
             let _ = move_transition_effects::move_source_in_scene_x_and_y(
                 &scene,
                 &source,
-                -300.0,
-                600.0,
+                1100.0,
+                500.0,
                 6000,
                 req.easing_function_index,
                 req.easing_type_index,
