@@ -6,6 +6,8 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 
+// TODO: We shouldn't be using warp::Future
+// std::future::Future
 pub trait GenerateImage {
     fn generate_image(
         &self,

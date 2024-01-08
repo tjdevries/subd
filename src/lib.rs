@@ -23,7 +23,7 @@ pub mod redirect;
 pub mod sdf_effects;
 pub mod skybox;
 pub mod skybox_requests;
-pub mod stable_diffusion;
+// pub mod stable_diffusion;
 pub mod stream_background_routing;
 pub mod stream_character;
 pub mod stream_fx;

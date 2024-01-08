@@ -1,8 +1,8 @@
 use crate::dalle;
+use crate::image_generation;
 use crate::obs;
 use crate::obs_scenes;
 use crate::obs_source;
-use crate::stable_diffusion;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -10,6 +10,7 @@ use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
+use stable_diffusion;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
@@ -167,30 +168,39 @@ async fn screenshot_routing(
     prompt: String,
     model: String,
     source: String,
-) -> Result<(), String> {
+) -> Result<()> {
     let path = if model == "dalle" {
         let req = dalle::DalleRequest {
             prompt: prompt.clone(),
             username: "beginbot".to_string(),
             amount: 1,
         };
-
-        println!("\n\tDALLE: NEW BEGIN: {}", prompt);
         telephone::create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source, None,
+            sink,
+            obs_client,
+            filename,
+            telephone::ImageRequestType::Dalle(req),
+            prompt,
+            source,
+            None,
         )
         .await?
     } else {
-        println!("\n\tSD: NEW BEGIN: {}", prompt);
-        let req = stable_diffusion::StableDiffusionRequest {
+        let (_, unique_identifier) = image_generation::unique_archive_filepath(
+            0,
+            "beginbot".to_string(),
+        )?;
+        let req = stable_diffusion::models::GenerateAndArchiveRequest {
             prompt: prompt.clone(),
-            username: "beginbot".to_string(),
-            amount: 1,
+            unique_identifier,
+            request_type: stable_diffusion::models::RequestType::Img2ImgFile(
+                filename,
+            ),
+            set_as_obs_bg: false,
+            additional_archive_dir: None,
+            strength: None,
         };
-        telephone::create_screenshot_variation(
-            sink, obs_client, filename, &req, prompt, source, None,
-        )
-        .await?
+        stable_diffusion::stable_diffusion_from_image(&req).await?
     };
 
     let source = obs::NEW_BEGIN_SOURCE.to_string();

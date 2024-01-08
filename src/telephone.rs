@@ -7,12 +7,21 @@ use crate::openai;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+// use crate::stable_diffusion::models::Generate
+use crate::dalle;
 use obws::requests::custom::source_settings::SlideshowFile;
 use obws::Client as OBSClient;
 use rodio::*;
+use stable_diffusion;
+use stable_diffusion::models;
 use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;
+
+pub enum ImageRequestType {
+    Dalle(dalle::DalleRequest),
+    StableDiffusion(stable_diffusion::models::GenerateAndArchiveRequest),
+}
 
 pub async fn telephone(
     obs_client: &OBSClient,
@@ -20,7 +29,7 @@ pub async fn telephone(
     url: String,
     prompt: String,
     num_connections: u8,
-    ai_image_req: &impl GenerateImage,
+    request_type: &ImageRequestType,
 ) -> Result<String, anyhow::Error> {
     let now: DateTime<Utc> = Utc::now();
     let folder = format!("telephone/{}", now.timestamp());
@@ -38,9 +47,16 @@ pub async fn telephone(
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
 
-    let mut dalle_path = ai_image_req
-        .generate_image(description, Some(folder.clone()), false)
-        .await;
+    let mut dalle_path = match &request_type {
+        ImageRequestType::Dalle(ai_image_req) => {
+            ai_image_req
+                .generate_image(description, Some(folder.clone()), false)
+                .await
+        }
+        ImageRequestType::StableDiffusion(ai_image_req) => {
+            stable_diffusion::stable_diffusion_from_image(ai_image_req).await?
+        }
+    };
     if dalle_path == "".to_string() {
         return Err(anyhow!("Dalle Path is empty"));
     }
@@ -59,12 +75,35 @@ pub async fn telephone(
 
         let prompt = format!("{} {}", description, prompt);
         println!("\n\tSaving Image to: {}", folder.clone());
-        dalle_path = ai_image_req
-            .generate_image(prompt, Some(folder.clone()), false)
-            .await;
-        if dalle_path != "".to_string() {
-            let dp = dalle_path.clone();
-            dalle_path_bufs.push(PathBuf::from(dp))
+
+        match &request_type {
+            ImageRequestType::Dalle(ai_image_req) => {
+                dalle_path = ai_image_req
+                    .generate_image(prompt, Some(folder.clone()), false)
+                    .await;
+                if dalle_path != "".to_string() {
+                    let dp = dalle_path.clone();
+                    dalle_path_bufs.push(PathBuf::from(dp))
+                }
+            }
+            ImageRequestType::StableDiffusion(og_req) => {
+                let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+                let unique_identifier = format!("{}_screenshot.png", timestamp);
+                let req = stable_diffusion::models::GenerateAndArchiveRequest {
+                    prompt: og_req.prompt.clone(),
+                    unique_identifier,
+                    request_type:
+                        stable_diffusion::models::RequestType::Img2ImgFile(
+                            dalle_path,
+                        ),
+                    set_as_obs_bg: false,
+                    additional_archive_dir: Some(folder.clone()),
+                    strength: None,
+                };
+                let new_path =
+                    stable_diffusion::stable_diffusion_from_image(&req).await?;
+                dalle_path = new_path.clone();
+            }
         }
     }
 
@@ -109,30 +148,34 @@ pub async fn create_screenshot_variation(
     _sink: &Sink,
     obs_client: &OBSClient,
     filename: String,
-    ai_image_req: &impl GenerateImage,
+    request_type: ImageRequestType,
     prompt: String,
     source: String,
     archive_dir: Option<String>,
-) -> Result<String, String> {
+) -> Result<String> {
     // let _ = audio::play_sound(&sink).await;
 
     let _ = obs_source::save_screenshot(&obs_client, &source, &filename).await;
 
-    let description = openai::ask_gpt_vision2(&filename, None)
-        .await
-        .map_err(|e| e.to_string())?;
+    let description = openai::ask_gpt_vision2(&filename, None).await?;
 
     let new_description = format!(
         "{} {} . The most important thing to focus on is: {}",
         prompt, description, prompt
     );
 
-    let image_path = ai_image_req
-        .generate_image(new_description, archive_dir, false)
-        .await;
+    let image_path = match request_type {
+        ImageRequestType::Dalle(req) => {
+            req.generate_image(new_description, archive_dir, false)
+                .await
+        }
+        ImageRequestType::StableDiffusion(req) => {
+            stable_diffusion::stable_diffusion_from_prompt(&req).await?
+        }
+    };
 
     if image_path == "".to_string() {
-        return Err("Image Path is empty".to_string());
+        return Err(anyhow!("Image Path is empty"));
     }
 
     // It's nice to print it off, to debug

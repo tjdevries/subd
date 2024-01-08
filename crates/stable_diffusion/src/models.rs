@@ -11,6 +11,15 @@ pub struct GenerateAndArchiveRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+pub struct StableDiffusionRequest {
+    pub prompt: String,
+    pub username: String,
+    pub amount: i32,
+    pub easing_function_index: i32,
+    pub easing_type_index: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum RequestType {
     #[default]
     Prompt2Img,
@@ -28,4 +37,3 @@ pub struct SDResponseData {
     pub b64_json: String,
     pub revised_prompt: String,
 }
-

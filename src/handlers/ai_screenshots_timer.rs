@@ -1,6 +1,4 @@
 use crate::dalle;
-use crate::image_generation::GenerateImage;
-use crate::openai;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -9,11 +7,9 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rand::seq::SliceRandom;
 use rodio::*;
-use std::fs::File;
-use std::io::BufReader;
 use std::thread;
 use std::time;
-use subd_types::{Event, UserMessage};
+use subd_types::Event;
 use tokio;
 use tokio::sync::broadcast;
 use twitch_irc::{
@@ -69,7 +65,7 @@ pub async fn handle_ai_screenshots(
     >,
     _pool: &sqlx::PgPool,
     sink: &Sink,
-) -> Result<String, String> {
+) -> Result<String> {
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
     let filename =
@@ -85,7 +81,7 @@ pub async fn handle_ai_screenshots(
         sink,
         obs_client,
         filename,
-        &req,
+        telephone::ImageRequestType::Dalle(req),
         random_prompt,
         "begin".to_string(),
         Some("timelapse".to_string()),

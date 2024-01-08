@@ -4,8 +4,8 @@ use anyhow::anyhow;
 use anyhow::{Context, Result};
 use base64::{engine::general_purpose, Engine as _};
 use reqwest;
-use reqwest::multipart::Part;
 use reqwest::multipart::Form;
+use reqwest::multipart::Part;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
@@ -26,7 +26,10 @@ pub async fn run_stable_diffusion(
 fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
     let default_strength = 0.4;
     let form = reqwest::multipart::Form::new()
-        .text("strength", format!("{}", request.strength.unwrap_or(default_strength)))
+        .text(
+            "strength",
+            format!("{}", request.strength.unwrap_or(default_strength)),
+        )
         .text("prompt", request.prompt.clone());
 
     let form = match &request.request_type {
@@ -41,7 +44,9 @@ fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
                 .file_name(path.clone());
             form.part("file", p)
         }
-        models::RequestType::Img2ImgURL(url) => form.text("image_url", url.clone()),
+        models::RequestType::Img2ImgURL(url) => {
+            form.text("image_url", url.clone())
+        }
 
         // we can't handle the prompt with our current setup
         models::RequestType::Prompt2Img => {
@@ -63,12 +68,10 @@ async fn call_prompt_api(request_type: RequestDataType) -> Result<Vec<u8>> {
         }
         RequestDataType::Img(form) => {
             let url = env::var("STABLE_DIFFUSION_IMG_URL")?;
-            Client::new()
-                .post(url)
-                .multipart(form)
+            Client::new().post(url).multipart(form)
         }
     };
-        
+
     let res = req
         .send()
         .await?
@@ -78,7 +81,7 @@ async fn call_prompt_api(request_type: RequestDataType) -> Result<Vec<u8>> {
         .with_context(|| {
             "Couldn't parse Stable Diffusion response into SDResponse"
         })??;
-    
+
     let base64 = &res.data[0].b64_json;
     general_purpose::STANDARD
         .decode(base64)

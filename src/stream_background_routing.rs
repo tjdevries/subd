@@ -5,12 +5,17 @@ use crate::move_transition;
 use crate::move_transition_effects;
 use crate::obs;
 use crate::obs_source;
-use crate::stable_diffusion;
-use crate::stable_diffusion::StableDiffusionRequest;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::Utc;
 use obws::Client as OBSClient;
+use stable_diffusion;
+use stable_diffusion::models::GenerateAndArchiveRequest;
+use stable_diffusion::models::RequestType;
+use stable_diffusion::models::RequestType::Img2ImgFile;
+use stable_diffusion::models::StableDiffusionRequest;
+use stable_diffusion::service::run_stable_diffusion;
+use stable_diffusion::stable_diffusion_from_image;
 use std::thread;
 use std::time::Duration;
 use subd_types::{Event, UserMessage};
@@ -177,137 +182,21 @@ pub async fn handle_stream_background_commands(
             Ok(())
         }
 
-        // !move bogan -350 600 9000
-        // - Move current bogan down off screen
-        // - Hide cauldron
-        // - Wait for image to complete
-        // - Show cauldron
-        // - Play lightning / thunder
-        // - Trigger slow rise
-
         // !bogan 0.77 A Description
-
-        // This uses Default strength
+        //
+        // This uses default strength
         // !bogan A Description
         "!bogan" => {
             if !is_sub {
                 return Ok(());
             }
-            // // Old END
-            // 1100.0,
-            // 500.0,
-            let end_pos = (1958.0, 479.0);
-            println!("Sub Time! {}", msg.user_name);
-
-            let scene = "AIAssets";
-            let source = "bogan";
-            let req = move_transition::ChatMoveSourceRequest {
-                ..Default::default()
-            };
-
-            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-            let unique_identifier = format!("{}_screenshot.png", timestamp);
-
-            // TODO: Update this
-            // This is wierd
-            let filename = format!(
-                // "./tmp/screenshots/timelapse/{}",
-                "/home/begin/code/subd/tmp/screenshots/{}",
-                unique_identifier
-            );
-
-            // TODO: Extract this OBS
-            let screenshot_source = "begin-base";
-            if let Err(e) = obs_source::save_screenshot(
-                &obs_client,
-                screenshot_source,
-                &filename,
-            )
-            .await
-            {
-                eprintln!("Error Saving Screenshot: {}", e);
-                return Ok(());
-            };
-            let strength =
-                splitmsg.get(1).ok_or(anyhow!("Nothing to modify!"))?;
-            // is this strength string parseable to a f32?
-            let parsed_strength = strength.parse::<f32>();
-
-            let (prompt_offset, strength) = match parsed_strength {
-                Ok(f) => (2, Some(f)),
-                Err(_) => (1, None),
-            };
-
-            let prompt = splitmsg
-                .iter()
-                .skip(prompt_offset)
-                .map(AsRef::as_ref)
-                .collect::<Vec<&str>>()
-                .join(" ");
-
-            let prompt = if screenshot_source == "begin-base" {
-                format!(
-                    "{}. on a bright chroma key green screen background",
-                    prompt
-                )
-            } else {
-                prompt
-            };
-
-            println!("Generating Screenshot Variation w/ {}", prompt);
-            let path = stable_diffusion::stable_diffusion_from_image(
-                prompt,
-                filename,
-                unique_identifier,
-                None,
-                false,
-                strength,
-            )
-            .await?;
-
-            let _ = move_transition_effects::move_source_in_scene_x_and_y(
-                scene,
-                source,
-                end_pos.0,
-                end_pos.1 + 500.0,
-                0,
-                req.easing_function_index,
-                req.easing_type_index,
-                &obs_client,
-            )
-            .await;
-            // do we need to sleep here?
-            thread::sleep(Duration::from_millis(100));
-
-            let source = obs::NEW_BEGIN_SOURCE.to_string();
-            let res = obs_source::update_image_source(
-                obs_client,
-                source.clone(),
-                path,
-            )
-            .await;
-            if let Err(e) = res {
-                eprintln!("Error Updating OBS Source: {} - {}", source, e);
-            };
-            let _ = move_transition_effects::move_source_in_scene_x_and_y(
-                &scene,
-                &source,
-                end_pos.0,
-                end_pos.1,
-                6000,
-                req.easing_function_index,
-                req.easing_type_index,
-                &obs_client,
-            )
-            .await;
+            if let Err(e) = create_and_show_bogan(obs_client, splitmsg).await {
+                eprintln!("Error Creating Bogan: {}", e);
+            }
             Ok(())
         }
 
         "!picasso" | "!sd" => {
-            // if not_beginbot {
-            //     return Ok(());
-            // }
-            //
             let prompt = splitmsg
                 .iter()
                 .skip(1)
@@ -315,13 +204,17 @@ pub async fn handle_stream_background_commands(
                 .collect::<Vec<&str>>()
                 .join(" ");
 
-            let req = stable_diffusion::StableDiffusionRequest {
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+            let unique_identifier = format!("{}_screenshot.png", timestamp);
+            let req = GenerateAndArchiveRequest {
                 prompt: prompt.clone(),
-                username: msg.user_name,
-                amount: 1,
+                unique_identifier,
+                request_type: RequestType::Prompt2Img,
+                set_as_obs_bg: true,
+                additional_archive_dir: None,
+                strength: None,
             };
-            // We need to finish the code though
-            let _ = req.generate_image(prompt, None, true).await;
+            run_stable_diffusion(&req).await;
             Ok(())
         }
 
@@ -350,4 +243,101 @@ pub async fn handle_stream_background_commands(
         }
         _ => Ok(()),
     }
+}
+
+async fn create_and_show_bogan(
+    obs_client: &OBSClient,
+    splitmsg: Vec<String>,
+) -> Result<()> {
+    let duration = 6000;
+    let easing_function_index = 0;
+    let easing_type_index = 0;
+    let end_pos = (1958.0, 449.0);
+    let scene = "AIAssets";
+    let source = "bogan";
+
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let unique_identifier = format!("{}_screenshot.png", timestamp);
+
+    // TODO: Update this
+    // This is wierd
+    let filename = format!(
+        // "./tmp/screenshots/timelapse/{}",
+        "/home/begin/code/subd/tmp/screenshots/{}",
+        unique_identifier
+    );
+
+    // TODO: Extract this OBS
+    let screenshot_source = "begin-base";
+    if let Err(e) =
+        obs_source::save_screenshot(&obs_client, screenshot_source, &filename)
+            .await
+    {
+        eprintln!("Error Saving Screenshot: {}", e);
+        return Ok(());
+    };
+    let strength = splitmsg.get(1).ok_or(anyhow!("Nothing to modify!"))?;
+    // is this strength string parseable to a f32?
+    let parsed_strength = strength.parse::<f32>();
+
+    let (prompt_offset, strength) = match parsed_strength {
+        Ok(f) => (2, Some(f)),
+        Err(_) => (1, None),
+    };
+
+    let prompt = splitmsg
+        .iter()
+        .skip(prompt_offset)
+        .map(AsRef::as_ref)
+        .collect::<Vec<&str>>()
+        .join(" ");
+
+    let prompt = if screenshot_source == "begin-base" {
+        format!("{}. on a bright chroma key green screen background", prompt)
+    } else {
+        prompt
+    };
+
+    let req = stable_diffusion::models::GenerateAndArchiveRequest {
+        prompt: prompt.clone(),
+        unique_identifier,
+        request_type: Img2ImgFile(filename),
+        set_as_obs_bg: false,
+        additional_archive_dir: None,
+        strength,
+    };
+    println!("Generating Screenshot Variation w/ {}", prompt.clone());
+    let path = stable_diffusion_from_image(&req).await?;
+
+    let _ = move_transition_effects::move_source_in_scene_x_and_y(
+        scene,
+        source,
+        end_pos.0,
+        end_pos.1 + 500.0,
+        0,
+        easing_function_index,
+        easing_type_index,
+        &obs_client,
+    )
+    .await;
+    // do we need to sleep here?
+    thread::sleep(Duration::from_millis(100));
+
+    let source = obs::NEW_BEGIN_SOURCE.to_string();
+    let res =
+        obs_source::update_image_source(obs_client, source.clone(), path).await;
+    if let Err(e) = res {
+        eprintln!("Error Updating OBS Source: {} - {}", source, e);
+    };
+    move_transition_effects::move_source_in_scene_x_and_y(
+        &scene,
+        &source,
+        end_pos.0,
+        end_pos.1,
+        duration,
+        easing_function_index,
+        easing_type_index,
+        &obs_client,
+    )
+    .await
 }

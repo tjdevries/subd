@@ -14,3 +14,4 @@ reqwest = { workspace = true, version = "0.11.11", features = ["stream", "multip
 serde_json.workspace = true
 serde = { workspace = true, version = "1.0", features = ["derive"] }
 tokio.workspace = true
+warp = "0.3.6"

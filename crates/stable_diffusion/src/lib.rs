@@ -4,9 +4,10 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-mod models;
-mod service;
-mod utils;
+
+pub mod models;
+pub mod service;
+pub mod utils;
 
 // 3 Types of Requests:
 //   Give me an image based on this prompt
@@ -15,18 +16,16 @@ mod utils;
 //
 //   Give me an image based on this image data AND a prompt
 pub async fn stable_diffusion_from_image(
-    request: models::GenerateAndArchiveRequest,
+    request: &models::GenerateAndArchiveRequest,
 ) -> Result<String> {
-    let image_data = service::run_stable_diffusion(&request)
-        .await?;
+    let image_data = service::run_stable_diffusion(request).await?;
     process_stable_diffusion(image_data, request).await
 }
 
 pub async fn stable_diffusion_from_prompt(
-    request: models::GenerateAndArchiveRequest,
+    request: &models::GenerateAndArchiveRequest,
 ) -> Result<String> {
-    let image_data = service::run_stable_diffusion(&request)
-        .await?;
+    let image_data = service::run_stable_diffusion(request).await?;
     process_stable_diffusion(image_data, request).await
 }
 
@@ -35,16 +34,19 @@ pub async fn stable_diffusion_from_prompt(
 
 async fn process_stable_diffusion(
     image_data: Vec<u8>,
-    request: models::GenerateAndArchiveRequest,
+    request: &models::GenerateAndArchiveRequest,
 ) -> Result<String> {
     let archive_file = format!("./archive/{}.png", request.unique_identifier);
     let _ = File::create(&Path::new(&archive_file))
         .map(|mut f| f.write_all(&image_data))
         .with_context(|| format!("Error creating: {}", archive_file))?;
 
-    if let Some(fld) = request.additional_archive_dir {
-        let extra_archive_file =
-            format!("./archive/{}/{}.png", fld.clone(), request.unique_identifier);
+    if let Some(fld) = &request.additional_archive_dir {
+        let extra_archive_file = format!(
+            "./archive/{}/{}.png",
+            fld.clone(),
+            request.unique_identifier
+        );
         let _ = File::create(&Path::new(&extra_archive_file))
             .map(|mut f| f.write_all(&image_data))
             .with_context(|| {

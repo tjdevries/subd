@@ -1,11 +1,12 @@
 use crate::dalle;
-use crate::stable_diffusion;
+use crate::image_generation;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
+use stable_diffusion;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;
@@ -97,19 +98,23 @@ pub async fn handle_telephone_requests(
             return Ok(());
         }
         "!carlphone" => {
-            let req = stable_diffusion::StableDiffusionRequest {
-                username: "beginbot".to_string(),
+            let (_, unique_identifier) =
+                image_generation::unique_archive_filepath(0, msg.user_name)?;
+            let req = stable_diffusion::models::GenerateAndArchiveRequest {
                 prompt: prompt.clone(),
-                amount: 1,
+                unique_identifier: unique_identifier.clone(),
+                request_type: stable_diffusion::models::RequestType::Prompt2Img,
+                set_as_obs_bg: true,
+                additional_archive_dir: None,
+                strength: None,
             };
-
             match telephone::telephone(
                 &obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
                 5,
-                &req,
+                &telephone::ImageRequestType::StableDiffusion(req),
             )
             .await
             {
@@ -118,37 +123,6 @@ pub async fn handle_telephone_requests(
                 }
                 Err(e) => {
                     eprintln!("Error Carlphone Prompt: {}", e);
-                    return Ok(());
-                }
-            }
-        }
-
-        "!begin_telephone" => {
-            if not_beginbot {
-                return Ok(());
-            }
-
-            let req = dalle::DalleRequest {
-                prompt: prompt.clone(),
-                username: msg.user_name,
-                amount: 1,
-            };
-
-            match telephone::telephone(
-                &obs_client,
-                sink,
-                image_url.to_string(),
-                prompt.clone(),
-                13,
-                &req,
-            )
-            .await
-            {
-                Ok(_) => {
-                    return Ok(());
-                }
-                Err(e) => {
-                    eprintln!("Error Telephone Prompt: {}", e);
                     return Ok(());
                 }
             }
@@ -167,7 +141,7 @@ pub async fn handle_telephone_requests(
                 image_url.to_string(),
                 prompt.clone(),
                 5,
-                &req,
+                &telephone::ImageRequestType::Dalle(req),
             )
             .await
             {

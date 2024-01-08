@@ -4,7 +4,6 @@ use crate::image_generation::GenerateImage;
 use crate::obs;
 use crate::obs_scenes;
 use crate::redirect;
-use crate::stable_diffusion;
 use crate::stream_character;
 use crate::twitch_stream_state;
 use anyhow::Result;
@@ -17,6 +16,9 @@ use elevenlabs_api::{
 use events::EventHandler;
 use obws::Client as OBSClient;
 use sqlx::types::Uuid;
+use stable_diffusion::models::GenerateAndArchiveRequest;
+use stable_diffusion::models::RequestType;
+use stable_diffusion::service::run_stable_diffusion;
 // use rand::Rng;
 // use subd_types::ElevenLabsRequest;
 use rand::{seq::SliceRandom, thread_rng};
@@ -295,15 +297,21 @@ impl EventHandler for AiScenesHandler {
 
                     if stable_diffusion_enabled {
                         println!("Attempting to Generate Stable Diffusion");
-                        let request: stable_diffusion::StableDiffusionRequest =
-                            stable_diffusion::StableDiffusionRequest {
-                                prompt: dalle_prompt.clone(),
-                                username: msg.username.clone(),
-                                amount: 1,
-                            };
-                        let _ = request
-                            .generate_image(dalle_prompt.clone(), None, true)
-                            .await;
+
+                        // TODO: check is this is the right name for a the file
+                        let timestamp =
+                            Utc::now().format("%Y%m%d%H%M%S").to_string();
+                        let unique_identifier =
+                            format!("{}_screenshot.png", timestamp);
+                        let req = GenerateAndArchiveRequest {
+                            prompt: dalle_prompt.clone(),
+                            unique_identifier,
+                            request_type: RequestType::Prompt2Img,
+                            set_as_obs_bg: true,
+                            additional_archive_dir: None,
+                            strength: None,
+                        };
+                        run_stable_diffusion(&req).await?;
                         println!("Done Generating Stable Diffusion");
                     };
 
