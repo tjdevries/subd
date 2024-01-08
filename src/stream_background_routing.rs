@@ -14,7 +14,7 @@ use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::models::RequestType::Img2ImgFile;
 use stable_diffusion::models::StableDiffusionRequest;
-use stable_diffusion::service::run_stable_diffusion;
+use stable_diffusion::run_from_prompt;
 use stable_diffusion::stable_diffusion_from_image;
 use std::thread;
 use std::time::Duration;
@@ -214,7 +214,9 @@ pub async fn handle_stream_background_commands(
                 additional_archive_dir: None,
                 strength: None,
             };
-            run_stable_diffusion(&req).await;
+            println!("Running Stable D");
+
+            let _ = run_from_prompt(&req).await;
             Ok(())
         }
 

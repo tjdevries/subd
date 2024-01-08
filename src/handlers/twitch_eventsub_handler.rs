@@ -250,7 +250,7 @@ async fn trigger_full_scene(
                     message: content.clone(),
                     voice_text: content.clone(),
                     music_bg: Some(music_bg),
-                    dalle_prompt: Some(prompt),
+                    prompt: Some(prompt),
                     ..Default::default()
                 }));
         }
@@ -262,7 +262,7 @@ async fn trigger_full_scene(
                     message: content.clone(),
                     voice_text: content,
                     music_bg: Some(music_bg),
-                    dalle_prompt: None,
+                    prompt: None,
                     ..Default::default()
                 }));
         }

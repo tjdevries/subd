@@ -1,11 +1,10 @@
 use crate::audio;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
-use crate::obs;
-use crate::obs_scenes;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
@@ -15,25 +14,21 @@ use elevenlabs_api::{
 };
 use events::EventHandler;
 use obws::Client as OBSClient;
+use rand::{seq::SliceRandom, thread_rng};
+use rodio::*;
+use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::service::run_stable_diffusion;
-// use rand::Rng;
-// use subd_types::ElevenLabsRequest;
-use rand::{seq::SliceRandom, thread_rng};
-use rodio::*;
-use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::process::Command;
-use std::{thread, time};
-use subd_types::Event;
-use subd_types::TransformOBSTextRequest;
-use tokio::sync::broadcast;
-// use std::sync::Mutex;
 use std::sync::Arc;
+use subd_types::AiScenesRequest;
+use subd_types::Event;
+use tokio::sync::broadcast;
 use tokio::sync::Mutex;
 use twitch_chat::client::send_message;
 
@@ -101,292 +96,228 @@ pub struct AiScenesHandler {
 impl EventHandler for AiScenesHandler {
     async fn handle(
         self: Box<Self>,
-        tx: broadcast::Sender<Event>,
+        _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         let twitch_client = Arc::new(Mutex::new(self.twitch_client));
         let clone_twitch_client = twitch_client.clone();
         let locked_client = clone_twitch_client.lock().await;
 
-        let obs_client = Arc::new(Mutex::new(self.obs_client));
-        let obs_client_clone = obs_client.clone();
-        let locked_obs_client = obs_client_clone.lock().await;
+        // let obs_client = Arc::new(Mutex::new(self.obs_client));
+        // let obs_client_clone = obs_client.clone();
+        // let locked_obs_client = obs_client_clone.lock().await;
 
         loop {
             let event = rx.recv().await?;
-            let msg = match event {
-                // TODO: rename UberDuckRequest to ElevenLabsRequest
+            let ai_scene_req = match event {
                 Event::AiScenesRequest(msg) => msg,
                 _ => continue,
             };
 
-            let ch = match msg.message.chars().next() {
-                Some(ch) => ch,
-                None => {
-                    continue;
-                }
-            };
-            if ch == '!' || ch == '@' {
-                continue;
-            };
+            let (stable_diffusion_enabled, dalle_enabled) =
+                find_image_modes(self.pool.clone()).await?;
 
-            let pool_clone = self.pool.clone();
-
-            let twitch_state = async {
-                twitch_stream_state::get_twitch_state(&pool_clone).await
-            };
-
-            let is_global_voice_enabled = match twitch_state.await {
-                Ok(state) => state.global_voice,
-                Err(err) => {
-                    eprintln!("Error fetching twitch_stream_state: {:?}", err);
-                    false
-                }
-            };
-            let global_voice = stream_character::get_voice_from_username(
-                &self.pool, "beginbot",
+            let final_voice = determine_voice_to_use(
+                ai_scene_req.username.clone(),
+                ai_scene_req.voice.clone(),
+                self.pool.clone(),
             )
-            .await
-            .unwrap();
+            .await?;
 
-            let user_voice_opt = stream_character::get_voice_from_username(
-                &self.pool,
-                msg.username.clone().as_str(),
-            )
-            .await;
+            let filename = twitch_chat_filename(
+                ai_scene_req.username.clone(),
+                final_voice.clone(),
+            );
 
-            let final_voice = match msg.voice.clone() {
-                Some(voice) => voice,
-                None => {
-                    if is_global_voice_enabled {
-                        global_voice.clone()
-                    } else {
-                        match user_voice_opt {
-                            Ok(user_voice) => user_voice,
-                            Err(_) => global_voice.clone(),
-                        }
-                    }
+            let chat_message =
+                sanitize_chat_message(ai_scene_req.message.clone());
+
+            let local_audio_path = generate_and_save_tts_audio(
+                final_voice.clone(),
+                filename,
+                chat_message,
+                &self.elevenlabs,
+                &ai_scene_req,
+            )?;
+
+            if let Some(music_bg) = ai_scene_req.music_bg {
+                let _ = send_message(&locked_client, music_bg.clone()).await;
+            }
+
+            if let Some(prompt) = ai_scene_req.prompt {
+                if let Err(e) = generate_image(
+                    prompt,
+                    ai_scene_req.username,
+                    stable_diffusion_enabled,
+                    dalle_enabled,
+                )
+                .await
+                {
+                    return Err(anyhow!("Error generating image: {}", e));
                 }
             };
 
-            let filename =
-                twitch_chat_filename(msg.username.clone(), final_voice.clone());
-
-            let chat_message = sanitize_chat_message(msg.message.clone());
-
-            // We keep track if we choose a random name for the user,
-            // so we can inform them on screen
-            let mut is_random = false;
-
-            let voice_data = find_voice_id_by_name(&final_voice.clone());
-            let (voice_id, voice_name) = match voice_data {
-                Some((id, name)) => (id, name),
-                None => {
-                    is_random = true;
-                    find_random_voice()
-                }
-            };
-
-            // The voice here in the TTS body is final
-            let tts_body = TtsBody {
-                model_id: None,
-                text: chat_message,
-                voice_settings: None,
-            };
-            let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
-            let bytes = tts_result.unwrap();
-
-            // w/ Extension
-            let full_filename = format!("{}.wav", filename);
-            let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
-            let mut local_audio_path =
-                format!("{}/{}", tts_folder, full_filename);
-
-            std::fs::write(local_audio_path.clone(), bytes).unwrap();
-
-            if msg.reverb {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
-            }
-
-            match msg.stretch {
-                Some(stretch) => {
-                    local_audio_path =
-                        normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path =
-                        stretch_audio(local_audio_path, stretch).unwrap();
-                }
-                None => {}
-            }
-
-            match msg.pitch {
-                Some(pitch) => {
-                    local_audio_path =
-                        normalize_tts_file(local_audio_path.clone()).unwrap();
-                    local_audio_path =
-                        change_pitch(local_audio_path, pitch).unwrap();
-                }
-                None => {}
-            }
-
-            if final_voice == "evil_pokimane" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    change_pitch(local_audio_path, "-200".to_string()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
-            }
-
-            if final_voice == "satan" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path =
-                    change_pitch(local_audio_path, "-350".to_string()).unwrap();
-                local_audio_path =
-                    add_reverb(local_audio_path.clone()).unwrap();
-            }
-
-            // What is the difference
-            if final_voice == "god" {
-                local_audio_path =
-                    normalize_tts_file(local_audio_path.clone()).unwrap();
-                local_audio_path = add_reverb(local_audio_path).unwrap();
-            }
-
-            // =====================================================
-            // WE just send a mesage to chat, with the mood
-            // and it's optional
+            println!("Image Generated, Playing Audio");
 
             // We are supressing a whole bunch of alsa message
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
-            // This sending a message, makes sure we have the right background music
-            match msg.music_bg {
-                Some(music_bg) => {
-                    let _ =
-                        send_message(&locked_client, music_bg.clone()).await;
-                }
-                None => {}
-            };
-
-            // So here, we need a dalle prompt
-            match msg.dalle_prompt {
-                Some(dalle_prompt) => {
-                    // How can we unpack all on one call
-                    let twitch_state = async {
-                        twitch_stream_state::get_twitch_state(&pool_clone).await
-                    };
-                    let (stable_diffusion_enabled, dalle_enabled) =
-                        match twitch_state.await {
-                            Ok(state) => (
-                                state.enable_stable_diffusion,
-                                state.dalle_mode,
-                            ),
-                            Err(err) => {
-                                eprintln!(
-                                    "Error fetching twitch_stream_state: {:?}",
-                                    err
-                                );
-                                (false, false)
-                            }
-                        };
-
-                    if stable_diffusion_enabled {
-                        println!("Attempting to Generate Stable Diffusion");
-
-                        // TODO: check is this is the right name for a the file
-                        let timestamp =
-                            Utc::now().format("%Y%m%d%H%M%S").to_string();
-                        let unique_identifier =
-                            format!("{}_screenshot.png", timestamp);
-                        let req = GenerateAndArchiveRequest {
-                            prompt: dalle_prompt.clone(),
-                            unique_identifier,
-                            request_type: RequestType::Prompt2Img,
-                            set_as_obs_bg: true,
-                            additional_archive_dir: None,
-                            strength: None,
-                        };
-                        run_stable_diffusion(&req).await?;
-                        println!("Done Generating Stable Diffusion");
-                    };
-
-                    if dalle_enabled {
-                        println!("Attempting to Generate Dalle");
-
-                        let req = dalle::DalleRequest {
-                            prompt: dalle_prompt.clone(),
-                            username: msg.username.clone(),
-                            amount: 1,
-                        };
-                        let _ = req
-                            .generate_image(dalle_prompt.clone(), None, true)
-                            .await;
-                        println!("Done Attempting to Generate Dalle");
-                    };
-
-                    // instead this should just hide Screen and AB-Browser
-                    let _ = obs_scenes::change_scene(
-                        &locked_obs_client,
-                        "art_gallery",
-                    )
-                    .await;
-                }
-                None => {}
-            };
-
             let (_stream, stream_handle) =
                 audio::get_output_stream("pulse").expect("stream handle");
 
-            let onscreen_msg = format!(
-                "{} | g: {} | r: {} | {}",
-                msg.username, is_global_voice_enabled, is_random, voice_name
-            );
-
-            let _ = tx.send(Event::TransformOBSTextRequest(
-                TransformOBSTextRequest {
-                    message: onscreen_msg,
-                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
-                },
-            ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-
-            // sink.set_volume(1.3);
-            sink.set_volume(0.5);
-            match final_voice.as_str() {
-                "melkey" => sink.set_volume(1.0),
-                "beginbot" => sink.set_volume(1.0),
-                "evil_pokimane" => sink.set_volume(1.0),
-                "satan" => sink.set_volume(0.7),
-                "god" => sink.set_volume(0.7),
-                _ => {
-                    sink.set_volume(0.5);
-                }
-            };
-
-            let file = BufReader::new(File::open(local_audio_path).unwrap());
-
-            sink.append(Decoder::new(BufReader::new(file)).unwrap());
+            let _ = set_volume(final_voice, &sink);
+            let file = BufReader::new(File::open(local_audio_path)?);
+            sink.append(Decoder::new(BufReader::new(file))?);
             sink.sleep_until_end();
-
             redirect::restore_stderr(backup);
-
-            // This playsthe text
-            let ten_millis = time::Duration::from_millis(1000);
-            thread::sleep(ten_millis);
-            let _ = tx.send(Event::TransformOBSTextRequest(
-                TransformOBSTextRequest {
-                    message: "".to_string(),
-                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
-                },
-            ));
-            thread::sleep(ten_millis);
         }
     }
+}
+
+async fn find_image_modes(pool: sqlx::PgPool) -> Result<(bool, bool)> {
+    let twitch_state = twitch_stream_state::get_twitch_state(&pool);
+    Ok(match twitch_state.await {
+        Ok(state) => (state.enable_stable_diffusion, state.dalle_mode),
+        Err(err) => {
+            eprintln!("Error fetching twitch_stream_state: {:?}", err);
+            (false, false)
+        }
+    })
+}
+
+fn set_volume(voice: String, sink: &Sink) -> Result<()> {
+    match voice.as_str() {
+        "melkey" => sink.set_volume(1.0),
+        "beginbot" => sink.set_volume(1.0),
+        "evil_pokimane" => sink.set_volume(1.0),
+        "satan" => sink.set_volume(0.7),
+        "god" => sink.set_volume(0.7),
+        _ => {
+            sink.set_volume(0.5);
+        }
+    };
+    Ok(())
+}
+
+fn generate_and_save_tts_audio(
+    voice: String,
+    filename: String,
+    chat_message: String,
+    elevenlabs: &Elevenlabs,
+    ai_scenes_request: &AiScenesRequest,
+) -> Result<String> {
+    let voice_data = find_voice_id_by_name(&voice.clone());
+    let (voice_id, _voice_name) = match voice_data {
+        Some((id, name)) => (id, name),
+        None => find_random_voice(),
+    };
+
+    // The voice here in the TTS body is final
+    let tts_body = TtsBody {
+        model_id: None,
+        text: chat_message,
+        voice_settings: None,
+    };
+    let tts_result = elevenlabs.tts(&tts_body, voice_id);
+    let bytes =
+        tts_result.map_err(|e| anyhow!("Error calling ElevenLabs: {}", e))?;
+
+    // w/ Extension
+    let full_filename = format!("{}.wav", filename);
+    let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
+    let local_audio_path = format!("{}/{}", tts_folder, full_filename);
+    std::fs::write(local_audio_path.clone(), bytes)?;
+
+    add_voice_modifiers(ai_scenes_request, voice, local_audio_path)
+}
+
+fn add_voice_modifiers(
+    req: &AiScenesRequest,
+    voice: String,
+    mut local_audio_path: String,
+) -> Result<String> {
+    if req.reverb {
+        local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+        local_audio_path = add_reverb(local_audio_path.clone())?;
+    }
+
+    match &req.stretch {
+        Some(stretch) => {
+            local_audio_path =
+                normalize_tts_file(local_audio_path.clone()).unwrap();
+            local_audio_path =
+                stretch_audio(local_audio_path, stretch.to_owned())?;
+        }
+        None => {}
+    }
+
+    match &req.pitch {
+        Some(pitch) => {
+            local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+            local_audio_path =
+                change_pitch(local_audio_path, pitch.to_owned())?;
+        }
+        None => {}
+    }
+
+    if voice == "evil_pokimane" {
+        local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+        local_audio_path = change_pitch(local_audio_path, "-200".to_string())?;
+        local_audio_path = add_reverb(local_audio_path.clone())?;
+    }
+
+    if voice == "satan" {
+        local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+        local_audio_path = change_pitch(local_audio_path, "-350".to_string())?;
+        local_audio_path = add_reverb(local_audio_path.clone())?;
+    }
+
+    if voice == "god" {
+        local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+        local_audio_path = add_reverb(local_audio_path)?;
+    }
+
+    return Ok(local_audio_path);
+}
+
+async fn generate_image(
+    prompt: String,
+    username: String,
+    stable_diffusion_enabled: bool,
+    dalle_enabled: bool,
+) -> Result<()> {
+    if stable_diffusion_enabled {
+        println!("Attempting to Generate Stable Diffusion");
+
+        // TODO: check is this is the right name for a the file
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}-{}.png", username, timestamp);
+        let req = GenerateAndArchiveRequest {
+            prompt: prompt.clone(),
+            unique_identifier,
+            request_type: RequestType::Prompt2Img,
+            set_as_obs_bg: true,
+            additional_archive_dir: None,
+            strength: None,
+        };
+        run_stable_diffusion(&req).await?;
+        println!("Done Generating Stable Diffusion");
+    };
+
+    if dalle_enabled {
+        println!("Attempting to Generate Dalle");
+
+        let req = dalle::DalleRequest {
+            prompt: prompt.clone(),
+            username: username.clone(),
+            amount: 1,
+        };
+        let _ = req.generate_image(prompt.clone(), None, true).await;
+    };
+
+    Ok(())
 }
 
 // ============= //
@@ -487,6 +418,38 @@ fn add_reverb(local_audio_path: String) -> Result<String> {
 // ================= //
 // Finding Functions //
 // ================= //
+
+async fn determine_voice_to_use(
+    username: String,
+    voice_override: Option<String>,
+    pool: sqlx::PgPool,
+) -> Result<String> {
+    let twitch_state = twitch_stream_state::get_twitch_state(&pool);
+    let global_voice =
+        stream_character::get_voice_from_username(&pool.clone(), "beginbot")
+            .await?;
+    // If global_voice mode is on, return the clone voice!
+    if let Ok(state) = twitch_state.await {
+        if state.global_voice {
+            return Ok(global_voice);
+        }
+    };
+
+    match voice_override {
+        Some(voice) => return Ok(voice),
+        None => {
+            let user_voice_opt = stream_character::get_voice_from_username(
+                &pool.clone(),
+                username.clone().as_str(),
+            )
+            .await;
+            return Ok(match user_voice_opt {
+                Ok(voice) => voice,
+                Err(_) => global_voice.clone(),
+            });
+        }
+    }
+}
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // We should replace this with an API call

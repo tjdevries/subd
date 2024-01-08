@@ -22,10 +22,10 @@ pub async fn stable_diffusion_from_image(
     process_stable_diffusion(image_data, request).await
 }
 
-pub async fn stable_diffusion_from_prompt(
+pub async fn run_from_prompt(
     request: &models::GenerateAndArchiveRequest,
 ) -> Result<String> {
-    let image_data = service::run_stable_diffusion(request).await?;
+    let image_data = service::run_stable_diffusion_from_prompt(request).await?;
     process_stable_diffusion(image_data, request).await
 }
 

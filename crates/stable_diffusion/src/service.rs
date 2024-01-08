@@ -15,6 +15,13 @@ enum RequestDataType {
     Img(Form),
 }
 
+pub async fn run_stable_diffusion_from_prompt(
+    request: &models::GenerateAndArchiveRequest,
+) -> Result<Vec<u8>> {
+    let request = RequestDataType::Prompt(request.prompt.clone());
+    Ok(call_prompt_api(request).await?)
+}
+
 pub async fn run_stable_diffusion(
     request: &models::GenerateAndArchiveRequest,
 ) -> Result<Vec<u8>> {
@@ -25,12 +32,8 @@ pub async fn run_stable_diffusion(
 
 fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
     let default_strength = 0.4;
-    let form = reqwest::multipart::Form::new()
-        .text(
-            "strength",
-            format!("{}", request.strength.unwrap_or(default_strength)),
-        )
-        .text("prompt", request.prompt.clone());
+    let form =
+        reqwest::multipart::Form::new().text("prompt", request.prompt.clone());
 
     let form = match &request.request_type {
         models::RequestType::Img2ImgFile(filename) => {
@@ -38,20 +41,19 @@ fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
                 request.unique_identifier.clone(),
                 filename.clone(),
             )?;
-
             let p = Part::bytes(buffer)
                 .mime_str("image/png")?
                 .file_name(path.clone());
-            form.part("file", p)
+            form.part("file", p).text(
+                "strength",
+                format!("{}", request.strength.unwrap_or(default_strength)),
+            )
         }
         models::RequestType::Img2ImgURL(url) => {
             form.text("image_url", url.clone())
         }
 
-        // we can't handle the prompt with our current setup
-        models::RequestType::Prompt2Img => {
-            return Err(anyhow!("Img2Img not implemented"));
-        }
+        models::RequestType::Prompt2Img => form,
     };
 
     Ok(form)

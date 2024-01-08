@@ -52,7 +52,7 @@ pub struct AiScenesRequest {
     pub stretch: Option<String>,
     pub source: Option<String>,
     pub music_bg: Option<String>,
-    pub dalle_prompt: Option<String>,
+    pub prompt: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
