@@ -1,7 +1,6 @@
 use crate::art_blocks;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
-use crate::move_transition;
 use crate::move_transition_effects;
 use crate::obs;
 use crate::obs_source;
@@ -13,7 +12,6 @@ use stable_diffusion;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::models::RequestType::Img2ImgFile;
-use stable_diffusion::models::StableDiffusionRequest;
 use stable_diffusion::run_from_prompt;
 use stable_diffusion::stable_diffusion_from_image;
 use std::thread;

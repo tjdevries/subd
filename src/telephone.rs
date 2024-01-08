@@ -1,19 +1,16 @@
 use crate::audio;
+use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::images;
-use crate::obs_scenes;
 use crate::obs_source;
 use crate::openai;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-// use crate::stable_diffusion::models::Generate
-use crate::dalle;
 use obws::requests::custom::source_settings::SlideshowFile;
 use obws::Client as OBSClient;
 use rodio::*;
 use stable_diffusion;
-use stable_diffusion::models;
 use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;

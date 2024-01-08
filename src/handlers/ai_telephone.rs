@@ -77,7 +77,7 @@ pub async fn handle_telephone_requests(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let not_beginbot =
+    let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
     let default = "".to_string();

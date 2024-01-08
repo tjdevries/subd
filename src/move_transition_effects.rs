@@ -156,7 +156,7 @@ pub async fn move_source_with_custom_settings(
 pub async fn customize_wide(
     scene: &str,
     source: &str,
-    x: f32,
+    _x: f32,
     duration: u64,
     easing_function_index: i32,
     easing_type_index: i32,

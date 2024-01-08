@@ -8,7 +8,7 @@ use anyhow::Result;
 use dotenv::dotenv;
 use obws::Client as OBSClient;
 use reqwest::multipart::{Form, Part};
-use reqwest::{Client, Error};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;

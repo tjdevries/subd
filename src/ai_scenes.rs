@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
-use stable_diffusion::service::run_stable_diffusion;
+use stable_diffusion::run_from_prompt;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
@@ -302,7 +302,7 @@ async fn generate_image(
             additional_archive_dir: None,
             strength: None,
         };
-        run_stable_diffusion(&req).await?;
+        run_from_prompt(&req).await?;
         println!("Done Generating Stable Diffusion");
     };
 
@@ -428,21 +428,22 @@ async fn determine_voice_to_use(
     let global_voice =
         stream_character::get_voice_from_username(&pool.clone(), "beginbot")
             .await?;
-    // If global_voice mode is on, return the clone voice!
-    if let Ok(state) = twitch_state.await {
-        if state.global_voice {
-            return Ok(global_voice);
-        }
-    };
 
     match voice_override {
         Some(voice) => return Ok(voice),
         None => {
+            if let Ok(state) = twitch_state.await {
+                if state.global_voice {
+                    return Ok(global_voice);
+                }
+            };
+
             let user_voice_opt = stream_character::get_voice_from_username(
                 &pool.clone(),
                 username.clone().as_str(),
             )
             .await;
+
             return Ok(match user_voice_opt {
                 Ok(voice) => voice,
                 Err(_) => global_voice.clone(),

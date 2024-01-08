@@ -45,7 +45,7 @@ struct Record {
 impl EventHandler for ExplicitSoundHandler {
     async fn handle(
         self: Box<Self>,
-        tx: broadcast::Sender<Event>,
+        _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         // Get all soundeffects loaded up once

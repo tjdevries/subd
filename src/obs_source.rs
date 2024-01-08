@@ -16,11 +16,10 @@ pub async fn update_slideshow_source(
     source: String,
     files: Vec<SlideshowFile<'_>>,
 ) -> Result<()> {
-    let slideshow_settings =
-        obws::requests::custom::source_settings::Slideshow {
-            files: &files,
-            ..Default::default()
-        };
+    let slideshow_settings = Slideshow {
+        files: &files,
+        ..Default::default()
+    };
     let set_settings = SetSettings {
         settings: &slideshow_settings,
         input: &source,
