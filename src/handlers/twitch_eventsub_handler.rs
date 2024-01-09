@@ -18,23 +18,15 @@ use std::env;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
-// use subd_twitch::rewards;
+use subd_twitch::rewards;
 use subd_twitch::rewards::RewardManager;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use twitch_api::helix::HelixClient;
 use twitch_api::twitch_oauth2::UserToken;
-// use subd_twitch::rewards;
-// use std::time::Duration;
-// use tokio::sync::oneshot;
-// use tokio::time::timeout;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-// use crate::music_scenes;
-// use crate::obs_scenes;
-// use std::env;
-// use twitch_chat::send_message;
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,
@@ -131,8 +123,8 @@ impl EventHandler for TwitchEventSubHandler {
             Box::leak(Box::new(twitch_reward_client));
 
         let broadcaster_id = "424038378";
-        let reward_manager =
-            RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
+        // RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
+        let reward_manager = rewards::build_reward_manager().await?;
         let cloneable_reward_manager = Arc::new(reward_manager);
 
         // How do you specify Generic arguments to a function that is being passed to another

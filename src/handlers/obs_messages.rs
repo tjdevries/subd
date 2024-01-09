@@ -22,19 +22,16 @@ use obws::Client as OBSClient;
 use rand::Rng;
 use rodio::*;
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::thread;
 use std::time;
 use subd_twitch::rewards;
 use subd_types::{Event, TransformOBSTextRequest, UserMessage};
 use tokio::sync::broadcast;
-use twitch_api::HelixClient;
 use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use twitch_oauth2::UserToken;
 use uuid::Uuid;
 
 const PRIMARY_CAM_SCENE: &str = "Begin";
@@ -97,34 +94,13 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let twitch_user_access_token =
-                env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
-            let broadcaster_id = env::var("TWITCH_BROADCAST_ID")?;
-
-            let reqwest = reqwest::Client::builder()
-                .redirect(reqwest::redirect::Policy::none())
-                .build()?;
-            let twitch_reward_client: HelixClient<reqwest::Client> =
-                HelixClient::new();
-            let token = UserToken::from_existing(
-                &reqwest,
-                twitch_user_access_token.into(),
-                None,
-                None,
-            )
-            .await?;
-
-            let reward_manager = rewards::RewardManager::new(
-                &twitch_reward_client,
-                &token,
-                &broadcaster_id,
-            );
-
+            let reward_manager = rewards::build_reward_manager().await?;
             match handle_obs_commands(
                 &tx,
                 &self.obs_client,
                 &self.twitch_client,
                 &self.pool,
+                reward_manager,
                 &self.sink,
                 splitmsg,
                 msg,
@@ -141,12 +117,12 @@ impl EventHandler for OBSMessageHandler {
     }
 }
 
-pub async fn handle_obs_commands(
+pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
-    // reward_manager: &rewards::RewardManager<>,
+    reward_manager: rewards::RewardManager<'_, C>,
     _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -171,7 +147,7 @@ pub async fn handle_obs_commands(
             if not_beginbot {
                 return Ok(());
             }
-            let res = flash_sale(pool, twitch_client)
+            let res = flash_sale(reward_manager, pool, twitch_client)
                 .await
                 .map_err(|e| e.to_string());
             return res;
@@ -187,31 +163,6 @@ pub async fn handle_obs_commands(
                 fs::read_to_string(file_path).expect("Can read file");
             let ai_scenes: ai_scenes::AIScenes =
                 serde_json::from_str(&contents).map_err(|e| e.to_string())?;
-
-            // This is need to create Reward Manager
-            let twitch_user_access_token =
-                env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
-            let reqwest = reqwest::Client::builder()
-                .redirect(reqwest::redirect::Policy::none())
-                .build()
-                .map_err(|e| e.to_string())?;
-            let twitch_reward_client: HelixClient<reqwest::Client> =
-                HelixClient::new();
-            let token = UserToken::from_existing(
-                &reqwest,
-                twitch_user_access_token.into(),
-                None,
-                None,
-            )
-            .await
-            .map_err(|e| e.to_string())?;
-
-            let broadcaster_id = "424038378";
-            let reward_manager = rewards::RewardManager::new(
-                &twitch_reward_client,
-                &token,
-                &broadcaster_id,
-            );
 
             // WE could make this more dynamic
             for scene in ai_scenes.scenes {
@@ -1106,65 +1057,12 @@ fn find_random_ai_scene_title() -> Result<String> {
     Ok(random_scene.reward_title.clone())
 }
 
-async fn build_reward_manager<'a>(
-) -> Result<rewards::RewardManager2<'a, reqwest::Client>> {
-    let twitch_user_access_token =
-        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
-    let broadcaster_id: String = env::var("TWITCH_BROADCAST_ID")?;
-
-    let reqwest = reqwest::Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()?;
-    let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
-    let token = UserToken::from_existing(
-        &reqwest,
-        twitch_user_access_token.into(),
-        None,
-        None,
-    )
-    .await?;
-
-    let reward_manager = rewards::RewardManager2::new(
-        twitch_reward_client,
-        token,
-        broadcaster_id,
-    );
-    Ok(reward_manager)
-}
-
-pub async fn flash_sale(
+pub async fn flash_sale<C: twitch_api::HttpClient>(
+    reward_manager: rewards::RewardManager<'_, C>,
     pool: &sqlx::PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 ) -> Result<()> {
     let title = find_random_ai_scene_title()?;
-
-    // let twitch_user_access_token =
-    //     env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
-    // let broadcaster_id =
-    //     env::var("TWITCH_BROADCAST_ID")?;
-    // let reqwest = reqwest::Client::builder()
-    //     .redirect(reqwest::redirect::Policy::none())
-    //     .build()?;
-    // let token = UserToken::from_existing(
-    //     &reqwest,
-    //     twitch_user_access_token.into(),
-    //     None,
-    //     None,
-    // )
-    // .await?;
-    // let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
-    // let reward_manager2 = rewards::RewardManager2::new(
-    //     twitch_reward_client,
-    //     token,
-    //     broadcaster_id,
-    // );
-    // let reward_manager = rewards::RewardManager::new(
-    //     &twitch_reward_client,
-    //     &token,
-    //     &broadcaster_id,
-    // );
-
-    let reward_manager = build_reward_manager().await?;
 
     // This goes in subd-twitch
     // If we don't have a reward for that Thang
