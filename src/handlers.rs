@@ -4,6 +4,7 @@ pub mod ai_telephone;
 pub mod chatgpt_response_handler;
 pub mod music_scenes_handler;
 pub mod obs_messages;
+pub mod reward_handler;
 pub mod skybox;
 pub mod skybox_status;
 pub mod sound_handler;

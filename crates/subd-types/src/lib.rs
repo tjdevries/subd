@@ -114,10 +114,16 @@ pub struct SkyboxRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelRewardRequest {
+    pub msg: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
 
+    ChannelRewardRequest(ChannelRewardRequest),
     ElevenLabsRequest(ElevenLabsRequest),
     AiScenesRequest(AiScenesRequest),
     AiTelephoneRequest(AiTelephoneRequest),

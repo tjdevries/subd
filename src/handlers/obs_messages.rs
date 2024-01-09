@@ -143,16 +143,6 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
     let command = splitmsg[0].as_str();
 
     let _ = match command {
-        "!flash_sale" => {
-            if not_beginbot {
-                return Ok(());
-            }
-            let res = flash_sale(reward_manager, pool, twitch_client)
-                .await
-                .map_err(|e| e.to_string());
-            return res;
-        }
-
         "!bootstrap_rewards" => {
             if not_beginbot {
                 return Ok(());
@@ -846,8 +836,6 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             move_transition_bootstrap::create_soundboard_text(obs_client).await
         }
 
-        "!set_character" => Ok(()),
-
         "!character" => {
             stream_character::create_new_obs_character(source, obs_client)
                 .await
@@ -1041,53 +1029,6 @@ pub fn build_wide_request(
     }
 
     return Ok(req);
-}
-
-fn find_random_ai_scene_title() -> Result<String> {
-    // TODO: Don't hardcode this
-    let file_path = "/home/begin/code/subd/data/AIScenes.json";
-    let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes::AIScenes =
-        serde_json::from_str(&contents.clone())?;
-    let random = {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(0..ai_scenes.scenes.len())
-    };
-    let random_scene = &ai_scenes.scenes[random];
-    Ok(random_scene.reward_title.clone())
-}
-
-pub async fn flash_sale<C: twitch_api::HttpClient>(
-    reward_manager: rewards::RewardManager<'_, C>,
-    pool: &sqlx::PgPool,
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-) -> Result<()> {
-    let title = find_random_ai_scene_title()?;
-
-    // This goes in subd-twitch
-    // If we don't have a reward for that Thang
-    let reward_res =
-        twitch_rewards::find_by_title(&pool, title.to_string()).await?;
-    let flash_cost = 100;
-    let _ = reward_manager
-        .update_reward(reward_res.twitch_id.to_string(), flash_cost)
-        .await;
-
-    let update = twitch_rewards::update_cost(
-        &pool,
-        reward_res.title.to_string(),
-        flash_cost as i32,
-    )
-    .await?;
-
-    println!("Update: {:?}", update);
-    let msg = format!(
-        "Flash Sale! {} - New Low Price! {}",
-        reward_res.title, flash_cost
-    );
-    let _ = send_message(&twitch_client, msg).await;
-
-    Ok(())
 }
 
 #[cfg(test)]

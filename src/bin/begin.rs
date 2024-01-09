@@ -108,6 +108,7 @@ async fn main() -> Result<()> {
             "chat_gpt_response".to_string(),
             "twitch_eventsub".to_string(),
             "dynamic_stream_background".to_string(),
+            "channel_rewards".to_string(),
         ]
     } else {
         args.enable
@@ -274,6 +275,20 @@ async fn main() -> Result<()> {
                         obs_client,
                     },
                 );
+            }
+
+            "channel_rewards" => {
+                let obs_client = server::obs::create_obs_client().await?;
+                let twitch_config = get_chat_config();
+                let (_, twitch_client) = TwitchIRCClient::<
+                    SecureTCPTransport,
+                    StaticLoginCredentials,
+                >::new(twitch_config);
+                event_loop.push(handlers::reward_handler::RewardHandler {
+                    obs_client,
+                    pool: pool.clone(),
+                    twitch_client,
+                });
             }
 
             "skybox" => {
