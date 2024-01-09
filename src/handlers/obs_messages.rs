@@ -97,6 +97,29 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
+            let twitch_user_access_token =
+                env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
+            let broadcaster_id = env::var("TWITCH_BROADCAST_ID")?;
+
+            let reqwest = reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()?;
+            let twitch_reward_client: HelixClient<reqwest::Client> =
+                HelixClient::new();
+            let token = UserToken::from_existing(
+                &reqwest,
+                twitch_user_access_token.into(),
+                None,
+                None,
+            )
+            .await?;
+
+            let reward_manager = rewards::RewardManager::new(
+                &twitch_reward_client,
+                &token,
+                &broadcaster_id,
+            );
+
             match handle_obs_commands(
                 &tx,
                 &self.obs_client,
@@ -123,6 +146,7 @@ pub async fn handle_obs_commands(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
+    // reward_manager: &rewards::RewardManager<>,
     _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -147,7 +171,9 @@ pub async fn handle_obs_commands(
             if not_beginbot {
                 return Ok(());
             }
-            let res = flash_sale(pool, twitch_client).await;
+            let res = flash_sale(pool, twitch_client)
+                .await
+                .map_err(|e| e.to_string());
             return res;
         }
 
@@ -1028,42 +1054,6 @@ fn find_easing_indicies(
     (*easing_type_index, *easing_function_index)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_screenshotting() {
-        let obs_client = obs::create_obs_client().await.unwrap();
-
-        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-        let unique_identifier = format!("{}_screenshot.png", timestamp);
-        let filename = format!(
-            "/home/begin/code/subd/tmp/screenshots/fake/{}",
-            unique_identifier
-        );
-        let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
-            .await;
-    }
-
-    #[test]
-    fn test_chunk_string() {
-        let input = "hello, now";
-        let strs = chunk_string(input, 4);
-        assert_eq!(strs[0], "hello,");
-        assert_eq!(strs[1], " now");
-        assert_eq!(strs.len(), 2);
-    }
-
-    // Now we can test
-    #[test]
-    fn test_easing_index() {
-        let res =
-            find_easing_indicies("ease-in".to_string(), "bounce".to_string());
-        assert_eq!(res, (1, 9));
-    }
-}
-
 pub fn build_wide_request(
     splitmsg: Vec<String>,
     arg_positions: Vec<WideArgPosition>,
@@ -1102,22 +1092,29 @@ pub fn build_wide_request(
     return Ok(req);
 }
 
-pub async fn flash_sale(
-    pool: &sqlx::PgPool,
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-) -> Result<(), String> {
-    let broadcaster_id = "424038378";
+fn find_random_ai_scene_title() -> Result<String> {
+    // TODO: Don't hardcode this
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
-    let twitch_user_access_token =
-        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
-
     let contents = fs::read_to_string(file_path).expect("Can read file");
     let ai_scenes: ai_scenes::AIScenes =
-        serde_json::from_str(&contents.clone()).map_err(|e| e.to_string())?;
+        serde_json::from_str(&contents.clone())?;
+    let random = {
+        let mut rng = rand::thread_rng();
+        rng.gen_range(0..ai_scenes.scenes.len())
+    };
+    let random_scene = &ai_scenes.scenes[random];
+    Ok(random_scene.reward_title.clone())
+}
+
+async fn build_reward_manager<'a>(
+) -> Result<rewards::RewardManager2<'a, reqwest::Client>> {
+    let twitch_user_access_token =
+        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
+    let broadcaster_id: String = env::var("TWITCH_BROADCAST_ID")?;
+
     let reqwest = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .map_err(|e| e.to_string())?;
+        .build()?;
     let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
     let token = UserToken::from_existing(
         &reqwest,
@@ -1125,26 +1122,54 @@ pub async fn flash_sale(
         None,
         None,
     )
-    .await
-    .map_err(|e| e.to_string())?;
-    let reward_manager = rewards::RewardManager::new(
-        &twitch_reward_client,
-        &token,
-        &broadcaster_id,
+    .await?;
+
+    let reward_manager = rewards::RewardManager2::new(
+        twitch_reward_client,
+        token,
+        broadcaster_id,
     );
+    Ok(reward_manager)
+}
 
-    let random = {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(0..ai_scenes.scenes.len())
-    };
-    let random_scene = &ai_scenes.scenes[random];
-    let title = &random_scene.reward_title;
+pub async fn flash_sale(
+    pool: &sqlx::PgPool,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+) -> Result<()> {
+    let title = find_random_ai_scene_title()?;
 
+    // let twitch_user_access_token =
+    //     env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
+    // let broadcaster_id =
+    //     env::var("TWITCH_BROADCAST_ID")?;
+    // let reqwest = reqwest::Client::builder()
+    //     .redirect(reqwest::redirect::Policy::none())
+    //     .build()?;
+    // let token = UserToken::from_existing(
+    //     &reqwest,
+    //     twitch_user_access_token.into(),
+    //     None,
+    //     None,
+    // )
+    // .await?;
+    // let twitch_reward_client: HelixClient<reqwest::Client> = HelixClient::new();
+    // let reward_manager2 = rewards::RewardManager2::new(
+    //     twitch_reward_client,
+    //     token,
+    //     broadcaster_id,
+    // );
+    // let reward_manager = rewards::RewardManager::new(
+    //     &twitch_reward_client,
+    //     &token,
+    //     &broadcaster_id,
+    // );
+
+    let reward_manager = build_reward_manager().await?;
+
+    // This goes in subd-twitch
     // If we don't have a reward for that Thang
-    let reward_res = twitch_rewards::find_by_title(&pool, title.to_string())
-        .await
-        .map_err(|e| e.to_string())?;
-
+    let reward_res =
+        twitch_rewards::find_by_title(&pool, title.to_string()).await?;
     let flash_cost = 100;
     let _ = reward_manager
         .update_reward(reward_res.twitch_id.to_string(), flash_cost)
@@ -1155,11 +1180,9 @@ pub async fn flash_sale(
         reward_res.title.to_string(),
         flash_cost as i32,
     )
-    .await
-    .map_err(|e| e.to_string())?;
+    .await?;
 
     println!("Update: {:?}", update);
-
     let msg = format!(
         "Flash Sale! {} - New Low Price! {}",
         reward_res.title, flash_cost
@@ -1167,4 +1190,40 @@ pub async fn flash_sale(
     let _ = send_message(&twitch_client, msg).await;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_screenshotting() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+
+        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+        let unique_identifier = format!("{}_screenshot.png", timestamp);
+        let filename = format!(
+            "/home/begin/code/subd/tmp/screenshots/fake/{}",
+            unique_identifier
+        );
+        let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
+            .await;
+    }
+
+    #[test]
+    fn test_chunk_string() {
+        let input = "hello, now";
+        let strs = chunk_string(input, 4);
+        assert_eq!(strs[0], "hello,");
+        assert_eq!(strs[1], " now");
+        assert_eq!(strs.len(), 2);
+    }
+
+    // Now we can test
+    #[test]
+    fn test_easing_index() {
+        let res =
+            find_easing_indicies("ease-in".to_string(), "bounce".to_string());
+        assert_eq!(res, (1, 9));
+    }
 }
