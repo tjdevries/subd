@@ -13,6 +13,7 @@ pub mod move_transition_effects;
 pub mod music_scenes;
 pub mod obs;
 pub mod obs_combo;
+pub mod obs_filters;
 pub mod obs_hotkeys;
 pub mod obs_scenes;
 pub mod obs_source;

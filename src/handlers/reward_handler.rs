@@ -15,6 +15,7 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use uuid::Uuid;
 
 pub struct RewardHandler {
     pub obs_client: OBSClient,
@@ -82,7 +83,37 @@ async fn route_messages<C: twitch_api::HttpClient>(
             if not_beginbot {
                 return Ok(());
             }
-            let _ = flash_sale(reward_manager, pool, twitch_client).await?;
+            let ai_scenes = current_ai_scenes()?;
+            let title = find_random_ai_scene_title(ai_scenes)?;
+            let _ =
+                flash_sale(title, reward_manager, pool, twitch_client).await?;
+        }
+
+        "!bootstrap_rewards" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            let ai_scenes = current_ai_scenes()?;
+            for scene in ai_scenes.scenes {
+                let cost = scene.cost * 10;
+                let res = reward_manager
+                    .create_reward(&scene.reward_title, cost)
+                    .await?;
+
+                let reward_id = res.as_str();
+                let reward_id = Uuid::parse_str(reward_id)?;
+
+                let _ = twitch_rewards::save_twitch_rewards(
+                    &pool.clone(),
+                    scene.reward_title,
+                    cost,
+                    reward_id,
+                    true,
+                )
+                .await;
+            }
+
+            return Ok(());
         }
         _ => {}
     }
@@ -90,12 +121,11 @@ async fn route_messages<C: twitch_api::HttpClient>(
 }
 
 pub async fn flash_sale<C: twitch_api::HttpClient>(
+    title: String,
     reward_manager: &rewards::RewardManager<'_, C>,
     pool: &sqlx::PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 ) -> Result<()> {
-    let title = find_random_ai_scene_title()?;
-
     // This goes in subd-twitch
     // If we don't have a reward for that Thang
     let reward_res =
@@ -122,16 +152,22 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
     Ok(())
 }
 
-fn find_random_ai_scene_title() -> Result<String> {
-    // TODO: Don't hardcode this
-    let file_path = "/home/begin/code/subd/data/AIScenes.json";
-    let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes::AIScenes =
-        serde_json::from_str(&contents.clone())?;
+fn find_random_ai_scene_title(
+    ai_scenes: ai_scenes::AIScenes,
+) -> Result<String> {
     let random = {
         let mut rng = rand::thread_rng();
         rng.gen_range(0..ai_scenes.scenes.len())
     };
     let random_scene = &ai_scenes.scenes[random];
     Ok(random_scene.reward_title.clone())
+}
+
+// TODO: Don't hardcode this
+fn current_ai_scenes() -> Result<ai_scenes::AIScenes> {
+    let file_path = "/home/begin/code/subd/data/AIScenes.json";
+    let contents = fs::read_to_string(file_path)?;
+    let ai_scenes: ai_scenes::AIScenes =
+        serde_json::from_str(&contents.clone())?;
+    Ok(ai_scenes)
 }

@@ -1,53 +1,29 @@
-use crate::ai_scenes;
 use crate::bootstrap;
 use crate::move_transition;
-use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
 use crate::obs;
-use crate::obs_combo;
-use crate::obs_hotkeys;
 use crate::obs_scenes;
-use crate::obs_source;
-use crate::openai;
-use crate::sdf_effects;
-use crate::stream_character;
-use crate::twitch_rewards;
-use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::Utc;
 use events::EventHandler;
 use obws;
 use obws::Client as OBSClient;
-use rand::Rng;
 use rodio::*;
 use std::collections::HashMap;
-use std::fs;
-use std::thread;
-use std::time;
 use subd_twitch::rewards;
-use subd_types::{Event, TransformOBSTextRequest, UserMessage};
+use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
-use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use uuid::Uuid;
 
 const PRIMARY_CAM_SCENE: &str = "Begin";
-const _DEFAULT_DURATION: u32 = 9001;
 
 pub enum WideArgPosition {
     Source(String),
     X(f32),
     Duration(u64),
 }
-
-// pub enum WideRequestPosition {
-//     Source(String),
-//     X(f32),
-//     Duration(u64),
-// }
 
 pub enum ChatArgPosition {
     Source(String),
@@ -94,13 +70,11 @@ impl EventHandler for OBSMessageHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let reward_manager = rewards::build_reward_manager().await?;
             match handle_obs_commands(
                 &tx,
                 &self.obs_client,
                 &self.twitch_client,
                 &self.pool,
-                reward_manager,
                 &self.sink,
                 splitmsg,
                 msg,
@@ -117,82 +91,36 @@ impl EventHandler for OBSMessageHandler {
     }
 }
 
-pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
-    tx: &broadcast::Sender<Event>,
+pub async fn handle_obs_commands(
+    _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    pool: &sqlx::PgPool,
-    reward_manager: rewards::RewardManager<'_, C>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
+    _pool: &sqlx::PgPool,
     _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
-) -> Result<(), String> {
+) -> Result<()> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
-    let not_beginbot =
+    let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let duration: u32 = splitmsg
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
-
-    let scene = match obs_scenes::find_scene(source).await {
-        Ok(scene) => scene.to_string(),
-        Err(_) => obs::MEME_SCENE.to_string(),
-    };
-
+    let _scene = obs_scenes::find_scene(source)
+        .await
+        .unwrap_or(obs::MEME_SCENE.to_string());
     let command = splitmsg[0].as_str();
 
     let _ = match command {
-        "!bootstrap_rewards" => {
-            if not_beginbot {
-                return Ok(());
-            }
-
-            let file_path = "/home/begin/code/subd/data/AIScenes.json";
-            let contents =
-                fs::read_to_string(file_path).expect("Can read file");
-            let ai_scenes: ai_scenes::AIScenes =
-                serde_json::from_str(&contents).map_err(|e| e.to_string())?;
-
-            // WE could make this more dynamic
-            for scene in ai_scenes.scenes {
-                if scene.reward_title == "Comedy Trailer" {
-                    let cost = scene.cost * 10;
-                    let res = reward_manager
-                        .create_reward(&scene.reward_title, cost)
-                        .await
-                        .map_err(|e| e.to_string())?;
-
-                    let reward_id = res.as_str();
-                    let reward_id = Uuid::parse_str(reward_id)
-                        .map_err(|e| e.to_string())?;
-
-                    let _ = twitch_rewards::save_twitch_rewards(
-                        &pool.clone(),
-                        scene.reward_title,
-                        cost,
-                        reward_id,
-                        true,
-                    )
-                    .await;
-                }
-            }
-
-            return Ok(());
-        }
-
-        // =================== //
-        // === Experiments === //
-        // =================== //
         // !wide SOURCE WIDTH DURATION
         "!wide" => {
             let meat_of_message = splitmsg[1..].to_vec();
-            let arg_positions = vec![
-                WideArgPosition::Source("beginbot".to_string()),
-                WideArgPosition::X(500.0),
-                WideArgPosition::Duration(3000),
-            ];
-            let req = build_wide_request(meat_of_message, arg_positions)?;
+            let arg_positions = default_wide_args();
+            let req = build_wide_request(meat_of_message, &arg_positions)?;
             let filter_value = 300.0;
             let filter_name = "3D-Transform-Orthographic";
             let filter_setting_name = "Scale.X";
@@ -207,72 +135,6 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             .await;
 
             return Ok(());
-        }
-
-        "!normal" => {
-            println!("Normal TIME!");
-
-            // We need ways of duplicated settings
-            let filter_name = "Default_3D-Transform-Perspective";
-            let filter_enabled = obws::requests::filters::SetEnabled {
-                // TODO: Find the const
-                source: "begin",
-                filter: &filter_name,
-                enabled: true,
-            };
-            obs_client
-                .filters()
-                .set_enabled(filter_enabled)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            let filter_name = "Default_3D-Transform-Orthographic";
-            let filter_enabled = obws::requests::filters::SetEnabled {
-                source: "begin",
-                filter: &filter_name,
-                enabled: true,
-            };
-            obs_client
-                .filters()
-                .set_enabled(filter_enabled)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            let filter_name = "Default_3D-Transform-CornerPin";
-            let filter_enabled = obws::requests::filters::SetEnabled {
-                source: "begin",
-                filter: &filter_name,
-                enabled: true,
-            };
-            obs_client
-                .filters()
-                .set_enabled(filter_enabled)
-                .await
-                .map_err(|e| e.to_string())?;
-
-            Ok(())
-        }
-
-        // This is a demonstration of updating a single Setting
-        // We need to make sure it works going back forth for updating multi-effects
-        "!nerd3" => {
-            println!("Nerd TIME!");
-
-            let source = "begin";
-            let filter_name = "3D-Transform-Perspective";
-            let duration = 5000;
-            let filter_setting_name = "Rotation.X";
-            let filter_value = -45.0;
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
-                source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                duration,
-                obs_client,
-            )
-            .await;
-            Ok(())
         }
 
         "!nerd" => {
@@ -348,161 +210,14 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             Ok(())
         }
 
-        // ======================== //
-        // === Rapper Functions === //
-        // ======================== //
-        "!reload_rapper" => {
-            let source = "SpeechBubble";
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                source,
-                false,
-                &obs_client,
-            )
-            .await;
-            let ten_millis = time::Duration::from_millis(300);
-            thread::sleep(ten_millis);
-            let _ = obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                source,
-                true,
-                &obs_client,
-            )
-            .await;
-            Ok(())
-        }
-        // ===========================================
-        // == Test Area
-        // ===========================================
-        "!durf" => {
-            // Put any code you want to experiment w/ the chat with here
-            Ok(())
-        }
-
-        // only Begin should be to do these sounds
-        // Maybe Mods
-        // ===========================================
-        // == Stream State
-        // ===========================================
-        "!implicit" | "!peace" => {
-            twitch_stream_state::update_implicit_soundeffects(&pool.clone())
-                .await
-                .map_err(|e| e.to_string())?;
-            Ok(())
-        }
-        "!explicit" => {
-            twitch_stream_state::update_explicit_soundeffects(&pool.clone())
-                .await
-                .map_err(|e| e.to_string())?;
-            Ok(())
-        }
-        // returns the current state of stream
-        "!state" => {
-            let state = twitch_stream_state::get_twitch_state(&pool.clone())
-                .await
-                .map_err(|e| e.to_string())?;
-            let msg = format!("Twitch State! {:?}", state);
-            send_message(twitch_client, msg)
-                .await
-                .map_err(|e| e.to_string())?;
-            // send_message(format!("Twitch State! {:?}", state));
-            // twitch_stream_state::update_implicit_soundeffects(false, &pool)
-            //     .await?;
-            Ok(())
-        }
-
-        // !upload_image URL
-        // "!upload_image" => handlers::upload_image(msg),
-
-        // ===========================================
-        // == Scrolling
-        // ===========================================
-
-        // !scroll SOURCE SCROLL_SETTING SPEED DURATION (in milliseconds)
-        // !scroll begin x 5 300
-        "!scroll" => {
-            let default_filter_setting_name = String::from("speed_x");
-
-            let filter_setting_name =
-                splitmsg.get(2).unwrap_or(&default_filter_setting_name);
-            let filter_setting_name: String = match filter_setting_name.as_str()
-            {
-                "x" => String::from("speed_x"),
-                "y" => String::from("speed_y"),
-                _ => default_filter_setting_name,
-            };
-
-            // Starting to Scroll: begin speed_x
-            println!("Starting to Scroll: {} {}", source, filter_setting_name);
-
-            // TODO: Fix
-            // move_transition::update_and_trigger_move_value_filter(
-            //     source,
-            //     obs::MOVE_SCROLL_FILTER_NAME,
-            //     &filter_setting_name,
-            //     filter_value,
-            //     "",
-            //     duration,
-            //     2,
-            //     &obs_client,
-            // )
-            // .await
-            Ok(())
-        }
-
-        // ===========================================
-        // == Blur
-        // ===========================================
-        "!blur" => {
-            let _filter_value = splitmsg
-                .get(2)
-                .map_or(100.0, |x| x.trim().parse().unwrap_or(100.0));
-
-            Ok(())
-            // move_transition::update_and_trigger_move_value_filter(
-            //     source,
-            //     obs::MOVE_BLUR_FILTER_NAME,
-            //     "Filter.Blur.Size",
-            //     filter_value,
-            //     "",
-            //     duration,
-            //     0,
-            //     &obs_client,
-            // )
-            // .await
-        }
-
-        // TODO: Update these values to be variables so we know what they do
-        "!noblur" | "!unblur" => {
-            Ok(())
-            // move_transition::update_and_trigger_move_value_filter(
-            //     source,
-            //     obs::DEFAULT_BLUR_FILTER_NAME,
-            //     "Filter.Blur.Size",
-            //     0.0,
-            //     5000,
-            //     "",
-            //     2,
-            //     &obs_client,
-            // )
-            // .await
-        }
-
         // ===========================================
         // == Scaling Sources
         // ===========================================
         "!grow" | "!scale" => {
             let meat_of_message = splitmsg[1..].to_vec();
-            let arg_positions = vec![
-                ChatArgPosition::Source("beginbot".to_string()),
-                ChatArgPosition::X(500.0),
-                ChatArgPosition::Y(500.0),
-                ChatArgPosition::Duration(3000),
-                ChatArgPosition::EasingType("ease-in".to_string()),
-                ChatArgPosition::EasingFunction("bounce".to_string()),
-            ];
+            let arg_positions = default_move_or_scale_args();
             let req =
-                build_chat_move_source_request(meat_of_message, arg_positions);
+                build_chat_move_source_request(meat_of_message, &arg_positions);
 
             dbg!(&req);
 
@@ -519,40 +234,10 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             .await
         }
 
-        // ===========================================
-        // == Moving Sources
-        // ===========================================
-
-        // TODO: I'd like one-for every corner
-        "!tr" => {
-            move_transition_effects::top_right(
-                &PRIMARY_CAM_SCENE,
-                source,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!br" => {
-            move_transition_effects::bottom_right(
-                &PRIMARY_CAM_SCENE,
-                source,
-                &obs_client,
-            )
-            .await
-        }
-
         "!alex" => {
             let source = "alex";
             let scene = "memes";
-
-            let arg_positions = vec![
-                ChatArgPosition::X(1111.0),
-                ChatArgPosition::Y(500.0),
-                ChatArgPosition::Duration(3000),
-                ChatArgPosition::EasingType("ease-in".to_string()),
-                ChatArgPosition::EasingFunction("bounce".to_string()),
-            ];
+            let arg_positions = &default_move_or_scale_args()[1..];
             let req = build_chat_move_source_request(
                 splitmsg[1..].to_vec(),
                 arg_positions,
@@ -574,14 +259,7 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
         "!begin" => {
             let source = "begin";
             let scene = PRIMARY_CAM_SCENE;
-
-            let arg_positions = vec![
-                ChatArgPosition::X(1111.0),
-                ChatArgPosition::Y(500.0),
-                ChatArgPosition::Duration(3000),
-                ChatArgPosition::EasingType("ease-in".to_string()),
-                ChatArgPosition::EasingFunction("bounce".to_string()),
-            ];
+            let arg_positions = &default_move_or_scale_args()[1..];
             let req = build_chat_move_source_request(
                 splitmsg[1..].to_vec(),
                 arg_positions,
@@ -600,42 +278,10 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             .await
         }
 
-        // So we save a source
-        // Lets add a timestamp
-        "!save" => {
-            let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-            let unique_identifier = format!("{}_screenshot.png", timestamp);
-            let filename = format!(
-                "/home/begin/code/subd/tmp/screenshots/{}",
-                unique_identifier
-            );
-            if let Err(e) =
-                obs_source::save_screenshot(&obs_client, "begin", &filename)
-                    .await
-            {
-                eprintln!("Error Saving Screenshot: {}", e);
-                return Ok(());
-            };
-
-            // WHAT
-            if let Ok(res) = openai::ask_gpt_vision2(&filename, None).await {
-                dbg!(&res);
-            }
-
-            Ok(())
-        }
-
         // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
         "!move" => {
             let meat_of_message = splitmsg[1..].to_vec();
-            let arg_positions = vec![
-                ChatArgPosition::Source("beginbot".to_string()),
-                ChatArgPosition::X(500.0),
-                ChatArgPosition::Y(500.0),
-                ChatArgPosition::Duration(3000),
-                ChatArgPosition::EasingType("ease-in".to_string()),
-                ChatArgPosition::EasingFunction("cubic".to_string()),
-            ];
+            let arg_positions = &default_move_or_scale_args();
             let req =
                 build_chat_move_source_request(meat_of_message, arg_positions);
 
@@ -652,110 +298,15 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             .await
         }
 
-        // ===========================================
-        // == Showing/Hiding Sources & Scenes
-        // ===========================================
-        "!memes" => {
-            obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                obs::MEME_SCENE,
-                true,
-                &obs_client,
-            )
-            .await
-        }
-
-        "!nomemes" | "!nojokes" | "!work" => {
-            obs_source::set_enabled(
-                obs::DEFAULT_SCENE,
-                obs::MEME_SCENE,
-                false,
-                &obs_client,
-            )
-            .await
-        }
-
-        // Rename These Commands
-        "!chat" => obs_hotkeys::trigger_hotkey("OBS_KEY_L", &obs_client).await,
-
-        "!code" => obs_hotkeys::trigger_hotkey("OBS_KEY_H", &obs_client).await,
-
-        "!hide" => obs_source::hide_sources(obs::MEME_SCENE, &obs_client).await,
-
-        "!show" => {
-            obs_source::set_enabled(obs::MEME_SCENE, source, true, &obs_client)
-                .await
-        }
-
-        // ===========================================
-        // == HotKeys
-        // ===========================================
-        "!hk" => {
-            let key = splitmsg[1].as_str().to_uppercase();
-            let obs_formatted_key = format!("OBS_KEY_{}", key);
-            let _ = tx.send(Event::TriggerHotkeyRequest(
-                subd_types::TriggerHotkeyRequest {
-                    hotkey: obs_formatted_key,
-                },
-            ));
-            Ok(())
-        }
-
-        // ===========================================
-        // == Creating Scenes & Filters
-        // ===========================================
-        "!create_source" => {
-            let new_scene: obws::requests::scene_items::CreateSceneItem =
-                obws::requests::scene_items::CreateSceneItem {
-                    scene: obs::DEFAULT_SCENE,
-                    source: &source,
-                    enabled: Some(true),
-                };
-
-            obs_client
-                .scene_items()
-                .create(new_scene)
-                .await
-                .map_err(|e| e.to_string())?;
-            Ok(())
-        }
-
-        "!create_3d_filters" => {
-            Ok(())
-            // bootstrap::create_split_3d_transform_filters(source, &obs_client)
-            //     .await
-        }
-
-        // This sets up OBS for Begin's current setup
-        "!create_filters_for_source" => {
-            if not_beginbot {
-                return Ok(());
-            }
-            let default = "alex".to_string();
-            let source: &str = splitmsg.get(1).unwrap_or(&default);
-            _ = bootstrap::remove_all_filters(source, &obs_client).await;
-            bootstrap::create_split_3d_transform_filters(source, &obs_client)
-                .await
-        }
-
-        // ===========================================
-        // == Debug Info
-        // ===========================================
-        "!source" => {
-            obs_source::print_source_info(source, &scene, &obs_client).await
-        }
-
         "!filter" => {
-            let default_filter_name = "Move_begin".to_string();
+            println!("Trying Filter");
+            // let default_filter_name = "Move_begin".to_string();
+            let default_filter_name = "3D-Transform-Perspective".to_string();
             // "Move-3D-Transform-Orthographic".to_string();
 
-            let source: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
+            let filter: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
-                match obs_client.filters().get("Begin", source).await {
-                    Ok(val) => Ok(val),
-                    Err(err) => Err(err),
-                }
-                .map_err(|e| e.to_string())?;
+                obs_client.filters().get("begin", filter).await?;
 
             println!("------------------------");
             println!("\n\tFilter Settings: {:?}", filter_details);
@@ -763,49 +314,17 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             Ok(())
         }
 
-        // This doesn't seem like it would just be info
-        // ...but it is!
-        "!outline" => sdf_effects::outline(source, &obs_client).await,
-
-        // ===========================================
-        // == Compound Effects
-        // ===========================================
-        "!norm" => obs_combo::norm(&source, &obs_client).await,
-
-        "!follow" => {
-            let scene = obs::DEFAULT_SCENE;
-            let leader = splitmsg.get(1).unwrap_or(&default_source);
-            let source = leader;
-
-            obs_combo::follow(source, scene, leader, &obs_client).await
-        }
-        "!staff" => obs_combo::staff(obs::DEFAULT_SOURCE, &obs_client).await,
-
-        // ===============================================================================================
-        // ===============================================================================================
-        // ===============================================================================================
-        // ===============================================================================================
-
         // Examples:
         //           !spin 1080 18000 ease-in-and-out cubic
         //
-        //
         // !spin SPIN_AMOUNT DURATION EASING-TYPE EASING-FUNCTION
         "!spin" | "!spinx" | "spiny" => {
-            let arg_positions = vec![
-                ChatArgPosition::Source("beginbot".to_string()),
-                ChatArgPosition::RotationZ(1080.0),
-                ChatArgPosition::Duration(3000),
-                ChatArgPosition::EasingType("ease-in-and-out".to_string()),
-                ChatArgPosition::EasingFunction("sine".to_string()),
-            ];
+            let arg_positions = &default_spin_args();
             let req = build_chat_move_source_request(
                 splitmsg[1..].to_vec(),
                 arg_positions,
             );
-
             dbg!(&req);
-
             move_transition_effects::spin_source(
                 &req.source,
                 req.rotation_z,
@@ -817,30 +336,16 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
             .await
         }
 
-        // ===========================================
-        // == Characters
-        // ===========================================
-        "!talk" => {
-            let _ = tx.send(Event::TransformOBSTextRequest(
-                TransformOBSTextRequest {
-                    message: "Hello".to_string(),
-                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
-                    // text_source: "Soundboard-Text".to_string(),
-                },
-            ));
-            Ok(())
-        }
-
-        // This Creates a new soundboard text item
-        "!soundboard_text" => {
-            move_transition_bootstrap::create_soundboard_text(obs_client).await
-        }
-
-        "!character" => {
-            stream_character::create_new_obs_character(source, obs_client)
+        // This sets up OBS for Begin's current setup
+        "!create_filters_for_source" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            let default = "alex".to_string();
+            let source: &str = splitmsg.get(1).unwrap_or(&default);
+            _ = bootstrap::remove_all_filters(source, &obs_client).await;
+            bootstrap::create_split_3d_transform_filters(source, &obs_client)
                 .await
-                .map_err(|e| e.to_string())?;
-            Ok(())
         }
 
         _ => Ok(()),
@@ -849,9 +354,38 @@ pub async fn handle_obs_commands<C: twitch_api::HttpClient>(
     Ok(())
 }
 
+// Shoudl this be ChatArgPosition
+fn default_wide_args() -> Vec<WideArgPosition> {
+    vec![
+        WideArgPosition::Source("begin".to_string()),
+        WideArgPosition::X(500.0),
+        WideArgPosition::Duration(3000),
+    ]
+}
+fn default_spin_args() -> Vec<ChatArgPosition> {
+    vec![
+        ChatArgPosition::Source("begin".to_string()),
+        ChatArgPosition::RotationZ(1090.0),
+        ChatArgPosition::Duration(3000),
+        ChatArgPosition::EasingType("ease-in-and-out".to_string()),
+        ChatArgPosition::EasingFunction("sine".to_string()),
+    ]
+}
+
+fn default_move_or_scale_args() -> Vec<ChatArgPosition> {
+    vec![
+        ChatArgPosition::Source("begin".to_string()),
+        ChatArgPosition::X(1111.0),
+        ChatArgPosition::Y(500.0),
+        ChatArgPosition::Duration(3000),
+        ChatArgPosition::EasingType("ease-in".to_string()),
+        ChatArgPosition::EasingFunction("bounce".to_string()),
+    ]
+}
+
 pub fn build_chat_move_source_request(
     splitmsg: Vec<String>,
-    arg_positions: Vec<ChatArgPosition>,
+    arg_positions: &[ChatArgPosition],
 ) -> move_transition::ChatMoveSourceRequest {
     let _default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
@@ -950,34 +484,6 @@ pub fn easing_match() -> HashMap<&'static str, i32> {
     ])
 }
 
-pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
-    let mut chunks = Vec::new();
-    let mut last_split = 0;
-    let mut current_count = 0;
-
-    for (idx, ch) in s.char_indices() {
-        current_count += 1;
-
-        // Check if the current character is a space or we reached the end of the string
-        // if ch.is_whitespace() || idx == s.len() - 1 {
-
-        if ch.to_string() == "," || idx == s.len() - 1 {
-            if current_count >= chunk_size {
-                chunks.push(s[last_split..=idx].to_string());
-
-                last_split = idx + 1;
-                current_count = 0;
-            }
-        }
-    }
-
-    if last_split < s.len() {
-        chunks.push(s[last_split..].to_string());
-    }
-
-    chunks
-}
-
 fn find_easing_indicies(
     easing_type: String,
     easing_function: String,
@@ -995,8 +501,8 @@ fn find_easing_indicies(
 
 pub fn build_wide_request(
     splitmsg: Vec<String>,
-    arg_positions: Vec<WideArgPosition>,
-) -> Result<WideRequest, String> {
+    arg_positions: &[WideArgPosition],
+) -> Result<WideRequest> {
     let _default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
 
@@ -1036,33 +542,20 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_screenshotting() {
+    async fn test_filters() {
+        // let default_filter_name = "3D-Transform-Perspective".to_string();
+        let default_filter_name = "3D-Transform-Orthographic".to_string();
+        // "Move-3D-Transform-Orthographic".to_string();
+
         let obs_client = obs::create_obs_client().await.unwrap();
+        let filter_details = obs_client
+            .filters()
+            .get("begin", &default_filter_name)
+            .await
+            .unwrap();
 
-        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-        let unique_identifier = format!("{}_screenshot.png", timestamp);
-        let filename = format!(
-            "/home/begin/code/subd/tmp/screenshots/fake/{}",
-            unique_identifier
-        );
-        let _ = obs_source::save_screenshot(&obs_client, "Primary", &filename)
-            .await;
-    }
-
-    #[test]
-    fn test_chunk_string() {
-        let input = "hello, now";
-        let strs = chunk_string(input, 4);
-        assert_eq!(strs[0], "hello,");
-        assert_eq!(strs[1], " now");
-        assert_eq!(strs.len(), 2);
-    }
-
-    // Now we can test
-    #[test]
-    fn test_easing_index() {
-        let res =
-            find_easing_indicies("ease-in".to_string(), "bounce".to_string());
-        assert_eq!(res, (1, 9));
+        println!("------------------------");
+        println!("\n\tFilter Settings: {:?}", filter_details);
+        println!("------------------------");
     }
 }

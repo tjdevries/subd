@@ -81,17 +81,19 @@ pub async fn spin_source(
         ..Default::default()
     };
 
+    dbg!(&new_settings);
+
     let three_d_transform_filter_name = filter_name;
     let move_transition_filter_name =
         format!("Move_{}", three_d_transform_filter_name);
 
-    _ = move_transition::update_and_trigger_move_values_filter(
+    let _ = move_transition::update_and_trigger_move_values_filter(
         source,
         &move_transition_filter_name,
         new_settings,
         &obs_client,
     )
-    .await;
+    .await?;
     Ok(())
 }
 

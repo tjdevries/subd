@@ -77,6 +77,10 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
+// We need a MoveSettingsOrtho
+// We need a MoveSettingsPerspective
+// We need a MoveSettingsCornerPin
+
 // we create Json of What we want
 // we then convert to a MoveMultipleStruct
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -477,11 +481,12 @@ pub async fn update_and_trigger_move_values_filter(
 ) -> Result<()> {
     new_settings.move_value_type = 1;
     new_settings.value_type = 1;
+    dbg!(&new_settings);
     let settings = obws::requests::filters::SetSettings {
         source: &source,
         filter: filter_name,
         settings: new_settings,
-        overlay: None,
+        overlay: Some(true),
     };
     let _ = obs_client.filters().set_settings(settings).await;
 
