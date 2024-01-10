@@ -2,6 +2,7 @@ use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_effects;
 use crate::obs;
+use crate::obs_filters;
 use crate::obs_scenes;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -121,92 +122,95 @@ pub async fn handle_obs_commands(
             let meat_of_message = splitmsg[1..].to_vec();
             let arg_positions = default_wide_args();
             let req = build_wide_request(meat_of_message, &arg_positions)?;
-            let filter_value = 300.0;
-            let filter_name = "3D-Transform-Orthographic";
-            let filter_setting_name = "Scale.X";
-            let _ = move_transition_effects::trigger_move_value_3d_transform(
+            let settings = obs_filters::three_d_transform::ThreeDTransformOrthographic{
+                scale_x: Some(300.0),
+                camera_mode: (),
+                ..Default::default()
+            };
+            let _ = move_transition_effects::generic_update_trigger_move_values(
+                &obs_client,
                 &req.source,
-                filter_name,
-                filter_setting_name,
-                filter_value,
-                req.duration as u32,
-                obs_client,
+                9000,
+                None,
+                None,
+                settings,
             )
             .await;
+            
+            // let filter_value = 300.0;
+            // let filter_name = "3D-Transform-Orthographic";
+            // let filter_setting_name = "Scale.X";
+            // let _ = move_transition_effects::trigger_move_value_3d_transform(
+            //     &req.source,
+            //     filter_name,
+            //     filter_setting_name,
+            //     filter_value,
+            //     req.duration as u32,
+            //     obs_client,
+            // )
+            // .await;
 
             return Ok(());
         }
 
         "!nerd" => {
-            println!("Nerd TIME!");
-
-            let source = "begin";
-            let filter_name = "3D-Transform-Perspective";
-
-            // See the settings aren't correct
-            // We need to convert from the settings of the filter
-            let new_settings = move_transition::MoveMultipleValuesSetting {
-                filter: Some(filter_name.to_string()),
+            let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
                 scale_x: Some(125.3),
                 scale_y: Some(140.6),
                 position_y: Some(40.0),
                 rotation_x: Some(-51.4),
-                duration: Some(duration),
-
-                // Added this to test
                 field_of_view: Some(90.0),
+                camera_mode: (),
                 ..Default::default()
             };
-
-            let three_d_transform_filter_name = filter_name;
-            let move_transition_filter_name =
-                format!("Move_{}", three_d_transform_filter_name);
-
-            _ = move_transition::update_and_trigger_move_values_filter(
-                source,
-                &move_transition_filter_name,
-                new_settings,
+            let _ = move_transition_effects::generic_update_trigger_move_values(
                 &obs_client,
+                source,
+                3000,
+                None,
+                None,
+                settings,
             )
             .await;
+            Ok(())
+        }
 
+        "!norm" => {
+            let filters = vec![
+                "Default_3D-Transform-Orthographic",
+                "Default_3D-Transform-Perspective",
+                "Default_3D-Transform-CornerPin",
+            ];
+            for filter in filters {
+                let filter_enabled = obws::requests::filters::SetEnabled {
+                    source,
+                    filter: &filter,
+                    enabled: true,
+                };
+                obs_client.filters().set_enabled(filter_enabled).await?;
+                        
+            }
             Ok(())
         }
 
         "!chad" => {
-            let source = "begin";
-            let filter_name = "3D-Transform-Perspective";
-
-            let new_settings = move_transition::MoveMultipleValuesSetting {
-                filter: Some(filter_name.to_string()),
+            let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
                 scale_x: Some(217.0),
                 scale_y: Some(200.0),
                 rotation_x: Some(50.0),
                 field_of_view: Some(108.0),
-                move_value_type: 1,
-
-                // If a previous Move_transition set this and you don't reset it, you're gonna hate you life
-                position_y: Some(0.0),
-                duration: Some(300),
-                shear_x: Some(0.0),
-                shear_y: Some(0.0),
-                position_x: Some(0.0),
-                rotation_y: Some(0.0),
-                rotation_z: Some(0.0),
+                camera_mode: (),
                 ..Default::default()
             };
-
-            // dbg!(&new_settings);
-            let move_transition_filter_name = format!("Move_{}", filter_name);
-
-            _ = move_transition::update_and_trigger_move_values_filter(
-                source,
-                &move_transition_filter_name,
-                new_settings,
+            let _ = move_transition_effects::generic_update_trigger_move_values(
                 &obs_client,
+                source,
+                3000,
+                None,
+                None,
+                settings,
             )
             .await;
-
             Ok(())
         }
 
