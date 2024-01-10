@@ -7,6 +7,37 @@ use anyhow::Result;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
 
+pub async fn generic_update_trigger_move_values<
+    T: serde::Serialize + std::default::Default,
+>(
+    obs_client: &OBSClient,
+    source: &str,
+    duration: u64,
+    easing_function_index: Option<i32>,
+    easing_type_index: Option<i32>,
+    settings: T,
+) -> Result<()> {
+    let filter_name = "3D-Transform-Perspective".to_string();
+    let new_settings = obs_filters::three_d_transform::MovePluginSettings {
+        filter: filter_name.clone(),
+        duration: Some(duration as u32),
+        easing_function: easing_function_index,
+        easing_type: easing_type_index,
+        settings,
+        ..Default::default()
+    };
+
+    let move_transition_filter_name = format!("Move_{}", filter_name);
+    let _ = update_and_trigger_move_values_filter(
+        source,
+        &move_transition_filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
+    Ok(())
+}
+
 pub async fn top_right(
     scene: &str,
     scene_item: &str,

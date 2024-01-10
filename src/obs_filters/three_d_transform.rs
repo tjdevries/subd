@@ -6,6 +6,12 @@ enum ThreeDTransformFilters {
     CornerPin(ThreeDTransformCornerPin),
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub enum SpinFilters {
+    Orthographic(ThreeDTransformOrthographic),
+    Perspective(ThreeDTransformPerspective),
+}
+
 // How should we have a hardcoded value associated with each Struct?
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ThreeDTransformPerspective {
