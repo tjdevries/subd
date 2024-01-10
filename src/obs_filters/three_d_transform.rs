@@ -12,6 +12,31 @@ pub enum SpinFilters {
     Perspective(ThreeDTransformPerspective),
 }
 
+pub trait FilterName {
+    fn filter_name(&self) -> String;
+}
+
+impl FilterName for ThreeDTransformPerspective {
+    // This should come from some constant
+    fn filter_name(&self) -> String {
+        "3D-Transform-Perspective".to_string()
+    }
+}
+
+impl FilterName for ThreeDTransformOrthographic {
+    // This should come from some constant
+    fn filter_name(&self) -> String {
+        "3D-Transform-Orthographic".to_string()
+    }
+}
+
+impl FilterName for ThreeDTransformCornerPin {
+    // This should come from some constant
+    fn filter_name(&self) -> String {
+        "3D-Transform-CornerPin".to_string()
+    }
+}
+
 // How should we have a hardcoded value associated with each Struct?
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ThreeDTransformPerspective {
@@ -205,11 +230,29 @@ mod tests {
     #[tokio::test]
     async fn test_transform_filters() {
         let obs_client = obs::create_obs_client().await.unwrap();
-        // let settings = ThreeDTransformPerspective {
-        //     field_of_view: Some(122.6),
+
+        // let settings = ThreeDTransformPerspective{
+        //     rotation_z: Some(1080.0),
         //     camera_mode: (),
         //     ..Default::default()
         // };
+        let settings = ThreeDTransformOrthographic {
+            rotation_x: Some(360.0),
+            rotation_y: Some(360.0),
+            rotation_z: Some(360.0),
+            camera_mode: (),
+            ..Default::default()
+        };
+        let _ = move_transition_effects::generic_update_trigger_move_values(
+            &obs_client,
+            "begin",
+            9000,
+            None,
+            None,
+            settings,
+        )
+        .await;
+
         // let move_settings = MovePluginSettings {
         //     filter: "Cool-Filter".to_string(),
         //     settings,
@@ -220,29 +263,29 @@ mod tests {
         // println!("\n\nTESTING {}", j);
         // println!("=======================");
 
-        let source = "begin".to_string();
-        let _ = move_transition_effects::spin_source2(
-            &obs_client,
-            &source,
-            1080.0,
-            3000,
-            None,
-            None,
-        )
-        .await;
+        // let source = "begin".to_string();
+        // let _ = move_transition_effects::spin_source2(
+        //     &obs_client,
+        //     &source,
+        //     1080.0,
+        //     3000,
+        //     None,
+        //     None,
+        // )
+        // .await;
 
-        let sleep_time = time::Duration::from_millis(3000);
-        thread::sleep(sleep_time);
-        let source = "begin".to_string();
-        let _ = move_transition_effects::spin_source2(
-            &obs_client,
-            &source,
-            0.0,
-            0,
-            None,
-            None,
-        )
-        .await;
+        // let sleep_time = time::Duration::from_millis(3000);
+        // thread::sleep(sleep_time);
+        // let source = "begin".to_string();
+        // let _ = move_transition_effects::spin_source2(
+        //     &obs_client,
+        //     &source,
+        //     0.0,
+        //     0,
+        //     None,
+        //     None,
+        // )
+        // .await;
 
         // let root: VoiceRoot = serde_json::from_str(&data)?;
     }

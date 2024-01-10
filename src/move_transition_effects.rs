@@ -8,7 +8,9 @@ use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
 
 pub async fn generic_update_trigger_move_values<
-    T: serde::Serialize + std::default::Default,
+    T: serde::Serialize
+        + std::default::Default
+        + obs_filters::three_d_transform::FilterName,
 >(
     obs_client: &OBSClient,
     source: &str,
@@ -17,7 +19,7 @@ pub async fn generic_update_trigger_move_values<
     easing_type_index: Option<i32>,
     settings: T,
 ) -> Result<()> {
-    let filter_name = "3D-Transform-Perspective".to_string();
+    let filter_name = settings.filter_name();
     let new_settings = obs_filters::three_d_transform::MovePluginSettings {
         filter: filter_name.clone(),
         duration: Some(duration as u32),
