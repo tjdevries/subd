@@ -8,7 +8,7 @@ enum ThreeDTransformFilters {
 
 // How should we have a hardcoded value associated with each Struct?
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct ThreeDTransformPerspective {
+pub struct ThreeDTransformPerspective {
     #[serde(
         rename = "Camera.FieldOfView",
         skip_serializing_if = "Option::is_none"
@@ -49,7 +49,7 @@ struct ThreeDTransformPerspective {
         serialize_with = "perspective_camera_mode",
         rename = "Camera.Mode"
     )]
-    camera_mode: (),
+    pub camera_mode: (),
 }
 
 fn perspective_camera_mode<S: Serializer>(
@@ -60,7 +60,7 @@ fn perspective_camera_mode<S: Serializer>(
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct ThreeDTransformOrthographic {
+pub struct ThreeDTransformOrthographic {
     #[serde(rename = "Position.X", skip_serializing_if = "Option::is_none")]
     pub position_x: Option<f32>,
 
@@ -95,7 +95,7 @@ struct ThreeDTransformOrthographic {
         serialize_with = "orthographic_camera_mode",
         rename = "Camera.Mode"
     )]
-    camera_mode: (),
+    pub camera_mode: (),
 }
 
 fn orthographic_camera_mode<S: Serializer>(
@@ -106,7 +106,7 @@ fn orthographic_camera_mode<S: Serializer>(
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
-struct ThreeDTransformCornerPin {
+pub struct ThreeDTransformCornerPin {
     #[serde(
         rename = "Corners.BottomLeft.X",
         skip_serializing_if = "Option::is_none"
@@ -144,7 +144,7 @@ struct ThreeDTransformCornerPin {
     pub top_right_y: Option<f32>,
 
     #[serde(serialize_with = "corner_pin_camera_mode", rename = "Camera.Mode")]
-    camera_mode: (),
+    pub camera_mode: (),
 }
 
 fn corner_pin_camera_mode<S: Serializer>(
@@ -154,22 +154,89 @@ fn corner_pin_camera_mode<S: Serializer>(
     s.serialize_i32(2)
 }
 
+fn value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_i32(2)
+}
+
+fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_i32(1)
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct MovePluginSettings<T> {
+    pub filter: String,
+
+    #[serde(serialize_with = "value_type")]
+    pub value_type: (),
+
+    #[serde(serialize_with = "move_value_type")]
+    pub move_value_type: (),
+
+    #[serde(
+        rename = "easing_function_match",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub easing_function: Option<i32>,
+
+    #[serde(rename = "easing_match", skip_serializing_if = "Option::is_none")]
+    pub easing_type: Option<i32>,
+
+    #[serde(rename = "duration", skip_serializing_if = "Option::is_none")]
+    pub duration: Option<u32>,
+
+    #[serde(flatten)]
+    pub settings: T,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::move_transition_effects;
+    use crate::obs;
+    use std::thread;
+    use std::time;
 
-    #[test]
-    fn test_transform_filters() {
-        let settings = ThreeDTransformPerspective {
-            field_of_view: Some(122.6),
-            camera_mode: (),
-            ..Default::default()
-        };
+    #[tokio::test]
+    async fn test_transform_filters() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+        // let settings = ThreeDTransformPerspective {
+        //     field_of_view: Some(122.6),
+        //     camera_mode: (),
+        //     ..Default::default()
+        // };
+        // let move_settings = MovePluginSettings {
+        //     filter: "Cool-Filter".to_string(),
+        //     settings,
+        //     ..Default::default()
+        // };
+        // let j = serde_json::to_string(&move_settings).unwrap();
+        // println!("=======================");
+        // println!("\n\nTESTING {}", j);
+        // println!("=======================");
 
-        let j = serde_json::to_string(&settings).unwrap();
-        println!("=======================");
-        println!("\n\nTESTING {}", j);
-        println!("=======================");
+        let source = "begin".to_string();
+        let _ = move_transition_effects::spin_source2(
+            &obs_client,
+            &source,
+            1080.0,
+            3000,
+            None,
+            None,
+        )
+        .await;
+
+        let sleep_time = time::Duration::from_millis(3000);
+        thread::sleep(sleep_time);
+        let source = "begin".to_string();
+        let _ = move_transition_effects::spin_source2(
+            &obs_client,
+            &source,
+            0.0,
+            0,
+            None,
+            None,
+        )
+        .await;
 
         // let root: VoiceRoot = serde_json::from_str(&data)?;
     }

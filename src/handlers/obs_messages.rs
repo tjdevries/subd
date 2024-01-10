@@ -325,13 +325,13 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
             dbg!(&req);
-            move_transition_effects::spin_source(
+            move_transition_effects::spin_source2(
+                &obs_client,
                 &req.source,
                 req.rotation_z,
                 req.duration,
-                req.easing_function_index,
-                req.easing_type_index,
-                &obs_client,
+                Some(req.easing_function_index),
+                Some(req.easing_type_index),
             )
             .await
         }
@@ -544,8 +544,8 @@ mod tests {
     #[tokio::test]
     async fn test_filters() {
         // let default_filter_name = "3D-Transform-Perspective".to_string();
-        let default_filter_name = "3D-Transform-Orthographic".to_string();
-        // "Move-3D-Transform-Orthographic".to_string();
+        // klet default_filter_name = "3D-Transform-Orthographic".to_string();
+        let default_filter_name = "Move_3D-Transform-Orthographic".to_string();
 
         let obs_client = obs::create_obs_client().await.unwrap();
         let filter_details = obs_client
@@ -553,6 +553,27 @@ mod tests {
             .get("begin", &default_filter_name)
             .await
             .unwrap();
+
+        // let settings = ThreeDTransformPerspective {
+        //     field_of_view: Some(122.6),
+        //     camera_mode: (),
+        //     ..Default::default()
+        // };
+        // let move_settings = MovePluginSettings {
+        //     filter: default_filter_name
+        //     settings,
+        //     ..Default::default()
+        // };
+
+        // move_transition_effects::spin_source(
+        //     &req.source,
+        //     req.rotation_z,
+        //     3000,
+        //     1,
+        //     1,
+        //     &obs_client,
+        // )
+        // .await;
 
         println!("------------------------");
         println!("\n\tFilter Settings: {:?}", filter_details);

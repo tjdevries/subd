@@ -100,6 +100,12 @@ pub struct MoveMultipleValuesSetting {
     #[serde(rename = "Camera.FieldOfView")]
     pub field_of_view: Option<f32>,
 
+    // "easing_function_match": Number(10), "easing_match": Number(2),
+    #[serde(rename = "easing_function_match")]
+    pub easing_function: Option<i32>,
+    #[serde(rename = "easing_match")]
+    pub easing_type: Option<i32>,
+
     // This is ortho
     #[serde(rename = "Scale.X")]
     pub scale_x: Option<f32>,
@@ -119,12 +125,6 @@ pub struct MoveMultipleValuesSetting {
     pub rotation_y: Option<f32>,
     #[serde(rename = "Rotation.Z")]
     pub rotation_z: Option<f32>,
-
-    // "easing_function_match": Number(10), "easing_match": Number(2),
-    #[serde(rename = "easing_function_match")]
-    pub easing_function: Option<i32>,
-    #[serde(rename = "easing_match")]
-    pub easing_type: Option<i32>,
 }
 
 // THESE EXTRA VALUES ARE BULLSHIT!!!

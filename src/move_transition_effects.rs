@@ -1,6 +1,7 @@
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::obs;
+use crate::obs_filters;
 use crate::stream_fx;
 use anyhow::Result;
 use obws::responses::filters::SourceFilter;
@@ -60,6 +61,134 @@ pub async fn find_or_create_filter(
         .await?;
     }
 
+    Ok(())
+}
+
+pub async fn new_spin(
+    source: &str,
+    filter_name: &str,
+    mut new_settings: move_transition::MoveMultipleValuesSetting,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    new_settings.move_value_type = 1;
+    new_settings.value_type = 1;
+    dbg!(&new_settings);
+    let settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: Some(true),
+    };
+    let _ = obs_client.filters().set_settings(settings).await;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    Ok(())
+}
+
+pub async fn spin_source_with_perspective(
+    source: &str,
+    rotation_z: f32,
+    duration: u64,
+    easing_function_index: i32,
+    easing_type_index: i32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = "3D-Transform-Perspective";
+
+    // let new_settings = move_transition::MoveMultipleValuesSetting {
+    //     rotation_z: Some(rotation_z),
+    //     easing_function: Some(easing_function_index),
+    //     easing_type: Some(easing_type_index),
+    //     duration: Some(duration as u32),
+    //     ..Default::default()
+    // };
+
+    // let new_settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
+    //     rotation_z: Some(rotation_z),
+    //     // easing_function: Some(easing_function_index),
+    //     // easing_type: Some(easing_type_index),
+    //     // duration: Some(duration as u32),
+    //     ..Default::default()
+    // };
+    // dbg!(&new_settings);
+    //
+    // let three_d_transform_filter_name = filter_name;
+    // let move_transition_filter_name =
+    //     format!("Move_{}", three_d_transform_filter_name);
+
+    // let _ = move_transition::update_and_trigger_move_values_filter(
+    //     source,
+    //     &move_transition_filter_name,
+    //     new_settings,
+    //     &obs_client,
+    // )
+    // .await?;
+    Ok(())
+}
+
+pub async fn update_and_trigger_move_values_filter<T: serde::Serialize>(
+    source: &str,
+    filter_name: &str,
+    new_settings: obs_filters::three_d_transform::MovePluginSettings<T>,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let settings = obws::requests::filters::SetSettings {
+        source: &source,
+        filter: filter_name,
+        settings: new_settings,
+        overlay: Some(true),
+    };
+    let _ = obs_client.filters().set_settings(settings).await;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: &source,
+        filter: filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+    Ok(())
+}
+
+pub async fn spin_source2(
+    obs_client: &OBSClient,
+    source: &str,
+    rotation_z: f32,
+    duration: u64,
+    easing_function_index: Option<i32>,
+    easing_type_index: Option<i32>,
+) -> Result<()> {
+    let filter_name = "3D-Transform-Perspective".to_string();
+
+    let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
+        rotation_z: Some(rotation_z),
+        camera_mode: (),
+        ..Default::default()
+    };
+    let new_settings = obs_filters::three_d_transform::MovePluginSettings {
+        filter: filter_name.clone(),
+        duration: Some(duration as u32),
+        easing_function: easing_function_index,
+        easing_type: easing_type_index,
+        settings,
+        ..Default::default()
+    };
+
+    dbg!(&new_settings);
+
+    let move_transition_filter_name = format!("Move_{}", filter_name);
+
+    let _ = update_and_trigger_move_values_filter(
+        source,
+        &move_transition_filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
     Ok(())
 }
 
