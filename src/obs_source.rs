@@ -307,6 +307,36 @@ pub async fn find_id(
     obs_client.scene_items().id(id_search).await
 }
 
+// source     | text    |           | not null |
+// position_x | numeric |           | not null |
+// position_y | numeric |           | not null |
+// scale      | numeric |           | not null |
+
+#[derive(Debug)]
+pub struct ObsSource {
+    pub source: String,
+    pub position_x: sqlx::types::BigDecimal,
+    pub position_y: sqlx::types::BigDecimal,
+    pub scale: sqlx::types::BigDecimal,
+}
+
+pub async fn get_obs_source(
+    pool: &sqlx::PgPool,
+    source: String,
+) -> Result<ObsSource> {
+    let res =
+        sqlx::query!("SELECT * FROM obs_sources WHERE source = $1", source)
+            .fetch_one(pool)
+            .await?;
+    let model = ObsSource {
+        source,
+        position_x: res.position_x,
+        position_y: res.position_y,
+        scale: res.scale,
+    };
+    Ok(model)
+}
+
 // ====================================================
 // // POSTRES
 // ====================================================
@@ -360,14 +390,17 @@ mod tests {
         let scale = 1000;
         let position_x = 1000;
         let position_y = 400;
-        save_obs_source(
-            &pool,
-            source.to_string(),
-            scale.into(),
-            position_x.into(),
-            position_y.into(),
-        )
-        .await;
+        // let _ = save_obs_source(
+        //     &pool,
+        //     source.to_string(),
+        //     scale.into(),
+        //     position_x.into(),
+        //     position_y.into(),
+        // )
+        // .await;
+
+        let res = get_obs_source(&pool, source.to_string()).await;
+        dbg!(&res);
 
         // We need to look up and move
     }
