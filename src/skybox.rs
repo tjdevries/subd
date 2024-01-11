@@ -95,7 +95,7 @@ pub async fn trigger_scene(
     // TODO: make this dynamic
     // let content = "lunch";
 
-let filter_enabled = obws::requests::filters::SetEnabled {
+    let filter_enabled = obws::requests::filters::SetEnabled {
         source: scene,
         filter: &filter_name,
         enabled: true,

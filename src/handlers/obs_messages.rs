@@ -30,6 +30,8 @@ pub enum ChatArgPosition {
     Source(String),
     X(f32),
     Y(f32),
+    RotationX(f32),
+    RotationY(f32),
     RotationZ(f32),
     Duration(u64),
     EasingType(String),
@@ -122,21 +124,23 @@ pub async fn handle_obs_commands(
             let meat_of_message = splitmsg[1..].to_vec();
             let arg_positions = default_wide_args();
             let req = build_wide_request(meat_of_message, &arg_positions)?;
-            let settings = obs_filters::three_d_transform::ThreeDTransformOrthographic{
-                scale_x: Some(300.0),
-                camera_mode: (),
-                ..Default::default()
-            };
-            let _ = move_transition_effects::generic_update_trigger_move_values(
-                &obs_client,
-                &req.source,
-                9000,
-                None,
-                None,
-                settings,
-            )
-            .await;
-            
+            let settings =
+                obs_filters::three_d_transform::ThreeDTransformOrthographic {
+                    scale_x: Some(300.0),
+                    camera_mode: (),
+                    ..Default::default()
+                };
+            let _ =
+                move_transition_effects::generic_update_trigger_move_values(
+                    &obs_client,
+                    &req.source,
+                    9000,
+                    None,
+                    None,
+                    settings,
+                )
+                .await;
+
             // let filter_value = 300.0;
             // let filter_name = "3D-Transform-Orthographic";
             // let filter_setting_name = "Scale.X";
@@ -154,24 +158,26 @@ pub async fn handle_obs_commands(
         }
 
         "!nerd" => {
-            let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
-                scale_x: Some(125.3),
-                scale_y: Some(140.6),
-                position_y: Some(40.0),
-                rotation_x: Some(-51.4),
-                field_of_view: Some(90.0),
-                camera_mode: (),
-                ..Default::default()
-            };
-            let _ = move_transition_effects::generic_update_trigger_move_values(
-                &obs_client,
-                source,
-                3000,
-                None,
-                None,
-                settings,
-            )
-            .await;
+            let settings =
+                obs_filters::three_d_transform::ThreeDTransformPerspective {
+                    scale_x: Some(125.3),
+                    scale_y: Some(140.6),
+                    position_y: Some(40.0),
+                    rotation_x: Some(-51.4),
+                    field_of_view: Some(90.0),
+                    camera_mode: (),
+                    ..Default::default()
+                };
+            let _ =
+                move_transition_effects::generic_update_trigger_move_values(
+                    &obs_client,
+                    source,
+                    3000,
+                    None,
+                    None,
+                    settings,
+                )
+                .await;
             Ok(())
         }
 
@@ -188,29 +194,30 @@ pub async fn handle_obs_commands(
                     enabled: true,
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
-                        
             }
             Ok(())
         }
 
         "!chad" => {
-            let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
-                scale_x: Some(217.0),
-                scale_y: Some(200.0),
-                rotation_x: Some(50.0),
-                field_of_view: Some(108.0),
-                camera_mode: (),
-                ..Default::default()
-            };
-            let _ = move_transition_effects::generic_update_trigger_move_values(
-                &obs_client,
-                source,
-                3000,
-                None,
-                None,
-                settings,
-            )
-            .await;
+            let settings =
+                obs_filters::three_d_transform::ThreeDTransformPerspective {
+                    scale_x: Some(217.0),
+                    scale_y: Some(200.0),
+                    rotation_x: Some(50.0),
+                    field_of_view: Some(108.0),
+                    camera_mode: (),
+                    ..Default::default()
+                };
+            let _ =
+                move_transition_effects::generic_update_trigger_move_values(
+                    &obs_client,
+                    source,
+                    3000,
+                    None,
+                    None,
+                    settings,
+                )
+                .await;
             Ok(())
         }
 
@@ -318,6 +325,29 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
+        "!twirl" => {
+            let meat_of_message = splitmsg[1..].to_vec();
+            let arg_positions = &default_twirl_args();
+            let req = build_chat_twirl_request(meat_of_message, arg_positions);
+            let settings =
+                obs_filters::three_d_transform::ThreeDTransformOrthographic {
+                    rotation_y: Some(req.rotation_y),
+                    camera_mode: (),
+                    ..Default::default()
+                };
+            let _ =
+                move_transition_effects::generic_update_trigger_move_values(
+                    &obs_client,
+                    source,
+                    req.duration,
+                    None,
+                    None,
+                    settings,
+                )
+                .await;
+            Ok(())
+        }
+
         // Examples:
         //           !spin 1080 18000 ease-in-and-out cubic
         //
@@ -366,10 +396,11 @@ fn default_wide_args() -> Vec<WideArgPosition> {
         WideArgPosition::Duration(3000),
     ]
 }
+
 fn default_spin_args() -> Vec<ChatArgPosition> {
     vec![
         ChatArgPosition::Source("begin".to_string()),
-        ChatArgPosition::RotationZ(1090.0),
+        ChatArgPosition::RotationZ(1080.0),
         ChatArgPosition::Duration(3000),
         ChatArgPosition::EasingType("ease-in-and-out".to_string()),
         ChatArgPosition::EasingFunction("sine".to_string()),
@@ -385,6 +416,77 @@ fn default_move_or_scale_args() -> Vec<ChatArgPosition> {
         ChatArgPosition::EasingType("ease-in".to_string()),
         ChatArgPosition::EasingFunction("bounce".to_string()),
     ]
+}
+
+fn default_twirl_args() -> Vec<ChatArgPosition> {
+    vec![
+        ChatArgPosition::Source("begin".to_string()),
+        ChatArgPosition::RotationY(360.0),
+        ChatArgPosition::Duration(3000),
+        ChatArgPosition::EasingType("ease-in".to_string()),
+        ChatArgPosition::EasingFunction("bounce".to_string()),
+    ]
+}
+
+#[derive(Default, Debug)]
+pub struct TwirlRequest {
+    pub source: String,
+    pub rotation_y: f32,
+    pub duration: u64,
+    pub easing_type: String,
+    pub easing_function: String,
+    pub easing_type_index: i32,
+    pub easing_function_index: i32,
+}
+
+fn build_chat_twirl_request(
+    splitmsg: Vec<String>,
+    arg_positions: &[ChatArgPosition],
+) -> TwirlRequest {
+    let mut req = TwirlRequest {
+        ..Default::default()
+    };
+    for (index, arg) in arg_positions.iter().enumerate() {
+        match arg {
+            ChatArgPosition::Source(source) => {
+                req.source = splitmsg.get(index).unwrap_or(source).to_string();
+            }
+            ChatArgPosition::RotationY(y) => {
+                let str_y = format!("{}", y);
+                req.rotation_y =
+                    splitmsg.get(index).unwrap_or(&str_y).parse().unwrap_or(*y);
+            }
+
+            ChatArgPosition::Duration(duration) => {
+                let str_duration = format!("{}", duration);
+                req.duration = splitmsg
+                    .get(index)
+                    .unwrap_or(&str_duration)
+                    .to_string()
+                    .parse()
+                    .unwrap_or(*duration);
+            }
+            ChatArgPosition::EasingType(easing_type) => {
+                req.easing_type =
+                    splitmsg.get(index).unwrap_or(easing_type).to_string()
+            }
+            ChatArgPosition::EasingFunction(easing_function) => {
+                req.easing_function =
+                    splitmsg.get(index).unwrap_or(easing_function).to_string()
+            }
+            _ => {
+                // do nothing for values we don't care about
+            }
+        }
+    }
+    let (easing_type_index, easing_function_index) = find_easing_indicies(
+        req.easing_type.clone(),
+        req.easing_function.clone(),
+    );
+
+    req.easing_type_index = easing_type_index;
+    req.easing_function_index = easing_function_index;
+    return req;
 }
 
 pub fn build_chat_move_source_request(
@@ -439,6 +541,7 @@ pub fn build_chat_move_source_request(
                 req.easing_function =
                     splitmsg.get(index).unwrap_or(easing_function).to_string()
             }
+            _ => {}
         }
     }
 
