@@ -79,7 +79,7 @@ CREATE TABLE twitch_users (
 );
 
 CREATE TABLE redemptions (
-  title      TEXT NOT NULL ,
+title      TEXT NOT NULL ,
 
   twitch_id  UUID NOT NULL,
   
@@ -104,4 +104,11 @@ CREATE TABLE skybox_requests (
   completed_at  TIMESTAMPTZ
 );
 
+
+CREATE TABLE obs_sources (
+  source TEXT UNIQUE NOT NULL,
+  position_x DECIMAL NOT NULL,
+  position_y DECIMAL NOT NULL,
+  scale      DECIMAL NOT NULL
+);
 

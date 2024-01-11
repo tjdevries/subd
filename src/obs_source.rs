@@ -1,5 +1,7 @@
 use crate::obs;
+use anyhow::anyhow;
 use anyhow::Result;
+use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::Slideshow;
 use obws::requests::custom::source_settings::SlideshowFile;
@@ -10,6 +12,10 @@ use obws::requests::scene_items::{
 use obws::requests::sources::SaveScreenshot;
 use obws::Client as OBSClient;
 use std::path::Path;
+
+// GOALS:
+//        - [x] Write obs_source to postgresql
+//        - [x] Lookup obs_source in postgresql
 
 pub async fn update_slideshow_source(
     obs_client: &OBSClient,
@@ -299,4 +305,70 @@ pub async fn find_id(
     };
 
     obs_client.scene_items().id(id_search).await
+}
+
+// ====================================================
+// // POSTRES
+// ====================================================
+
+// source     | text    |           | not null |
+// position_x | numeric |           | not null |
+// position_y | numeric |           | not null |
+// scale      | numeric |           | not null |
+
+//
+// use sqlx::bigdecimal::BigDecimal;
+// 22:26:07
+
+// We need to save:
+//  - prime
+//  - alex
+//
+//  we need to move them through chat commands
+//
+//  We need to write a function that reads the obs_sources values and moves
+pub async fn save_obs_source(
+    pool: &sqlx::PgPool,
+    source: String,
+    scale: sqlx::types::BigDecimal,
+    position_x: sqlx::types::BigDecimal,
+    position_y: sqlx::types::BigDecimal,
+) -> Result<()> {
+    let x = sqlx::query!(
+        r#"INSERT INTO obs_sources(source, scale, position_x, position_y)
+        VALUES ( $1, $2, $3, $4)"#,
+        source,
+        scale,
+        position_x,
+        position_y,
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow!("Error saving obs_source: {}", e));
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use subd_db::get_db_pool;
+
+    #[tokio::test]
+    async fn test_obs_sources() {
+        let pool = get_db_pool().await;
+        let source = "prime";
+        let scale = 1000;
+        let position_x = 1000;
+        let position_y = 400;
+        save_obs_source(
+            &pool,
+            source.to_string(),
+            scale.into(),
+            position_x.into(),
+            position_y.into(),
+        )
+        .await;
+
+        // We need to look up and move
+    }
 }
