@@ -112,11 +112,13 @@ pub async fn move_source_in_scene_x_and_y(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
+
+    // TODO: These are incorrect
     let settings =
-        move_transition::fetch_source_settings(scene, &source, &obs_client)
+        move_transition_bootstrap::fetch_source_settings(scene, &source, &obs_client)
             .await?;
     let mut new_settings =
-        move_transition::custom_filter_settings(settings, x, y);
+        move_transition_bootstrap::custom_filter_settings(settings, x, y);
 
     new_settings.duration = Some(duration);
     new_settings.easing_type = Some(easing_type_index);
