@@ -1,12 +1,7 @@
 use crate::obs;
-use num_bigint;
-use num_traits::{FromPrimitive, One, Signed, ToPrimitive, Zero};
-use sqlx::postgres::PgQueryResult;
-// use bigdecimal::BigDecimal;
 use anyhow::anyhow;
 use anyhow::Result;
-use sqlx::types::BigDecimal;
-// use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
+use num_traits::FromPrimitive;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::Slideshow;
 use obws::requests::custom::source_settings::SlideshowFile;
@@ -16,6 +11,8 @@ use obws::requests::scene_items::{
 };
 use obws::requests::sources::SaveScreenshot;
 use obws::Client as OBSClient;
+use sqlx::postgres::PgQueryResult;
+use sqlx::types::BigDecimal;
 use std::path::Path;
 
 // GOALS:
@@ -437,8 +434,6 @@ pub async fn create_obs_source(
 
 #[cfg(test)]
 mod tests {
-    use std::task::Wake;
-
     use super::*;
     use subd_db::get_db_pool;
 

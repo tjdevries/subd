@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize, Serializer};
 
-enum ThreeDTransformFilters {
-    Perspective(ThreeDTransformPerspective),
-    Orthographic(ThreeDTransformOrthographic),
-    CornerPin(ThreeDTransformCornerPin),
-}
+// enum ThreeDTransformFilters {
+//     Perspective(ThreeDTransformPerspective),
+//     Orthographic(ThreeDTransformOrthographic),
+//     CornerPin(ThreeDTransformCornerPin),
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SpinFilters {
@@ -224,8 +224,8 @@ mod tests {
     use super::*;
     use crate::move_transition_effects;
     use crate::obs;
-    use std::thread;
-    use std::time;
+    // use std::thread;
+    // use std::time;
 
     #[tokio::test]
     async fn test_transform_filters() {

@@ -114,9 +114,12 @@ pub async fn move_source_in_scene_x_and_y(
     let filter_name = format!("Move_{}", source);
 
     // TODO: These are incorrect
-    let settings =
-        move_transition_bootstrap::fetch_source_settings(scene, &source, &obs_client)
-            .await?;
+    let settings = move_transition_bootstrap::fetch_source_settings(
+        scene,
+        &source,
+        &obs_client,
+    )
+    .await?;
     let mut new_settings =
         move_transition_bootstrap::custom_filter_settings(settings, x, y);
 

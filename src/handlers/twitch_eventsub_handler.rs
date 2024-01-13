@@ -118,11 +118,11 @@ impl EventHandler for TwitchEventSubHandler {
         )
         .await?;
 
-        let box_token: &'static UserToken = Box::leak(Box::new(token));
-        let box_twitch_client: &'static HelixClient<reqwest::Client> =
+        let _box_token: &'static UserToken = Box::leak(Box::new(token));
+        let _box_twitch_client: &'static HelixClient<reqwest::Client> =
             Box::leak(Box::new(twitch_reward_client));
 
-        let broadcaster_id = "424038378";
+        let _broadcaster_id = "424038378";
         // RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
         let reward_manager = rewards::build_reward_manager().await?;
         let cloneable_reward_manager = Arc::new(reward_manager);

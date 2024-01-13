@@ -59,7 +59,7 @@ impl EventHandler for StreamCharacterHandler {
     ) -> Result<()> {
         loop {
             let event = rx.recv().await?;
-            let msg = match event {
+            let _msg = match event {
                 Event::StreamCharacterRequest(msg) => msg,
                 _ => continue,
             };

@@ -1,7 +1,7 @@
-use crate::bootstrap;
 use crate::move_transition;
 use crate::move_transition_effects;
 use crate::obs;
+use crate::obs_bootstrap::bootstrap;
 use crate::obs_filters;
 use crate::obs_scenes;
 use crate::obs_source;
@@ -9,19 +9,16 @@ use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
+use num_traits::ToPrimitive;
 use obws;
 use obws::Client as OBSClient;
 use rodio::*;
 use std::collections::HashMap;
-use subd_twitch::rewards;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
-use tracing_subscriber::registry::SpanData;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-// use sqlx::types::bigdecimal::ToPrimitive;
-use num_traits::{FromPrimitive, One, Signed, ToPrimitive, Zero};
 
 const PRIMARY_CAM_SCENE: &str = "Begin";
 
@@ -46,7 +43,7 @@ pub enum ChatArgPosition {
 #[derive(Default, Debug)]
 pub struct WideRequest {
     source: String,
-    scene: String,
+    _scene: String,
     x: f32,
     duration: u64,
 }
@@ -117,7 +114,7 @@ pub async fn handle_obs_commands(
     let is_mod = msg.roles.is_twitch_mod();
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-    let duration: u32 = splitmsg
+    let _duration: u32 = splitmsg
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
     let _scene = obs_scenes::find_scene(source)
@@ -227,7 +224,7 @@ pub async fn handle_obs_commands(
             let res =
                 obs_source::get_obs_source(&pool, source.to_string()).await?;
 
-            let scale = res
+            let _scale = res
                 .scale
                 .to_f32()
                 .ok_or(anyhow!("Error converting scale to f32"))?;
@@ -423,6 +420,7 @@ pub async fn handle_obs_commands(
             .await
         }
 
+        // This need to be updated
         // This sets up OBS for Begin's current setup
         "!create_filters_for_source" => {
             if _not_beginbot {
@@ -430,6 +428,8 @@ pub async fn handle_obs_commands(
             }
             let default = "alex".to_string();
             let source: &str = splitmsg.get(1).unwrap_or(&default);
+
+            // These aren't implemented properly
             _ = bootstrap::remove_all_filters(source, &obs_client).await;
             bootstrap::create_split_3d_transform_filters(source, &obs_client)
                 .await
@@ -664,7 +664,7 @@ pub fn build_wide_request(
     arg_positions: &[WideArgPosition],
 ) -> Result<WideRequest> {
     let _default_source = "begin".to_string();
-    let default_scene = PRIMARY_CAM_SCENE.to_string();
+    let _default_scene = PRIMARY_CAM_SCENE.to_string();
 
     let mut req = WideRequest {
         ..Default::default()
@@ -675,7 +675,7 @@ pub fn build_wide_request(
             WideArgPosition::Source(source) => {
                 req.source = splitmsg.get(index).unwrap_or(source).to_string()
             }
-            WideArgPosition::X(x) => {
+            WideArgPosition::X(_x) => {
                 if let Some(x) = splitmsg
                     .get(index)
                     .and_then(|m| Some(m.parse::<f32>().unwrap_or(100.0)))
@@ -683,7 +683,7 @@ pub fn build_wide_request(
                     req.x = x
                 }
             }
-            WideArgPosition::Duration(duration) => {
+            WideArgPosition::Duration(_duration) => {
                 if let Some(duration) = splitmsg
                     .get(index)
                     .and_then(|m| Some(m.parse::<u64>().unwrap_or(3000)))

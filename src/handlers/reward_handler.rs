@@ -65,8 +65,8 @@ impl EventHandler for RewardHandler {
 }
 
 async fn route_messages<C: twitch_api::HttpClient>(
-    tx: &broadcast::Sender<Event>,
-    obs_client: &OBSClient,
+    _tx: &broadcast::Sender<Event>,
+    _obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     reward_manager: &rewards::RewardManager<'_, C>,

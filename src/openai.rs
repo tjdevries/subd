@@ -6,7 +6,7 @@ use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs::File;
-use std::io::Read;
+
 use std::io::Write;
 
 use openai::{
@@ -225,6 +225,7 @@ pub async fn ask_gpt_vision(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Read;
 
     #[tokio::test]
     async fn test_telephone() {

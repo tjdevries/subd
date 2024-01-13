@@ -120,7 +120,7 @@ mod tests {
 
     #[test]
     fn test_screenshot_variation() {
-        let screenshot_prompt = generate_random_prompt();
+        let _screenshot_prompt = generate_random_prompt();
         //assert_eq!(screenshot_prompt,"");
     }
 }

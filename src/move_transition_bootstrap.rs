@@ -1,14 +1,12 @@
-use crate::move_transition;
-use serde::{Deserialize, Serialize};
-use crate::obs;
 use crate::obs_source;
-use std::fs;
 use anyhow::Result;
 use obws::Client as OBSClient;
+use serde::{Deserialize, Serialize};
+use std::fs;
 
 // What's the difference between const and static
 const MOVE_SOURCE_FILTER_KIND: &str = "move_source_filter";
-const MOVE_VALUE_FILTER_KIND: &str = "move_value_filter";
+// const MOVE_VALUE_FILTER_KIND: &str = "move_value_filter";
 
 pub async fn create_move_source_filter_from_file(
     scene: &str,
@@ -41,8 +39,7 @@ pub async fn create_move_text_value_filter(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let base_settings = create_move_source_filter_settings(scene_item);
-    let new_settings =
-        custom_filter_settings(base_settings, 1662.0, 13.0);
+    let new_settings = custom_filter_settings(base_settings, 1662.0, 13.0);
 
     let new_filter = obws::requests::filters::Create {
         source,
@@ -81,7 +78,6 @@ pub async fn create_move_text_value_filter(
 //
 //     Ok(())
 // }
-
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Coordinates {
@@ -134,7 +130,6 @@ pub struct MoveSourceCropSetting {
     #[serde(rename = "right")]
     pub right: Option<f32>,
 }
-
 
 fn create_move_source_filter_settings(
     source: &str,

@@ -26,7 +26,7 @@ impl EventHandler for TransformOBSTextHandler {
             // Attempting to Transform! Soundboard-Text TransformSoundboard-Text
             // Attempting to Transform! Soundboard-Text TransformSoundboard-Text Hello
 
-            let filter_name = format!("Transform{}", msg.text_source);
+            let _filter_name = format!("Transform{}", msg.text_source);
             // println!("Attempting to Transform! {} {} {}", &msg.text_source, &filter_name, &msg.message);
 
             // We are calling the update and move text filter

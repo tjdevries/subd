@@ -1,8 +1,6 @@
-use crate::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::thread;
 use std::time::Duration;
 
