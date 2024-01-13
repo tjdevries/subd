@@ -327,30 +327,7 @@ pub async fn update_and_trigger_text_move_filter(
 // == Highest Level MOVE SOURCE
 // ===================================================================================
 
-// We update the filter with the settings passed in
-// we then trigger than scene
-//
-// TODO: This needs to take in a scene
-pub async fn move_with_move_source(
-    scene: &str,
-    filter_name: &str,
-    new_settings: MoveSourceFilterSettings,
-    obs_client: &obws::Client,
-) -> Result<()> {
-    update_move_source_filters(scene, filter_name, new_settings, &obs_client)
-        .await?;
-
-    let filter_enabled = obws::requests::filters::SetEnabled {
-        source: scene,
-        filter: &filter_name,
-        enabled: true,
-    };
-    obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-pub async fn move_with_move_source2<T: serde::Serialize>(
+pub async fn move_with_move_source<T: serde::Serialize>(
     scene: &str,
     filter_name: &str,
     new_settings: T,
@@ -574,25 +551,6 @@ async fn update_move_source_filters2<T: serde::Serialize>(
     source: &str,
     filter_name: &str,
     new_settings: T,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    // What ever this serializes too, ain't right for Move Multiple Settings
-    let new_filter = obws::requests::filters::SetSettings {
-        source,
-        filter: filter_name,
-        settings: Some(new_settings),
-        overlay: Some(false),
-    };
-    obs_client.filters().set_settings(new_filter).await?;
-
-    Ok(())
-}
-
-// This takes in settings and updates a filter
-async fn update_move_source_filters(
-    source: &str,
-    filter_name: &str,
-    new_settings: MoveSourceFilterSettings,
     obs_client: &OBSClient,
 ) -> Result<()> {
     // What ever this serializes too, ain't right for Move Multiple Settings

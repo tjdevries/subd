@@ -244,14 +244,7 @@ pub async fn handle_obs_commands(
                 .ok_or(anyhow!("Error converting position_y to f32"))?;
             let scene = res.scene;
 
-            let _ = move_transition_effects::scale_source(
-                "Begin",
-                source,
-                scale.clone(),
-                scale,
-                obs_client,
-            )
-            .await;
+            // TODO: find proper move:
 
             let duration = 3000;
             let easing_function_index = 1;
@@ -305,15 +298,8 @@ pub async fn handle_obs_commands(
                 build_chat_move_source_request(meat_of_message, &arg_positions);
 
             dbg!(&req);
-
-            move_transition_effects::scale_source(
-                &req.scene,
-                &req.source,
-                req.x,
-                req.y,
-                &obs_client,
-            )
-            .await
+            // Add Scale code
+            Ok(())
         }
 
         "!alex" => {

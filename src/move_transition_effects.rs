@@ -200,31 +200,6 @@ pub async fn spin_source(
     Ok(())
 }
 
-// Scale Source taking in BigD
-pub async fn scale_source(
-    scene: &str,
-    source: &str,
-    x: f32,
-    y: f32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let filter_name = format!("Move_{}", source);
-    let new_settings = move_transition::MoveMultipleValuesSetting {
-        scale_x: Some(x),
-        scale_y: Some(y),
-        duration: Some(3000),
-        ..Default::default()
-    };
-
-    move_transition::move_with_move_source2(
-        scene,
-        &filter_name,
-        new_settings,
-        &obs_client,
-    )
-    .await
-}
-
 pub async fn move_source_in_scene_x_and_y(
     scene: &str,
     source: &str,
@@ -250,7 +225,7 @@ pub async fn move_source_in_scene_x_and_y(
     new_settings.easing_type = Some(easing_type_index);
     new_settings.easing_function = Some(easing_function_index);
 
-    move_transition::move_with_move_source2(
+    move_transition::move_with_move_source(
         scene,
         &filter_name,
         new_settings,
