@@ -149,24 +149,24 @@ pub async fn create_new_obs_character(
 
     // ======================================================
 
-    // This is creating the Text Transform Filter
-    // Create Move-Value for 3D Transform Filter
-    let filter_name = format!("Transform{}-text", base_source);
-    let move_text_filter = move_transition::MoveTextFilter {
-        setting_name: "text".to_string(),
-        setting_text: "Ok NOW".to_string(),
-        value_type: 4,
-        ..Default::default()
-    };
-    let new_filter = obws::requests::filters::Create {
-        source: &text_source_name,
-        filter: &filter_name,
-        kind: "move_value_filter",
-        settings: Some(move_text_filter),
-    };
-    if let Err(err) = obs_client.filters().create(new_filter).await {
-        println!("Error Creating Filter: {filter_name} | {:?}", err);
-    };
+    // // This is creating the Text Transform Filter
+    // // Create Move-Value for 3D Transform Filter
+    // let filter_name = format!("Transform{}-text", base_source);
+    // let move_text_filter = move_transition::MoveTextFilter {
+    //     setting_name: "text".to_string(),
+    //     setting_text: "Ok NOW".to_string(),
+    //     value_type: 4,
+    //     ..Default::default()
+    // };
+    // let new_filter = obws::requests::filters::Create {
+    //     source: &text_source_name,
+    //     filter: &filter_name,
+    //     kind: "move_value_filter",
+    //     settings: Some(move_text_filter),
+    // };
+    // if let Err(err) = obs_client.filters().create(new_filter).await {
+    //     println!("Error Creating Filter: {filter_name} | {:?}", err);
+    // };
 
     let file_path = "./obs_data/move_transition_show_source.json";
     let filter_name = format!("Show{}", base_source);

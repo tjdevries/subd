@@ -64,12 +64,12 @@ impl EventHandler for StreamCharacterHandler {
                 _ => continue,
             };
 
-            let _ = crate::obs_combo::trigger_character_filters(
-                &msg.source,
-                &self.obs_client,
-                msg.enabled,
-            )
-            .await;
+            // let _ = crate::obs_combo::trigger_character_filters(
+            //     &msg.source,
+            //     &self.obs_client,
+            //     msg.enabled,
+            // )
+            // .await;
         }
     }
 }
