@@ -244,7 +244,7 @@ pub async fn handle_obs_commands(
                 .ok_or(anyhow!("Error converting position_y to f32"))?;
             let scene = res.scene;
 
-            let _ = move_transition_effects::scale_source2(
+            let _ = move_transition_effects::scale_source(
                 "Begin",
                 source,
                 scale.clone(),
@@ -306,7 +306,7 @@ pub async fn handle_obs_commands(
 
             dbg!(&req);
 
-            move_transition_effects::scale_source2(
+            move_transition_effects::scale_source(
                 &req.scene,
                 &req.source,
                 req.x,
