@@ -243,7 +243,7 @@ mod tests {
             camera_mode: (),
             ..Default::default()
         };
-        let _ = move_transition_effects::generic_update_trigger_move_values(
+        let _ = move_transition_effects::update_and_trigger_3d_filter(
             &obs_client,
             "begin",
             9000,

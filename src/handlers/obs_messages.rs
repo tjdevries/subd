@@ -137,16 +137,15 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ =
-                move_transition_effects::generic_update_trigger_move_values(
-                    &obs_client,
-                    &req.source,
-                    9000,
-                    None,
-                    None,
-                    settings,
-                )
-                .await;
+            let _ = move_transition_effects::update_and_trigger_3d_filter(
+                &obs_client,
+                &req.source,
+                9000,
+                None,
+                None,
+                settings,
+            )
+            .await;
 
             // let filter_value = 300.0;
             // let filter_name = "3D-Transform-Orthographic";
@@ -175,16 +174,15 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ =
-                move_transition_effects::generic_update_trigger_move_values(
-                    &obs_client,
-                    source,
-                    3000,
-                    None,
-                    None,
-                    settings,
-                )
-                .await;
+            let _ = move_transition_effects::update_and_trigger_3d_filter(
+                &obs_client,
+                source,
+                3000,
+                None,
+                None,
+                settings,
+            )
+            .await;
             Ok(())
         }
 
@@ -275,16 +273,15 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ =
-                move_transition_effects::generic_update_trigger_move_values(
-                    &obs_client,
-                    source,
-                    3000,
-                    None,
-                    None,
-                    settings,
-                )
-                .await;
+            let _ = move_transition_effects::update_and_trigger_3d_filter(
+                &obs_client,
+                source,
+                3000,
+                None,
+                None,
+                settings,
+            )
+            .await;
             Ok(())
         }
 
@@ -392,16 +389,15 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ =
-                move_transition_effects::generic_update_trigger_move_values(
-                    &obs_client,
-                    source,
-                    req.duration,
-                    None,
-                    None,
-                    settings,
-                )
-                .await;
+            let _ = move_transition_effects::update_and_trigger_3d_filter(
+                &obs_client,
+                source,
+                req.duration,
+                None,
+                None,
+                settings,
+            )
+            .await;
             Ok(())
         }
 
@@ -416,7 +412,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
             dbg!(&req);
-            move_transition_effects::spin_source2(
+            move_transition_effects::spin_source(
                 &obs_client,
                 &req.source,
                 req.rotation_z,

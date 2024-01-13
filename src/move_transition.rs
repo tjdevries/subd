@@ -333,7 +333,7 @@ pub async fn move_with_move_source<T: serde::Serialize>(
     new_settings: T,
     obs_client: &obws::Client,
 ) -> Result<()> {
-    update_move_source_filters2(scene, filter_name, new_settings, &obs_client)
+    update_move_source_filters(scene, filter_name, new_settings, &obs_client)
         .await?;
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: scene,
@@ -547,7 +547,7 @@ pub async fn update_and_trigger_move_values_filter(
 // ====================================================================
 
 // This takes in settings and updates a filter
-async fn update_move_source_filters2<T: serde::Serialize>(
+async fn update_move_source_filters<T: serde::Serialize>(
     source: &str,
     filter_name: &str,
     new_settings: T,
@@ -558,7 +558,7 @@ async fn update_move_source_filters2<T: serde::Serialize>(
         source,
         filter: filter_name,
         settings: Some(new_settings),
-        overlay: Some(false),
+        overlay: Some(true),
     };
     obs_client.filters().set_settings(new_filter).await?;
 
