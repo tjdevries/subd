@@ -112,10 +112,6 @@ pub async fn move_source_in_scene_x_and_y(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
-
-    let _ = find_or_create_filter(&scene, &source, &filter_name, obs_client)
-        .await?;
-
     let settings =
         move_transition::fetch_source_settings(scene, &source, &obs_client)
             .await?;
@@ -133,38 +129,4 @@ pub async fn move_source_in_scene_x_and_y(
         &obs_client,
     )
     .await
-}
-
-// This doesn't really "find"
-pub async fn find_or_create_filter(
-    scene: &str,
-    source: &str,
-    filter_name: &str,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let filters = match obs_client.filters().list(scene).await {
-        Ok(val) => val,
-        Err(e) => {
-            eprintln!("Error listing filters: {}", e);
-            return Ok(());
-        }
-    };
-
-    let mut filter_exists = false;
-    for filter in filters {
-        if filter.name == filter_name {
-            filter_exists = true
-        }
-    }
-
-    if !filter_exists {
-        move_transition_bootstrap::create_move_source_filters(
-            &scene,
-            &source,
-            &filter_name,
-            &obs_client,
-        )
-        .await?;
-    }
-    Ok(())
 }
