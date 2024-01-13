@@ -1,7 +1,12 @@
 use crate::obs;
+use num_bigint;
+use num_traits::{FromPrimitive, One, Signed, ToPrimitive, Zero};
+use sqlx::postgres::PgQueryResult;
+// use bigdecimal::BigDecimal;
 use anyhow::anyhow;
 use anyhow::Result;
-use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
+use sqlx::types::BigDecimal;
+// use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::Slideshow;
 use obws::requests::custom::source_settings::SlideshowFile;
@@ -315,6 +320,7 @@ pub async fn find_id(
 #[derive(Debug)]
 pub struct ObsSource {
     pub source: String,
+    pub scene: String,
     pub position_x: sqlx::types::BigDecimal,
     pub position_y: sqlx::types::BigDecimal,
     pub scale: sqlx::types::BigDecimal,
@@ -330,6 +336,7 @@ pub async fn get_obs_source(
             .await?;
     let model = ObsSource {
         source,
+        scene: res.scene,
         position_x: res.position_x,
         position_y: res.position_y,
         scale: res.scale,
@@ -350,6 +357,32 @@ pub async fn get_obs_source(
 // use sqlx::bigdecimal::BigDecimal;
 // 22:26:07
 
+// Is that the right word?
+pub async fn update_obs_source_defaults(
+    pool: &sqlx::PgPool,
+    source: String,
+    scale: f32,
+    position_x: f32,
+    position_y: f32,
+) -> Result<PgQueryResult> {
+    let scale = BigDecimal::from_f32(scale).unwrap();
+    let position_x = BigDecimal::from_f32(position_x).unwrap();
+    let position_y = BigDecimal::from_f32(position_y).unwrap();
+    sqlx::query!(
+        r#"UPDATE obs_sources
+        SET scale = $1,
+        position_x = $2,
+        position_y = $3
+        WHERE source = $4"#,
+        scale,
+        position_x,
+        position_y,
+        source,
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow!("Error updating obs_source: {}", e))
+}
 // We need to save:
 //  - prime
 //  - alex
@@ -357,39 +390,54 @@ pub async fn get_obs_source(
 //  we need to move them through chat commands
 //
 //  We need to write a function that reads the obs_sources values and moves
-pub async fn save_obs_source(
+pub async fn create_obs_source(
     pool: &sqlx::PgPool,
     source: String,
+    scene: String,
     scale: sqlx::types::BigDecimal,
     position_x: sqlx::types::BigDecimal,
     position_y: sqlx::types::BigDecimal,
-) -> Result<()> {
-    let x = sqlx::query!(
-        r#"INSERT INTO obs_sources(source, scale, position_x, position_y)
-        VALUES ( $1, $2, $3, $4)"#,
+) -> Result<PgQueryResult> {
+    sqlx::query!(
+        r#"INSERT INTO obs_sources(source, scene, scale, position_x, position_y)
+        VALUES ( $1, $2, $3, $4, $5)"#,
         source,
+        scene,
         scale,
         position_x,
         position_y,
     )
     .execute(pool)
     .await
-    .map_err(|e| anyhow!("Error saving obs_source: {}", e));
-    Ok(())
+    .map_err(|e| anyhow!("Error saving obs_source: {}", e))
 }
 
 #[cfg(test)]
 mod tests {
+    use std::task::Wake;
+
     use super::*;
     use subd_db::get_db_pool;
 
     #[tokio::test]
     async fn test_obs_sources() {
         let pool = get_db_pool().await;
-        let source = "prime";
-        let scale = 1000;
-        let position_x = 1000;
-        let position_y = 400;
+        let source = "technofroggo".to_string();
+        let scene = "Memes".to_string();
+        let scale = 0.3;
+
+        let position_x = 100.0;
+        let position_y = 100.0;
+        let x = BigDecimal::from_f32(position_x).unwrap();
+        let y = BigDecimal::from_f32(position_y).unwrap();
+        let scale = BigDecimal::from_f32(scale).unwrap();
+
+        let res =
+            create_obs_source(&pool, source.clone(), scene, scale, x, y).await;
+        if let Err(e) = res {
+            println!("Error: {}", e);
+        }
+
         // let _ = save_obs_source(
         //     &pool,
         //     source.to_string(),
@@ -399,8 +447,8 @@ mod tests {
         // )
         // .await;
 
-        let res = get_obs_source(&pool, source.to_string()).await;
-        dbg!(&res);
+        // let res = get_obs_source(&pool, source.to_string()).await;
+        // dbg!(&res);
 
         // We need to look up and move
     }

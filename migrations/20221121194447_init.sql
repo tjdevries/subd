@@ -107,6 +107,7 @@ CREATE TABLE skybox_requests (
 
 CREATE TABLE obs_sources (
   source TEXT UNIQUE NOT NULL,
+  scene TEXT NOT NULL,
   position_x DECIMAL NOT NULL,
   position_y DECIMAL NOT NULL,
   scale      DECIMAL NOT NULL

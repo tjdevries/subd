@@ -4,6 +4,8 @@ use crate::move_transition_effects;
 use crate::obs;
 use crate::obs_filters;
 use crate::obs_scenes;
+use crate::obs_source;
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -17,6 +19,8 @@ use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+// use sqlx::types::bigdecimal::ToPrimitive;
+use num_traits::{FromPrimitive, One, Signed, ToPrimitive, Zero};
 
 const PRIMARY_CAM_SCENE: &str = "Begin";
 
@@ -101,7 +105,7 @@ pub async fn handle_obs_commands(
         SecureTCPTransport,
         StaticLoginCredentials,
     >,
-    _pool: &sqlx::PgPool,
+    pool: &sqlx::PgPool,
     _sink: &Sink,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -195,6 +199,50 @@ pub async fn handle_obs_commands(
                 };
                 obs_client.filters().set_enabled(filter_enabled).await?;
             }
+
+            let res =
+                obs_source::get_obs_source(&pool, source.to_string()).await?;
+
+            let scale = res
+                .scale
+                .to_f32()
+                .ok_or(anyhow!("Error converting scale to f32"))?;
+
+            let position_x = res
+                .position_x
+                .to_f32()
+                .ok_or(anyhow!("Error converting position_x to f32"))?;
+            let position_y = res
+                .position_y
+                .to_f32()
+                .ok_or(anyhow!("Error converting position_y to f32"))?;
+            let scene = res.scene;
+
+            let _ = move_transition_effects::scale_source2(
+                "Begin",
+                source,
+                scale.clone(),
+                scale,
+                obs_client,
+            )
+            .await;
+
+            let duration = 3000;
+            let easing_function_index = 1;
+            let easing_type_index = 1;
+
+            let _ = move_transition_effects::move_source_in_scene_x_and_y(
+                &scene,
+                source,
+                position_x,
+                position_y,
+                duration,
+                easing_function_index,
+                easing_type_index,
+                obs_client,
+            )
+            .await?;
+
             Ok(())
         }
 

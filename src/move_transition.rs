@@ -47,9 +47,9 @@ pub struct MoveSourceFilterSettings {
 
     pub scale: Option<Coordinates>,
 
+    // This should not be on here
     #[serde(rename = "Rotation.Z")]
-    pub rotation_z: Option<f32>,
-
+    // pub rotation_z: Option<f32>,
     pub duration: Option<u64>,
 
     pub source: Option<String>,
@@ -75,6 +75,54 @@ pub struct Coordinates {
 
     #[serde(rename = "y")]
     pub y: Option<f32>,
+}
+
+use sqlx::types::BigDecimal;
+
+// we create Json of What we want
+// we then convert to a MoveMultipleStruct
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct MoveMultipleValuesSetting2 {
+    pub filter: Option<String>,
+
+    // #[serde(default="multiple_settings_value_type_default")]
+    pub move_value_type: u32,
+
+    #[serde(rename = "duration")]
+    pub duration: Option<u32>,
+
+    // What is the difference
+    // #[serde(default="multiple_settings_value_type_default")]
+    pub value_type: u32,
+
+    #[serde(rename = "Camera.FieldOfView")]
+    pub field_of_view: Option<f32>,
+
+    // "easing_function_match": Number(10), "easing_match": Number(2),
+    #[serde(rename = "easing_function_match")]
+    pub easing_function: Option<i32>,
+    #[serde(rename = "easing_match")]
+    pub easing_type: Option<i32>,
+
+    // This is ortho
+    #[serde(rename = "Scale.X")]
+    pub scale_x: Option<f32>,
+    #[serde(rename = "Scale.Y")]
+    pub scale_y: Option<f32>,
+    #[serde(rename = "Shear.X")]
+    pub shear_x: Option<f32>,
+    #[serde(rename = "Shear.Y")]
+    pub shear_y: Option<f32>,
+    #[serde(rename = "Position.X")]
+    pub position_x: Option<f32>,
+    #[serde(rename = "Position.Y")]
+    pub position_y: Option<f32>,
+    #[serde(rename = "Rotation.X")]
+    pub rotation_x: Option<f32>,
+    #[serde(rename = "Rotation.Y")]
+    pub rotation_y: Option<f32>,
+    #[serde(rename = "Rotation.Z")]
+    pub rotation_z: Option<f32>,
 }
 
 // We need a MoveSettingsOrtho
@@ -302,6 +350,25 @@ pub async fn move_with_move_source(
     Ok(())
 }
 
+pub async fn move_with_move_source2<T: serde::Serialize>(
+    scene: &str,
+    filter_name: &str,
+    new_settings: T,
+    obs_client: &obws::Client,
+) -> Result<()> {
+    update_move_source_filters2(scene, filter_name, new_settings, &obs_client)
+        .await?;
+
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    Ok(())
+}
+
 // ===================================================================================
 // == MOVE SOURCE ====================================================================
 // ===================================================================================
@@ -506,6 +573,25 @@ pub async fn update_and_trigger_move_values_filter(
 // ====================================================================
 
 // This takes in settings and updates a filter
+async fn update_move_source_filters2<T: serde::Serialize>(
+    source: &str,
+    filter_name: &str,
+    new_settings: T,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    // What ever this serializes too, ain't right for Move Multiple Settings
+    let new_filter = obws::requests::filters::SetSettings {
+        source,
+        filter: filter_name,
+        settings: Some(new_settings),
+        overlay: Some(false),
+    };
+    obs_client.filters().set_settings(new_filter).await?;
+
+    Ok(())
+}
+
+// This takes in settings and updates a filter
 async fn update_move_source_filters(
     source: &str,
     filter_name: &str,
@@ -528,7 +614,6 @@ async fn update_move_source_filters(
 // == FETCHING ===================================================================
 // ===============================================================================
 
-// This function is long!!!
 pub async fn fetch_source_settings(
     scene: &str,
     source: &str,

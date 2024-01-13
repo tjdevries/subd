@@ -4,8 +4,10 @@ use crate::obs;
 use crate::obs_filters;
 use crate::stream_fx;
 use anyhow::Result;
+use move_transition::MoveMultipleValuesSetting;
 use obws::responses::filters::SourceFilter;
 use obws::Client as OBSClient;
+use sqlx::types::BigDecimal;
 
 pub async fn generic_update_trigger_move_values<
     T: serde::Serialize
@@ -14,6 +16,8 @@ pub async fn generic_update_trigger_move_values<
 >(
     obs_client: &OBSClient,
     source: &str,
+
+    // These are an struct
     duration: u64,
     easing_function_index: Option<i32>,
     easing_type_index: Option<i32>,
@@ -123,47 +127,6 @@ pub async fn new_spin(
     Ok(())
 }
 
-pub async fn spin_source_with_perspective(
-    source: &str,
-    rotation_z: f32,
-    duration: u64,
-    easing_function_index: i32,
-    easing_type_index: i32,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    let filter_name = "3D-Transform-Perspective";
-
-    // let new_settings = move_transition::MoveMultipleValuesSetting {
-    //     rotation_z: Some(rotation_z),
-    //     easing_function: Some(easing_function_index),
-    //     easing_type: Some(easing_type_index),
-    //     duration: Some(duration as u32),
-    //     ..Default::default()
-    // };
-
-    // let new_settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
-    //     rotation_z: Some(rotation_z),
-    //     // easing_function: Some(easing_function_index),
-    //     // easing_type: Some(easing_type_index),
-    //     // duration: Some(duration as u32),
-    //     ..Default::default()
-    // };
-    // dbg!(&new_settings);
-    //
-    // let three_d_transform_filter_name = filter_name;
-    // let move_transition_filter_name =
-    //     format!("Move_{}", three_d_transform_filter_name);
-
-    // let _ = move_transition::update_and_trigger_move_values_filter(
-    //     source,
-    //     &move_transition_filter_name,
-    //     new_settings,
-    //     &obs_client,
-    // )
-    // .await?;
-    Ok(())
-}
-
 pub async fn update_and_trigger_move_values_filter<T: serde::Serialize>(
     source: &str,
     filter_name: &str,
@@ -259,6 +222,40 @@ pub async fn spin_source(
     Ok(())
 }
 
+// Scale Source taking in BigD
+pub async fn scale_source2(
+    scene: &str,
+    source: &str,
+    x: f32,
+    y: f32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let filter_name = format!("Move_{}", source);
+    let new_settings = move_transition::MoveMultipleValuesSetting {
+        scale_x: Some(x),
+        scale_y: Some(y),
+        duration: Some(300),
+        ..Default::default()
+    };
+
+    // Let's save the obs_source position
+    // which requires update_or_create
+    // let mut settings =
+    //     move_transition::fetch_source_settings(scene, &source, &obs_client)
+    //         .await?;
+
+    // settings.x = x;
+    // settings.y = y;
+
+    move_transition::move_with_move_source2(
+        scene,
+        &filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await
+}
+
 pub async fn scale_source(
     scene: &str,
     source: &str,
@@ -300,7 +297,6 @@ pub async fn move_source_with_custom_settings(
     scene: &str,
     source: &str,
     custom_settings: move_transition::MoveSourceFilterSettings,
-
     obs_client: &OBSClient,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
