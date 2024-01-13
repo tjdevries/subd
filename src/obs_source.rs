@@ -383,6 +383,29 @@ pub async fn update_obs_source_defaults(
     .await
     .map_err(|e| anyhow!("Error updating obs_source: {}", e))
 }
+
+// Is that the right word?
+pub async fn update_obs_source_position(
+    pool: &sqlx::PgPool,
+    source: String,
+    position_x: f32,
+    position_y: f32,
+) -> Result<PgQueryResult> {
+    let position_x = BigDecimal::from_f32(position_x).unwrap();
+    let position_y = BigDecimal::from_f32(position_y).unwrap();
+    sqlx::query!(
+        r#"UPDATE obs_sources
+        SET position_x = $1,
+        position_y = $2
+        WHERE source = $3"#,
+        position_x,
+        position_y,
+        source,
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow!("Error updating obs_source: {}", e))
+}
 // We need to save:
 //  - prime
 //  - alex

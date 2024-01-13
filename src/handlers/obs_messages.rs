@@ -16,6 +16,7 @@ use std::collections::HashMap;
 use subd_twitch::rewards;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use tracing_subscriber::registry::SpanData;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -112,6 +113,8 @@ pub async fn handle_obs_commands(
 ) -> Result<()> {
     let default_source = obs::DEFAULT_SOURCE.to_string();
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
+
+    let is_mod = msg.roles.is_twitch_mod();
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let duration: u32 = splitmsg
@@ -182,6 +185,29 @@ pub async fn handle_obs_commands(
                     settings,
                 )
                 .await;
+            Ok(())
+        }
+
+        // !update_meme SOURCE X Y
+        "!update_meme" => {
+            if !is_mod {
+                return Ok(());
+            }
+            let x = splitmsg
+                .get(2)
+                .ok_or(anyhow!("Error Fetching X to update_meme"))?
+                .parse::<f32>()?;
+
+            let y =
+                splitmsg.get(2).map_or(x, |v| v.parse::<f32>().unwrap_or(x));
+
+            let _ = obs_source::update_obs_source_position(
+                &pool,
+                source.to_string(),
+                x,
+                y,
+            )
+            .await;
             Ok(())
         }
 
@@ -280,14 +306,11 @@ pub async fn handle_obs_commands(
 
             dbg!(&req);
 
-            move_transition_effects::scale_source(
+            move_transition_effects::scale_source2(
                 &req.scene,
                 &req.source,
                 req.x,
                 req.y,
-                req.duration as u64,
-                req.easing_function_index,
-                req.easing_type_index,
                 &obs_client,
             )
             .await
