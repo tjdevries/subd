@@ -9,7 +9,8 @@ pub struct Coordinates {
 // I think the easing will want to be an Enum
 // TODO: Finish this
 // Then we need to add defaults
-pub struct MoveTimingSettings {
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct DurationSettings {
     pub duration: Option<i32>,
     pub easing_function_index: Option<i32>,
     pub easing_type_index: Option<i32>,

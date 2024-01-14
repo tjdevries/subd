@@ -5,6 +5,12 @@ use crate::obs_filters;
 use anyhow::Result;
 use obws::Client as OBSClient;
 
+// OBS_Client, Source, Scene
+// could be the default info we need
+// we need pass in settings
+//
+// and pass in a DurationSettings
+//
 // TODO: MoveTimingSettings
 
 // Update and Trigger 3d Filter
@@ -82,17 +88,16 @@ pub async fn spin_source(
 }
 
 pub async fn move_source_in_scene_x_and_y(
+    obs_client: &OBSClient,
     scene: &str,
     source: &str,
     x: f32,
     y: f32,
-    _duration: u64,
-    _easing_function_index: i32,
-    _easing_type_index: i32,
-    obs_client: &OBSClient,
+    duration_settings: models::DurationSettings,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
 
+    // Now we need a collapsed struct
     // I need something that takes in x, y and these values
     let new_settings = models::Coordinates {
         x: Some(x),
