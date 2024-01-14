@@ -211,45 +211,10 @@ mod tests {
         let _ = move_transition::update_and_trigger_3d_filter(
             &obs_client,
             "begin",
+            "3d-Transform-Orthographic",
             settings,
             d,
         )
         .await;
-
-        // let move_settings = MovePluginSettings {
-        //     filter: "Cool-Filter".to_string(),
-        //     settings,
-        //     ..Default::default()
-        // };
-        // let j = serde_json::to_string(&move_settings).unwrap();
-        // println!("=======================");
-        // println!("\n\nTESTING {}", j);
-        // println!("=======================");
-
-        // let source = "begin".to_string();
-        // let _ = move_transition::spin_source2(
-        //     &obs_client,
-        //     &source,
-        //     1080.0,
-        //     3000,
-        //     None,
-        //     None,
-        // )
-        // .await;
-
-        // let sleep_time = time::Duration::from_millis(3000);
-        // thread::sleep(sleep_time);
-        // let source = "begin".to_string();
-        // let _ = move_transition::spin_source2(
-        //     &obs_client,
-        //     &source,
-        //     0.0,
-        //     0,
-        //     None,
-        //     None,
-        // )
-        // .await;
-
-        // let root: VoiceRoot = serde_json::from_str(&data)?;
     }
 }
