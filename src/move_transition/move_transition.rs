@@ -5,15 +5,6 @@ use crate::obs_filters;
 use anyhow::Result;
 use obws::Client as OBSClient;
 
-// OBS_Client, Source, Scene
-// could be the default info we need
-// we need pass in settings
-//
-// and pass in a DurationSettings
-//
-// TODO: MoveTimingSettings
-
-// Update and Trigger 3d Filter
 pub async fn update_and_trigger_3d_filter<
     T: serde::Serialize
         + std::default::Default
@@ -21,8 +12,8 @@ pub async fn update_and_trigger_3d_filter<
 >(
     obs_client: &OBSClient,
     source: &str,
-    duration_settings: models::DurationSettings,
     settings: T,
+    duration_settings: models::DurationSettings,
 ) -> Result<()> {
     let filter_name = settings.filter_name();
     let new_settings = obs_filters::three_d_transform::MovePluginSettings {
@@ -36,13 +27,13 @@ pub async fn update_and_trigger_3d_filter<
 
     let move_transition_filter_name = format!("Move_{}", filter_name);
 
-    Ok(private::update_filter_and_enable(
+    private::update_filter_and_enable(
         source,
         &move_transition_filter_name,
         new_settings,
         &obs_client,
     )
-    .await?)
+    .await
 }
 
 pub async fn spin_source(
@@ -70,14 +61,13 @@ pub async fn spin_source(
 
     let move_transition_filter_name = format!("Move_{}", filter_name);
 
-    let _ = private::update_filter_and_enable(
+    private::update_filter_and_enable(
         source,
         &move_transition_filter_name,
         new_settings,
         &obs_client,
     )
-    .await?;
-    Ok(())
+    .await
 }
 
 pub async fn move_source_in_scene_x_and_y(
@@ -86,7 +76,7 @@ pub async fn move_source_in_scene_x_and_y(
     source: &str,
     x: f32,
     y: f32,
-    duration_settings: models::DurationSettings,
+    _duration_settings: models::DurationSettings,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
 

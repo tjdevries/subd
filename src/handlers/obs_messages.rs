@@ -162,8 +162,8 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 &req.source,
-                d,
                 settings,
+                d,
             )
             .await;
 
@@ -201,8 +201,8 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                d,
                 settings,
+                d,
             )
             .await;
             Ok(())
@@ -301,8 +301,8 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                d,
                 settings,
+                d,
             )
             .await;
             Ok(())
@@ -434,8 +434,8 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                d,
                 settings,
+                d,
             )
             .await;
             Ok(())

@@ -1,11 +1,4 @@
-use crate::move_transition::models;
 use serde::{Deserialize, Serialize, Serializer};
-
-// enum ThreeDTransformFilters {
-//     Perspective(ThreeDTransformPerspective),
-//     Orthographic(ThreeDTransformOrthographic),
-//     CornerPin(ThreeDTransformCornerPin),
-// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SpinFilters {
@@ -252,8 +245,8 @@ mod tests {
         let _ = move_transition::update_and_trigger_3d_filter(
             &obs_client,
             "begin",
-            d,
             settings,
+            d,
         )
         .await;
 
