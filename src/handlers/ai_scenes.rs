@@ -1,3 +1,4 @@
+use crate::ai_scene;
 use crate::audio;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
@@ -16,8 +17,6 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
-use serde::{Deserialize, Serialize};
-use sqlx::types::Uuid;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::run_from_prompt;
@@ -35,50 +34,6 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScenes {
-    pub scenes: Vec<AIScene>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScene {
-    pub reward_title: String,
-    pub base_prompt: String,
-    pub base_dalle_prompt: String,
-    pub voice: String,
-    pub music_bg: String,
-    pub cost: usize,
-    pub id: Option<Uuid>,
-}
-
-#[derive(Deserialize, Debug)]
-struct ElevenlabsVoice {
-    voice_id: String,
-    name: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct VoiceList {
-    voices: Vec<ElevenlabsVoice>,
-}
-
-// Should they be optional???
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StreamCharacter {
-    // text_source: String,
-    pub voice: Option<String>,
-    pub source: String,
-    pub username: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Voice {
-    pub category: String,
-    pub display_name: String,
-    pub model_id: String,
-    pub name: String,
-}
 
 // ============================================================
 //
@@ -456,7 +411,7 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // We should replace this with an API call
     // or call it every once-in-a-while and "cache"
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
-    let voice_list: VoiceList =
+    let voice_list: ai_scene::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
     let name_lowercase = name.to_lowercase();
@@ -494,7 +449,7 @@ fn sanitize_chat_message(raw_msg: String) -> String {
 fn find_random_voice() -> (String, String) {
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
-    let voice_list: VoiceList =
+    let voice_list: ai_scene::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
     let mut rng = thread_rng();

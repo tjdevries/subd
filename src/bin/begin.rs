@@ -2,7 +2,6 @@ use anyhow::Result;
 use clap::Parser;
 use elevenlabs_api::{Auth, Elevenlabs};
 use serde::{Deserialize, Serialize};
-use server::ai_scenes;
 use server::audio;
 use server::handlers;
 use server::obs::obs::create_obs_client;
@@ -261,7 +260,7 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                event_loop.push(ai_scenes::AiScenesHandler {
+                event_loop.push(handlers::ai_scenes::AiScenesHandler {
                     pool: pool.clone(),
                     twitch_client,
                     sink,

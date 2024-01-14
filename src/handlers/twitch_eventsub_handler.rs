@@ -1,4 +1,4 @@
-use crate::ai_scenes;
+use crate::ai_scene;
 use crate::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
@@ -168,10 +168,10 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes::AIScenes =
+    let ai_scenes: ai_scene::AIScenes =
         serde_json::from_str(&contents).unwrap();
 
-    let ai_scenes_map: HashMap<String, &ai_scenes::AIScene> = ai_scenes
+    let ai_scenes_map: HashMap<String, &ai_scene::AIScene> = ai_scenes
         .scenes
         .iter()
         .map(|scene| (scene.reward_title.clone(), scene))
@@ -345,7 +345,7 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
     reward_manager: Arc<RewardManager<'a, C>>,
-    ai_scenes_map: HashMap<String, &ai_scenes::AIScene>,
+    ai_scenes_map: HashMap<String, &ai_scene::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
     let state = twitch_stream_state::get_twitch_state(&pool).await?;

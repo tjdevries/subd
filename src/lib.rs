@@ -1,4 +1,4 @@
-pub mod ai_scenes;
+pub mod ai_scene;
 pub mod art_blocks;
 pub mod audio;
 pub mod commands;

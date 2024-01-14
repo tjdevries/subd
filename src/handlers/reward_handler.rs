@@ -1,4 +1,4 @@
-use crate::ai_scenes;
+use crate::ai_scene;
 use crate::twitch_rewards;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -152,9 +152,7 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
     Ok(())
 }
 
-fn find_random_ai_scene_title(
-    ai_scenes: ai_scenes::AIScenes,
-) -> Result<String> {
+fn find_random_ai_scene_title(ai_scenes: ai_scene::AIScenes) -> Result<String> {
     let random = {
         let mut rng = rand::thread_rng();
         rng.gen_range(0..ai_scenes.scenes.len())
@@ -164,10 +162,10 @@ fn find_random_ai_scene_title(
 }
 
 // TODO: Don't hardcode this
-fn current_ai_scenes() -> Result<ai_scenes::AIScenes> {
+fn current_ai_scenes() -> Result<ai_scene::AIScenes> {
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path)?;
-    let ai_scenes: ai_scenes::AIScenes =
+    let ai_scenes: ai_scene::AIScenes =
         serde_json::from_str(&contents.clone())?;
     Ok(ai_scenes)
 }
