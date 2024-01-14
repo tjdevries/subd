@@ -1,6 +1,6 @@
+use crate::constants;
 use crate::move_transition;
 use crate::music_scenes;
-use crate::obs;
 use crate::obs_scenes;
 use crate::obs_source;
 use crate::twitch_stream_state;
@@ -67,7 +67,7 @@ async fn handle_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let default_source = obs::DEFAULT_SOURCE.to_string();
+    let default_source = constants::DEFAULT_SOURCE.to_string();
 
     let is_mod = msg.roles.is_twitch_mod();
     let is_vip = msg.roles.is_twitch_vip();
@@ -90,7 +90,7 @@ async fn handle_commands(
 
     let _scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
-        Err(_) => obs::MEME_SCENE.to_string(),
+        Err(_) => constants::MEME_SCENE.to_string(),
     };
 
     // This fails, and we stop

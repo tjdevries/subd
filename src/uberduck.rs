@@ -1,5 +1,5 @@
 use crate::audio;
-use crate::obs;
+use crate::constants;
 // use crate::dalle;
 // use crate::obs_scenes;
 use crate::redirect;
@@ -272,7 +272,8 @@ impl EventHandler for ElevenLabsHandler {
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
-                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
+                    text_source: constants::SOUNDBOARD_TEXT_SOURCE_NAME
+                        .to_string(),
                 },
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -309,7 +310,8 @@ impl EventHandler for ElevenLabsHandler {
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: "".to_string(),
-                    text_source: obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string(),
+                    text_source: constants::SOUNDBOARD_TEXT_SOURCE_NAME
+                        .to_string(),
                 },
             ));
             thread::sleep(ten_millis);
@@ -334,7 +336,7 @@ pub fn chop_text(starting_text: String) -> String {
 }
 
 fn find_obs_character(_voice: &str) -> &str {
-    let default_character = obs::DEFAULT_STREAM_CHARACTER_SOURCE;
+    let default_character = constants::DEFAULT_STREAM_CHARACTER_SOURCE;
     return default_character;
 }
 
@@ -346,7 +348,7 @@ pub async fn set_voice(
     let model = stream_character::user_stream_character_information::Model {
         username: username.clone(),
         voice: voice.to_string().to_lowercase(),
-        obs_character: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+        obs_character: constants::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
         random: false,
     };
 
@@ -417,21 +419,22 @@ pub async fn build_stream_character(
     pool: &sqlx::PgPool,
     username: &str,
 ) -> Result<StreamCharacter> {
-    let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
+    let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
 
-    let voice =
-        match stream_character::get_voice_from_username(pool, username).await {
-            Ok(voice) => voice,
-            Err(_) => {
-                println!("No Voice Found, Using Default");
+    let voice = match stream_character::get_voice_from_username(pool, username)
+        .await
+    {
+        Ok(voice) => voice,
+        Err(_) => {
+            println!("No Voice Found, Using Default");
 
-                return Ok(StreamCharacter {
-                    username: username.to_string(),
-                    voice: Some(default_voice.to_string()),
-                    source: obs::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
-                });
-            }
-        };
+            return Ok(StreamCharacter {
+                username: username.to_string(),
+                voice: Some(default_voice.to_string()),
+                source: constants::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+            });
+        }
+    };
 
     let character = find_obs_character(&voice);
 

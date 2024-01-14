@@ -3,6 +3,7 @@ pub mod art_blocks;
 pub mod audio;
 pub mod bootstrap;
 pub mod commands;
+pub mod constants;
 pub mod dalle;
 pub mod handlers;
 pub mod image_generation;

@@ -1,4 +1,4 @@
-use crate::obs;
+use crate::constants;
 use crate::twitch_stream_state;
 use crate::uberduck;
 use anyhow::Result;
@@ -94,7 +94,7 @@ impl EventHandler for ExplicitSoundHandler {
                 continue;
             };
 
-            // let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+            // let text_source = constants::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
             // We are not showing next of SFXs right now
             // let _ = tx.send(Event::TransformOBSTextRequest(
             //     TransformOBSTextRequest {
@@ -189,7 +189,7 @@ impl EventHandler for SoundHandler {
 
             let voice = match stream_character.voice {
                 Some(voice) => voice,
-                None => obs::TWITCH_MOD_DEFAULT_VOICE.to_string(),
+                None => constants::TWITCH_MOD_DEFAULT_VOICE.to_string(),
             };
 
             // This is the current state of the stream:
@@ -206,16 +206,19 @@ impl EventHandler for SoundHandler {
             // This is all about how to respond to messages from various types of users
             if msg.roles.is_twitch_staff() {
                 character.voice =
-                    Some(obs::TWITCH_STAFF_OBS_SOURCE.to_string());
-                character.source = Some(obs::TWITCH_STAFF_VOICE.to_string());
+                    Some(constants::TWITCH_STAFF_OBS_SOURCE.to_string());
+                character.source =
+                    Some(constants::TWITCH_STAFF_VOICE.to_string());
             } else if msg.user_name == "beginbotbot" {
-                character.voice = Some(obs::TWITCH_HELPER_VOICE.to_string());
+                character.voice =
+                    Some(constants::TWITCH_HELPER_VOICE.to_string());
             } else if msg.roles.is_twitch_mod() {
                 match character.voice {
                     Some(_) => {}
                     None => {
-                        character.voice =
-                            Some(obs::TWITCH_MOD_DEFAULT_VOICE.to_string());
+                        character.voice = Some(
+                            constants::TWITCH_MOD_DEFAULT_VOICE.to_string(),
+                        );
                     }
                 }
             } else if msg.roles.is_twitch_sub() {
@@ -268,7 +271,8 @@ impl EventHandler for SoundHandler {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            let text_source = obs::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+            let text_source =
+                constants::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);

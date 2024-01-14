@@ -1,6 +1,6 @@
+use crate::constants;
 use crate::move_transition;
 use crate::move_transition_effects;
-use crate::obs;
 use crate::obs_bootstrap::bootstrap;
 use crate::obs_filters;
 use crate::obs_scenes;
@@ -108,7 +108,7 @@ pub async fn handle_obs_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let default_source = obs::DEFAULT_SOURCE.to_string();
+    let default_source = constants::DEFAULT_SOURCE.to_string();
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
 
     let is_mod = msg.roles.is_twitch_mod();
@@ -119,7 +119,7 @@ pub async fn handle_obs_commands(
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
     let _scene = obs_scenes::find_scene(source)
         .await
-        .unwrap_or(obs::MEME_SCENE.to_string());
+        .unwrap_or(constants::MEME_SCENE.to_string());
     let command = splitmsg[0].as_str();
 
     let _ = match command {
@@ -606,7 +606,7 @@ pub fn build_chat_move_source_request(
     req.easing_type_index = easing_type_index;
     req.easing_function_index = easing_function_index;
 
-    let new_begin_source = obs::NEW_BEGIN_SOURCE;
+    let new_begin_source = constants::NEW_BEGIN_SOURCE;
     let scene = if req.source == "begin" {
         default_scene
     } else if req.source == new_begin_source {
@@ -700,6 +700,7 @@ pub fn build_wide_request(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::obs;
 
     #[tokio::test]
     async fn test_filters() {

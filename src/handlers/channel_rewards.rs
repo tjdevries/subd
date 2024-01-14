@@ -4,6 +4,7 @@ use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
 use crate::obs;
+use crate::constants;
 use crate::obs_combo;
 use crate::obs_hotkeys;
 use crate::obs_scenes;
@@ -141,7 +142,7 @@ pub async fn handle_obs_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<(), String> {
-    let default_source = obs::DEFAULT_SOURCE.to_string();
+    let default_source = constants::DEFAULT_SOURCE.to_string();
     let not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
@@ -153,7 +154,7 @@ pub async fn handle_obs_commands(
         .map_or(0.0, |x| x.trim().parse().unwrap_or(0.0));
     let scene = match obs_scenes::find_scene(source).await {
         Ok(scene) => scene.to_string(),
-        Err(_) => obs::MEME_SCENE.to_string(),
+        Err(_) => constants::MEME_SCENE.to_string(),
     };
 
     let command = splitmsg[0].as_str();
@@ -449,7 +450,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_screenshotting() {
-        let obs_client = obs::create_obs_client().await.unwrap();
+        let obs_client = constants::create_obs_client().await.unwrap();
 
         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
         let unique_identifier = format!("{}_screenshot.png", timestamp);

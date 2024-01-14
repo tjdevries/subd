@@ -1,5 +1,5 @@
+use crate::constants;
 use crate::music_scenes;
-use crate::obs;
 use crate::obs_source;
 use crate::twitch_stream_state;
 use crate::uberduck;
@@ -188,7 +188,7 @@ pub async fn handle_voices_commands(
         }
 
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
-            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
+            let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::set_voice(
                 voice.to_string(),
@@ -199,7 +199,7 @@ pub async fn handle_voices_commands(
         }
 
         "!voice" => {
-            let default_voice = obs::TWITCH_DEFAULT_VOICE.to_string();
+            let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             uberduck::talk_in_voice(
                 msg.contents.clone(),

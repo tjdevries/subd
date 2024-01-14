@@ -1,8 +1,8 @@
 use crate::art_blocks;
+use crate::constants;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::move_transition_effects;
-use crate::obs;
 use crate::obs_source;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -323,7 +323,7 @@ async fn create_and_show_bogan(
     // do we need to sleep here?
     thread::sleep(Duration::from_millis(100));
 
-    let source = obs::NEW_BEGIN_SOURCE.to_string();
+    let source = constants::NEW_BEGIN_SOURCE.to_string();
     let res =
         obs_source::update_image_source(obs_client, source.clone(), path).await;
     if let Err(e) = res {

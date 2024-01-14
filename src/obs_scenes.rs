@@ -1,4 +1,4 @@
-use crate::obs;
+use crate::constants;
 use anyhow::Result;
 use obws;
 
@@ -13,8 +13,8 @@ pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
 
 pub async fn find_scene(source: &str) -> Result<String> {
     let scene = match source {
-        "begin" => obs::DEFAULT_SCENE,
-        _ => obs::MEME_SCENE,
+        "begin" => constants::DEFAULT_SCENE,
+        _ => constants::MEME_SCENE,
     };
 
     Ok(scene.to_string())

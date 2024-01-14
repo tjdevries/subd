@@ -1,4 +1,4 @@
-use crate::obs;
+use crate::constants;
 use anyhow::anyhow;
 use anyhow::Result;
 use num_traits::FromPrimitive;
@@ -144,7 +144,10 @@ pub async fn old_trigger_grow(
     // This also takes in a scene,
     // BUT has DEFAULT_SCENE and MEME_SCENE hardcoded into it
     if source == "all" {
-        let sources = obs_client.scene_items().list(obs::DEFAULT_SCENE).await?;
+        let sources = obs_client
+            .scene_items()
+            .list(constants::DEFAULT_SCENE)
+            .await?;
         for source in sources {
             let new_scale = Scale {
                 x: base_scale.x,
@@ -153,7 +156,7 @@ pub async fn old_trigger_grow(
 
             // Do we need to do this not to crash all the time???
             let id = match find_id(
-                obs::MEME_SCENE,
+                constants::MEME_SCENE,
                 &source.source_name,
                 &obs_client,
             )
@@ -163,7 +166,7 @@ pub async fn old_trigger_grow(
                 Err(_) => return Ok(()),
             };
 
-            scale(obs::MEME_SCENE, id, new_scale, &obs_client).await?;
+            scale(constants::MEME_SCENE, id, new_scale, &obs_client).await?;
         }
         Ok(())
     } else {
@@ -284,7 +287,7 @@ pub async fn print_source_info(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id = find_id(obs::MEME_SCENE, source, &obs_client).await?;
+    let id = find_id(constants::MEME_SCENE, source, &obs_client).await?;
     let settings = obs_client.scene_items().transform(scene, id).await?;
 
     println!("Source Settings: {:?}", settings);
