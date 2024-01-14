@@ -22,7 +22,7 @@ impl EventHandler for SourceVisibilityHandler {
                 Event::SourceVisibilityRequest(msg) => msg,
                 _ => continue,
             };
-            let _ = crate::obs_source::set_enabled(
+            let _ = crate::obs::obs_source::set_enabled(
                 &msg.scene,
                 &msg.source,
                 msg.enabled,

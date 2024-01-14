@@ -1,12 +1,8 @@
-use crate::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::thread;
 use std::time;
-use std::time::Duration;
-use sqlx::types::BigDecimal;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct MoveTextFilter {
@@ -37,7 +33,6 @@ pub struct MoveTextFilter {
     #[serde(rename = "move_value_type")]
     pub move_value_type: Option<u32>,
 }
-
 
 // ===============================================================
 // == TEXT
@@ -85,4 +80,3 @@ pub async fn update_and_trigger_text_move_filter(
     obs_client.filters().set_enabled(filter_enabled).await?;
     Ok(())
 }
-

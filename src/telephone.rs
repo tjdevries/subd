@@ -2,7 +2,7 @@ use crate::audio;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::images;
-use crate::obs_source;
+use crate::obs::obs_source;
 use crate::openai;
 use anyhow::anyhow;
 use anyhow::Result;

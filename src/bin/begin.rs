@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use server::ai_scenes;
 use server::audio;
 use server::handlers;
+use server::obs::obs::create_obs_client;
 use server::uberduck;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
@@ -142,7 +143,7 @@ async fn main() -> Result<()> {
                 );
 
                 // TODO: We want to reconsider our feature boundaries
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(handlers::voices_handler::VoicesHandler {
                     pool: pool.clone(),
                     obs_client,
@@ -180,7 +181,7 @@ async fn main() -> Result<()> {
                     "https://api.elevenlabs.io/v1/",
                 );
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -196,7 +197,7 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -214,7 +215,7 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots_timer" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -232,7 +233,7 @@ async fn main() -> Result<()> {
             }
 
             "ai_telephone" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -254,7 +255,7 @@ async fn main() -> Result<()> {
                     "https://api.elevenlabs.io/v1/",
                 );
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -268,7 +269,7 @@ async fn main() -> Result<()> {
                     elevenlabs,
                 });
 
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::music_scenes_handler::MusicScenesHandler {
                         pool: pool.clone(),
@@ -278,7 +279,7 @@ async fn main() -> Result<()> {
             }
 
             "channel_rewards" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -292,21 +293,21 @@ async fn main() -> Result<()> {
             }
 
             "skybox" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(handlers::skybox::SkyboxHandler {
                     obs_client,
                     pool: pool.clone(),
                 });
 
                 // This checks if Skyboxes are done, every 60 seconds
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(handlers::skybox_status::SkyboxStatusHandler {
                     obs_client,
                     pool: pool.clone(),
                 });
 
                 // This checks if Skyboxes are done, every 60 seconds
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
@@ -331,7 +332,7 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 // Do we need to duplicate this?
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(handlers::obs_messages::OBSMessageHandler {
@@ -342,7 +343,7 @@ async fn main() -> Result<()> {
                 });
 
                 // OBS Hotkeys are controlled here
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::trigger_obs_hotkey::TriggerHotkeyHandler {
                         obs_client,
@@ -350,7 +351,7 @@ async fn main() -> Result<()> {
                 );
 
                 // OBS Text is controlled here
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::transform_obs_test::TransformOBSTextHandler {
                         obs_client,
@@ -358,7 +359,7 @@ async fn main() -> Result<()> {
                 );
 
                 // OBS Sources are controlled here
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::source_visibility::SourceVisibilityHandler {
                         obs_client,
@@ -369,7 +370,7 @@ async fn main() -> Result<()> {
 
             "stream_character" => {
                 // OBS Stream Characters are controlled here
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::stream_character_handler::StreamCharacterHandler {
                         obs_client,
@@ -397,7 +398,7 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::twitch_eventsub_handler::TwitchEventSubHandler {
                         pool: pool.clone(),
@@ -408,7 +409,7 @@ async fn main() -> Result<()> {
             }
 
             "dynamic_stream_background" => {
-                let obs_client = server::obs::create_obs_client().await?;
+                let obs_client = create_obs_client().await?;
                 event_loop.push(
                     handlers::stream_background::StreamBackgroundHandler {
                         obs_client,

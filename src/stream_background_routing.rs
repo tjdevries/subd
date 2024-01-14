@@ -3,7 +3,7 @@ use crate::constants;
 use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::move_transition_effects;
-use crate::obs_source;
+use crate::obs::obs_source;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::Utc;

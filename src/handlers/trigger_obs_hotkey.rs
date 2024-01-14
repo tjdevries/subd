@@ -23,8 +23,11 @@ impl EventHandler for TriggerHotkeyHandler {
                 _ => continue,
             };
 
-            crate::obs_hotkeys::trigger_hotkey(&msg.hotkey, &self.obs_client)
-                .await?;
+            crate::obs::obs_hotkeys::trigger_hotkey(
+                &msg.hotkey,
+                &self.obs_client,
+            )
+            .await?;
         }
     }
 }

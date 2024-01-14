@@ -1,4 +1,4 @@
-use crate::obs_source;
+use crate::obs::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};

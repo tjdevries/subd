@@ -2,7 +2,7 @@ extern crate reqwest;
 use askama::Template;
 extern crate serde;
 extern crate serde_json;
-use crate::obs_source;
+use crate::obs::obs_source;
 use crate::skybox::skybox;
 use crate::skybox::skybox_requests;
 use anyhow::Result;

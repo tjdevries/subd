@@ -1,6 +1,5 @@
 use crate::constants;
-use crate::music_scenes;
-use crate::obs_source;
+use crate::obs::obs_source;
 use crate::twitch_stream_state;
 use crate::uberduck;
 use anyhow::anyhow;
@@ -219,7 +218,7 @@ pub async fn handle_voices_commands(
             }
             println!("Time for !nothing");
 
-            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC
+            let music_list: Vec<&str> = constants::VOICE_TO_MUSIC
                 .iter()
                 .map(|(_, scene)| scene.music)
                 .collect();

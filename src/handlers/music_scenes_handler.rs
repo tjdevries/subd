@@ -1,8 +1,7 @@
 use crate::constants;
 use crate::move_transition;
-use crate::music_scenes;
-use crate::obs_scenes;
-use crate::obs_source;
+use crate::obs::obs_scenes;
+use crate::obs::obs_source;
 use crate::twitch_stream_state;
 use crate::uberduck;
 use anyhow::Result;
@@ -103,7 +102,7 @@ async fn handle_commands(
     let command = splitmsg[0].as_str();
 
     // TODO: Check for a playlist
-    let exists = music_scenes::VOICE_TO_MUSIC
+    let exists = constants::VOICE_TO_MUSIC
         .iter()
         .any(|&(cmd, _)| cmd == command);
     if exists {
@@ -112,7 +111,7 @@ async fn handle_commands(
         }
 
         let mut scene_details = None;
-        for &(cmd, ref scene) in music_scenes::VOICE_TO_MUSIC.iter() {
+        for &(cmd, ref scene) in constants::VOICE_TO_MUSIC.iter() {
             if cmd == command {
                 scene_details = Some(scene);
                 break;
@@ -196,7 +195,7 @@ async fn handle_commands(
             };
 
             // Hide all Background Music Sources
-            let music_list: Vec<&str> = music_scenes::VOICE_TO_MUSIC
+            let music_list: Vec<&str> = constants::VOICE_TO_MUSIC
                 .iter()
                 .map(|(_, scene)| scene.music)
                 .collect();

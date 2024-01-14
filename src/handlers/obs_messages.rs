@@ -1,10 +1,10 @@
 use crate::constants;
 use crate::move_transition;
 use crate::move_transition_effects;
+use crate::obs::obs_scenes;
+use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
 use crate::obs_filters;
-use crate::obs_scenes;
-use crate::obs_source;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -700,7 +700,7 @@ pub fn build_wide_request(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::obs;
+    use crate::obs::obs;
 
     #[tokio::test]
     async fn test_filters() {
