@@ -179,40 +179,6 @@ fn corner_pin_camera_mode<S: Serializer>(
     s.serialize_i32(2)
 }
 
-fn value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_i32(2)
-}
-
-fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_i32(1)
-}
-
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct MovePluginSettings<T> {
-    pub filter: String,
-
-    #[serde(serialize_with = "value_type")]
-    pub value_type: (),
-
-    #[serde(serialize_with = "move_value_type")]
-    pub move_value_type: (),
-
-    #[serde(
-        rename = "easing_function_match",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub easing_function: Option<i32>,
-
-    #[serde(rename = "easing_match", skip_serializing_if = "Option::is_none")]
-    pub easing_type: Option<i32>,
-
-    #[serde(rename = "duration", skip_serializing_if = "Option::is_none")]
-    pub duration: Option<i32>,
-
-    #[serde(flatten)]
-    pub settings: T,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

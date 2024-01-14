@@ -16,7 +16,7 @@ pub async fn update_and_trigger_3d_filter<
     duration_settings: models::DurationSettings,
 ) -> Result<()> {
     let filter_name = settings.filter_name();
-    let new_settings = obs_filters::three_d_transform::MovePluginSettings {
+    let new_settings = models::MovePluginSettings {
         filter: filter_name.clone(),
         duration: duration_settings.duration,
         easing_function: duration_settings.easing_function_index,
@@ -50,7 +50,7 @@ pub async fn spin_source(
         camera_mode: (),
         ..Default::default()
     };
-    let new_settings = obs_filters::three_d_transform::MovePluginSettings {
+    let new_settings = models::MovePluginSettings {
         filter: filter_name.clone(),
         duration: duration_settings.duration,
         easing_function: duration_settings.easing_function_index,
@@ -70,6 +70,7 @@ pub async fn spin_source(
     .await
 }
 
+// We need another type here
 pub async fn move_source_in_scene_x_and_y(
     obs_client: &OBSClient,
     scene: &str,
