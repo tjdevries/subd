@@ -47,6 +47,27 @@ pub struct WideRequest {
     duration: u64,
 }
 
+// This is used inside of OBS Messages
+// It also does more than Move
+// This is related to chat, and shouldn't note taht
+#[derive(Default, Debug)]
+pub struct ChatMoveSourceRequest {
+    // I think we are always operating on a source, and sometimes also have a scene?
+    pub source: String,
+    pub scene: String,
+
+    pub x: f32,
+    pub y: f32,
+    pub rotation_z: f32,
+
+    // I think we need to learn to flatten this
+    pub duration: u64,
+    pub easing_type: String,
+    pub easing_function: String,
+    pub easing_type_index: i32,
+    pub easing_function_index: i32,
+}
+
 pub struct OBSMessageHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
@@ -544,11 +565,11 @@ fn build_chat_twirl_request(
 pub fn build_chat_move_source_request(
     splitmsg: Vec<String>,
     arg_positions: &[ChatArgPosition],
-) -> crate::move_transition::models::ChatMoveSourceRequest {
+) -> ChatMoveSourceRequest {
     let _default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
 
-    let mut req = crate::move_transition::models::ChatMoveSourceRequest {
+    let mut req = ChatMoveSourceRequest {
         ..Default::default()
     };
 

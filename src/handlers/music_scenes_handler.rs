@@ -78,7 +78,7 @@ async fn handle_commands(
     // defaults used by many commands
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
 
-    let duration: u32 = splitmsg
+    let _duration: u32 = splitmsg
         .get(4)
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
 
