@@ -27,7 +27,6 @@ pub mod skybox_requests;
 // pub mod stable_diffusion;
 pub mod stream_background_routing;
 pub mod stream_character;
-pub mod stream_fx;
 pub mod telephone;
 pub mod themesong;
 pub mod twitch_rewards;
@@ -36,6 +35,3 @@ pub mod uberduck;
 pub mod user_messages;
 pub mod users;
 pub mod voices_routing;
-
-// Handlers
-// pub mod handler::ai_screenshots;

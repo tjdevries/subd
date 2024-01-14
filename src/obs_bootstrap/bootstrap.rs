@@ -1,6 +1,5 @@
 use crate::move_transition;
 use crate::obs;
-use crate::stream_fx;
 use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
@@ -11,6 +10,53 @@ use serde::{Deserialize, Serialize};
 static MOVE_VALUE_TYPE_SINGLE: u32 = 1;
 static MOVE_VALUE_TYPE_ZERO: u32 = 0;
 static DEFAULT_DURATION: u32 = 7000;
+
+// This is the old catch all
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StreamFXSettings {
+    #[serde(rename = "Camera.Mode")]
+    pub camera_mode: Option<i32>,
+
+    #[serde(rename = "Commit")]
+    pub commit: String,
+
+    #[serde(rename = "Position.X")]
+    pub position_x: Option<f32>,
+
+    #[serde(rename = "Position.Y")]
+    pub position_y: Option<f32>,
+
+    #[serde(rename = "Position.Z")]
+    pub position_z: Option<f32>,
+
+    #[serde(rename = "Rotation.X")]
+    pub rotation_x: Option<f32>,
+
+    #[serde(rename = "Rotation.Y")]
+    pub rotation_y: Option<f32>,
+
+    #[serde(rename = "Rotation.Z")]
+    pub rotation_z: Option<f32>,
+
+    #[serde(rename = "Version")]
+    pub version: i64,
+}
+
+impl Default for StreamFXSettings {
+    fn default() -> Self {
+        StreamFXSettings {
+            camera_mode: Some(0),
+            commit: "2099sdd9".to_string(),
+            version: 1,
+            position_x: Some(0.),
+            position_y: Some(0.),
+            position_z: Some(0.),
+            rotation_x: Some(0.),
+            rotation_y: Some(0.),
+            rotation_z: Some(0.),
+        }
+    }
+}
 
 // TODO: consider serde defaults???
 // move into it's own SDF_Effects file???
@@ -193,7 +239,7 @@ pub async fn create_blur_filters(
 ) -> Result<()> {
     let stream_fx_filter_name = obs::MOVE_BLUR_FILTER_NAME.to_string();
 
-    let stream_fx_settings = stream_fx::StreamFXSettings {
+    let stream_fx_settings = StreamFXSettings {
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -228,7 +274,7 @@ pub async fn create_scroll_filters(
 ) -> Result<()> {
     let stream_fx_filter_name = obs::MOVE_SCROLL_FILTER_NAME.to_string();
 
-    let stream_fx_settings = stream_fx::StreamFXSettings {
+    let stream_fx_settings = StreamFXSettings {
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
@@ -266,7 +312,7 @@ pub async fn create_split_3d_transform_filters(
 
     for (i, camera_type) in camera_types.iter().enumerate() {
         let filter_name = format!("3D-Transform-{}", camera_type);
-        let stream_fx_settings = stream_fx::StreamFXSettings {
+        let stream_fx_settings = StreamFXSettings {
             camera_mode: Some(i as i32),
             ..Default::default()
         };
@@ -323,7 +369,7 @@ pub async fn create_3d_transform_filters(
 ) -> Result<()> {
     let stream_fx_filter_name = obs::MOVE_STREAM_FX_FILTER_NAME.to_string();
 
-    let stream_fx_settings = stream_fx::StreamFXSettings {
+    let stream_fx_settings = StreamFXSettings {
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
