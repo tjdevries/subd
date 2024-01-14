@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition::models::MoveSingleValueSetting;
+// use crate::move_transition::models::MoveSingleValueSetting;
 use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
@@ -423,4 +423,49 @@ pub async fn remove_all_filters(
             .expect("Error Deleting Filter");
     }
     Ok(())
+}
+
+// THESE EXTRA VALUES ARE BULLSHIT!!!
+// WE NEED TO ABSTRACT THEM AWAY
+// TODO: We need to organize this by:
+//       - generic values
+//       - values per filter-type
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct MoveSingleValueSetting {
+    #[serde(rename = "source")]
+    pub source: Option<String>,
+
+    #[serde(rename = "filter")]
+    pub filter: String,
+    #[serde(rename = "duration")]
+    pub duration: Option<u32>,
+    // #[serde(rename = "move_value_type", default=Some(0))]
+    pub move_value_type: Option<u32>,
+
+    #[serde(rename = "setting_float")]
+    pub setting_float: f32,
+    #[serde(rename = "setting_float_max")]
+    pub setting_float_max: f32,
+    #[serde(rename = "setting_float_min")]
+    pub setting_float_min: f32,
+    #[serde(rename = "setting_name")]
+    pub setting_name: String,
+    #[serde(rename = "value_type")]
+    pub value_type: u32,
+
+    // Just for the Blur Filter
+    #[serde(rename = "Filter.Blur.Size")]
+    pub filter_blur_size: Option<f32>,
+
+    // Just for the SDF Effects Filter
+    #[serde(rename = "Filter.SDFEffects.Glow.Inner")]
+    pub glow_inner: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Glow.Outer")]
+    pub glow_outer: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Shadow.Outer")]
+    pub shadow_outer: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Shadow.Inner")]
+    pub shadow_inner: Option<bool>,
+    #[serde(rename = "Filter.SDFEffects.Outline")]
+    pub outline: Option<bool>,
 }
