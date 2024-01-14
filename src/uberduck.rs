@@ -1,7 +1,5 @@
 use crate::audio;
 use crate::constants;
-// use crate::dalle;
-// use crate::obs_scenes;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
@@ -27,8 +25,6 @@ use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
-// use std::sync::Mutex;
-// use twitch_chat::send_message;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use twitch_irc::{
