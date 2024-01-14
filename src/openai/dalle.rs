@@ -1,5 +1,5 @@
-use crate::image_generation;
-use crate::images;
+use crate::ai_images::image_generation;
+use crate::ai_images::images;
 use anyhow::{anyhow, Result};
 use core::pin::Pin;
 use reqwest;

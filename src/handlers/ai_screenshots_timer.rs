@@ -1,4 +1,4 @@
-use crate::dalle;
+use crate::openai::dalle;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;

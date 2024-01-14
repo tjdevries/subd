@@ -1,7 +1,7 @@
 use crate::art_blocks;
 use crate::constants;
-use crate::dalle;
-use crate::image_generation::GenerateImage;
+use crate::openai::dalle;
+use crate::ai_images::image_generation::GenerateImage;
 use crate::move_transition::move_transition_effects;
 use crate::obs::obs_source;
 use anyhow::anyhow;

@@ -1,7 +1,7 @@
 use crate::ai_scene;
 use crate::audio;
-use crate::dalle;
-use crate::image_generation::GenerateImage;
+use crate::openai::dalle;
+use crate::ai_images::image_generation::GenerateImage;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;

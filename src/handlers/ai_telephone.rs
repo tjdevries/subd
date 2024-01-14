@@ -1,5 +1,5 @@
-use crate::dalle;
-use crate::image_generation;
+use crate::openai::dalle;
+use crate::ai_images::image_generation;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;

@@ -1,13 +1,13 @@
 // use anyhow::Error;
-use crate::images;
+use crate::ai_images::images;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs::File;
-
 use std::io::Write;
+use std::env;
 
 use openai::{
     chat::{
@@ -16,7 +16,6 @@ use openai::{
     },
     set_key,
 };
-use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct VisionResponse {

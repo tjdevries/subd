@@ -1,12 +1,11 @@
 pub mod ai_scene;
+pub mod ai_images;
+pub mod ai_audio;
 pub mod art_blocks;
 pub mod audio;
 pub mod commands;
 pub mod constants;
-pub mod dalle;
 pub mod handlers;
-pub mod image_generation;
-pub mod images;
 pub mod move_transition;
 pub mod obs;
 pub mod obs_bootstrap;

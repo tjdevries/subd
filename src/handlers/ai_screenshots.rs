@@ -1,6 +1,6 @@
 use crate::constants;
-use crate::dalle;
-use crate::image_generation;
+use crate::openai::dalle;
+use crate::ai_images::image_generation;
 use crate::obs::obs_source;
 use crate::telephone;
 use anyhow::Result;
