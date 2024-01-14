@@ -8,7 +8,7 @@ use crate::obs::obs;
 use crate::obs::obs_hotkeys;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
-use crate::openai;
+use crate::openai::openai;
 use crate::sdf_effects;
 use crate::stream_character;
 use crate::twitch_rewards;

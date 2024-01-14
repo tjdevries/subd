@@ -3,7 +3,7 @@ use crate::dalle;
 use crate::image_generation::GenerateImage;
 use crate::images;
 use crate::obs::obs_source;
-use crate::openai;
+use crate::openai::openai;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, Utc};

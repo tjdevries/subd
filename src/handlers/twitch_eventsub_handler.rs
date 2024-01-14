@@ -1,5 +1,5 @@
 use crate::ai_scene;
-use crate::openai;
+use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
 use crate::twitch_stream_state;
