@@ -24,7 +24,6 @@ use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 
 use server::themesong;
-use server::user_messages;
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
 use twitch_chat::client::TwitchChat;
@@ -558,8 +557,6 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-
-    event_loop.push(user_messages::UserMessageHandler {});
 
     event_loop.push(themesong::ThemesongListener::new());
     event_loop.push(themesong::ThemesongDownloader::new(

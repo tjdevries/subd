@@ -1,7 +1,7 @@
+use crate::move_transition::models;
 use crate::obs::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
-use serde::{Deserialize, Serialize};
 use std::fs;
 
 // What's the difference between const and static
@@ -79,77 +79,25 @@ pub async fn create_move_text_value_filter(
 //     Ok(())
 // }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct Coordinates {
-    pub x: Option<f32>,
-    pub y: Option<f32>,
-}
-
-// This is wrong IMO
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct MoveSourceFilterSettings {
-    pub crop: Option<MoveSourceCropSetting>,
-
-    pub bounds: Option<Coordinates>,
-
-    #[serde(rename = "pos")]
-    pub position: Option<Coordinates>,
-
-    pub scale: Option<Coordinates>,
-
-    // This should not be on here
-    #[serde(rename = "Rotation.Z")]
-    // pub rotation_z: Option<f32>,
-    pub duration: Option<u64>,
-
-    pub source: Option<String>,
-
-    // This should be a method on this struct
-    // How do we calculate the settings to this string
-    //     "transform_text": "pos: x 83.0 y 763.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0",
-    pub transform_text: Option<String>,
-
-    // "easing_function_match": Number(10), "easing_match": Number(2),
-    #[serde(rename = "easing_function_match")]
-    pub easing_function: Option<i32>,
-    #[serde(rename = "easing_match")]
-    pub easing_type: Option<i32>,
-}
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct MoveSourceCropSetting {
-    #[serde(rename = "bottom")]
-    pub bottom: Option<f32>,
-
-    #[serde(rename = "left")]
-    pub left: Option<f32>,
-
-    #[serde(rename = "top")]
-    pub top: Option<f32>,
-
-    #[serde(rename = "right")]
-    pub right: Option<f32>,
-}
-
 fn create_move_source_filter_settings(
     source: &str,
-) -> MoveSourceFilterSettings {
-    let settings = MoveSourceFilterSettings {
+) -> models::MoveSourceFilterSettings {
+    let settings = models::MoveSourceFilterSettings {
         source: Some(source.to_string()),
         duration: Some(300),
-        bounds: Some(Coordinates {
+        bounds: Some(models::Coordinates {
             x: Some(251.0),
             y: Some(234.0),
         }),
-        scale: Some(Coordinates {
+        scale: Some(models::Coordinates {
             x: Some(1.0),
             y: Some(1.0),
         }),
-        position: Some(Coordinates {
+        position: Some(models::Coordinates {
             x: Some(1662.0),
             y: Some(13.0),
         }),
-        crop: Some(MoveSourceCropSetting {
+        crop: Some(models::MoveSourceCropSetting {
             bottom: Some(0.0),
             left: Some(0.0),
             right: Some(0.0),
@@ -166,21 +114,23 @@ fn create_move_source_filter_settings(
 // =======================================================================
 
 // This is a simple utility method
-pub fn parse_json_into_struct(file_path: &str) -> MoveSourceFilterSettings {
+pub fn parse_json_into_struct(
+    file_path: &str,
+) -> models::MoveSourceFilterSettings {
     let contents = fs::read_to_string(file_path).expect("Can read file");
 
-    let filter: MoveSourceFilterSettings =
+    let filter: models::MoveSourceFilterSettings =
         serde_json::from_str(&contents).unwrap();
 
     filter
 }
 
 pub fn custom_filter_settings(
-    mut base_settings: MoveSourceFilterSettings,
+    mut base_settings: models::MoveSourceFilterSettings,
     x: f32,
     y: f32,
-) -> MoveSourceFilterSettings {
-    base_settings.position = Some(Coordinates {
+) -> models::MoveSourceFilterSettings {
+    base_settings.position = Some(models::Coordinates {
         x: Some(x),
         y: Some(y),
     });
@@ -195,11 +145,11 @@ pub async fn fetch_source_settings(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<MoveSourceFilterSettings> {
+) -> Result<models::MoveSourceFilterSettings> {
     let id = match obs_source::find_id(scene, source, &obs_client).await {
         Ok(val) => val,
         Err(_) => {
-            return Ok(MoveSourceFilterSettings {
+            return Ok(models::MoveSourceFilterSettings {
                 ..Default::default()
             })
         }
@@ -229,22 +179,22 @@ pub async fn fetch_source_settings(
         settings.crop_bottom
     );
 
-    let new_settings = MoveSourceFilterSettings {
+    let new_settings = models::MoveSourceFilterSettings {
         source: Some(source.to_string()),
         duration: Some(4444),
-        bounds: Some(Coordinates {
+        bounds: Some(models::Coordinates {
             x: Some(settings.bounds_width),
             y: Some(settings.bounds_height),
         }),
-        scale: Some(Coordinates {
+        scale: Some(models::Coordinates {
             x: Some(settings.scale_x),
             y: Some(settings.scale_y),
         }),
-        position: Some(Coordinates {
+        position: Some(models::Coordinates {
             x: Some(settings.position_x),
             y: Some(settings.position_y),
         }),
-        crop: Some(MoveSourceCropSetting {
+        crop: Some(models::MoveSourceCropSetting {
             left: Some(settings.crop_left as f32),
             right: Some(settings.crop_right as f32),
             bottom: Some(settings.crop_bottom as f32),

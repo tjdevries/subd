@@ -1,6 +1,6 @@
 use crate::constants;
+use crate::elevenlabs;
 use crate::twitch_stream_state;
-use crate::uberduck;
 use anyhow::Result;
 use async_trait::async_trait;
 use csv::Writer;
@@ -173,7 +173,7 @@ impl EventHandler for SoundHandler {
 
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
-            let speech_bubble_text = uberduck::chop_text(spoken_string);
+            let speech_bubble_text = elevenlabs::chop_text(spoken_string);
 
             // Anything less than 2 words we don't use
             let split = voice_text.split(" ");
@@ -184,7 +184,7 @@ impl EventHandler for SoundHandler {
 
             // This is how we determing the voice for the user
             let stream_character =
-                uberduck::build_stream_character(&self.pool, &msg.user_name)
+                elevenlabs::build_stream_character(&self.pool, &msg.user_name)
                     .await?;
 
             let voice = match stream_character.voice {
@@ -230,7 +230,7 @@ impl EventHandler for SoundHandler {
             }
 
             // If the character
-            // If we have a voice assigned, then we fire off an UberDuck Request
+            // If we have a voice assigned, then we fire off an elevenlabs Request
             match character.voice {
                 Some(voice) => {
                     // Write records to a CSV file

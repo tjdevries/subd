@@ -5,9 +5,9 @@ use chrono::{DateTime, Utc};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::env;
 
 use openai::{
     chat::{

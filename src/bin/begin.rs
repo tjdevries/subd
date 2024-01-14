@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use server::audio;
 use server::handlers;
 use server::obs::obs::create_obs_client;
-use server::uberduck;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
@@ -173,7 +172,7 @@ async fn main() -> Result<()> {
 
             "tts" => {
                 println!("Enabling TTS");
-                // Elevenlabs/Uberduck handles voice messages
+                // Elevenlabs/elevenlabs handles voice messages
                 let elevenlabs_auth = Auth::from_env().unwrap();
                 let elevenlabs = Elevenlabs::new(
                     elevenlabs_auth,
@@ -186,13 +185,15 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                event_loop.push(uberduck::ElevenLabsHandler {
-                    pool: pool.clone(),
-                    twitch_client,
-                    sink,
-                    obs_client,
-                    elevenlabs,
-                });
+                event_loop.push(
+                    handlers::elevenlabs_handler::ElevenLabsHandler {
+                        pool: pool.clone(),
+                        twitch_client,
+                        sink,
+                        obs_client,
+                        elevenlabs,
+                    },
+                );
             }
 
             "ai_screenshots" => {

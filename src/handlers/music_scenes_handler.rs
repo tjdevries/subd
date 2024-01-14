@@ -1,9 +1,8 @@
 use crate::constants;
-use crate::move_transition::move_transition;
+use crate::elevenlabs;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::twitch_stream_state;
-use crate::uberduck;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -230,26 +229,27 @@ async fn handle_commands(
                 let source = "begin";
                 let filter_name = "3D-Transform-Perspective";
 
-                let new_settings = move_transition::MoveMultipleValuesSetting {
-                    filter: Some(filter_name.to_string()),
-                    scale_x: Some(217.0),
-                    scale_y: Some(200.0),
-                    rotation_x: Some(50.0),
-                    field_of_view: Some(108.0),
-                    duration: Some(duration),
+                let new_settings =
+                    crate::move_transition::models::MoveMultipleValuesSetting {
+                        filter: Some(filter_name.to_string()),
+                        scale_x: Some(217.0),
+                        scale_y: Some(200.0),
+                        rotation_x: Some(50.0),
+                        field_of_view: Some(108.0),
+                        duration: Some(duration),
 
-                    // If a previous Move_transition set this and you don't reset it, you're gonna hate
-                    // you life
-                    position_y: Some(0.0),
-                    ..Default::default()
-                };
+                        // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                        // you life
+                        position_y: Some(0.0),
+                        ..Default::default()
+                    };
 
                 dbg!(&new_settings);
                 let three_d_transform_filter_name = filter_name;
                 let move_transition_filter_name =
                     format!("Move_{}", three_d_transform_filter_name);
 
-                _ = move_transition::update_and_trigger_move_values_filter(
+                _ = crate::move_transition::move_transition::update_and_trigger_move_values_filter(
                     source,
                     &move_transition_filter_name,
                     new_settings,
@@ -259,7 +259,7 @@ async fn handle_commands(
             }
 
             // Set the Voice for Begin, which is the source of the global voice
-            let _ = uberduck::set_voice(
+            let _ = elevenlabs::set_voice(
                 details.voice.to_string(),
                 "beginbot".to_string(),
                 pool,

@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition::move_transition;
+use crate::move_transition::models::MoveSingleValueSetting;
 use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
@@ -219,7 +219,7 @@ pub async fn create_outline_filter(
 
     // I think this is fucking shit up
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transition::MoveSingleValueSetting {
+    let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
         filter: String::from(constants::SDF_EFFECTS_FILTER_NAME),
         duration: Some(DEFAULT_DURATION),
@@ -254,7 +254,7 @@ pub async fn create_blur_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transition::MoveSingleValueSetting {
+    let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(constants::BLUR_FILTER_NAME),
         duration: Some(DEFAULT_DURATION),
@@ -289,7 +289,7 @@ pub async fn create_scroll_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transition::MoveSingleValueSetting {
+    let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(&constants::SCROLL_FILTER_NAME.to_string()),
         duration: Some(DEFAULT_DURATION),
@@ -330,7 +330,7 @@ pub async fn create_split_3d_transform_filters(
         let stream_fx_filter_name = format!("Move_{}", filter_name.clone());
 
         // This is wrong
-        let new_settings = move_transition::MoveSingleValueSetting {
+        let new_settings = MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
             filter: String::from(filter_name.clone()),
             duration: Some(DEFAULT_DURATION),
@@ -348,7 +348,7 @@ pub async fn create_split_3d_transform_filters(
         let stream_fx_filter_name = format!("Default_{}", filter_name.clone());
 
         let filter_name = format!("3D_{}", camera_type);
-        let new_settings = move_transition::MoveSingleValueSetting {
+        let new_settings = MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
             filter: String::from(filter_name.clone()),
             duration: Some(3000),
@@ -385,7 +385,7 @@ pub async fn create_3d_transform_filters(
     obs_client.filters().create(new_filter).await?;
 
     // Create Move-Value for 3D Transform Filter
-    let new_settings = move_transition::MoveSingleValueSetting {
+    let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
         filter: String::from(constants::THE_3D_TRANSFORM_FILTER_NAME),
         duration: Some(DEFAULT_DURATION),

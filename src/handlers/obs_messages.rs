@@ -1,5 +1,4 @@
 use crate::constants;
-use crate::move_transition::move_transition;
 use crate::move_transition::move_transition_effects;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
@@ -545,11 +544,11 @@ fn build_chat_twirl_request(
 pub fn build_chat_move_source_request(
     splitmsg: Vec<String>,
     arg_positions: &[ChatArgPosition],
-) -> move_transition::ChatMoveSourceRequest {
+) -> crate::move_transition::models::ChatMoveSourceRequest {
     let _default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
 
-    let mut req = move_transition::ChatMoveSourceRequest {
+    let mut req = crate::move_transition::models::ChatMoveSourceRequest {
         ..Default::default()
     };
 

@@ -1,7 +1,7 @@
 use crate::constants;
+use crate::elevenlabs;
 use crate::obs::obs_source;
 use crate::twitch_stream_state;
-use crate::uberduck;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -234,7 +234,7 @@ pub async fn handle_voices_commands(
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-            uberduck::set_voice(
+            elevenlabs::set_voice(
                 voice.to_string(),
                 msg.user_name.to_string(),
                 pool,
@@ -245,7 +245,7 @@ pub async fn handle_voices_commands(
         "!voice" => {
             let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-            uberduck::talk_in_voice(
+            elevenlabs::talk_in_voice(
                 msg.contents.clone(),
                 voice.to_string(),
                 msg.user_name,
@@ -298,7 +298,7 @@ pub async fn handle_voices_commands(
 
         "!random" => {
             Ok(())
-            // uberduck::use_random_voice(msg.contents.clone(), msg.user_name, tx)
+            // elevenlabs::use_random_voice(msg.contents.clone(), msg.user_name, tx)
             //     .await
         }
 
