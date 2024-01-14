@@ -114,48 +114,10 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
-// This is wrong IMO
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct MoveSourceFilterSettings {
-    pub crop: Option<MoveSourceCropSetting>,
-
-    pub bounds: Option<Coordinates>,
-
-    #[serde(rename = "pos")]
-    pub position: Option<Coordinates>,
-
-    pub scale: Option<Coordinates>,
-
-    // This should not be on here
-    #[serde(rename = "Rotation.Z")]
-    // pub rotation_z: Option<f32>,
-    pub duration: Option<u64>,
-
-    pub source: Option<String>,
-
-    // This should be a method on this struct
-    // How do we calculate the settings to this string
-    //     "transform_text": "pos: x 83.0 y 763.0 rot: 0.0 bounds: x 251.000 y 234.000 crop: l 0 t 0 r 0 b 0",
-    pub transform_text: Option<String>,
-
-    // "easing_function_match": Number(10), "easing_match": Number(2),
-    #[serde(rename = "easing_function_match")]
-    pub easing_function: Option<i32>,
-    #[serde(rename = "easing_match")]
-    pub easing_type: Option<i32>,
-}
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct MoveSourceCropSetting {
-    #[serde(rename = "bottom")]
-    pub bottom: Option<f32>,
-
-    #[serde(rename = "left")]
-    pub left: Option<f32>,
-
-    #[serde(rename = "top")]
-    pub top: Option<f32>,
-
-    #[serde(rename = "right")]
-    pub right: Option<f32>,
+// TODO: Finish this
+// Then we need to add defaults
+pub struct MoveTimingSettings {
+    pub duration: Option<i32>,
+    pub easing_function_index: Option<i32>,
+    pub easing_type_index: Option<i32>,
 }

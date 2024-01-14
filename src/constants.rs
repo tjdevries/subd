@@ -45,6 +45,9 @@ pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
 pub const MOVE_OUTLINE_FILTER_NAME: &str = "Move_Outline";
 pub const MOVE_STREAM_FX_FILTER_NAME: &str = "Move_Stream_FX";
 
+pub const THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME: &str =
+    "3D-Transform-Perspective";
+
 // Dynamic Filters but Default Filters
 pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D-Transform";
 pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
