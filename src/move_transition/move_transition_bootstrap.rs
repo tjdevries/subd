@@ -1,12 +1,9 @@
+use crate::constants;
 use crate::move_transition::models;
 use crate::obs::obs_source;
 use anyhow::Result;
 use obws::Client as OBSClient;
 use std::fs;
-
-// What's the difference between const and static
-const MOVE_SOURCE_FILTER_KIND: &str = "move_source_filter";
-// const MOVE_VALUE_FILTER_KIND: &str = "move_value_filter";
 
 pub async fn create_move_source_filter_from_file(
     scene: &str,
@@ -22,7 +19,7 @@ pub async fn create_move_source_filter_from_file(
     let new_filter = obws::requests::filters::Create {
         source: scene,
         filter: filter_name,
-        kind: MOVE_SOURCE_FILTER_KIND,
+        kind: constants::MOVE_SOURCE_FILTER_KIND,
         settings: Some(filter),
     };
     if let Err(err) = obs_client.filters().create(new_filter).await {
@@ -44,7 +41,7 @@ pub async fn create_move_text_value_filter(
     let new_filter = obws::requests::filters::Create {
         source,
         filter: filter_name,
-        kind: MOVE_SOURCE_FILTER_KIND,
+        kind: constants::MOVE_SOURCE_FILTER_KIND,
         settings: Some(new_settings),
     };
     if let Err(err) = obs_client.filters().create(new_filter).await {

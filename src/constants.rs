@@ -3,6 +3,10 @@
 // Dynamic Default Filters
 pub const DEFAULT_STREAM_FX_FILTER_NAME: &str = "Default_Stream_FX";
 
+// What's the difference between const and static
+pub const MOVE_SOURCE_FILTER_KIND: &str = "move_source_filter";
+// const MOVE_VALUE_FILTER_KIND: &str = "move_value_filter";
+
 // Scenes
 pub const CHARACTERS_SCENE: &str = "Characters";
 pub const DEFAULT_SCENE: &str = "Primary";
