@@ -28,20 +28,20 @@ pub struct MovePluginSettings<T> {
     #[serde(serialize_with = "move_value_type")]
     pub move_value_type: (),
 
-    #[serde(
-        rename = "easing_function_match",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub easing_function: Option<i32>,
-
-    #[serde(rename = "easing_match", skip_serializing_if = "Option::is_none")]
-    pub easing_type: Option<i32>,
-
-    #[serde(rename = "duration", skip_serializing_if = "Option::is_none")]
-    pub duration: Option<i32>,
-
+    // #[serde(
+    //     rename = "easing_function_match",
+    //     skip_serializing_if = "Option::is_none"
+    // )]
+    // pub easing_function: Option<i32>,
+    // #[serde(rename = "easing_match", skip_serializing_if = "Option::is_none")]
+    // pub easing_type: Option<i32>,
+    // #[serde(rename = "duration", skip_serializing_if = "Option::is_none")]
+    // pub duration: Option<i32>,
     #[serde(flatten)]
     pub settings: T,
+
+    #[serde(flatten)]
+    pub duration: DurationSettings,
 }
 
 fn value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {

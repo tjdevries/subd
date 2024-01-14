@@ -18,20 +18,33 @@ pub async fn update_and_trigger_3d_filter<
     let filter_name = settings.filter_name();
     let new_settings = models::MovePluginSettings {
         filter: filter_name.clone(),
-        duration: duration_settings.duration,
-        easing_function: duration_settings.easing_function_index,
-        easing_type: duration_settings.easing_type_index,
+        duration: duration_settings,
         settings,
         ..Default::default()
     };
+    update_move_filter_and_enable(
+        obs_client,
+        source,
+        &filter_name,
+        new_settings,
+    )
+    .await
+}
 
+async fn update_move_filter_and_enable<
+    T: serde::Serialize + std::default::Default,
+>(
+    obs_client: &OBSClient,
+    source: &str,
+    filter_name: &str,
+    settings: T,
+) -> Result<()> {
     let move_transition_filter_name = format!("Move_{}", filter_name);
-
     private::update_filter_and_enable(
         source,
         &move_transition_filter_name,
-        new_settings,
-        &obs_client,
+        settings,
+        obs_client,
     )
     .await
 }
@@ -44,28 +57,20 @@ pub async fn spin_source(
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
-
-    let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
-        rotation_z: Some(rotation_z),
-        camera_mode: (),
-        ..Default::default()
-    };
     let new_settings = models::MovePluginSettings {
         filter: filter_name.clone(),
-        duration: duration_settings.duration,
-        easing_function: duration_settings.easing_function_index,
-        easing_type: duration_settings.easing_type_index,
-        settings,
+        duration: duration_settings,
+        settings: obs_filters::three_d_transform::ThreeDTransformPerspective {
+            rotation_z: Some(rotation_z),
+            ..Default::default()
+        },
         ..Default::default()
     };
-
-    let move_transition_filter_name = format!("Move_{}", filter_name);
-
-    private::update_filter_and_enable(
+    update_move_filter_and_enable(
+        obs_client,
         source,
-        &move_transition_filter_name,
+        &filter_name,
         new_settings,
-        &obs_client,
     )
     .await
 }
@@ -73,30 +78,24 @@ pub async fn spin_source(
 // We need another type here
 pub async fn move_source_in_scene_x_and_y(
     obs_client: &OBSClient,
-    scene: &str,
+    _scene: &str,
     source: &str,
     x: f32,
     y: f32,
-    _duration_settings: models::DurationSettings,
+    duration_settings: models::DurationSettings,
 ) -> Result<()> {
-    let filter_name = format!("Move_{}", source);
-
-    // Now we need a collapsed struct
-    // I need something that takes in x, y and these values
-    let new_settings = models::Coordinates {
-        x: Some(x),
-        y: Some(y),
+    let s = models::MovePluginSettings {
+        duration: duration_settings,
+        settings: models::Coordinates {
+            x: Some(x),
+            y: Some(y),
+        },
+        ..Default::default()
     };
 
-    // new_settings.duration = Some(duration);
-    // new_settings.easing_type = Some(easing_type_index);
-    // new_settings.easing_function = Some(easing_function_index);
+    // So we decide the filer_name
 
-    private::update_filter_and_enable(
-        scene,
-        &filter_name,
-        new_settings,
-        &obs_client,
-    )
-    .await
+    // Not sure if this is correct
+    let filter_name = format!("Move_{}", source);
+    update_move_filter_and_enable(obs_client, source, &filter_name, s).await
 }
