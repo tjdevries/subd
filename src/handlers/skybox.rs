@@ -1,5 +1,5 @@
-use crate::skybox;
-use crate::skybox::check_skybox_status_and_save;
+use crate::skybox::skybox;
+use crate::skybox::skybox::check_skybox_status_and_save;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;

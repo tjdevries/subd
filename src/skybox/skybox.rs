@@ -1,4 +1,4 @@
-use crate::skybox_requests;
+use crate::skybox::skybox_requests;
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
