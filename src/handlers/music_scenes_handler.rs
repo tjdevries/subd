@@ -228,27 +228,26 @@ async fn handle_commands(
             if command == "!sigma" {
                 println!("We are in Chad mode!");
                 let _source = "begin";
-                let filter_name = "3D-Transform-Perspective";
-
-                let new_settings =
-                    crate::move_transition::models::MoveMultipleValuesSetting {
-                        filter: Some(filter_name.to_string()),
-                        scale_x: Some(217.0),
-                        scale_y: Some(200.0),
-                        rotation_x: Some(50.0),
-                        field_of_view: Some(108.0),
-                        duration: Some(duration),
-
-                        // If a previous Move_transition set this and you don't reset it, you're gonna hate
-                        // you life
-                        position_y: Some(0.0),
-                        ..Default::default()
-                    };
-
-                dbg!(&new_settings);
-                let three_d_transform_filter_name = filter_name;
-                let _move_transition_filter_name =
-                    format!("Move_{}", three_d_transform_filter_name);
+                let _filter_name = "3D-Transform-Perspective";
+                // let new_settings =
+                //     crate::move_transition::models::MoveMultipleValuesSetting {
+                //         filter: Some(filter_name.to_string()),
+                //         scale_x: Some(217.0),
+                //         scale_y: Some(200.0),
+                //         rotation_x: Some(50.0),
+                //         field_of_view: Some(108.0),
+                //         duration: Some(duration),
+                //
+                //         // If a previous Move_transition set this and you don't reset it, you're gonna hate
+                //         // you life
+                //         position_y: Some(0.0),
+                //         ..Default::default()
+                //     };
+                //
+                // dbg!(&new_settings);
+                // let three_d_transform_filter_name = filter_name;
+                // let _move_transition_filter_name =
+                //     format!("Move_{}", three_d_transform_filter_name);
 
                 // _ = crate::move_transition::move_transition::update_and_trigger_move_values_filter(
                 //     source,
