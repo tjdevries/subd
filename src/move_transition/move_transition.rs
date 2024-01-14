@@ -6,18 +6,17 @@ use anyhow::Result;
 use obws::Client as OBSClient;
 
 pub async fn update_and_trigger_3d_filter<
-    T: serde::Serialize
-        + std::default::Default
-        + obs_filters::three_d_transform::FilterName,
+    T: serde::Serialize + std::default::Default, // + obs_filters::three_d_transform::FilterName,
 >(
     obs_client: &OBSClient,
     source: &str,
+    filter_name: &str,
     settings: T,
     duration_settings: models::DurationSettings,
 ) -> Result<()> {
-    let filter_name = settings.filter_name();
+    // let filter_name = settings.filter_name();
     let new_settings = models::MovePluginSettings {
-        filter: filter_name.clone(),
+        filter: filter_name.to_string(),
         duration: duration_settings,
         settings,
         ..Default::default()
@@ -27,24 +26,6 @@ pub async fn update_and_trigger_3d_filter<
         source,
         &filter_name,
         new_settings,
-    )
-    .await
-}
-
-async fn update_move_filter_and_enable<
-    T: serde::Serialize + std::default::Default,
->(
-    obs_client: &OBSClient,
-    source: &str,
-    filter_name: &str,
-    settings: T,
-) -> Result<()> {
-    let move_transition_filter_name = format!("Move_{}", filter_name);
-    private::update_filter_and_enable(
-        source,
-        &move_transition_filter_name,
-        settings,
-        obs_client,
     )
     .await
 }
@@ -92,10 +73,25 @@ pub async fn move_source_in_scene_x_and_y(
         },
         ..Default::default()
     };
+    update_move_filter_and_enable(obs_client, source, &source, s).await
+}
 
-    // So we decide the filer_name
+// ==========================================
 
-    // Not sure if this is correct
-    let filter_name = format!("Move_{}", source);
-    update_move_filter_and_enable(obs_client, source, &filter_name, s).await
+async fn update_move_filter_and_enable<
+    T: serde::Serialize + std::default::Default,
+>(
+    obs_client: &OBSClient,
+    source: &str,
+    filter_name: &str,
+    settings: T,
+) -> Result<()> {
+    let move_transition_filter_name = format!("Move_{}", filter_name);
+    private::update_filter_and_enable(
+        source,
+        &move_transition_filter_name,
+        settings,
+        obs_client,
+    )
+    .await
 }

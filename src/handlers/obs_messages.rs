@@ -144,7 +144,6 @@ pub async fn handle_obs_commands(
     let command = splitmsg[0].as_str();
 
     let _ = match command {
-        // !wide SOURCE WIDTH DURATION
         "!wide" => {
             let meat_of_message = splitmsg[1..].to_vec();
             let arg_positions = default_wide_args();
@@ -162,6 +161,7 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 &req.source,
+                "3D-Transform-Orthographic",
                 settings,
                 d,
             )
@@ -201,6 +201,7 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
+                "3D-Transform-Perspective",
                 settings,
                 d,
             )
@@ -301,6 +302,7 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
+                "3D-Transform-Perspective",
                 settings,
                 d,
             )
@@ -434,6 +436,7 @@ pub async fn handle_obs_commands(
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
+                "3D-Transform-Orthographic",
                 settings,
                 d,
             )
