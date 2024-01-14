@@ -1,7 +1,22 @@
 use anyhow::Result;
 use obws::Client as OBSClient;
 
-pub async fn update_filter<T: serde::Serialize>(
+pub async fn update_filter_and_enable<T: serde::Serialize>(
+    scene: &str,
+    filter_name: &str,
+    new_settings: T,
+    obs_client: &obws::Client,
+) -> Result<()> {
+    update_filter(scene, filter_name, new_settings, &obs_client).await?;
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source: scene,
+        filter: &filter_name,
+        enabled: true,
+    };
+    Ok(obs_client.filters().set_enabled(filter_enabled).await?)
+}
+
+async fn update_filter<T: serde::Serialize>(
     source: &str,
     filter_name: &str,
     new_settings: T,
