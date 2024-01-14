@@ -16,7 +16,6 @@ pub mod raffle;
 pub mod redemptions;
 pub mod redirect;
 pub mod skybox;
-pub mod stream_background_routing;
 pub mod stream_character;
 pub mod telephone;
 pub mod themesong;
