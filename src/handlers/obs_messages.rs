@@ -155,12 +155,14 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
+            let d = models::DurationSettings {
+                duration: Some(req.duration as i32),
+                ..Default::default()
+            };
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 &req.source,
-                9000,
-                None,
-                None,
+                d,
                 settings,
             )
             .await;
@@ -192,12 +194,14 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
+            let d = models::DurationSettings {
+                ..Default::default()
+            };
+
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                3000,
-                None,
-                None,
+                d,
                 settings,
             )
             .await;
@@ -290,12 +294,14 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
+            let d = models::DurationSettings {
+                duration: Some(3000),
+                ..Default::default()
+            };
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                3000,
-                None,
-                None,
+                d,
                 settings,
             )
             .await;
@@ -419,12 +425,16 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
+            let d = models::DurationSettings {
+                duration: Some(req.duration as i32),
+                easing_function_index: None,
+                easing_type_index: None,
+                ..Default::default()
+            };
             let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
-                req.duration,
-                None,
-                None,
+                d,
                 settings,
             )
             .await;
@@ -441,14 +451,18 @@ pub async fn handle_obs_commands(
                 splitmsg[1..].to_vec(),
                 arg_positions,
             );
-            dbg!(&req);
+
+            let d = models::DurationSettings {
+                duration: Some(req.duration as i32),
+                easing_function_index: Some(req.easing_function_index),
+                easing_type_index: Some(req.easing_type_index),
+                ..Default::default()
+            };
             move_transition::spin_source(
                 &obs_client,
                 &req.source,
                 req.rotation_z,
-                req.duration,
-                Some(req.easing_function_index),
-                Some(req.easing_type_index),
+                d,
             )
             .await
         }

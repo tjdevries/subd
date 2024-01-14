@@ -21,19 +21,15 @@ pub async fn update_and_trigger_3d_filter<
 >(
     obs_client: &OBSClient,
     source: &str,
-
-    // TODO: these should be a struct
-    duration: u64,
-    easing_function_index: Option<i32>,
-    easing_type_index: Option<i32>,
+    duration_settings: models::DurationSettings,
     settings: T,
 ) -> Result<()> {
     let filter_name = settings.filter_name();
     let new_settings = obs_filters::three_d_transform::MovePluginSettings {
         filter: filter_name.clone(),
-        duration: Some(duration as u32),
-        easing_function: easing_function_index,
-        easing_type: easing_type_index,
+        duration: duration_settings.duration,
+        easing_function: duration_settings.easing_function_index,
+        easing_type: duration_settings.easing_type_index,
         settings,
         ..Default::default()
     };
@@ -53,10 +49,7 @@ pub async fn spin_source(
     obs_client: &OBSClient,
     source: &str,
     rotation_z: f32,
-
-    duration: u64,
-    easing_function_index: Option<i32>,
-    easing_type_index: Option<i32>,
+    duration_settings: models::DurationSettings,
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
@@ -68,9 +61,9 @@ pub async fn spin_source(
     };
     let new_settings = obs_filters::three_d_transform::MovePluginSettings {
         filter: filter_name.clone(),
-        duration: Some(duration as u32),
-        easing_function: easing_function_index,
-        easing_type: easing_type_index,
+        duration: duration_settings.duration,
+        easing_function: duration_settings.easing_function_index,
+        easing_type: duration_settings.easing_type_index,
         settings,
         ..Default::default()
     };

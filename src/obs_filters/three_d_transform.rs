@@ -1,3 +1,4 @@
+use crate::move_transition::models;
 use serde::{Deserialize, Serialize, Serializer};
 
 // enum ThreeDTransformFilters {
@@ -213,7 +214,7 @@ pub struct MovePluginSettings<T> {
     pub easing_type: Option<i32>,
 
     #[serde(rename = "duration", skip_serializing_if = "Option::is_none")]
-    pub duration: Option<u32>,
+    pub duration: Option<i32>,
 
     #[serde(flatten)]
     pub settings: T,
@@ -222,6 +223,7 @@ pub struct MovePluginSettings<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::move_transition::models;
     use crate::move_transition::move_transition;
     use crate::obs::obs;
     // use std::thread;
@@ -243,12 +245,14 @@ mod tests {
             camera_mode: (),
             ..Default::default()
         };
+        let d = models::DurationSettings {
+            duration: Some(9000),
+            ..Default::default()
+        };
         let _ = move_transition::update_and_trigger_3d_filter(
             &obs_client,
             "begin",
-            9000,
-            None,
-            None,
+            d,
             settings,
         )
         .await;
