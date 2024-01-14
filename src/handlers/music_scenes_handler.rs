@@ -224,9 +224,10 @@ async fn handle_commands(
             // then we update the OBS source w/ the new Media
             // Turn on the Music for the scene
 
+            // TODO: fix sigma
             if command == "!sigma" {
                 println!("We are in Chad mode!");
-                let source = "begin";
+                let _source = "begin";
                 let filter_name = "3D-Transform-Perspective";
 
                 let new_settings =
@@ -246,16 +247,16 @@ async fn handle_commands(
 
                 dbg!(&new_settings);
                 let three_d_transform_filter_name = filter_name;
-                let move_transition_filter_name =
+                let _move_transition_filter_name =
                     format!("Move_{}", three_d_transform_filter_name);
 
-                _ = crate::move_transition::move_transition::update_and_trigger_move_values_filter(
-                    source,
-                    &move_transition_filter_name,
-                    new_settings,
-                    &obs_client,
-                )
-                .await;
+                // _ = crate::move_transition::move_transition::update_and_trigger_move_values_filter(
+                //     source,
+                //     &move_transition_filter_name,
+                //     new_settings,
+                //     &obs_client,
+                // )
+                // .await;
             }
 
             // Set the Voice for Begin, which is the source of the global voice

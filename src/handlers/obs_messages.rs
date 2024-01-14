@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition::move_transition_effects;
+use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
@@ -133,7 +133,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ = move_transition_effects::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 &req.source,
                 9000,
@@ -146,7 +146,7 @@ pub async fn handle_obs_commands(
             // let filter_value = 300.0;
             // let filter_name = "3D-Transform-Orthographic";
             // let filter_setting_name = "Scale.X";
-            // let _ = move_transition_effects::trigger_move_value_3d_transform(
+            // let _ = move_transition::trigger_move_value_3d_transform(
             //     &req.source,
             //     filter_name,
             //     filter_setting_name,
@@ -170,7 +170,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ = move_transition_effects::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
                 3000,
@@ -244,7 +244,7 @@ pub async fn handle_obs_commands(
             let easing_function_index = 1;
             let easing_type_index = 1;
 
-            let _ = move_transition_effects::move_source_in_scene_x_and_y(
+            let _ = move_transition::move_source_in_scene_x_and_y(
                 &scene,
                 source,
                 position_x,
@@ -269,7 +269,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ = move_transition_effects::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
                 3000,
@@ -304,7 +304,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            move_transition_effects::move_source_in_scene_x_and_y(
+            move_transition::move_source_in_scene_x_and_y(
                 scene,
                 source,
                 req.x,
@@ -326,7 +326,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            move_transition_effects::move_source_in_scene_x_and_y(
+            move_transition::move_source_in_scene_x_and_y(
                 scene,
                 source,
                 req.x,
@@ -346,7 +346,7 @@ pub async fn handle_obs_commands(
             let req =
                 build_chat_move_source_request(meat_of_message, arg_positions);
 
-            move_transition_effects::move_source_in_scene_x_and_y(
+            move_transition::move_source_in_scene_x_and_y(
                 &req.scene,
                 &req.source,
                 req.x,
@@ -385,7 +385,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let _ = move_transition_effects::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_3d_filter(
                 &obs_client,
                 source,
                 req.duration,
@@ -408,7 +408,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
             dbg!(&req);
-            move_transition_effects::spin_source(
+            move_transition::spin_source(
                 &obs_client,
                 &req.source,
                 req.rotation_z,
@@ -725,7 +725,7 @@ mod tests {
         //     ..Default::default()
         // };
 
-        // move_transition_effects::spin_source(
+        // move_transition::spin_source(
         //     &req.source,
         //     req.rotation_z,
         //     3000,

@@ -222,7 +222,7 @@ pub struct MovePluginSettings<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::move_transition::move_transition_effects;
+    use crate::move_transition::move_transition;
     use crate::obs::obs;
     // use std::thread;
     // use std::time;
@@ -243,7 +243,7 @@ mod tests {
             camera_mode: (),
             ..Default::default()
         };
-        let _ = move_transition_effects::update_and_trigger_3d_filter(
+        let _ = move_transition::update_and_trigger_3d_filter(
             &obs_client,
             "begin",
             9000,
@@ -264,7 +264,7 @@ mod tests {
         // println!("=======================");
 
         // let source = "begin".to_string();
-        // let _ = move_transition_effects::spin_source2(
+        // let _ = move_transition::spin_source2(
         //     &obs_client,
         //     &source,
         //     1080.0,
@@ -277,7 +277,7 @@ mod tests {
         // let sleep_time = time::Duration::from_millis(3000);
         // thread::sleep(sleep_time);
         // let source = "begin".to_string();
-        // let _ = move_transition_effects::spin_source2(
+        // let _ = move_transition::spin_source2(
         //     &obs_client,
         //     &source,
         //     0.0,
