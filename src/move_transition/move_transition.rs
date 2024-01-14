@@ -6,7 +6,7 @@ use anyhow::Result;
 use obws::Client as OBSClient;
 
 pub async fn update_and_trigger_3d_filter<
-    T: serde::Serialize + std::default::Default, // + obs_filters::three_d_transform::FilterName,
+    T: serde::Serialize + std::default::Default,
 >(
     obs_client: &OBSClient,
     source: &str,
@@ -14,7 +14,6 @@ pub async fn update_and_trigger_3d_filter<
     settings: T,
     duration_settings: models::DurationSettings,
 ) -> Result<()> {
-    // let filter_name = settings.filter_name();
     let new_settings = models::MovePluginSettings {
         filter: filter_name.to_string(),
         duration: duration_settings,
