@@ -1,6 +1,7 @@
 use crate::move_transition::models;
 use crate::move_transition::move_transition;
 use crate::move_transition::move_transition_bootstrap;
+use crate::move_transition::private;
 use crate::obs_filters;
 use anyhow::Result;
 use obws::Client as OBSClient;
@@ -13,8 +14,13 @@ pub async fn move_with_move_source<T: serde::Serialize>(
     new_settings: T,
     obs_client: &obws::Client,
 ) -> Result<()> {
-    update_move_source_filters(scene, filter_name, new_settings, &obs_client)
-        .await?;
+    private::update_move_source_filters(
+        scene,
+        filter_name,
+        new_settings,
+        &obs_client,
+    )
+    .await?;
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: scene,
         filter: &filter_name,
@@ -90,53 +96,6 @@ pub async fn update_and_trigger_move_value_filter(
         enabled: true,
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
-
-    Ok(())
-}
-
-// pub async fn update_and_trigger_move_values_filter<T: serde::Serialize + std::fmt::Debug>(
-//     source: &str,
-//     filter_name: &str,
-//     new_settings: T,
-//     obs_client: &OBSClient,
-// ) -> Result<()> {
-//     // new_settings.move_value_type = 1;
-//     // new_settings.value_type = 1;
-//     dbg!(&new_settings);
-//     let settings = obws::requests::filters::SetSettings {
-//         source: &source,
-//         filter: filter_name,
-//         settings: new_settings,
-//         overlay: Some(true),
-//     };
-//     let _ = obs_client.filters().set_settings(settings).await;
-//
-//     let filter_enabled = obws::requests::filters::SetEnabled {
-//         source: &source,
-//         filter: filter_name,
-//         enabled: true,
-//     };
-//     obs_client.filters().set_enabled(filter_enabled).await?;
-//
-//     thread::sleep(Duration::from_millis(400));
-//     Ok(())
-// }
-
-// This takes in settings and updates a filter
-async fn update_move_source_filters<T: serde::Serialize>(
-    source: &str,
-    filter_name: &str,
-    new_settings: T,
-    obs_client: &OBSClient,
-) -> Result<()> {
-    // What ever this serializes too, ain't right for Move Multiple Settings
-    let new_filter = obws::requests::filters::SetSettings {
-        source,
-        filter: filter_name,
-        settings: Some(new_settings),
-        overlay: Some(true),
-    };
-    obs_client.filters().set_settings(new_filter).await?;
 
     Ok(())
 }
