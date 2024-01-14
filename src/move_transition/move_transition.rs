@@ -14,13 +14,8 @@ pub async fn move_with_move_source<T: serde::Serialize>(
     new_settings: T,
     obs_client: &obws::Client,
 ) -> Result<()> {
-    private::update_move_source_filters(
-        scene,
-        filter_name,
-        new_settings,
-        &obs_client,
-    )
-    .await?;
+    private::update_filter(scene, filter_name, new_settings, &obs_client)
+        .await?;
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: scene,
         filter: &filter_name,
