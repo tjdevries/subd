@@ -222,8 +222,8 @@ pub struct MovePluginSettings<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::move_transition_effects;
-    use crate::obs;
+    use crate::move_transition::move_transition_effects;
+    use crate::obs::obs;
     // use std::thread;
     // use std::time;
 

@@ -8,8 +8,6 @@ pub mod handlers;
 pub mod image_generation;
 pub mod images;
 pub mod move_transition;
-pub mod move_transition_bootstrap;
-pub mod move_transition_effects;
 pub mod obs;
 pub mod obs_bootstrap;
 pub mod obs_filters;

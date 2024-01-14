@@ -20,12 +20,12 @@ use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::process::Command;
+use std::sync::Arc;
 use std::{thread, time};
 use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
-use std::sync::Arc;
 use tokio::sync::Mutex;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,

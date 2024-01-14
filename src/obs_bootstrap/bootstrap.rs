@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition;
+use crate::move_transition::move_transition;
 use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;

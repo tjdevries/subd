@@ -1,5 +1,5 @@
-use crate::move_transition;
-use crate::move_transition_bootstrap;
+use crate::move_transition::move_transition;
+use crate::move_transition::move_transition_bootstrap;
 use crate::obs_filters;
 use anyhow::Result;
 use obws::Client as OBSClient;

@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition;
+use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::twitch_stream_state;
