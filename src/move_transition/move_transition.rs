@@ -1,6 +1,7 @@
 use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::models;
+use crate::move_transition::move_value;
 use crate::move_transition::private;
 use crate::obs_filters;
 use anyhow::Result;
@@ -15,7 +16,7 @@ pub async fn update_and_trigger_3d_filter<
     settings: T,
     duration_settings: duration::EasingDuration,
 ) -> Result<()> {
-    let new_settings = models::MovePluginSettings {
+    let new_settings = move_value::Settings {
         filter: filter_name.to_string(),
         duration: duration_settings,
         settings,
@@ -38,13 +39,14 @@ pub async fn spin_source(
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
-    let new_settings = models::MovePluginSettings {
+    let settings = obs_filters::three_d_transform::ThreeDTransformPerspective {
+        rotation_z: Some(rotation_z),
+        ..Default::default()
+    };
+    let new_settings = move_value::Settings {
         filter: filter_name.clone(),
         duration: duration_settings,
-        settings: obs_filters::three_d_transform::ThreeDTransformPerspective {
-            rotation_z: Some(rotation_z),
-            ..Default::default()
-        },
+        settings,
         ..Default::default()
     };
     update_move_filter_and_enable(
@@ -65,7 +67,7 @@ pub async fn move_source_in_scene_x_and_y(
     y: f32,
     duration_settings: duration::EasingDuration,
 ) -> Result<()> {
-    let s = models::MovePluginSettings {
+    let s = move_value::Settings {
         duration: duration_settings,
         settings: models::Coordinates {
             x: Some(x),

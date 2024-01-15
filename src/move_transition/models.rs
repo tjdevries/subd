@@ -2,20 +2,12 @@ use crate::move_transition::duration;
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 
-// MoveSource
-// MoveValue
-//      - Single
-//      - Multiple
-//      - Add
-//      - Random
-//      - Typing
-// MoveAction
-
-// This should have a default?
+// I want to remove this
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MovePluginSettings<T> {
     pub filter: String,
 
+    // I don't know if we need thisT
     // These should be Enums
     #[serde(serialize_with = "value_type")]
     pub value_type: (),
@@ -45,6 +37,7 @@ pub struct Coordinates {
     pub y: Option<f32>,
 }
 
+#[allow(dead_code)]
 enum FilterKind {
     MoveAction,
     MoveValue,
@@ -63,7 +56,7 @@ impl fmt::Display for FilterKind {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 
     #[tokio::test]
     async fn test_move_transition_filters() {

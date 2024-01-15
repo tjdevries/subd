@@ -19,7 +19,7 @@ pub struct Settings<T> {
     pub filter: String,
 
     #[serde(serialize_with = "settings")]
-    move_value_type: (),
+    pub move_value_type: (),
 
     #[serde(flatten)]
     pub settings: T,
