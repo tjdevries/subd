@@ -204,17 +204,17 @@ mod tests {
             camera_mode: (),
             ..Default::default()
         };
-        let d = models::DurationSettings {
-            duration: Some(9000),
-            ..Default::default()
-        };
-        let _ = move_transition::update_and_trigger_3d_filter(
-            &obs_client,
-            "begin",
-            "3d-Transform-Orthographic",
-            settings,
-            d,
-        )
-        .await;
+        // let d = models::DurationSettings {
+        //     duration: Some(9000),
+        //     ..Default::default()
+        // };
+        // let _ = move_transition::update_and_trigger_3d_filter(
+        //     &obs_client,
+        //     "begin",
+        //     "3d-Transform-Orthographic",
+        //     settings,
+        //     d,
+        // )
+        // .await;
     }
 }

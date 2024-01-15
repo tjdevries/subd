@@ -7,7 +7,22 @@ use crate::obs_filters;
 use anyhow::Result;
 use obws::Client as OBSClient;
 
-pub async fn update_and_trigger_3d_filter<
+pub async fn update_and_trigger_single_value_filter<T: serde::Serialize>(
+    obs_client: &OBSClient,
+    source: &str,
+    filter_name: &str,
+    settings: T,
+) -> Result<()> {
+    private::update_filter_and_enable(
+        source,
+        &filter_name,
+        settings,
+        obs_client,
+    )
+    .await
+}
+
+pub async fn update_and_trigger_filter<
     T: serde::Serialize + std::default::Default,
 >(
     obs_client: &OBSClient,
@@ -22,7 +37,7 @@ pub async fn update_and_trigger_3d_filter<
         settings,
         ..Default::default()
     };
-    update_move_filter_and_enable(
+    update_move_filter_and_enable_plus_rename(
         obs_client,
         source,
         &filter_name,
@@ -49,7 +64,7 @@ pub async fn spin_source(
         settings,
         ..Default::default()
     };
-    update_move_filter_and_enable(
+    update_move_filter_and_enable_plus_rename(
         obs_client,
         source,
         &filter_name,
@@ -75,12 +90,13 @@ pub async fn move_source_in_scene_x_and_y(
         },
         ..Default::default()
     };
-    update_move_filter_and_enable(obs_client, source, &source, s).await
+    update_move_filter_and_enable_plus_rename(obs_client, source, &source, s)
+        .await
 }
 
 // ==========================================
 
-async fn update_move_filter_and_enable<
+async fn update_move_filter_and_enable_plus_rename<
     T: serde::Serialize + std::default::Default,
 >(
     obs_client: &OBSClient,

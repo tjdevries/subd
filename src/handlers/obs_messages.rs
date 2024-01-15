@@ -159,7 +159,7 @@ pub async fn handle_obs_commands(
                 duration: Some(req.duration as i32),
                 ..Default::default()
             };
-            let _ = move_transition::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 &req.source,
                 "3D-Transform-Orthographic",
@@ -199,7 +199,7 @@ pub async fn handle_obs_commands(
                 ..Default::default()
             };
 
-            let _ = move_transition::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Perspective",
@@ -300,7 +300,7 @@ pub async fn handle_obs_commands(
                 duration: Some(3000),
                 ..Default::default()
             };
-            let _ = move_transition::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Perspective",
@@ -434,7 +434,7 @@ pub async fn handle_obs_commands(
                 // easing_type_index: None,
                 ..Default::default()
             };
-            let _ = move_transition::update_and_trigger_3d_filter(
+            let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Orthographic",
