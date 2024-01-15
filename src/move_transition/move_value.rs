@@ -90,3 +90,10 @@ pub struct Typing {
     #[serde(flatten)]
     pub duration: EasingDuration,
 }
+
+#[cfg(tests)]
+mod tests {
+    
+    
+}
+
