@@ -10,7 +10,8 @@ ff:
 ft:
 	cargo test test_transform_filters -- --nocapture
 
-
+t:
+	cargo test test_duration -- --nocapture
 	
 loudtest:
 	cargo test -- --nocapture
