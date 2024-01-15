@@ -1,5 +1,5 @@
 use once_cell::sync::OnceCell;
-use twitch_api2::twitch_oauth2::{AccessToken, RefreshToken};
+use twitch_oauth2::{AccessToken, RefreshToken};
 
 /// twitch_bot_oauth is the authentication for the bot that will respond to messages in chat and
 /// whispers (TODO). It can possibly be your account, but in general that will be pretty confusing
@@ -24,6 +24,8 @@ pub fn get_twitch_broadcaster_raw() -> String {
     TWITCH_BROADCASTER_OAUTH
         .get_or_init(|| {
             dotenv::var("SUBD_TWITCH_BROADCASTER_OAUTH")
+                // dotenv::var("TWITCH_OAUTH_TOKEN")
+                // dotenv::var("BEGINBOT_TWITCH_OAUTH_TOKEN")
                 .expect("$SUBD_TWITCH_BROADCASTER_OAUTH must be set")
                 .replace("oauth:", "")
                 .to_string()

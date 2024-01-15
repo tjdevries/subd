@@ -1,40 +1,19 @@
-pub fn upload_image(msg: UserMessage) -> Result<()> {
-    let image_url = msg
-        .contents
-        .iter()
-        .split(" ")
-        .skip(1)
-        .take(1)
-        .collect::<Vec<String>>();
-
-    let output_path = format!("{}.png" msg.user_name);
-
-    let output = Command::new("sh")
-        .arg(format!("curl -s {} | rembg i > output.png", image_url))
-        .output()
-        .expect("failed to executge process");
-
-    let output = Command::new("sh")
-        .arg(format!(
-            "convert output.png -resize 256x256^ {}",
-            output_path
-        ))
-        .output()
-        .expect("failed to edcute proces");
-
-    Ok(())
-}
-
-mod tests {
-    use subd_types::UserMessage;
-
-    fn upload_image() {
-        super::handlers::upload_image(UserMessage {
-            user_id: 1,
-            user_name: "rockerBOO".to_string(),
-            roles: subd_types::Role::TwitchMod,
-            platform: subd_types::UserPlatform::Twitch,
-            contents: "hello test chat".to_string(),
-        })
-    }
-}
+pub mod ai_scenes;
+pub mod ai_screenshots;
+pub mod ai_screenshots_timer;
+pub mod ai_telephone;
+pub mod chatgpt_response_handler;
+pub mod elevenlabs_handler;
+pub mod music_scenes_handler;
+pub mod obs_messages;
+pub mod reward_handler;
+pub mod skybox;
+pub mod skybox_status;
+pub mod sound_handler;
+pub mod source_visibility;
+pub mod stream_background;
+pub mod stream_character_handler;
+pub mod transform_obs_test;
+pub mod trigger_obs_hotkey;
+pub mod twitch_eventsub_handler;
+pub mod voices_handler;
