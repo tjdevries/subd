@@ -26,6 +26,7 @@ impl Serialize for MoveSourceSettings {
         // 7 is the number of fields in the struct.
         let mut state = serializer.serialize_struct("MoveSource", 5)?;
         state.serialize_field("bounds", &self.bounds)?;
+        state.serialize_field("scale", &self.scale)?;
         state.serialize_field("crop", &self.crop)?;
         state.serialize_field("position", &self.position)?;
         state.serialize_field("x", &self.x)?;
@@ -44,6 +45,16 @@ impl Serialize for MoveSourceSettings {
             .y
             .unwrap_or(0.0);
         let rot = self.rot.unwrap_or(0.0);
+        let scale_x = self
+            .scale
+            .unwrap_or(models::Coordinates::default())
+            .x
+            .unwrap_or(0.0);
+        let scale_y = self
+            .scale
+            .unwrap_or(models::Coordinates::default())
+            .y
+            .unwrap_or(0.0);
         let bounds_x = self
             .bounds
             .unwrap_or(models::Coordinates::default())
@@ -76,12 +87,14 @@ impl Serialize for MoveSourceSettings {
             .unwrap_or(0.0);
 
         let transform_text = format!(
-            "pos: x {} y {} rot: {} bounds: x {} y {} crop: l {} t {} r {} b {}",
+            "pos: x {} y {} rot: {} bounds: x {} y {} scale: x {} y {} crop: l {} t {} r {} b {}",
             x,
             y,
             rot,
             bounds_x,
             bounds_y,
+            scale_x,
+            scale_y,
             crop_left,
             crop_top,
             crop_right,
@@ -117,6 +130,7 @@ impl MoveSource {
 #[derive(Deserialize, Debug, Default)]
 pub struct MoveSourceSettings {
     bounds: Option<models::Coordinates>,
+    scale: Option<models::Coordinates>,
     crop: Option<CropSettings>,
     position: Option<models::Coordinates>,
     x: Option<f32>,
@@ -169,6 +183,11 @@ mod tests {
             position: Some(models::Coordinates {
                 x: Some(500.0),
                 y: Some(100.0),
+            }),
+
+            scale: Some(models::Coordinates {
+                x: Some(2.0),
+                y: Some(2.0),
             }),
             rot: Some(1090.0),
             ..Default::default()
