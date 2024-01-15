@@ -35,7 +35,7 @@ pub enum EasingType {
 }
 
 impl EasingDuration {
-    fn new(duration: i32) -> EasingDuration {
+    pub fn new(duration: i32) -> EasingDuration {
         return EasingDuration {
             duration: Some(duration),
             ..Default::default()
