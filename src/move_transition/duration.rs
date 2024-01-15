@@ -1,7 +1,5 @@
-use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_repr::*;
-use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EasingDuration {
@@ -12,7 +10,7 @@ pub struct EasingDuration {
 
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
 #[repr(u8)]
-enum EasingFunction {
+pub enum EasingFunction {
     #[default]
     Quadratic = 1,
     Cubic = 2,
@@ -28,7 +26,7 @@ enum EasingFunction {
 
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
 #[repr(u8)]
-enum EasingType {
+pub enum EasingType {
     #[default]
     NoEasing = 0,
     EasingIn = 1,
