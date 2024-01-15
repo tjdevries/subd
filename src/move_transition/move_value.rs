@@ -194,7 +194,7 @@ mod tests {
     use crate::move_transition::move_transition;
 
     #[tokio::test]
-    async fn test_fun() {
+    async fn test_settings() {
         let source = "alex";
         let filter_name = "move-value-single";
 

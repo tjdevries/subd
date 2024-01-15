@@ -31,10 +31,16 @@ fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
     s.serialize_i32(1)
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
 pub struct Coordinates {
     pub x: Option<f32>,
     pub y: Option<f32>,
+}
+
+impl Coordinates {
+    pub fn new() -> Self {
+        Self { x: None, y: None }
+    }
 }
 
 #[allow(dead_code)]
