@@ -1,4 +1,5 @@
 use crate::constants;
+use crate::move_transition::duration;
 use crate::move_transition::models;
 use crate::move_transition::private;
 use crate::obs_filters;
@@ -12,7 +13,7 @@ pub async fn update_and_trigger_3d_filter<
     source: &str,
     filter_name: &str,
     settings: T,
-    duration_settings: models::DurationSettings,
+    duration_settings: duration::EasingDuration,
 ) -> Result<()> {
     let new_settings = models::MovePluginSettings {
         filter: filter_name.to_string(),
@@ -33,7 +34,7 @@ pub async fn spin_source(
     obs_client: &OBSClient,
     source: &str,
     rotation_z: f32,
-    duration_settings: models::DurationSettings,
+    duration_settings: duration::EasingDuration,
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
@@ -62,7 +63,7 @@ pub async fn move_source_in_scene_x_and_y(
     source: &str,
     x: f32,
     y: f32,
-    duration_settings: models::DurationSettings,
+    duration_settings: duration::EasingDuration,
 ) -> Result<()> {
     let s = models::MovePluginSettings {
         duration: duration_settings,

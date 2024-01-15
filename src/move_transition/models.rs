@@ -1,3 +1,4 @@
+use crate::move_transition::duration;
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 
@@ -26,7 +27,7 @@ pub struct MovePluginSettings<T> {
     pub settings: T,
 
     #[serde(flatten)]
-    pub duration: DurationSettings,
+    pub duration: duration::EasingDuration,
 }
 
 // This is wrong now
@@ -36,18 +37,6 @@ fn value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
 
 fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
     s.serialize_i32(1)
-}
-
-// TODO: We need to add defaults
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct DurationSettings {
-    pub duration: Option<i32>,
-    pub easing_function_index: Option<i32>,
-    pub easing_type_index: Option<i32>,
-
-    // We don't need these Strings
-    pub easing_type: Option<String>,
-    pub easing_function: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]

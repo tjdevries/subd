@@ -1,7 +1,7 @@
 use crate::ai_images::image_generation::GenerateImage;
 use crate::art_blocks;
 use crate::constants;
-use crate::move_transition::models;
+use crate::move_transition::duration;
 use crate::move_transition::move_transition;
 use crate::obs::obs_source;
 use crate::openai::dalle;
@@ -353,10 +353,10 @@ async fn create_and_show_bogan(
     println!("Generating Screenshot Variation w/ {}", prompt.clone());
     let path = stable_diffusion_from_image(&req).await?;
 
-    let d = models::DurationSettings {
+    let d = duration::EasingDuration {
         duration: Some(duration),
-        easing_function_index: Some(easing_function_index),
-        easing_type_index: Some(easing_type_index),
+        // easing_function_index: Some(easing_function_index),
+        // easing_type_index: Some(easing_type_index),
         ..Default::default()
     };
     let _ = move_transition::move_source_in_scene_x_and_y(
@@ -378,10 +378,8 @@ async fn create_and_show_bogan(
     if let Err(e) = res {
         eprintln!("Error Updating OBS Source: {} - {}", source, e);
     };
-    let d = models::DurationSettings {
+    let d = duration::EasingDuration {
         duration: Some(duration),
-        easing_function_index: Some(easing_function_index),
-        easing_type_index: Some(easing_type_index),
         ..Default::default()
     };
     move_transition::move_source_in_scene_x_and_y(

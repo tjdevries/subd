@@ -1,4 +1,5 @@
 use crate::constants;
+use crate::move_transition::duration;
 use crate::move_transition::models;
 use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
@@ -154,7 +155,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration as i32),
                 ..Default::default()
             };
@@ -194,7 +195,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 ..Default::default()
             };
 
@@ -270,10 +271,10 @@ pub async fn handle_obs_commands(
             let duration = 3000;
             let easing_function_index = 1;
             let easing_type_index = 1;
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(duration),
-                easing_function_index: Some(easing_function_index),
-                easing_type_index: Some(easing_type_index),
+                // easing_function_index: Some(easing_function_index),
+                // easing_type_index: Some(easing_type_index),
                 ..Default::default()
             };
 
@@ -295,7 +296,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(3000),
                 ..Default::default()
             };
@@ -333,10 +334,10 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration as i32),
-                easing_function_index: Some(req.easing_function_index),
-                easing_type_index: Some(req.easing_type_index),
+                // easing_function_index: Some(req.easing_function_index),
+                // easing_type_index: Some(req.easing_type_index),
                 ..Default::default()
             };
 
@@ -360,10 +361,10 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration.try_into().unwrap_or(3000)),
-                easing_function_index: Some(req.easing_function_index),
-                easing_type_index: Some(req.easing_type_index),
+                // easing_function_index: Some(req.easing_function_index),
+                // easing_type_index: Some(req.easing_type_index),
                 ..Default::default()
             };
             move_transition::move_source_in_scene_x_and_y(
@@ -384,10 +385,10 @@ pub async fn handle_obs_commands(
             let req =
                 build_chat_move_source_request(meat_of_message, arg_positions);
 
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration.try_into().unwrap_or(3000)),
-                easing_function_index: Some(req.easing_function_index),
-                easing_type_index: Some(req.easing_type_index),
+                // easing_function_index: Some(req.easing_function_index),
+                // easing_type_index: Some(req.easing_type_index),
                 ..Default::default()
             };
             move_transition::move_source_in_scene_x_and_y(
@@ -427,10 +428,10 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration as i32),
-                easing_function_index: None,
-                easing_type_index: None,
+                // easing_function_index: None,
+                // easing_type_index: None,
                 ..Default::default()
             };
             let _ = move_transition::update_and_trigger_3d_filter(
@@ -455,10 +456,10 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            let d = models::DurationSettings {
+            let d = duration::EasingDuration {
                 duration: Some(req.duration as i32),
-                easing_function_index: Some(req.easing_function_index),
-                easing_type_index: Some(req.easing_type_index),
+                // easing_function_index: Some(req.easing_function_index),
+                // easing_type_index: Some(req.easing_type_index),
                 ..Default::default()
             };
             move_transition::spin_source(
