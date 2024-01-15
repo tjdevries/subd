@@ -101,6 +101,7 @@ fn typing<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::move_transition::move_transition;
 
     #[tokio::test]
     async fn test_fun() {
@@ -125,4 +126,14 @@ mod tests {
             duration_settings,
         );
     }
+
+    // Min Blur
+    //
+    // Max Blur
+    //
+    // More Blur
+    //
+    // Less Blur
+    //
+    // Random Blur
 }
