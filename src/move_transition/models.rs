@@ -1,6 +1,6 @@
+use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
-use serde::ser::{SerializeStruct};
 use std::fmt;
 
 // MoveSource
@@ -52,7 +52,6 @@ pub struct DurationSettings {
     pub easing_function: Option<String>,
 }
 
-
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Coordinates {
     pub x: Option<f32>,
@@ -82,8 +81,11 @@ mod tests {
     #[tokio::test]
     async fn test_move_transition_filters() {
         let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
-        let filter_details =
-            obs_client.filters().get("test-source", "move-value").await.unwrap();
+        let filter_details = obs_client
+            .filters()
+            .get("test-source", "move-value")
+            .await
+            .unwrap();
         let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
         println!("\nMove Value\n{}", res);
 

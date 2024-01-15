@@ -1,6 +1,6 @@
+use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
-use serde::ser::{SerializeStruct};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -41,10 +41,9 @@ impl EasingDuration {
         return EasingDuration {
             duration: Some(duration),
             ..Default::default()
-        }
+        };
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -52,7 +51,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_duration() {
-
         let obj = EasingDuration::new(3000);
         let res = serde_json::to_string(&obj);
         println!("{:?}", res);
