@@ -2,16 +2,11 @@ use crate::move_transition::duration::EasingDuration;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
 
-// "setting_float": 1.0,
-// "setting_name": "opacity",
-// "value_type": 2
-
-// How do I make sure each of these have a default?
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct SingleSetting {
-    pub filter: String,
+    #[serde(rename = "filter")]
+    pub target_filter: String,
 
-    // Might need to be optional
     pub setting_float: f32,
 
     pub setting_name: String,
@@ -25,13 +20,13 @@ pub struct SingleSetting {
 
 impl SingleSetting {
     pub fn new(
-        filter: impl Into<String>,
+        target_filter: impl Into<String>,
         setting_name: impl Into<String>,
         setting_float: f32,
         duration: EasingDuration,
     ) -> Self {
         Self {
-            filter: filter.into(),
+            target_filter: target_filter.into(),
             setting_name: setting_name.into(),
             setting_float,
             duration,
@@ -46,7 +41,8 @@ fn single_setting<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Settings<T> {
-    pub filter: String,
+    #[serde(rename = "filter")]
+    pub target_filter: String,
 
     #[serde(serialize_with = "settings")]
     pub move_value_type: (),
@@ -58,15 +54,36 @@ pub struct Settings<T> {
     pub duration: EasingDuration,
 }
 
+pub struct SettingsBuilder<T> {
+    pub target_filter: String,
+    pub settings: Option<T>,
+    pub duration: EasingDuration,
+}
+
+impl<T: serde::Serialize + std::default::Default> Settings<T> {
+    pub fn new(
+        target_filter: impl Into<String>,
+        settings: T,
+        duration: EasingDuration,
+    ) -> Self {
+        Self {
+            target_filter: target_filter.into(),
+            settings,
+            duration,
+            ..Default::default()
+        }
+    }
+}
+
 impl Add {
     pub fn new(
-        filter_name: impl Into<String>,
+        target_filter: impl Into<String>,
         setting_name: impl Into<String>,
         setting_float: f32,
         duration: EasingDuration,
     ) -> Self {
         Self {
-            filter: filter_name.into(),
+            target_filter: target_filter.into(),
             setting_name: setting_name.into(),
             setting_float,
             duration,
@@ -78,7 +95,8 @@ impl Add {
 // This is like a single settings
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Add {
-    pub filter: String,
+    #[serde(rename = "filter")]
+    pub target_filter: String,
 
     // This could always be the value
     #[serde(serialize_with = "add")]
@@ -96,14 +114,38 @@ pub struct Add {
 // This is like a single settings
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Random {
-    pub filter: String,
+    #[serde(rename = "filter")]
+    pub target_filter: String,
 
     #[serde(serialize_with = "random")]
     move_value_type: (),
 
+    pub setting_name: String,
+    pub setting_float_min: f32,
+    pub setting_float_max: f32,
+
     // Takes a min and max value
     #[serde(flatten)]
     pub duration: EasingDuration,
+}
+
+impl Random {
+    pub fn new(
+        target_filter: impl Into<String>,
+        setting_name: impl Into<String>,
+        setting_float_min: f32,
+        setting_float_max: f32,
+        duration: EasingDuration,
+    ) -> Self {
+        Self {
+            target_filter: target_filter.into(),
+            setting_name: setting_name.into(),
+            setting_float_min,
+            setting_float_max,
+            duration,
+            ..Default::default()
+        }
+    }
 }
 
 // Has to be on a typing source
@@ -153,6 +195,69 @@ mod tests {
 
     #[tokio::test]
     async fn test_fun() {
+        let source = "alex";
+        let filter_name = "move-value-single";
+
+        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let filter_details =
+            obs_client.filters().get(source, filter_name).await.unwrap();
+        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
+        let duration_settings =
+            crate::move_transition::duration::EasingDuration {
+                duration: Some(3000),
+                ..Default::default()
+            };
+        println!("\nMove Value\n{}", res);
+
+        let threed =
+            crate::obs_filters::three_d_transform::ThreeDTransformPerspective {
+                field_of_view: Some(90.0),
+                ..Default::default()
+            };
+        let req = Settings::new(
+            "3D-Transform-Perspective",
+            threed,
+            duration_settings,
+        );
+        let _ = move_transition::update_and_trigger_single_value_filter(
+            &obs_client,
+            source,
+            filter_name,
+            req,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_random() {
+        let source = "alex";
+        let filter_name = "move-value-single";
+
+        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let filter_details =
+            obs_client.filters().get(source, filter_name).await.unwrap();
+        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
+        let duration_settings =
+            crate::move_transition::duration::EasingDuration {
+                duration: Some(3000),
+                ..Default::default()
+            };
+        println!("\nMove Value\n{}", res);
+
+        let _saturation_rng = [-1, 5];
+        let req =
+            Random::new("Scroll", "speed_x", 0.0, 100.0, duration_settings);
+        let _ = move_transition::update_and_trigger_single_value_filter(
+            &obs_client,
+            source,
+            filter_name,
+            req,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_add() {
         let source = "alex";
         let filter_name = "move-value-single";
 

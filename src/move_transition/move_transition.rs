@@ -32,7 +32,7 @@ pub async fn update_and_trigger_filter<
     duration_settings: duration::EasingDuration,
 ) -> Result<()> {
     let new_settings = move_value::Settings {
-        filter: filter_name.to_string(),
+        target_filter: filter_name.to_string(),
         duration: duration_settings,
         settings,
         ..Default::default()
@@ -59,7 +59,7 @@ pub async fn spin_source(
         ..Default::default()
     };
     let new_settings = move_value::Settings {
-        filter: filter_name.clone(),
+        target_filter: filter_name.clone(),
         duration: duration_settings,
         settings,
         ..Default::default()
