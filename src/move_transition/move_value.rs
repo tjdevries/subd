@@ -1,5 +1,4 @@
 use crate::move_transition::duration::EasingDuration;
-use crate::move_transition::move_transition;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
 
@@ -11,9 +10,6 @@ pub struct SingleSetting {
     #[serde(serialize_with = "single_setting")]
     move_value_type: (),
 
-    // I think single setting is 2
-    // #[serde(serialize_with = "value_type")]
-    // pub value_type: (),
     #[serde(flatten)]
     pub duration: EasingDuration,
 }
@@ -22,14 +18,9 @@ pub struct SingleSetting {
 pub struct Settings<T> {
     pub filter: String,
 
-    // This could always be the value
     #[serde(serialize_with = "settings")]
     move_value_type: (),
 
-    // We need to handle these
-    // // These should be Enums
-    // #[serde(serialize_with = "value_type")]
-    // pub value_type: (),
     #[serde(flatten)]
     pub settings: T,
 
@@ -46,12 +37,6 @@ pub struct Add {
     #[serde(serialize_with = "add")]
     move_value_type: (),
 
-    // #[serde(serialize_with = "value_type")]
-    // pub value_type: (),
-
-    // This is like the single Settings
-    // #[serde(flatten)]
-    // pub settings: T,
     #[serde(flatten)]
     pub duration: EasingDuration,
 }
@@ -61,14 +46,8 @@ pub struct Add {
 pub struct Random {
     pub filter: String,
 
-    // This could always be the value
     #[serde(serialize_with = "random")]
     move_value_type: (),
-
-    // We need to handle these
-    // // These should be Enums
-    // #[serde(serialize_with = "value_type")]
-    // pub value_type: (),
 
     // Takes a min and max value
     #[serde(flatten)]
@@ -88,60 +67,6 @@ pub struct Typing {
     #[serde(flatten)]
     pub duration: EasingDuration,
 }
-
-// Single Settings
-// {
-//   "filterEnabled": false,
-//   "filterIndex": 2,
-//   "filterKind": "move_value_filter",
-//   "filterName": "",
-//   "filterSettings": {
-//     "filter": "color",
-//     "move_value_type": 0,
-//     "setting_float": 20.0,
-//     "setting_float_max": 0.04,
-//     "setting_name": "contrast",
-//     "value_type": 2
-//   }
-// }
-//
-// Move Value
-// Settings
-// {
-//   "filterEnabled": false,
-//   "filterIndex": 2,
-//   "filterKind": "move_value_filter",
-//   "filterName": "",
-//   "filterSettings": {
-//     "filter": "color",
-//     "move_value_type": 1,
-//     "setting_float": 20.0,
-//     "setting_float_max": 0.04,
-//     "setting_name": "contrast",
-//     "value_type": 2
-//   }
-// }
-
-// Random
-// "filterSettings": {
-//     "filter": "color",
-//     "move_value_type": 2,
-//     "setting_float": 0.0,
-//     "setting_float_max": 0.04,
-//     "setting_name": "contrast",
-//     "value_type": 2
-//   }
-//
-
-// Add
-// "filterSettings": {
-//     "filter": "color",
-//     "move_value_type": 2,
-//     "setting_float": 0.0,
-//     "setting_float_max": 0.04,
-//     "setting_name": "contrast",
-//     "value_type": 2
-//   }
 
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
 #[repr(u8)]
@@ -177,23 +102,6 @@ fn typing<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
 mod tests {
     use super::*;
 
-    // Move brightness
-    // {
-    //   "filterEnabled": false,
-    //   "filterIndex": 2,
-    //   "filterKind": "move_value_filter",
-    //   "filterName": "",
-    //   "filterSettings": {
-    //     "filter": "color",
-    //     "move_value_type": 0,
-    //     "setting_color": 16777215,
-    //     "setting_float": 1.0,
-    //     "setting_float_max": 0.04,
-    //     "setting_name": "brightness",
-    //     "value_type": 2
-    //   }
-    // }
-
     #[tokio::test]
     async fn test_fun() {
         let source = "test-source";
@@ -216,56 +124,5 @@ mod tests {
             settings,
             duration_settings,
         );
-
-        // We won't need anything except Defaults
-
-        // pub async fn update_and_trigger_3d_filter<
-        //     T: serde::Serialize + std::default::Default,
-        // >(
-        //     obs_client: &OBSClient,
-        //     source: &str,
-        //     filter_name: &str,
-        //     settings: T,
-        //     duration_settings: models::DurationSettings,
-        // ) -> Result<()> {
-
-        // How can we modify?
-
-        // Move Value
-        // {
-        //   "filterEnabled": false,
-        //   "filterIndex": 2,
-        //   "filterKind": "move_value_filter",
-        //   "filterName": "",
-        //   "filterSettings": {
-        //     "filter": "color",
-        //     "move_value_type": 0,
-        //     "setting_color": 16777215,
-        //     "setting_float": 1.0,
-        //     "setting_float_max": 0.04,
-        //     "setting_name": "brightness",
-        //     "value_type": 2
-        //   }
-        // }
-
-        // let obj = SingleSetting {
-        //     filter: "test".to_string(),
-        //     duration: EasingDuration::new(3000),
-        //     ..Default::default()
-        // };
-        // let res = ::serde_json::to_string_pretty(&obj).unwrap();
-        // println!("\nMove Single Value\n{}", res);
-
-        // let filter_details =
-        //     obs_client.filters().get("test-source", "move-action").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Action\n{}", res);
-        //
-        // let filter_details =
-        //     obs_client.filters().get("test-scene", "move-source").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Source\n{}", res);
-        // let x = MoveValueType::Settings as i32;
-        // println!("X: {}", x);
     }
 }
