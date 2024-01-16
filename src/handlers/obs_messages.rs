@@ -2,7 +2,6 @@ use crate::chat_parser::parser;
 use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::move_transition;
-use crate::move_transition::private;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
@@ -110,7 +109,7 @@ pub async fn handle_obs_commands(
                 ms,
                 duration,
             );
-            let res = private::update_filter_and_enable(
+            let res = move_transition::update_filter_and_enable(
                 scene,
                 filter_name,
                 settings,

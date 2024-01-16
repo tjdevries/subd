@@ -2,10 +2,44 @@ use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::models;
 use crate::move_transition::move_value;
-use crate::move_transition::private;
 use crate::obs_filters;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use obws::Client as OBSClient;
+
+pub async fn update_filter_and_enable<T: serde::Serialize>(
+    source: &str,
+    filter_name: &str,
+    new_settings: T,
+    obs_client: &obws::Client,
+) -> Result<()> {
+    update_filter(source, filter_name, new_settings, &obs_client)
+        .await
+        .context(format!(
+            "Failed to update Filter: {} on Source: {}",
+            filter_name, source
+        ))?;
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source,
+        filter: &filter_name,
+        enabled: true,
+    };
+    Ok(obs_client.filters().set_enabled(filter_enabled).await?)
+}
+
+async fn update_filter<T: serde::Serialize>(
+    source: &str,
+    filter_name: &str,
+    new_settings: T,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let new_filter = obws::requests::filters::SetSettings {
+        source,
+        filter: filter_name,
+        settings: Some(new_settings),
+        overlay: Some(true),
+    };
+    Ok(obs_client.filters().set_settings(new_filter).await?)
+}
 
 // This uses the source passed in to find a filter that starts w/ Move_
 // and ends with the source
@@ -27,7 +61,7 @@ pub async fn update_and_trigger_filter<
 
     // ========================================
     let move_transition_filter_name = format!("Move_{}", filter_name);
-    private::update_filter_and_enable(
+    update_filter_and_enable(
         source,
         &move_transition_filter_name,
         settings,
@@ -59,7 +93,7 @@ pub async fn spin_source(
     };
 
     let move_transition_filter_name = format!("Move_{}", source);
-    private::update_filter_and_enable(
+    update_filter_and_enable(
         source,
         &move_transition_filter_name,
         settings,
@@ -84,7 +118,7 @@ pub async fn move_source_in_scene_x_and_y(
 
     // ========================================
     let move_transition_filter_name = format!("Move_{}", source);
-    private::update_filter_and_enable(
+    update_filter_and_enable(
         scene,
         &move_transition_filter_name,
         settings,

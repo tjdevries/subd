@@ -5,6 +5,5 @@ pub mod move_plus_cache;
 pub mod move_source;
 pub mod move_transition;
 pub mod move_value;
-pub mod private;
 
 mod tests;
