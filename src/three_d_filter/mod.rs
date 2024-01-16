@@ -11,10 +11,6 @@ pub enum SpinFilters {
     Perspective(perspective::ThreeDTransformPerspective),
 }
 
-pub trait FilterName {
-    fn filter_name(&self) -> String;
-}
-
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
 #[repr(u8)]
 pub enum CameraMode {
@@ -22,4 +18,10 @@ pub enum CameraMode {
     Perspective = 0,
     Orthographic = 1,
     CornerPin = 2,
+}
+
+// This still feels wrong
+// I think there is a more idiomatic Rust to do this
+pub trait FilterName {
+    fn filter_name(&self) -> String;
 }

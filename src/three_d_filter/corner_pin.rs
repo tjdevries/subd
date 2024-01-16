@@ -2,8 +2,8 @@ use crate::three_d_filter::CameraMode;
 use crate::three_d_filter::FilterName;
 use serde::{Deserialize, Serialize};
 
+// This should come from some constant
 impl FilterName for ThreeDTransformCornerPin {
-    // This should come from some constant
     fn filter_name(&self) -> String {
         "3D-Transform-CornerPin".to_string()
     }
