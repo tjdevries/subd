@@ -130,7 +130,8 @@ pub async fn handle_obs_commands(
             let settings =
                 obs_filters::three_d_transform::ThreeDTransformOrthographic {
                     scale_x: Some(300.0),
-                    camera_mode: (),
+                    camera_mode:
+                        obs_filters::three_d_transform::CameraMode::Orthographic,
                     ..Default::default()
                 };
             let d = duration::EasingDuration::new(req.duration as i32);
@@ -153,7 +154,8 @@ pub async fn handle_obs_commands(
                     position_y: Some(40.0),
                     rotation_x: Some(-51.4),
                     field_of_view: Some(90.0),
-                    camera_mode: (),
+                    camera_mode:
+                        obs_filters::three_d_transform::CameraMode::Perspective,
                     ..Default::default()
                 };
             let d = duration::EasingDuration {
@@ -246,7 +248,8 @@ pub async fn handle_obs_commands(
                     scale_y: Some(200.0),
                     rotation_x: Some(50.0),
                     field_of_view: Some(108.0),
-                    camera_mode: (),
+                    camera_mode:
+                        obs_filters::three_d_transform::CameraMode::Perspective,
                     ..Default::default()
                 };
             let d = duration::EasingDuration::new(3000);
@@ -361,7 +364,8 @@ pub async fn handle_obs_commands(
             let settings =
                 obs_filters::three_d_transform::ThreeDTransformOrthographic {
                     rotation_y: Some(req.rotation_y),
-                    camera_mode: (),
+                    camera_mode:
+                        obs_filters::three_d_transform::CameraMode::Orthographic,
                     ..Default::default()
                 };
             let d = duration::EasingDuration::new(req.duration as i32);

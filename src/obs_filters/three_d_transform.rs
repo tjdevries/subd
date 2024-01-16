@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize, Serializer};
+use serde_repr::*;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum SpinFilters {
@@ -10,6 +11,7 @@ pub trait FilterName {
     fn filter_name(&self) -> String;
 }
 
+// This should come from constants
 impl FilterName for ThreeDTransformPerspective {
     // This should come from some constant
     fn filter_name(&self) -> String {
@@ -29,6 +31,15 @@ impl FilterName for ThreeDTransformCornerPin {
     fn filter_name(&self) -> String {
         "3D-Transform-CornerPin".to_string()
     }
+}
+
+#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
+#[repr(u8)]
+pub enum CameraMode {
+    #[default]
+    Perspective = 0,
+    Orthographic = 1,
+    CornerPin = 2,
 }
 
 // How should we have a hardcoded value associated with each Struct?
@@ -70,18 +81,8 @@ pub struct ThreeDTransformPerspective {
     #[serde(rename = "Shear.Y", skip_serializing_if = "Option::is_none")]
     pub shear_y: Option<f32>,
 
-    #[serde(
-        serialize_with = "perspective_camera_mode",
-        rename = "Camera.Mode"
-    )]
-    pub camera_mode: (),
-}
-
-fn perspective_camera_mode<S: Serializer>(
-    _: &(),
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.serialize_i32(1)
+    #[serde(rename = "Camera.Mode")]
+    pub camera_mode: CameraMode,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -116,18 +117,8 @@ pub struct ThreeDTransformOrthographic {
     #[serde(rename = "Shear.Y", skip_serializing_if = "Option::is_none")]
     pub shear_y: Option<f32>,
 
-    #[serde(
-        serialize_with = "orthographic_camera_mode",
-        rename = "Camera.Mode"
-    )]
-    pub camera_mode: (),
-}
-
-fn orthographic_camera_mode<S: Serializer>(
-    _: &(),
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.serialize_i32(0)
+    #[serde(rename = "Camera.Mode")]
+    pub camera_mode: CameraMode,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -168,42 +159,30 @@ pub struct ThreeDTransformCornerPin {
     )]
     pub top_right_y: Option<f32>,
 
-    #[serde(serialize_with = "corner_pin_camera_mode", rename = "Camera.Mode")]
-    pub camera_mode: (),
-}
-
-fn corner_pin_camera_mode<S: Serializer>(
-    _: &(),
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.serialize_i32(2)
+    #[serde(rename = "Camera.Mode")]
+    pub camera_mode: CameraMode,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::move_transition::models;
-    use crate::move_transition::move_transition;
     use crate::obs::obs;
+    // use crate::move_transition::models;
+    // use crate::move_transition::move_transition;
     // use std::thread;
     // use std::time;
 
     #[tokio::test]
-    async fn test_transform_filters() {
+    async fn test_fun() {
         let obs_client = obs::create_obs_client().await.unwrap();
-
-        // let settings = ThreeDTransformPerspective{
-        //     rotation_z: Some(1080.0),
-        //     camera_mode: (),
-        //     ..Default::default()
-        // };
-        let settings = ThreeDTransformOrthographic {
+        let settings = ThreeDTransformPerspective {
             rotation_x: Some(360.0),
             rotation_y: Some(360.0),
             rotation_z: Some(360.0),
-            camera_mode: (),
+            camera_mode: CameraMode::Orthographic,
             ..Default::default()
         };
+        println!("{:?}", serde_json::to_string_pretty(&settings));
         // let d = models::DurationSettings {
         //     duration: Some(9000),
         //     ..Default::default()
