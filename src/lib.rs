@@ -3,6 +3,7 @@ pub mod ai_images;
 pub mod ai_scene;
 pub mod art_blocks;
 pub mod audio;
+pub mod chat_parser;
 pub mod commands;
 pub mod constants;
 pub mod elevenlabs;
