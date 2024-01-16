@@ -1,7 +1,8 @@
 use crate::constants;
 use crate::move_transition::duration;
-use crate::move_transition::models;
+use crate::move_transition::duration::find_easing_indicies;
 use crate::move_transition::move_transition;
+use crate::move_transition::private;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
@@ -14,7 +15,6 @@ use num_traits::ToPrimitive;
 use obws;
 use obws::Client as OBSClient;
 use rodio::*;
-use std::collections::HashMap;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_irc::{
@@ -145,6 +145,47 @@ pub async fn handle_obs_commands(
     let command = splitmsg[0].as_str();
 
     let _ = match command {
+        "!right" => {
+            let duration = crate::move_transition::duration::EasingDuration {
+                duration: Some(300),
+                ..Default::default()
+            };
+
+            // We need to update builder
+            let ms =
+                crate::move_transition::move_source::MoveSourceSettings::new();
+
+            // let ms = crate::move_transition::move_source::MoveSourceSettings {
+            //     position: Some(crate::move_transition::models::Coordinates {
+            //         x: Some(100.0),
+            //         y: None,
+            //     }),
+            //     ..Default::default()
+            // };
+
+            let filter_name = "Move_alex";
+            let scene = "Memes";
+            let settings = crate::move_transition::move_source::MoveSource::new(
+                source,
+                filter_name,
+                ms,
+                duration,
+            );
+
+            let res = private::update_filter_and_enable(
+                scene,
+                filter_name,
+                settings,
+                &obs_client,
+            )
+            .await;
+            if let Err(err) = res {
+                println!("Error: {:?}", err);
+            }
+
+            Ok(())
+        }
+
         "!wide" => {
             let meat_of_message = splitmsg[1..].to_vec();
             let arg_positions = default_wide_args();
@@ -266,17 +307,8 @@ pub async fn handle_obs_commands(
                 .ok_or(anyhow!("Error converting position_y to f32"))?;
             let scene = res.scene;
 
-            // TODO: find proper move:
-
             let duration = 3000;
-            let easing_function_index = 1;
-            let easing_type_index = 1;
-            let d = duration::EasingDuration {
-                duration: Some(duration),
-                // easing_function_index: Some(easing_function_index),
-                // easing_type_index: Some(easing_type_index),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(duration);
 
             let _ = move_transition::move_source_in_scene_x_and_y(
                 obs_client, &scene, source, position_x, position_y, d,
@@ -334,13 +366,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            let d = duration::EasingDuration {
-                duration: Some(req.duration as i32),
-                // easing_function_index: Some(req.easing_function_index),
-                // easing_type_index: Some(req.easing_type_index),
-                ..Default::default()
-            };
-
+            let d = duration::EasingDuration::new(req.duration as i32);
             move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
                 scene,
@@ -361,12 +387,9 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
 
-            let d = duration::EasingDuration {
-                duration: Some(req.duration.try_into().unwrap_or(3000)),
-                // easing_function_index: Some(req.easing_function_index),
-                // easing_type_index: Some(req.easing_type_index),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(
+                req.duration.try_into().unwrap_or(3000),
+            );
             move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
                 scene,
@@ -385,12 +408,9 @@ pub async fn handle_obs_commands(
             let req =
                 build_chat_move_source_request(meat_of_message, arg_positions);
 
-            let d = duration::EasingDuration {
-                duration: Some(req.duration.try_into().unwrap_or(3000)),
-                // easing_function_index: Some(req.easing_function_index),
-                // easing_type_index: Some(req.easing_type_index),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(
+                req.duration.try_into().unwrap_or(3000),
+            );
             move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
                 &req.scene,
@@ -587,12 +607,14 @@ fn build_chat_twirl_request(
         req.easing_type.clone(),
         req.easing_function.clone(),
     );
-
     req.easing_type_index = easing_type_index;
     req.easing_function_index = easing_function_index;
+
     return req;
 }
 
+// Parsing Chat
+// This is related to parsing chat
 pub fn build_chat_move_source_request(
     splitmsg: Vec<String>,
     arg_positions: &[ChatArgPosition],
@@ -600,9 +622,7 @@ pub fn build_chat_move_source_request(
     let _default_source = "begin".to_string();
     let default_scene = PRIMARY_CAM_SCENE.to_string();
 
-    let mut req = ChatMoveSourceRequest {
-        ..Default::default()
-    };
+    let mut req = ChatMoveSourceRequest::default();
 
     for (index, arg) in arg_positions.iter().enumerate() {
         match arg {
@@ -671,45 +691,6 @@ pub fn build_chat_move_source_request(
     return req;
 }
 
-pub fn easing_function_match() -> HashMap<&'static str, i32> {
-    HashMap::from([
-        ("quadratic", 1),
-        ("cubic", 2),
-        ("quartic", 3),
-        ("quintic", 4),
-        ("sine", 5),
-        ("circular", 6),
-        ("exponential", 7),
-        ("elastic", 8),
-        ("bounce", 9),
-        ("back", 10),
-    ])
-}
-
-pub fn easing_match() -> HashMap<&'static str, i32> {
-    HashMap::from([
-        ("nothing", 0),
-        ("ease-in", 1),
-        ("ease-out", 2),
-        ("ease-in-and-out", 3),
-    ])
-}
-
-fn find_easing_indicies(
-    easing_type: String,
-    easing_function: String,
-) -> (i32, i32) {
-    let easing_types = easing_match();
-    let easing_functions = easing_function_match();
-    let easing_type_index =
-        easing_types.get(easing_type.clone().as_str()).unwrap_or(&1);
-    let easing_function_index = easing_functions
-        .get(easing_function.clone().as_str())
-        .unwrap_or(&1);
-
-    (*easing_type_index, *easing_function_index)
-}
-
 pub fn build_wide_request(
     splitmsg: Vec<String>,
     arg_positions: &[WideArgPosition],
@@ -750,7 +731,7 @@ pub fn build_wide_request(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
     use crate::obs::obs;
 
     #[tokio::test]

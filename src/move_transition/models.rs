@@ -38,8 +38,8 @@ pub struct Coordinates {
 }
 
 impl Coordinates {
-    pub fn new() -> Self {
-        Self { x: None, y: None }
+    pub fn new(x: Option<f32>, y: Option<f32>) -> Self {
+        Self { x, y }
     }
 }
 
@@ -57,34 +57,5 @@ impl fmt::Display for FilterKind {
             FilterKind::MoveValue => write!(f, "move_value_filter"),
             FilterKind::MoveSource => write!(f, "move_source_filter"),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // use super::*;
-
-    #[tokio::test]
-    async fn test_move_transition_filters() {
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
-        let filter_details = obs_client
-            .filters()
-            .get("test-source", "move-value")
-            .await
-            .unwrap();
-        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        println!("\nMove Value\n{}", res);
-
-        // let filter_details =
-        //     obs_client.filters().get("test-source", "move-action").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Action\n{}", res);
-        //
-        // let filter_details =
-        //     obs_client.filters().get("test-scene", "move-source").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Source\n{}", res);
-        // let x = MoveValueType::Settings as i32;
-        // println!("X: {}", x);
     }
 }

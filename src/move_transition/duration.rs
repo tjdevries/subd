@@ -1,5 +1,20 @@
+use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
+use std::str::FromStr;
+use strum::EnumString;
+
+pub fn find_easing_indicies(
+    easing_function: impl Into<String>,
+    easing_type: impl Into<String>,
+) -> (i32, i32) {
+    let ef =
+        EasingFunction::from_str(&easing_function.into().to_case(Case::Pascal))
+            .unwrap_or(EasingFunction::Quadratic) as i32;
+    let et = EasingType::from_str(&easing_type.into().to_case(Case::Pascal))
+        .unwrap_or(EasingType::NoEasing) as i32;
+    (ef, et)
+}
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EasingDuration {
@@ -8,7 +23,18 @@ pub struct EasingDuration {
     pub easing_type: EasingType,
 }
 
-#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
+impl EasingDuration {
+    pub fn new(duration: i32) -> EasingDuration {
+        return EasingDuration {
+            duration: Some(duration),
+            ..Default::default()
+        };
+    }
+}
+
+#[derive(
+    Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, EnumString,
+)]
 #[repr(u8)]
 pub enum EasingFunction {
     #[default]
@@ -24,51 +50,25 @@ pub enum EasingFunction {
     Back = 10,
 }
 
-#[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug, Default)]
+#[derive(
+    Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, EnumString,
+)]
 #[repr(u8)]
 pub enum EasingType {
     #[default]
     NoEasing = 0,
-    EasingIn = 1,
-    EasingOut = 2,
-    EasingInAndOut = 3,
-}
-
-impl EasingDuration {
-    pub fn new(duration: i32) -> EasingDuration {
-        return EasingDuration {
-            duration: Some(duration),
-            ..Default::default()
-        };
-    }
+    EaseIn = 1,
+    EaseOut = 2,
+    EaseInAndOut = 3,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[tokio::test]
-    async fn test_duration() {
-        let obj = EasingDuration::new(3000);
-        let res = serde_json::to_string(&obj);
-        println!("{:?}", res);
-        // Get a new object serial/deserial
-        // let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
-        // let filter_details =
-        //     obs_client.filters().get("test-source", "move-value").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Value\n{}", res);
-
-        // let filter_details =
-        //     obs_client.filters().get("test-source", "move-action").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Action\n{}", res);
-        //
-        // let filter_details =
-        //     obs_client.filters().get("test-scene", "move-source").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Source\n{}", res);
-        // let x = MoveValueType::Settings as i32;
-        // println!("X: {}", x);
+    #[test]
+    fn test_fun2() {
+        let res = find_easing_indicies("cubic", "ease-in");
+        assert_eq!(res, (2, 1));
     }
 }
