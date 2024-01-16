@@ -50,3 +50,22 @@ pub struct ThreeDTransformCornerPin {
     #[serde(rename = "Camera.Mode")]
     camera_mode: CameraMode,
 }
+
+#[derive(Debug, Default)]
+pub struct ThreeDTransformCornerPinBuilder {
+    pub bottom_left_x: Option<f32>,
+    pub bottom_left_y: Option<f32>,
+    pub top_left_x: Option<f32>,
+    pub top_left_y: Option<f32>,
+    pub top_right_x: Option<f32>,
+    pub top_right_y: Option<f32>,
+}
+
+// TODO: Finish
+impl ThreeDTransformCornerPinBuilder {
+    pub fn build(self) -> ThreeDTransformCornerPin {
+        ThreeDTransformCornerPin {
+            ..Default::default()
+        }
+    }
+}
