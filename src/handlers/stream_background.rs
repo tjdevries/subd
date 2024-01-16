@@ -2,6 +2,7 @@ use crate::ai_images::image_generation::GenerateImage;
 use crate::art_blocks;
 use crate::constants;
 use crate::move_transition::duration;
+use crate::move_transition::models;
 use crate::move_transition::move_transition;
 use crate::obs::obs_source;
 use crate::openai::dalle;
@@ -298,13 +299,10 @@ async fn create_and_show_bogan(
     let scene = "AIAssets";
     let source = "bogan";
 
+    // TODO: Update this
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let unique_identifier = format!("{}_screenshot.png", timestamp);
-
-    // TODO: Update this
-    // This is wierd
     let filename = format!(
-        // "./tmp/screenshots/timelapse/{}",
         "/home/begin/code/subd/tmp/screenshots/{}",
         unique_identifier
     );
@@ -381,4 +379,75 @@ async fn create_and_show_bogan(
         d,
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::move_transition::duration;
+    use crate::obs::obs::create_obs_client;
+
+    #[tokio::test]
+    async fn test_bogan() {
+        // "pos: x 1660.5 y 170.0 rot: 3150.0 scale: x 1.200 y 1.200 crop: l 0 t 0 r 0 b 0"
+        let obs_client = create_obs_client().await.unwrap();
+        // let scene = "AIAssets";
+        let source = "alex";
+        // let x = 0.0;
+        // let y = 0.0;
+        // let d = duration::EasingDuration::new(3000);
+        // let _ = move_transition::move_source_in_scene_x_and_y(
+        //     &obs_client,
+        //     scene,
+        //     source,
+        //     x,
+        //     y,
+        //     d,
+        // )
+        // .await;
+
+        let filter_name = "Move_alex";
+        let scene = "Memes";
+        let duration =
+            crate::move_transition::duration::EasingDuration::new(301);
+        let builder =
+            crate::move_transition::move_source::MoveSourceSettings::builder();
+        let x = 0.0;
+        let y = 0.0;
+
+        // Non-Relative is failing!!!1
+        let ms = builder
+            .relative_transform(true)
+            .position(models::Coordinates::new(Some(x), Some(y)))
+            .rot(0.0)
+            .scale(models::Coordinates::new(Some(1.2), Some(1.2)))
+            .build();
+
+        let res = ::serde_json::to_string_pretty(&ms).unwrap();
+        println!("{:?}", res);
+
+        let settings = crate::move_transition::move_source::MoveSource::new(
+            source,
+            filter_name,
+            ms,
+            duration,
+        );
+        let res = move_transition::update_filter_and_enable(
+            scene,
+            filter_name,
+            settings,
+            &obs_client,
+        )
+        .await;
+        if let Err(err) = res {
+            println!("Error: {:?}", err);
+        }
+
+        let filter_enabled = obws::requests::filters::SetEnabled {
+            source: scene,
+            filter: &filter_name,
+            enabled: true,
+        };
+        obs_client.filters().set_enabled(filter_enabled).await;
+    }
 }

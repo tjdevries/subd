@@ -33,7 +33,10 @@ fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
 pub struct Coordinates {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub x: Option<f32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f32>,
 }
 

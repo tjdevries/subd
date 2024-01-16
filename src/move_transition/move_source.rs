@@ -34,16 +34,30 @@ impl MoveSource {
 
 #[derive(Deserialize, Debug, Default)]
 pub struct MoveSourceSettings {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bounds: Option<models::Coordinates>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scale: Option<models::Coordinates>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub crop: Option<CropSettings>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<models::Coordinates>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub x: Option<f32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f32>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rot: Option<f32>,
 
     #[serde(skip)]
     relative_transform: bool,
+    // One extra field
 }
 
 impl MoveSourceSettings {
@@ -129,7 +143,7 @@ impl MoveSourceSettingsBuilder {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct MoveSourceSettingsBuilder {
     pub bounds: Option<models::Coordinates>,
     pub scale: Option<models::Coordinates>,
@@ -146,14 +160,52 @@ impl Serialize for MoveSourceSettings {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("MoveSource", 8)?;
-        state.serialize_field("bounds", &self.bounds)?;
-        state.serialize_field("scale", &self.scale)?;
-        state.serialize_field("crop", &self.crop)?;
-        state.serialize_field("position", &self.position)?;
-        state.serialize_field("x", &self.x)?;
-        state.serialize_field("y", &self.y)?;
-        state.serialize_field("rot", &self.rot)?;
+        let mut struct_count = 0;
+        if self.bounds.is_some() {
+            struct_count += 1;
+        }
+        if self.scale.is_some() {
+            struct_count += 1;
+        }
+        if self.crop.is_some() {
+            struct_count += 1;
+        }
+        if self.position.is_some() {
+            struct_count += 1;
+        }
+        if self.x.is_some() {
+            struct_count += 1;
+        }
+        if self.y.is_some() {
+            struct_count += 1;
+        }
+        if self.rot.is_some() {
+            struct_count += 1;
+        }
+
+        let mut state =
+            serializer.serialize_struct("MoveSource", struct_count)?;
+        if self.bounds.is_some() {
+            state.serialize_field("bounds", &self.bounds)?;
+        }
+        if self.scale.is_some() {
+            state.serialize_field("scale", &self.scale)?;
+        }
+        if self.crop.is_some() {
+            state.serialize_field("crop", &self.crop)?;
+        }
+        if self.position.is_some() {
+            state.serialize_field("position", &self.position)?;
+        }
+        if self.x.is_some() {
+            state.serialize_field("x", &self.x)?;
+        }
+        if self.y.is_some() {
+            state.serialize_field("y", &self.y)?;
+        }
+        if self.rot.is_some() {
+            state.serialize_field("rot", &self.rot)?;
+        }
 
         let transform_text = build_transform_text(self);
         state.serialize_field("transform_text", &transform_text)?;
@@ -178,25 +230,39 @@ fn build_transform_text(s: &MoveSourceSettings) -> String {
     let crop_top = s.crop.unwrap_or(default_crop).top.unwrap_or(0.0);
     let crop_bottom = s.crop.unwrap_or(default_crop).bottom.unwrap_or(0.0);
 
+    // if s.relative_transform {
+    //     format!(
+    //         "pos: x+{} y+{} rot:+{} scale: x*{} y*{} crop: l {} t {} r {} b {}",
+    //         x,
+    //         y,
+    //         rot,
+    //         scale_x,
+    //         scale_y,
+    //         crop_left,
+    //         crop_top,
+    //         crop_right,
+    //         crop_bottom
+    //     )
+    // } else {
+    //     // format!(
+    //     //     "pos: x {} y {} rot: {} bounds: x {} y {} scale: x {} y {} crop: l {} t {} r {} b {}",
+    //     //     x, y, rot, bounds_x, bounds_y, scale_x, scale_y, crop_left, crop_top, crop_right, crop_bottom
+    //     // )
+    // }
+    //
+
     if s.relative_transform {
         format!(
-            "pos: x {} y {} rot: {} bounds: x {} y {} scale: x {} y {} crop: l {} t {} r {} b {}",
-            x, y, rot, bounds_x, bounds_y, scale_x, scale_y, crop_left, crop_top, crop_right, crop_bottom
+            "pos: x+{} y+{} rot:+{} scale: x*{} y*{} crop: l 0 t 0 r 0 b 0",
+            x, y, rot, scale_x, scale_y
         )
     } else {
         format!(
-            "pos: x+{} y+{} rot:+{} scale: x*{} y*{} crop: l {} t {} r {} b {}",
-            x,
-            y,
-            rot,
-            scale_x,
-            scale_y,
-            crop_left,
-            crop_top,
-            crop_right,
-            crop_bottom
+            "pos: x {} y {} rot: {} scale: x {} y {} crop: l 0 t 0 r 0 b 0",
+            x, y, rot, scale_x, scale_y
         )
     }
+    // return "pos: x 1660.5 y 170.0 rot: 3150.0 scale: x 1.200 y 1.200 crop: l 0 t 0 r 0 b 0".to_string();
 }
 
 impl CropSettings {

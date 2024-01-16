@@ -102,9 +102,9 @@ pub async fn handle_obs_commands(
             let scene = "Memes";
             let duration =
                 crate::move_transition::duration::EasingDuration::new(300);
-            // TODO: we need to make this use the builder pattern
-            let ms =
-                crate::move_transition::move_source::MoveSourceSettings::new();
+            let builder =
+                crate::move_transition::move_source::MoveSourceSettings::builder();
+            let ms = builder.relative_transform(true).x(100.0).build();
             let settings = crate::move_transition::move_source::MoveSource::new(
                 source,
                 filter_name,

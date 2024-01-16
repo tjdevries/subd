@@ -1,10 +1,13 @@
 use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::models;
+use crate::move_transition::move_source;
 use crate::move_transition::move_value;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use anyhow::{Context, Result};
 use obws::Client as OBSClient;
+use std::thread;
+use tokio::time::Duration;
 
 pub async fn update_and_trigger_filter<
     T: serde::Serialize + std::default::Default,
@@ -62,11 +65,20 @@ pub async fn move_source_in_scene_x_and_y(
     duration: duration::EasingDuration,
 ) -> Result<()> {
     let filter_name = format!("Move_{}", source);
-    let settings = move_value::Settings::new(
-        source.to_string(),
-        models::Coordinates::new(Some(x), Some(y)),
-        duration,
-    );
+
+    let builder = move_source::MoveSourceSettings::builder()
+        .position(models::Coordinates::new(Some(x), Some(y)))
+        .x(x)
+        .y(y);
+
+    println!("Builder: {:?}", builder);
+    let s = builder.build();
+
+    println!("scene: {:?} | filter_name: {:?}", scene, filter_name);
+    println!("{:?}", serde_json::to_string_pretty(&s));
+
+    let settings = move_value::Settings::new(source.to_string(), s, duration);
+
     update_filter_and_enable(scene, &filter_name, settings, obs_client).await
 }
 
@@ -82,12 +94,37 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
             "Failed to update Filter: {} on Source: {}",
             filter_name, source
         ))?;
+
+    println!("Presleep");
+    // I hate this
+    thread::sleep(Duration::from_millis(300));
+
+    println!("Post sleep");
+    let filter_enabled = obws::requests::filters::SetEnabled {
+        source,
+        filter: &filter_name,
+        enabled: true,
+    };
+    println!("Setting Enabled");
+    // WTF no sure why filters not enabled
+    obs_client.filters().set_enabled(filter_enabled).await?;
+
+    thread::sleep(Duration::from_millis(300));
     let filter_enabled = obws::requests::filters::SetEnabled {
         source,
         filter: &filter_name,
         enabled: true,
     };
     Ok(obs_client.filters().set_enabled(filter_enabled).await?)
+
+    // obs_client.filters().set_enabled(filter_enabled).await?;
+    // // I don't know why, but sometimes we need to trigger it twice
+    // thread::sleep(Duration::from_millis(300));
+    // let filter_enabled = obws::requests::filters::SetEnabled {
+    //     source,
+    //     filter: &filter_name,
+    //     enabled: true,
+    // };
 }
 
 async fn update_filter<T: serde::Serialize>(
@@ -102,5 +139,9 @@ async fn update_filter<T: serde::Serialize>(
         settings: Some(new_settings),
         overlay: Some(true),
     };
-    Ok(obs_client.filters().set_settings(settings).await?)
+    Ok(obs_client
+        .filters()
+        .set_settings(settings)
+        .await
+        .context(format!("Error updating filter: {}", filter_name))?)
 }
