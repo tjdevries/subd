@@ -2,13 +2,9 @@
 mod tests {
     use crate::move_transition::duration::EasingDuration;
     use crate::move_transition::models::Coordinates;
-    use crate::move_transition::move_source::{
-        MoveSource, MoveSourceSettings, MoveSourceSettingsBuilder,
-    };
+    use crate::move_transition::move_source::{MoveSource, MoveSourceSettings};
+    use crate::move_transition::move_transition;
     use crate::move_transition::move_value::*;
-    use crate::move_transition::{
-        duration, models, move_source, move_transition, move_value,
-    };
 
     #[tokio::test]
     async fn test_duration() {
@@ -52,10 +48,9 @@ mod tests {
         println!("\nMove Value\n{}", res);
 
         let threed =
-            crate::obs_filters::three_d_transform::ThreeDTransformPerspective {
-                field_of_view: Some(90.0),
-                ..Default::default()
-            };
+            crate::three_d_filter::perspective::ThreeDTransformPerspective::builder()
+                .field_of_view(Some(90.0))
+                .build();
         let req = Settings::new(
             "3D-Transform-Perspective",
             threed,
@@ -163,30 +158,6 @@ mod tests {
             &obs_client,
         )
         .await;
-    }
-
-    #[tokio::test]
-    async fn test_move_transition_filters() {
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
-        let filter_details = obs_client
-            .filters()
-            .get("test-source", "move-value")
-            .await
-            .unwrap();
-        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        println!("\nMove Value\n{}", res);
-
-        // let filter_details =
-        //     obs_client.filters().get("test-source", "move-action").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Action\n{}", res);
-        //
-        // let filter_details =
-        //     obs_client.filters().get("test-scene", "move-source").await.unwrap();
-        // let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        // println!("\nMove Source\n{}", res);
-        // let x = MoveValueType::Settings as i32;
-        // println!("X: {}", x);
     }
 
     #[tokio::test]

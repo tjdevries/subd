@@ -44,3 +44,126 @@ impl FilterName for ThreeDTransformOrthographic {
         "3D-Transform-Orthographic".to_string()
     }
 }
+
+impl ThreeDTransformOrthographic {
+    pub fn builder() -> ThreeDTransformOrthographicBuilder {
+        ThreeDTransformOrthographicBuilder::default()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ThreeDTransformOrthographicBuilder {
+    pub position_x: Option<f32>,
+    pub position_y: Option<f32>,
+    pub position_z: Option<f32>,
+    pub rotation_x: Option<f32>,
+    pub rotation_y: Option<f32>,
+    pub rotation_z: Option<f32>,
+    pub scale_x: Option<f32>,
+    pub scale_y: Option<f32>,
+    pub shear_x: Option<f32>,
+    pub shear_y: Option<f32>,
+}
+
+impl ThreeDTransformOrthographicBuilder {
+    pub fn new() -> ThreeDTransformOrthographicBuilder {
+        ThreeDTransformOrthographicBuilder::default()
+    }
+
+    pub fn build(self) -> ThreeDTransformOrthographic {
+        ThreeDTransformOrthographic {
+            position_x: self.position_x,
+            position_y: self.position_y,
+            position_z: self.position_z,
+            rotation_x: self.rotation_x,
+            rotation_y: self.rotation_y,
+            rotation_z: self.rotation_z,
+            scale_x: self.scale_x,
+            scale_y: self.scale_y,
+            shear_x: self.shear_x,
+            shear_y: self.shear_y,
+            camera_mode: CameraMode::Orthographic,
+            ..Default::default()
+        }
+    }
+
+    pub fn position_x(
+        mut self,
+        position_x: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.position_x = position_x;
+        self
+    }
+
+    pub fn position_y(
+        mut self,
+        position_y: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.position_y = position_y;
+        self
+    }
+
+    pub fn position_z(
+        mut self,
+        position_z: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.position_z = position_z;
+        self
+    }
+
+    pub fn rotation_x(
+        mut self,
+        rotation_x: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.rotation_x = rotation_x;
+        self
+    }
+
+    pub fn rotation_y(
+        mut self,
+        rotation_y: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.rotation_y = rotation_y;
+        self
+    }
+
+    pub fn rotation_z(
+        mut self,
+        rotation_z: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.rotation_z = rotation_z;
+        self
+    }
+
+    pub fn scale_x(
+        mut self,
+        scale_x: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.scale_x = scale_x;
+        self
+    }
+
+    pub fn scale_y(
+        mut self,
+        scale_y: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.scale_y = scale_y;
+        self
+    }
+
+    pub fn shear_x(
+        mut self,
+        shear_x: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.shear_x = shear_x;
+        self
+    }
+
+    pub fn shear_y(
+        mut self,
+        shear_y: Option<f32>,
+    ) -> ThreeDTransformOrthographicBuilder {
+        self.shear_y = shear_y;
+        self
+    }
+}

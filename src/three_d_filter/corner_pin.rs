@@ -48,5 +48,5 @@ pub struct ThreeDTransformCornerPin {
     pub top_right_y: Option<f32>,
 
     #[serde(rename = "Camera.Mode")]
-    pub camera_mode: CameraMode,
+    camera_mode: CameraMode,
 }

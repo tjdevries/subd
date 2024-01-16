@@ -35,10 +35,9 @@ pub async fn spin_source(
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
-    let three_d_settings = ThreeDTransformPerspective {
-        rotation_z: Some(rotation_z),
-        ..Default::default()
-    };
+    let three_d_settings = ThreeDTransformPerspective::builder()
+        .rotation_z(Some(rotation_z))
+        .build();
     let move_transition_filter_name = format!("Move_{}", source);
     let settings = move_value::Settings::new(
         filter_name.clone(),

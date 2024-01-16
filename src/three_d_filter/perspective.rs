@@ -48,7 +48,7 @@ pub struct ThreeDTransformPerspective {
     pub shear_y: Option<f32>,
 
     #[serde(rename = "Camera.Mode")]
-    pub camera_mode: CameraMode,
+    camera_mode: CameraMode,
 }
 
 impl ThreeDTransformPerspective {

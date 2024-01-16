@@ -147,18 +147,15 @@ pub async fn handle_obs_commands(
         }
 
         "!nerd" => {
-            let settings = ThreeDTransformPerspective {
-                scale_x: Some(125.3),
-                scale_y: Some(140.6),
-                position_y: Some(40.0),
-                rotation_x: Some(-51.4),
-                field_of_view: Some(90.0),
-                camera_mode: CameraMode::Perspective,
-                ..Default::default()
-            };
-            let d = duration::EasingDuration {
-                ..Default::default()
-            };
+            let settings = ThreeDTransformPerspective::builder()
+                .scale_x(Some(125.3))
+                .scale_y(Some(140.6))
+                .position_y(Some(40.0))
+                .rotation_x(Some(-51.4))
+                .field_of_view(Some(90.0))
+                .build();
+
+            let d = duration::EasingDuration::new(3000);
 
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
@@ -240,14 +237,12 @@ pub async fn handle_obs_commands(
 
         "!chad" => {
             // This should be a new
-            let settings = ThreeDTransformPerspective {
-                scale_x: Some(217.0),
-                scale_y: Some(200.0),
-                rotation_x: Some(50.0),
-                field_of_view: Some(108.0),
-                camera_mode: CameraMode::Perspective,
-                ..Default::default()
-            };
+            let settings = ThreeDTransformPerspective::builder()
+                .scale_x(Some(217.0))
+                .scale_y(Some(200.0))
+                .rotation_x(Some(50.0))
+                .field_of_view(Some(108.0))
+                .build();
             let d = duration::EasingDuration::new(3000);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
