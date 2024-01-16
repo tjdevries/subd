@@ -4,18 +4,6 @@ use serde_repr::*;
 use std::str::FromStr;
 use strum::EnumString;
 
-pub fn find_easing_indicies(
-    easing_function: impl Into<String>,
-    easing_type: impl Into<String>,
-) -> (i32, i32) {
-    let ef =
-        EasingFunction::from_str(&easing_function.into().to_case(Case::Pascal))
-            .unwrap_or(EasingFunction::Quadratic) as i32;
-    let et = EasingType::from_str(&easing_type.into().to_case(Case::Pascal))
-        .unwrap_or(EasingType::NoEasing) as i32;
-    (ef, et)
-}
-
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EasingDuration {
     pub duration: Option<i32>,
@@ -60,6 +48,18 @@ pub enum EasingType {
     EaseIn = 1,
     EaseOut = 2,
     EaseInAndOut = 3,
+}
+
+pub fn find_easing_indicies(
+    easing_function: impl Into<String>,
+    easing_type: impl Into<String>,
+) -> (i32, i32) {
+    let ef =
+        EasingFunction::from_str(&easing_function.into().to_case(Case::Pascal))
+            .unwrap_or(EasingFunction::Quadratic) as i32;
+    let et = EasingType::from_str(&easing_type.into().to_case(Case::Pascal))
+        .unwrap_or(EasingType::NoEasing) as i32;
+    (ef, et)
 }
 
 #[cfg(test)]

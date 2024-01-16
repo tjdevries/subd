@@ -7,7 +7,7 @@ mod tests {
     };
     use crate::move_transition::move_value::*;
     use crate::move_transition::{
-        duration, models, move_source, move_transition, move_value, private,
+        duration, models, move_source, move_transition, move_value,
     };
 
     #[tokio::test]
@@ -61,7 +61,7 @@ mod tests {
             threed,
             duration_settings,
         );
-        let _ = private::update_filter_and_enable(
+        let _ = move_transition::update_filter_and_enable(
             source,
             filter_name,
             req,
@@ -89,7 +89,7 @@ mod tests {
         let _saturation_rng = [-1, 5];
         let req =
             Random::new("Scroll", "speed_x", 0.0, 100.0, duration_settings);
-        let _ = private::update_filter_and_enable(
+        let _ = move_transition::update_filter_and_enable(
             source,
             filter_name,
             req,
@@ -129,7 +129,7 @@ mod tests {
         //     10.0,
         //     duration_settings
         // );
-        let _ = private::update_filter_and_enable(
+        let _ = move_transition::update_filter_and_enable(
             source,
             filter_name,
             req,
@@ -156,7 +156,7 @@ mod tests {
         let req =
             SingleSetting::new("color", "opacity", -0.99, duration_settings);
 
-        let _ = private::update_filter_and_enable(
+        let _ = move_transition::update_filter_and_enable(
             source,
             filter_name,
             req,
@@ -206,7 +206,7 @@ mod tests {
             MoveSource::new(source, filter_name, ms.build(), duration);
 
         let scene = "Memes";
-        let res = private::update_filter_and_enable(
+        let res = move_transition::update_filter_and_enable(
             scene,
             filter_name,
             settings,
@@ -241,7 +241,7 @@ mod tests {
             serde_json::to_string_pretty(&settings).unwrap()
         );
 
-        let res = private::update_filter_and_enable(
+        let res = move_transition::update_filter_and_enable(
             scene,
             filter_name,
             settings,
