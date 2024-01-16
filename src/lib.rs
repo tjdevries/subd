@@ -20,6 +20,7 @@ pub mod skybox;
 pub mod stream_character;
 pub mod telephone;
 pub mod themesong;
+pub mod three_d_filter;
 pub mod twitch_rewards;
 pub mod twitch_stream_state;
 pub mod users;

@@ -2,7 +2,7 @@ use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::models;
 use crate::move_transition::move_value;
-use crate::obs_filters;
+use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use anyhow::{Context, Result};
 use obws::Client as OBSClient;
 
@@ -35,11 +35,10 @@ pub async fn spin_source(
 ) -> Result<()> {
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
-    let three_d_settings =
-        obs_filters::three_d_transform::ThreeDTransformPerspective {
-            rotation_z: Some(rotation_z),
-            ..Default::default()
-        };
+    let three_d_settings = ThreeDTransformPerspective {
+        rotation_z: Some(rotation_z),
+        ..Default::default()
+    };
     let move_transition_filter_name = format!("Move_{}", source);
     let settings = move_value::Settings::new(
         filter_name.clone(),

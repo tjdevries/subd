@@ -5,7 +5,9 @@ use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
-use crate::obs_filters;
+use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
+use crate::three_d_filter::perspective::ThreeDTransformPerspective;
+use crate::three_d_filter::CameraMode;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -127,13 +129,11 @@ pub async fn handle_obs_commands(
             let arg_positions = parser::default_wide_args();
             let req =
                 parser::build_wide_request(meat_of_message, &arg_positions)?;
-            let settings =
-                obs_filters::three_d_transform::ThreeDTransformOrthographic {
-                    scale_x: Some(300.0),
-                    camera_mode:
-                        obs_filters::three_d_transform::CameraMode::Orthographic,
-                    ..Default::default()
-                };
+            let settings = ThreeDTransformOrthographic {
+                scale_x: Some(300.0),
+                camera_mode: CameraMode::Orthographic,
+                ..Default::default()
+            };
             let d = duration::EasingDuration::new(req.duration as i32);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
@@ -147,17 +147,15 @@ pub async fn handle_obs_commands(
         }
 
         "!nerd" => {
-            let settings =
-                obs_filters::three_d_transform::ThreeDTransformPerspective {
-                    scale_x: Some(125.3),
-                    scale_y: Some(140.6),
-                    position_y: Some(40.0),
-                    rotation_x: Some(-51.4),
-                    field_of_view: Some(90.0),
-                    camera_mode:
-                        obs_filters::three_d_transform::CameraMode::Perspective,
-                    ..Default::default()
-                };
+            let settings = ThreeDTransformPerspective {
+                scale_x: Some(125.3),
+                scale_y: Some(140.6),
+                position_y: Some(40.0),
+                rotation_x: Some(-51.4),
+                field_of_view: Some(90.0),
+                camera_mode: CameraMode::Perspective,
+                ..Default::default()
+            };
             let d = duration::EasingDuration {
                 ..Default::default()
             };
@@ -242,16 +240,14 @@ pub async fn handle_obs_commands(
 
         "!chad" => {
             // This should be a new
-            let settings =
-                obs_filters::three_d_transform::ThreeDTransformPerspective {
-                    scale_x: Some(217.0),
-                    scale_y: Some(200.0),
-                    rotation_x: Some(50.0),
-                    field_of_view: Some(108.0),
-                    camera_mode:
-                        obs_filters::three_d_transform::CameraMode::Perspective,
-                    ..Default::default()
-                };
+            let settings = ThreeDTransformPerspective {
+                scale_x: Some(217.0),
+                scale_y: Some(200.0),
+                rotation_x: Some(50.0),
+                field_of_view: Some(108.0),
+                camera_mode: CameraMode::Perspective,
+                ..Default::default()
+            };
             let d = duration::EasingDuration::new(3000);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
@@ -361,13 +357,11 @@ pub async fn handle_obs_commands(
                 meat_of_message,
                 arg_positions,
             );
-            let settings =
-                obs_filters::three_d_transform::ThreeDTransformOrthographic {
-                    rotation_y: Some(req.rotation_y),
-                    camera_mode:
-                        obs_filters::three_d_transform::CameraMode::Orthographic,
-                    ..Default::default()
-                };
+            let settings = ThreeDTransformOrthographic {
+                rotation_y: Some(req.rotation_y),
+                camera_mode: CameraMode::Orthographic,
+                ..Default::default()
+            };
             let d = duration::EasingDuration::new(req.duration as i32);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
