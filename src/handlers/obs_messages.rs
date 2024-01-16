@@ -97,32 +97,19 @@ pub async fn handle_obs_commands(
 
     let _ = match command {
         "!right" => {
-            let duration = crate::move_transition::duration::EasingDuration {
-                duration: Some(300),
-                ..Default::default()
-            };
-
-            // We need to update builder
-            let ms =
-                crate::move_transition::move_source::MoveSourceSettings::new();
-
-            // let ms = crate::move_transition::move_source::MoveSourceSettings {
-            //     position: Some(crate::move_transition::models::Coordinates {
-            //         x: Some(100.0),
-            //         y: None,
-            //     }),
-            //     ..Default::default()
-            // };
-
             let filter_name = "Move_alex";
             let scene = "Memes";
+            let duration =
+                crate::move_transition::duration::EasingDuration::new(300);
+            // TODO: we need to make this use the builder pattern
+            let ms =
+                crate::move_transition::move_source::MoveSourceSettings::new();
             let settings = crate::move_transition::move_source::MoveSource::new(
                 source,
                 filter_name,
                 ms,
                 duration,
             );
-
             let res = private::update_filter_and_enable(
                 scene,
                 filter_name,
@@ -133,7 +120,6 @@ pub async fn handle_obs_commands(
             if let Err(err) = res {
                 println!("Error: {:?}", err);
             }
-
             Ok(())
         }
 
@@ -148,10 +134,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = duration::EasingDuration {
-                duration: Some(req.duration as i32),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(req.duration as i32);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 &req.source,
@@ -160,20 +143,6 @@ pub async fn handle_obs_commands(
                 d,
             )
             .await;
-
-            // let filter_value = 300.0;
-            // let filter_name = "3D-Transform-Orthographic";
-            // let filter_setting_name = "Scale.X";
-            // let _ = move_transition::trigger_move_value_3d_transform(
-            //     &req.source,
-            //     filter_name,
-            //     filter_setting_name,
-            //     filter_value,
-            //     req.duration as u32,
-            //     obs_client,
-            // )
-            // .await;
-
             return Ok(());
         }
 
@@ -271,6 +240,7 @@ pub async fn handle_obs_commands(
         }
 
         "!chad" => {
+            // This should be a new
             let settings =
                 obs_filters::three_d_transform::ThreeDTransformPerspective {
                     scale_x: Some(217.0),
@@ -280,10 +250,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = duration::EasingDuration {
-                duration: Some(3000),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(3000);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
@@ -305,7 +272,6 @@ pub async fn handle_obs_commands(
                 meat_of_message,
                 &arg_positions,
             );
-
             dbg!(&req);
             // Add Scale code
             Ok(())
@@ -313,13 +279,12 @@ pub async fn handle_obs_commands(
 
         "!alex" => {
             let source = "alex";
-            let scene = "memes";
+            let scene = "Memes";
             let arg_positions = &parser::default_move_or_scale_args()[1..];
             let req = parser::build_chat_move_source_request(
                 splitmsg[1..].to_vec(),
                 arg_positions,
             );
-
             let d = duration::EasingDuration::new(req.duration as i32);
             move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
@@ -340,7 +305,6 @@ pub async fn handle_obs_commands(
                 splitmsg[1..].to_vec(),
                 arg_positions,
             );
-
             let d = duration::EasingDuration::new(
                 req.duration.try_into().unwrap_or(3000),
             );
@@ -363,7 +327,6 @@ pub async fn handle_obs_commands(
                 meat_of_message,
                 arg_positions,
             );
-
             let d = duration::EasingDuration::new(
                 req.duration.try_into().unwrap_or(3000),
             );
@@ -379,15 +342,10 @@ pub async fn handle_obs_commands(
         }
 
         "!filter" => {
-            println!("Trying Filter");
-            // let default_filter_name = "Move_begin".to_string();
             let default_filter_name = "3D-Transform-Perspective".to_string();
-            // "Move-3D-Transform-Orthographic".to_string();
-
             let filter: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
             let filter_details =
                 obs_client.filters().get("begin", filter).await?;
-
             println!("------------------------");
             println!("\n\tFilter Settings: {:?}", filter_details);
             println!("------------------------");
@@ -407,12 +365,7 @@ pub async fn handle_obs_commands(
                     camera_mode: (),
                     ..Default::default()
                 };
-            let d = duration::EasingDuration {
-                duration: Some(req.duration as i32),
-                // easing_function_index: None,
-                // easing_type_index: None,
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(req.duration as i32);
             let _ = move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
@@ -434,13 +387,7 @@ pub async fn handle_obs_commands(
                 splitmsg[1..].to_vec(),
                 arg_positions,
             );
-
-            let d = duration::EasingDuration {
-                duration: Some(req.duration as i32),
-                // easing_function_index: Some(req.easing_function_index),
-                // easing_type_index: Some(req.easing_type_index),
-                ..Default::default()
-            };
+            let d = duration::EasingDuration::new(req.duration as i32);
             move_transition::spin_source(
                 &obs_client,
                 &req.source,
