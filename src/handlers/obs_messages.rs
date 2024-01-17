@@ -120,17 +120,19 @@ pub async fn handle_obs_commands(
             println!("Moving!!!!");
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
-            let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(0.0));
+            let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(100.0));
+            let duration = EasingDuration::builder()
+                .duration(3000)
+                .easing_function(duration::EasingFunction::Bounce)
+                .easing_type(duration::EasingType::EaseInAndOut)
+                .build();
+
             let ms = MoveSourceSettings::builder()
                 .relative_transform(true)
                 .position(Coordinates::new(x, y))
                 .build();
-            let settings = MoveSource::new(
-                source,
-                filter_name.clone(),
-                ms,
-                EasingDuration::new(300),
-            );
+            let settings =
+                MoveSource::new(source, filter_name.clone(), ms, duration);
             let res = move_transition::update_filter_and_enable(
                 scene,
                 &filter_name,

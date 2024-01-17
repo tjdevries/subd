@@ -12,6 +12,49 @@ pub struct EasingDuration {
 }
 
 impl EasingDuration {
+    pub fn builder() -> EasingDurationBuilder {
+        EasingDurationBuilder {
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Debug, Default, Copy, Clone)]
+pub struct EasingDurationBuilder {
+    pub duration: Option<i32>,
+    pub easing_function: Option<EasingFunction>,
+    pub easing_type: Option<EasingType>,
+}
+
+impl EasingDurationBuilder {
+    pub fn build(&self) -> EasingDuration {
+        let ef = self.easing_function.unwrap_or(EasingFunction::Quadratic);
+        let et = self.easing_type.unwrap_or(EasingType::NoEasing);
+        EasingDuration {
+            duration: self.duration,
+            easing_function: ef,
+            easing_type: et,
+            ..Default::default()
+        }
+    }
+
+    pub fn duration(mut self, duration: i32) -> Self {
+        self.duration = Some(duration);
+        self
+    }
+
+    pub fn easing_function(mut self, easing_function: EasingFunction) -> Self {
+        self.easing_function = Some(easing_function);
+        self
+    }
+
+    pub fn easing_type(mut self, easing_type: EasingType) -> Self {
+        self.easing_type = Some(easing_type);
+        self
+    }
+}
+
+impl EasingDuration {
     pub fn new(duration: i32) -> EasingDuration {
         return EasingDuration {
             duration: Some(duration),
@@ -21,7 +64,14 @@ impl EasingDuration {
 }
 
 #[derive(
-    Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, EnumString,
+    Serialize_repr,
+    Deserialize_repr,
+    PartialEq,
+    Debug,
+    Default,
+    EnumString,
+    Copy,
+    Clone,
 )]
 #[repr(u8)]
 pub enum EasingFunction {
@@ -39,7 +89,14 @@ pub enum EasingFunction {
 }
 
 #[derive(
-    Serialize_repr, Deserialize_repr, PartialEq, Debug, Default, EnumString,
+    Serialize_repr,
+    Deserialize_repr,
+    PartialEq,
+    Debug,
+    Default,
+    EnumString,
+    Copy,
+    Clone,
 )]
 #[repr(u8)]
 pub enum EasingType {
