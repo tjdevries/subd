@@ -43,10 +43,10 @@ pub enum EasingFunction {
 )]
 #[repr(u8)]
 pub enum EasingType {
-    #[default]
     NoEasing = 0,
     EaseIn = 1,
     EaseOut = 2,
+    #[default]
     EaseInAndOut = 3,
 }
 

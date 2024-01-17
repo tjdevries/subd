@@ -88,6 +88,12 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
     new_settings: T,
     obs_client: &obws::Client,
 ) -> Result<()> {
+    println!("\n\nSource: {} | Filter: {}\n", source, filter_name);
+    println!(
+        "\n\nSettings: {:?} \n",
+        serde_json::to_string_pretty(&new_settings)
+    );
+
     update_filter(source, filter_name, new_settings, &obs_client)
         .await
         .context(format!(
@@ -95,20 +101,20 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
             filter_name, source
         ))?;
 
-    println!("Presleep");
-    // I hate this
+    // Yooo are these the same as those you passed in?
+    let filter_details = obs_client.filters().get(source, filter_name).await?;
+    println!("Filter Details: {:?}", filter_details);
+    // TODO: I hate this
     thread::sleep(Duration::from_millis(300));
 
-    println!("Post sleep");
     let filter_enabled = obws::requests::filters::SetEnabled {
         source,
         filter: &filter_name,
-        enabled: true,
+        enabled: false,
     };
-    println!("Setting Enabled");
-    // WTF no sure why filters not enabled
     obs_client.filters().set_enabled(filter_enabled).await?;
 
+    // TODO: I hate this
     thread::sleep(Duration::from_millis(300));
     let filter_enabled = obws::requests::filters::SetEnabled {
         source,
@@ -116,15 +122,6 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
         enabled: true,
     };
     Ok(obs_client.filters().set_enabled(filter_enabled).await?)
-
-    // obs_client.filters().set_enabled(filter_enabled).await?;
-    // // I don't know why, but sometimes we need to trigger it twice
-    // thread::sleep(Duration::from_millis(300));
-    // let filter_enabled = obws::requests::filters::SetEnabled {
-    //     source,
-    //     filter: &filter_name,
-    //     enabled: true,
-    // };
 }
 
 async fn update_filter<T: serde::Serialize>(
@@ -137,7 +134,7 @@ async fn update_filter<T: serde::Serialize>(
         source,
         filter: filter_name,
         settings: Some(new_settings),
-        overlay: Some(true),
+        overlay: Some(false),
     };
     Ok(obs_client
         .filters()

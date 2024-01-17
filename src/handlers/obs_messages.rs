@@ -1,6 +1,10 @@
 use crate::chat_parser::parser;
 use crate::constants;
 use crate::move_transition::duration;
+use crate::move_transition::duration::EasingDuration;
+use crate::move_transition::models::Coordinates;
+use crate::move_transition::move_source::MoveSource;
+use crate::move_transition::move_source::MoveSourceSettings;
 use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
@@ -96,24 +100,33 @@ pub async fn handle_obs_commands(
         .unwrap_or(constants::MEME_SCENE.to_string());
     let command = splitmsg[0].as_str();
 
+    let (scene, source) = match source {
+        "begin" => ("Begin", "base-begin"),
+        "bogan" => ("AIAssets", source),
+        "randall" => ("TestScene", source),
+        _ => ("Memes", source),
+    };
+
     let _ = match command {
-        "!right" => {
-            let filter_name = "Move_alex";
-            let scene = "Memes";
-            let duration =
-                crate::move_transition::duration::EasingDuration::new(300);
-            let builder =
-                crate::move_transition::move_source::MoveSourceSettings::builder();
-            let ms = builder.relative_transform(true).x(100.0).build();
-            let settings = crate::move_transition::move_source::MoveSource::new(
+        "!move" => {
+            // this can move any source, as long as it dynamically updates the target_source
+            // let filter_name = "Move_alex";
+            let filter_name = format!("Move_{}", source);
+            let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
+            let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(0.0));
+            let ms = MoveSourceSettings::builder()
+                .relative_transform(true)
+                .position(Coordinates::new(x, y))
+                .build();
+            let settings = MoveSource::new(
                 source,
-                filter_name,
+                filter_name.clone(),
                 ms,
-                duration,
+                EasingDuration::new(300),
             );
             let res = move_transition::update_filter_and_enable(
                 scene,
-                filter_name,
+                &filter_name,
                 settings,
                 &obs_client,
             )
@@ -311,29 +324,28 @@ pub async fn handle_obs_commands(
             )
             .await
         }
-
-        // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
-        "!move" => {
-            let meat_of_message = splitmsg[1..].to_vec();
-            let arg_positions = &parser::default_move_or_scale_args();
-            let req = parser::build_chat_move_source_request(
-                meat_of_message,
-                arg_positions,
-            );
-            let d = duration::EasingDuration::new(
-                req.duration.try_into().unwrap_or(3000),
-            );
-            move_transition::move_source_in_scene_x_and_y(
-                &obs_client,
-                &req.scene,
-                &req.source,
-                req.x,
-                req.y,
-                d,
-            )
-            .await
-        }
-
+        //
+        // // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
+        // "!move" => {
+        //     let meat_of_message = splitmsg[1..].to_vec();
+        //     let arg_positions = &parser::default_move_or_scale_args();
+        //     let req = parser::build_chat_move_source_request(
+        //         meat_of_message,
+        //         arg_positions,
+        //     );
+        //     let d = duration::EasingDuration::new(
+        //         req.duration.try_into().unwrap_or(3000),
+        //     );
+        //     move_transition::move_source_in_scene_x_and_y(
+        //         &obs_client,
+        //         &req.scene,
+        //         &req.source,
+        //         req.x,
+        //         req.y,
+        //         d,
+        //     )
+        //     .await
+        // }
         "!filter" => {
             let default_filter_name = "3D-Transform-Perspective".to_string();
             let filter: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
