@@ -1,12 +1,12 @@
-use crate::move_transition::move_transition;
-use crate::move_transition::move_source::MoveSource;
 use crate::constants;
 use crate::move_transition::duration;
-use crate::move_transition::models;
-use crate::move_transition::move_source;
-use crate::move_transition::move_source::MoveSourceSettings;
 use crate::move_transition::duration::EasingDuration;
+use crate::move_transition::models;
 use crate::move_transition::models::Coordinates;
+use crate::move_transition::move_source;
+use crate::move_transition::move_source::MoveSource;
+use crate::move_transition::move_source::MoveSourceSettings;
+use crate::move_transition::move_transition;
 use crate::move_transition::move_value;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use anyhow::{Context, Result};
@@ -221,6 +221,12 @@ mod tests {
         let scene = "Memes";
         let source = "alex";
         let filter_name = "Move_alex";
-        let _ = move_transition::find_source(scene, source, filter_name, &obs_client).await;
+        let _ = move_transition::find_source(
+            scene,
+            source,
+            filter_name,
+            &obs_client,
+        )
+        .await;
     }
 }

@@ -113,7 +113,8 @@ pub async fn handle_obs_commands(
         "!find" => {
             println!("Find Time!");
             let filter_name = format!("Move_{}", source);
-            move_transition::find_source(scene, source, filter_name, obs_client).await
+            move_transition::find_source(scene, source, filter_name, obs_client)
+                .await
         }
 
         "!move" => {
@@ -121,9 +122,15 @@ pub async fn handle_obs_commands(
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
             let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(100.0));
-            let res =
-                move_transition::move_source(scene, source, filter_name, x, y, &obs_client)
-                    .await;
+            let res = move_transition::move_source(
+                scene,
+                source,
+                filter_name,
+                x,
+                y,
+                &obs_client,
+            )
+            .await;
             if let Err(err) = res {
                 println!("Error: {:?}", err);
             }
