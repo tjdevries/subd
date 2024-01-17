@@ -101,16 +101,21 @@ pub async fn handle_obs_commands(
     let command = splitmsg[0].as_str();
 
     let (scene, source) = match source {
-        "begin" => ("Begin", "base-begin"),
+        "begin" => ("Begin", "begin"),
         "bogan" => ("AIAssets", source),
         "randall" => ("TestScene", source),
         _ => ("Memes", source),
     };
 
     let _ = match command {
+        "!find" => {
+            println!("Find Time!");
+            let filter_name = format!("Move_{}", source);
+            find_source(scene, source, filter_name, obs_client).await
+        }
+        
         "!move" => {
-            // this can move any source, as long as it dynamically updates the target_source
-            // let filter_name = "Move_alex";
+            println!("Moving!!!!");
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
             let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(0.0));
@@ -325,27 +330,6 @@ pub async fn handle_obs_commands(
             .await
         }
         //
-        // // !move MEME_NAME X Y DURATION EASE-TYPE EASE-FUNCTION
-        // "!move" => {
-        //     let meat_of_message = splitmsg[1..].to_vec();
-        //     let arg_positions = &parser::default_move_or_scale_args();
-        //     let req = parser::build_chat_move_source_request(
-        //         meat_of_message,
-        //         arg_positions,
-        //     );
-        //     let d = duration::EasingDuration::new(
-        //         req.duration.try_into().unwrap_or(3000),
-        //     );
-        //     move_transition::move_source_in_scene_x_and_y(
-        //         &obs_client,
-        //         &req.scene,
-        //         &req.source,
-        //         req.x,
-        //         req.y,
-        //         d,
-        //     )
-        //     .await
-        // }
         "!filter" => {
             let default_filter_name = "3D-Transform-Perspective".to_string();
             let filter: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
@@ -420,4 +404,50 @@ pub async fn handle_obs_commands(
     };
 
     Ok(())
+}
+
+
+async fn find_source(
+    scene: impl Into<String> + std::fmt::Debug,
+    source: impl Into<String> + std::fmt::Debug,
+    filter_name: impl Into<String> + std::fmt::Debug,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!("\nFinding Source: {:?} {:?} {:?}", scene, source, filter_name);
+    let ms = MoveSourceSettings::builder()
+        .relative_transform(false)
+        .position(Coordinates::new(Some(100.0), Some(100.0)))
+        .scale(Coordinates::new(Some(1.0), Some(1.0)))
+        .rot(0.0)
+        .build();
+    let filter_name = filter_name.into();
+    let settings = MoveSource::new(
+        source,
+        &filter_name,
+        ms,
+        EasingDuration::new(300),
+    );
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::obs::obs::create_obs_client;
+    
+    #[tokio::test]
+    async fn test_find_source() {
+        let obs_client = create_obs_client().await.unwrap();
+        let scene = "Memes";
+        let source = "alex";
+        let filter_name = "Move_alex";
+        let _ = find_source(scene, source, filter_name, &obs_client).await;
+    }
 }

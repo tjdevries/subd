@@ -389,6 +389,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_bogan() {
+        let obs_client = create_obs_client().await.unwrap();
+        let scene = "BoganArmy";
+        let source = "Bogan1";
+
+        let b = obws::requests::scene_items::CreateSceneItem {
+            scene,
+            source,
+            enabled: Some(true),
+        };
+
+        // How do I make this image based
+    }
+
+    #[tokio::test]
+    async fn test_move_shit() {
         // "pos: x 1660.5 y 170.0 rot: 3150.0 scale: x 1.200 y 1.200 crop: l 0 t 0 r 0 b 0"
         let obs_client = create_obs_client().await.unwrap();
         // let scene = "AIAssets";
