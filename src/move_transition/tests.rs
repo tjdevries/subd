@@ -164,38 +164,33 @@ mod tests {
 
     #[tokio::test]
     async fn test_fun() {
-        // let cor = Coordinates::new(None, None);
-        // let res = serde_json::to_string_pretty(&cor).unwrap();
-        // println!("{:?}", res);
-        // println!("{}", Sign::Positive);
-        // let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
-        // let duration =
-        //     crate::move_transition::duration::EasingDuration::new(300);
+        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let duration =
+            crate::move_transition::duration::EasingDuration::new(300);
         let ms = MoveSourceSettings::builder()
             .position(Coordinates::new(Some(100.0), Some(100.0)))
-            .rot(90.0)
+            .rot(360.0)
+            .scale(Coordinates::new(Some(1.2), Some(1.2)))
             .relative_transform(true)
             .build();
         let res = serde_json::to_string_pretty(&ms).unwrap();
         println!("{:?}", res);
-        //
-        // // let source = "alex";
+
         // let source = "technofroggo";
-        // let filter_name = "Move_alex";
-        // let settings =
-        //     MoveSource::new(source, filter_name, ms.build(), duration);
-        //
-        // let scene = "Memes";
-        // let res = move_transition::update_filter_and_enable(
-        //     scene,
-        //     filter_name,
-        //     settings,
-        //     &obs_client,
-        // )
-        // .await;
-        // if let Err(err) = res {
-        //     println!("Error: {:?}", err);
-        // }
+        let source = "alex";
+        let filter_name = "Move_alex";
+        let settings = MoveSource::new(source, filter_name, ms, duration);
+        let scene = "Memes";
+        let res = move_transition::update_filter_and_enable(
+            scene,
+            filter_name,
+            settings,
+            &obs_client,
+        )
+        .await;
+        if let Err(err) = res {
+            println!("Error: {:?}", err);
+        }
     }
 
     #[tokio::test]

@@ -5,6 +5,8 @@ use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt::Display;
 
+use super::models::Coordinates;
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MoveSource {
     pub filter: String,
@@ -28,48 +30,6 @@ pub enum Sign {
     Multiply,
     Divide,
 }
-
-// This is never called
-impl Sign {
-    fn as_str(&self) -> &'static str {
-        match self {
-            Sign::Nothing => " ",
-            Sign::Positive => "+",
-            Sign::Negative => "-",
-            Sign::Multiply => "*",
-            Sign::Divide => "/",
-        }
-    }
-}
-//
-// // This is not be called
-// impl Serialize for Sign {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         match *self {
-//             Sign::Nothing =>  serializer.serialize_str(" "),
-//             Sign::Positive => serializer.serialize_str("+"),
-//             Sign::Negative => serializer.serialize_str("-"),
-//             Sign::Multiply => serializer.serialize_str("*"),
-//             Sign::Divide =>   serializer.serialize_str("/"),
-//         }
-//     }
-// }
-
-// impl TryFrom<String> for Sign{
-//     // type Error = SourceFromStrError;
-//     fn try_from(s: String) -> Result<Self, Self::Error> {
-//         match s {
-//             Sign::Nothing =>  " ",
-//             Sign::Positive => "+",
-//             Sign::Negative => "-",
-//             Sign::Multiply => "*",
-//             Sign::Divide => "/",
-//         }
-//     }
-// }
 
 impl Display for Sign {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -101,20 +61,19 @@ impl MoveSource {
     }
 }
 
-// pos: xP0.0 yP100.0 rot:P0.0 scale: xP0.000 yP0.000 crop: lN0 tN0 rN0 bN0
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct MoveSourceSettings {
     pub bounds: models::Coordinates,
-
     pub scale: models::Coordinates,
-
     pub crop: CropSettings,
 
     #[serde(rename = "pos")]
     pub position: models::Coordinates,
 
     pub rot: f32,
-    #[serde(default)]
+    #[serde(
+        serialize_with = "crate::move_transition::models::sign_serializer"
+    )]
     pub rot_sign: Sign,
 }
 
@@ -143,9 +102,13 @@ impl MoveSourceSettingsBuilder {
                 (Sign::Nothing, Sign::Nothing)
             };
 
+        let bounds = self.bounds.unwrap_or_default().with_signs(pos_sign);
         MoveSourceSettings {
             bounds: self.bounds.unwrap_or_default().with_signs(pos_sign),
-            scale: self.scale.unwrap_or_default().with_signs(pos_sign),
+            scale: self
+                .scale
+                .unwrap_or(Coordinates::new(Some(1.0), Some(1.0)))
+                .with_signs(scale_sign),
             position: self.position.unwrap_or_default().with_signs(pos_sign),
             crop: self.crop.unwrap_or_default(),
             rot_sign: pos_sign,
@@ -233,14 +196,26 @@ impl CropSettings {
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub struct CropSettings {
     left: Option<f32>,
+    #[serde(
+        serialize_with = "crate::move_transition::models::sign_serializer"
+    )]
     left_sign: Sign,
 
     top: Option<f32>,
+    #[serde(
+        serialize_with = "crate::move_transition::models::sign_serializer"
+    )]
     top_sign: Sign,
 
     right: Option<f32>,
+    #[serde(
+        serialize_with = "crate::move_transition::models::sign_serializer"
+    )]
     right_sign: Sign,
 
     bottom: Option<f32>,
+    #[serde(
+        serialize_with = "crate::move_transition::models::sign_serializer"
+    )]
     bottom_sign: Sign,
 }

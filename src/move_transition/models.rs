@@ -1,10 +1,7 @@
 use crate::move_transition::duration;
 
 use crate::move_transition::move_source::Sign;
-use core::fmt::Display;
 use serde::{Deserialize, Serialize, Serializer};
-use serde_with::serde_as;
-use serde_with::DisplayFromStr;
 use std::fmt;
 
 // I want to remove this
@@ -36,7 +33,7 @@ fn move_value_type<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
     s.serialize_i32(1)
 }
 
-fn sign_serializer<S>(sign: &Sign, s: S) -> Result<S::Ok, S::Error>
+pub fn sign_serializer<S>(sign: &Sign, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -51,11 +48,8 @@ where
 
 #[derive(Serialize, Deserialize, Default, Debug, Copy, Clone)]
 pub struct Coordinates {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub x: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub y: Option<f32>,
-
+    pub x: f32,
+    pub y: f32,
     #[serde(serialize_with = "sign_serializer")]
     pub y_sign: Sign,
     #[serde(serialize_with = "sign_serializer")]
@@ -65,8 +59,8 @@ pub struct Coordinates {
 impl Coordinates {
     pub fn new(x: Option<f32>, y: Option<f32>) -> Self {
         Self {
-            x,
-            y,
+            x: x.unwrap_or(0.0),
+            y: y.unwrap_or(0.0),
             x_sign: Sign::Nothing,
             y_sign: Sign::Nothing,
         }
