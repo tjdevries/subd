@@ -4,6 +4,7 @@ use crate::move_transition::duration::EasingDuration;
 use crate::move_transition::models;
 use crate::move_transition::models::Coordinates;
 use crate::move_transition::move_source;
+use crate::move_transition::move_source::CropSettings;
 use crate::move_transition::move_source::MoveSource;
 use crate::move_transition::move_source::MoveSourceSettings;
 use crate::move_transition::move_transition;
@@ -56,9 +57,11 @@ pub async fn move_source(
 
     dbg!(&duration);
 
+    let c = CropSettings::builder().left(580.0).build();
     let ms = MoveSourceSettings::builder()
         .relative_transform(true)
         .position(Coordinates::new(x, y))
+        .crop(c)
         .build();
     let filter_name = filter_name.into().clone();
     let settings = MoveSource::new(source, filter_name.clone(), ms, duration);

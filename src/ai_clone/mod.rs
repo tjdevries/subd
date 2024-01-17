@@ -102,7 +102,7 @@ pub async fn create_and_show_bogan(
         SCENE,
         SOURCE,
         filter_name,
-        Some(0.0),
+        Some(-580.0),
         Some(-700.0),
         obs_client,
     )

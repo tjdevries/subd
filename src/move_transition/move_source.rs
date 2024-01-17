@@ -189,29 +189,108 @@ impl CropSettings {
             ..Default::default()
         }
     }
+
+    pub fn builder() -> CropSettingsBuilder {
+        CropSettingsBuilder::default()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct CropSettingsBuilder {
+    pub left: Option<f32>,
+    pub top: Option<f32>,
+    pub right: Option<f32>,
+    pub bottom: Option<f32>,
+
+    pub left_sign: Option<Sign>,
+    pub top_sign: Option<Sign>,
+    pub right_sign: Option<Sign>,
+    pub bottom_sign: Option<Sign>,
+}
+
+impl CropSettingsBuilder {
+    pub fn build(self) -> CropSettings {
+        CropSettings {
+            left: self.left,
+            top: self.top,
+            right: self.right,
+            bottom: self.bottom,
+            left_sign: self.left_sign.unwrap_or(Sign::Nothing),
+            top_sign: self.top_sign.unwrap_or(Sign::Nothing),
+            right_sign: self.right_sign.unwrap_or(Sign::Nothing),
+            bottom_sign: self.bottom_sign.unwrap_or(Sign::Nothing),
+        }
+    }
+
+    pub fn left(mut self, left: f32) -> CropSettingsBuilder {
+        self.left = Some(left);
+        self
+    }
+
+    pub fn left_sign(mut self, left_sign: Sign) -> CropSettingsBuilder {
+        self.left_sign = Some(left_sign);
+        self
+    }
+
+    pub fn right(mut self, right: f32) -> CropSettingsBuilder {
+        self.right = Some(right);
+        self
+    }
+
+    pub fn right_sign(mut self, right_sign: Sign) -> CropSettingsBuilder {
+        self.right_sign = Some(right_sign);
+        self
+    }
+
+    pub fn top(mut self, top: f32) -> CropSettingsBuilder {
+        self.top = Some(top);
+        self
+    }
+
+    pub fn top_sign(mut self, top_sign: Sign) -> CropSettingsBuilder {
+        self.top_sign = Some(top_sign);
+        self
+    }
+
+    pub fn bottom(mut self, bottom: f32) -> CropSettingsBuilder {
+        self.bottom = Some(bottom);
+        self
+    }
+
+    pub fn bottom_sign(mut self, bottom_sign: Sign) -> CropSettingsBuilder {
+        self.bottom_sign = Some(bottom_sign);
+        self
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub struct CropSettings {
+    #[serde(skip_serializing_if = "Option::is_none")]
     left: Option<f32>,
+
     #[serde(
         serialize_with = "crate::move_transition::models::sign_serializer"
     )]
     left_sign: Sign,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     top: Option<f32>,
     #[serde(
         serialize_with = "crate::move_transition::models::sign_serializer"
     )]
     top_sign: Sign,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     right: Option<f32>,
+
     #[serde(
         serialize_with = "crate::move_transition::models::sign_serializer"
     )]
     right_sign: Sign,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     bottom: Option<f32>,
+
     #[serde(
         serialize_with = "crate::move_transition::models::sign_serializer"
     )]
