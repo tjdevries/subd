@@ -7,7 +7,11 @@ use strum::EnumString;
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct EasingDuration {
     pub duration: Option<i32>,
+
+    #[serde(rename = "easing_function_match")]
     pub easing_function: EasingFunction,
+
+    #[serde(rename = "easing_match")]
     pub easing_type: EasingType,
 }
 

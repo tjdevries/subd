@@ -17,6 +17,8 @@ pub async fn update_and_trigger_filter<
     duration: duration::EasingDuration,
 ) -> Result<()> {
     let move_transition_filter_name = format!("Move_{}", filter_name);
+
+    dbg!(&duration);
     let settings =
         move_value::Settings::new(filter_name.to_string(), settings, duration);
     update_filter_and_enable(
@@ -96,7 +98,7 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
     let filter_enabled = obws::requests::filters::SetEnabled {
         source,
         filter: &filter_name,
-        enabled: false,
+        enabled: true,
     };
     Ok(obs_client.filters().set_enabled(filter_enabled).await?)
 }

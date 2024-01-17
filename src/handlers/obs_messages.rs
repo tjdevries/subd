@@ -121,25 +121,9 @@ pub async fn handle_obs_commands(
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
             let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(100.0));
-            let duration = EasingDuration::builder()
-                .duration(3000)
-                .easing_function(duration::EasingFunction::Bounce)
-                .easing_type(duration::EasingType::EaseInAndOut)
-                .build();
-
-            let ms = MoveSourceSettings::builder()
-                .relative_transform(true)
-                .position(Coordinates::new(x, y))
-                .build();
-            let settings =
-                MoveSource::new(source, filter_name.clone(), ms, duration);
-            let res = move_transition::update_filter_and_enable(
-                scene,
-                &filter_name,
-                settings,
-                &obs_client,
-            )
-            .await;
+            let res =
+                move_source(scene, source, filter_name, x, y, &obs_client)
+                    .await;
             if let Err(err) = res {
                 println!("Error: {:?}", err);
             }
@@ -439,10 +423,65 @@ async fn find_source(
     .await
 }
 
+pub async fn move_source(
+    scene: impl Into<String>,
+    source: impl Into<String>,
+    filter_name: impl Into<String>,
+    x: Option<f32>,
+    y: Option<f32>,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let duration = EasingDuration::builder()
+        .duration(3000)
+        .easing_function(duration::EasingFunction::Bounce)
+        .easing_type(duration::EasingType::EaseIn)
+        .build();
+
+    dbg!(&duration);
+
+    let ms = MoveSourceSettings::builder()
+        .relative_transform(true)
+        .position(Coordinates::new(x, y))
+        .build();
+    let filter_name = filter_name.into().clone();
+    let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
+
+    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::obs::obs::create_obs_client;
+
+    #[tokio::test]
+    async fn test_move_source() {
+        let obs_client = create_obs_client().await.unwrap();
+
+        let scene = "Memes";
+        let source = "alex";
+        let filter_name = "Move_alex";
+        let res = obs_client.filters().get(scene, filter_name).await.unwrap();
+        dbg!(&res);
+
+        let _ = move_source(
+            scene,
+            source,
+            filter_name,
+            Some(-100.0),
+            Some(-100.0),
+            &obs_client,
+        )
+        .await;
+    }
 
     #[tokio::test]
     async fn test_find_source() {
