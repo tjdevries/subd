@@ -1,11 +1,78 @@
+use crate::move_transition::move_transition;
+use crate::move_transition::move_source::MoveSource;
 use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::models;
 use crate::move_transition::move_source;
+use crate::move_transition::move_source::MoveSourceSettings;
+use crate::move_transition::duration::EasingDuration;
+use crate::move_transition::models::Coordinates;
 use crate::move_transition::move_value;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use anyhow::{Context, Result};
 use obws::Client as OBSClient;
+
+pub async fn find_source(
+    scene: impl Into<String> + std::fmt::Debug,
+    source: impl Into<String> + std::fmt::Debug,
+    filter_name: impl Into<String> + std::fmt::Debug,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    println!(
+        "\nFinding Source: {:?} {:?} {:?}",
+        scene, source, filter_name
+    );
+    let ms = MoveSourceSettings::builder()
+        .relative_transform(false)
+        .position(Coordinates::new(Some(100.0), Some(100.0)))
+        .scale(Coordinates::new(Some(1.0), Some(1.0)))
+        .rot(0.0)
+        .build();
+    let filter_name = filter_name.into();
+    let settings =
+        MoveSource::new(source, &filter_name, ms, EasingDuration::new(300));
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
+pub async fn move_source(
+    scene: impl Into<String>,
+    source: impl Into<String>,
+    filter_name: impl Into<String>,
+    x: Option<f32>,
+    y: Option<f32>,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let duration = EasingDuration::builder()
+        .duration(3000)
+        .easing_function(duration::EasingFunction::Bounce)
+        .easing_type(duration::EasingType::EaseIn)
+        .build();
+
+    dbg!(&duration);
+
+    let ms = MoveSourceSettings::builder()
+        .relative_transform(true)
+        .position(Coordinates::new(x, y))
+        .build();
+    let filter_name = filter_name.into().clone();
+    let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
+
+    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
 
 pub async fn update_and_trigger_filter<
     T: serde::Serialize + std::default::Default,
@@ -120,4 +187,40 @@ async fn update_filter<T: serde::Serialize>(
         .set_settings(settings)
         .await
         .context(format!("Error updating filter: {}", filter_name))?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::obs::obs::create_obs_client;
+
+    #[tokio::test]
+    async fn test_move_source() {
+        let obs_client = create_obs_client().await.unwrap();
+
+        let scene = "Memes";
+        let source = "alex";
+        let filter_name = "Move_alex";
+        let res = obs_client.filters().get(scene, filter_name).await.unwrap();
+        dbg!(&res);
+
+        let _ = move_transition::move_source(
+            scene,
+            source,
+            filter_name,
+            Some(-100.0),
+            Some(-100.0),
+            &obs_client,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn test_find_source() {
+        let obs_client = create_obs_client().await.unwrap();
+        let scene = "Memes";
+        let source = "alex";
+        let filter_name = "Move_alex";
+        let _ = move_transition::find_source(scene, source, filter_name, &obs_client).await;
+    }
 }

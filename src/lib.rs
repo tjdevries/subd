@@ -1,4 +1,5 @@
 pub mod ai_audio;
+pub mod ai_clone;
 pub mod ai_images;
 pub mod ai_scene;
 pub mod art_blocks;
