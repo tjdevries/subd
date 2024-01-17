@@ -107,13 +107,15 @@ pub async fn handle_obs_commands(
         _ => ("Memes", source),
     };
 
+    println!("OBS Messages: Command: {:?}", command);
+
     let _ = match command {
         "!find" => {
             println!("Find Time!");
             let filter_name = format!("Move_{}", source);
             find_source(scene, source, filter_name, obs_client).await
         }
-        
+
         "!move" => {
             println!("Moving!!!!");
             let filter_name = format!("Move_{}", source);
@@ -143,6 +145,7 @@ pub async fn handle_obs_commands(
         }
 
         "!wide" => {
+            println!("Wide Time!");
             let meat_of_message = splitmsg[1..].to_vec();
             let arg_positions = parser::default_wide_args();
             let req =
@@ -406,14 +409,16 @@ pub async fn handle_obs_commands(
     Ok(())
 }
 
-
 async fn find_source(
     scene: impl Into<String> + std::fmt::Debug,
     source: impl Into<String> + std::fmt::Debug,
     filter_name: impl Into<String> + std::fmt::Debug,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    println!("\nFinding Source: {:?} {:?} {:?}", scene, source, filter_name);
+    println!(
+        "\nFinding Source: {:?} {:?} {:?}",
+        scene, source, filter_name
+    );
     let ms = MoveSourceSettings::builder()
         .relative_transform(false)
         .position(Coordinates::new(Some(100.0), Some(100.0)))
@@ -421,12 +426,8 @@ async fn find_source(
         .rot(0.0)
         .build();
     let filter_name = filter_name.into();
-    let settings = MoveSource::new(
-        source,
-        &filter_name,
-        ms,
-        EasingDuration::new(300),
-    );
+    let settings =
+        MoveSource::new(source, &filter_name, ms, EasingDuration::new(300));
     move_transition::update_filter_and_enable(
         &scene.into(),
         &filter_name,
@@ -436,12 +437,11 @@ async fn find_source(
     .await
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::obs::obs::create_obs_client;
-    
+
     #[tokio::test]
     async fn test_find_source() {
         let obs_client = create_obs_client().await.unwrap();
