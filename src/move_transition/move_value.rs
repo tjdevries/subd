@@ -172,6 +172,7 @@ enum MoveValueType {
     Typing = 4,
 }
 
+// I feel like we don't need this
 fn settings<S: Serializer>(_: &(), s: S) -> Result<S::Ok, S::Error> {
     s.serialize_i32(MoveValueType::Settings as i32)
 }

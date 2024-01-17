@@ -1,8 +1,7 @@
 use crate::move_transition::duration;
 use crate::move_transition::models;
 use core::fmt;
-use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 use super::models::Coordinates;
@@ -102,7 +101,6 @@ impl MoveSourceSettingsBuilder {
                 (Sign::Nothing, Sign::Nothing)
             };
 
-        let bounds = self.bounds.unwrap_or_default().with_signs(pos_sign);
         MoveSourceSettings {
             bounds: self.bounds.unwrap_or_default().with_signs(pos_sign),
             scale: self
