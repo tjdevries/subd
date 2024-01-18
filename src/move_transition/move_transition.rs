@@ -9,7 +9,6 @@ use crate::move_transition::move_source::MoveSource;
 use crate::move_transition::move_source::MoveSourceSettings;
 use crate::move_transition::move_transition;
 use crate::move_transition::move_value;
-use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use anyhow::{Context, Result};
 use obws::Client as OBSClient;
 
@@ -47,6 +46,7 @@ pub async fn move_source(
     filter_name: impl Into<String>,
     x: Option<f32>,
     y: Option<f32>,
+    crop: Option<CropSettings>,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let duration = EasingDuration::builder()
@@ -57,12 +57,14 @@ pub async fn move_source(
 
     dbg!(&duration);
 
-    let c = CropSettings::builder().left(580.0).build();
-    let ms = MoveSourceSettings::builder()
+    let b = MoveSourceSettings::builder()
         .relative_transform(true)
-        .position(Coordinates::new(x, y))
-        .crop(c)
-        .build();
+        .position(Coordinates::new(x, y));
+
+    let b = if let Some(c) = crop { b.crop(c) } else { b };
+
+    let ms = b.build();
+
     let filter_name = filter_name.into().clone();
     let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
 
@@ -106,17 +108,27 @@ pub async fn spin_source(
     rotation_z: f32,
     duration: duration::EasingDuration,
 ) -> Result<()> {
+    // let three_d_settings = ThreeDTransformPerspective::builder()
+    //     .rotation_z(Some(rotation_z))
+    //     .build();
+    // let settings = move_value::Settings::new(
+    //     filter_name.clone(),
+    //     three_d_settings,
+    //     duration,
+    // );
+
     let filter_name =
         constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
-    let three_d_settings = ThreeDTransformPerspective::builder()
-        .rotation_z(Some(rotation_z))
-        .build();
-    let move_transition_filter_name = format!("Move_{}", source);
-    let settings = move_value::Settings::new(
+
+    let settings = move_value::Add::new(
         filter_name.clone(),
-        three_d_settings,
+        "Rotation.Z",
+        rotation_z,
         duration,
     );
+    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+
+    let move_transition_filter_name = format!("Move_{}", filter_name);
     update_filter_and_enable(
         source,
         &move_transition_filter_name,
@@ -198,6 +210,14 @@ mod tests {
     use crate::obs::obs::create_obs_client;
 
     #[tokio::test]
+    async fn test_spin() {
+        let obs_client = create_obs_client().await.unwrap();
+        let source = "alex";
+        let duration = EasingDuration::new(300);
+        let _ = spin_source(&obs_client, source, 1080.0, duration).await;
+    }
+
+    #[tokio::test]
     async fn test_move_source() {
         let obs_client = create_obs_client().await.unwrap();
 
@@ -213,6 +233,7 @@ mod tests {
             filter_name,
             Some(-100.0),
             Some(-100.0),
+            None,
             &obs_client,
         )
         .await;

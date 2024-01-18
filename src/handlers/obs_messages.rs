@@ -1,10 +1,6 @@
 use crate::chat_parser::parser;
 use crate::constants;
 use crate::move_transition::duration;
-use crate::move_transition::duration::EasingDuration;
-use crate::move_transition::models::Coordinates;
-use crate::move_transition::move_source::MoveSource;
-use crate::move_transition::move_source::MoveSourceSettings;
 use crate::move_transition::move_transition;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
@@ -111,14 +107,12 @@ pub async fn handle_obs_commands(
 
     let _ = match command {
         "!find" => {
-            println!("Find Time!");
             let filter_name = format!("Move_{}", source);
             move_transition::find_source(scene, source, filter_name, obs_client)
                 .await
         }
 
         "!move" => {
-            println!("Moving!!!!");
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
             let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(100.0));
@@ -128,6 +122,7 @@ pub async fn handle_obs_commands(
                 filter_name,
                 x,
                 y,
+                None,
                 &obs_client,
             )
             .await;

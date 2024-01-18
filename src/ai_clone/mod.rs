@@ -1,5 +1,5 @@
 use crate::constants;
-use crate::move_transition::duration;
+use crate::move_transition::move_source::CropSettings;
 use crate::move_transition::move_transition;
 use crate::obs::obs_source;
 use anyhow::anyhow;
@@ -97,6 +97,7 @@ pub async fn create_and_show_bogan(
         );
     };
 
+    let c = CropSettings::builder().left(580.0).build();
     let filter_name = format!("Move_{}", SOURCE);
     move_transition::move_source(
         SCENE,
@@ -104,6 +105,7 @@ pub async fn create_and_show_bogan(
         filter_name,
         Some(-580.0),
         Some(-700.0),
+        Some(c),
         obs_client,
     )
     .await

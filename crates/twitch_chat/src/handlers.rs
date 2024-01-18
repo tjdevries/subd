@@ -1,11 +1,11 @@
 use crate::client::TwitchChat;
-use anyhow::anyhow;
 use crate::model;
 use crate::model::save_twitch_message;
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use subd_types::{Event, UserMessage, UserPlatform, UserID, TwitchUserID};
+use subd_types::{Event, UserID, UserMessage, UserPlatform};
 use tokio::sync::broadcast;
 use twitch_irc::message::ServerMessage;
 
@@ -72,7 +72,17 @@ impl EventHandler for TwitchMessageHandler {
                 Ok(user_id) => user_id,
                 Err(e) => {
                     eprintln!("Failed to upsert twitch user: {}", e);
-                    UserID::try_from(msg.sender.id).map_err(|e| anyhow!(e))?
+                    let var_name = match UserID::try_from(msg.sender.id)
+                        .map_err(|e| anyhow!(e))
+                    {
+                        Ok(u) => u,
+                        Err(e) => {
+                            // We need to return to the top of the Loop!
+                            eprintln!("Failed to convert to UserID: {}", e);
+                            continue;
+                        }
+                    };
+                    var_name
                 }
             };
 

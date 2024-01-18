@@ -1,8 +1,6 @@
-use std::convert::From;
-use anyhow::anyhow;
-use std::convert::TryFrom;
-use std::convert::TryInto;
 use anyhow::Result;
+use std::convert::From;
+use std::convert::TryFrom;
 
 use std::{
     collections::{HashMap, HashSet},
@@ -35,7 +33,10 @@ impl TryFrom<TwitchUserID> for UserID {
                 return Ok(UserID(s));
             }
             Err(e) => {
-                return Err(format!("Error converting TwitchUserID to UserID: {}", e));
+                return Err(format!(
+                    "Error converting TwitchUserID to UserID: {}",
+                    e
+                ));
             }
         }
     }
