@@ -40,6 +40,39 @@ pub async fn find_source(
     .await
 }
 
+pub async fn rot_source(
+    scene: impl Into<String>,
+    source: impl Into<String>,
+    filter_name: impl Into<String>,
+    z: f32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let duration = EasingDuration::builder()
+        .duration(3000)
+        .easing_function(duration::EasingFunction::Bounce)
+        .easing_type(duration::EasingType::EaseIn)
+        .build();
+
+    let b = MoveSourceSettings::builder()
+        .relative_transform(true)
+        .rot(z);
+
+    let ms = b.build();
+
+    let filter_name = filter_name.into().clone();
+    let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
+
+    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
 pub async fn move_source(
     scene: impl Into<String>,
     source: impl Into<String>,

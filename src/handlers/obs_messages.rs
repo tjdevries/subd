@@ -356,6 +356,26 @@ pub async fn handle_obs_commands(
             Ok(())
         }
 
+        "!rot" => {
+            let filter_name = format!("Move_{}", source);
+            let z = splitmsg
+                .get(2)
+                .map(|v| v.parse::<f32>().unwrap_or(360.0))
+                .unwrap_or(360.0);
+            let res = move_transition::rot_source(
+                scene,
+                source,
+                filter_name,
+                z,
+                &obs_client,
+            )
+            .await;
+            if let Err(err) = res {
+                println!("Error: {:?}", err);
+            }
+            Ok(())
+        }
+
         // Examples:
         //           !spin 1080 18000 ease-in-and-out cubic
         //
