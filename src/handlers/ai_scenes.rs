@@ -108,7 +108,10 @@ impl EventHandler for AiScenesHandler {
                 )
                 .await
                 {
-                    return Err(anyhow!("Error generating image: {}", e));
+                    // If we can't generate an image,
+                    // we still play the elevenlabs sound
+                    eprintln!("Error generating image: {}", e);
+                    // We should print
                 }
             };
 
