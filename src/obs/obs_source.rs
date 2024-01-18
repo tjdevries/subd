@@ -41,7 +41,7 @@ pub async fn update_image_source(
     obs_client: &OBSClient,
     source: String,
     filename: String,
-) -> Result<(), String> {
+) -> Result<()> {
     let image_settings = ImageSource {
         file: &Path::new(&filename),
         unload: true,
@@ -55,7 +55,7 @@ pub async fn update_image_source(
         .inputs()
         .set_settings(set_settings)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| anyhow!("{}", e))
 }
 
 // This doesn't go here

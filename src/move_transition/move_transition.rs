@@ -40,6 +40,40 @@ pub async fn find_source(
     .await
 }
 
+pub async fn scale_source(
+    scene: impl Into<String>,
+    source: impl Into<String>,
+    filter_name: impl Into<String>,
+    x: f32,
+    y: f32,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let duration = EasingDuration::builder()
+        .duration(3000)
+        .easing_function(duration::EasingFunction::Bounce)
+        .easing_type(duration::EasingType::EaseIn)
+        .build();
+
+    let b = MoveSourceSettings::builder()
+        .relative_transform(true)
+        .scale(models::Coordinates::new(Some(x), Some(y)));
+
+    let ms = b.build();
+
+    let filter_name = filter_name.into().clone();
+    let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
+
+    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+
+    move_transition::update_filter_and_enable(
+        &scene.into(),
+        &filter_name,
+        settings,
+        &obs_client,
+    )
+    .await
+}
+
 pub async fn rot_source(
     scene: impl Into<String>,
     source: impl Into<String>,
@@ -80,6 +114,7 @@ pub async fn move_source(
     x: Option<f32>,
     y: Option<f32>,
     crop: Option<CropSettings>,
+    scale: Option<Coordinates>,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let duration = EasingDuration::builder()
@@ -95,6 +130,7 @@ pub async fn move_source(
         .position(Coordinates::new(x, y));
 
     let b = if let Some(c) = crop { b.crop(c) } else { b };
+    let b = if let Some(s) = scale { b.scale(s) } else { b };
 
     let ms = b.build();
 
@@ -266,6 +302,7 @@ mod tests {
             filter_name,
             Some(-100.0),
             Some(-100.0),
+            None,
             None,
             &obs_client,
         )

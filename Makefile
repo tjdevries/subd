@@ -11,7 +11,7 @@ ft:
 	cargo test test_transform_filters -- --nocapture
 
 t:
-	cargo test test_spin -- --nocapture
+	cargo test test_bogan_army -- --nocapture
 	
 loudtest:
 	cargo test -- --nocapture

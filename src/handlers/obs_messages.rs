@@ -123,6 +123,7 @@ pub async fn handle_obs_commands(
                 x,
                 y,
                 None,
+                None,
                 &obs_client,
             )
             .await;
@@ -275,6 +276,27 @@ pub async fn handle_obs_commands(
                 &arg_positions,
             );
             dbg!(&req);
+            let filter_name = format!("Move_{}", source);
+            let x = splitmsg
+                .get(2)
+                .map(|v| v.parse::<f32>().unwrap_or(2.0))
+                .unwrap_or(2.0);
+            let y = splitmsg
+                .get(3)
+                .map(|v| v.parse::<f32>().unwrap_or(x))
+                .unwrap_or(x);
+            let res = move_transition::scale_source(
+                scene,
+                source,
+                filter_name,
+                x,
+                y,
+                &obs_client,
+            )
+            .await;
+            if let Err(err) = res {
+                println!("Error: {:?}", err);
+            }
             // Add Scale code
             Ok(())
         }
