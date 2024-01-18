@@ -1,3 +1,9 @@
+use std::convert::From;
+use anyhow::anyhow;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+use anyhow::Result;
+
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
@@ -18,6 +24,22 @@ pub struct UserID(pub uuid::Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
+
+impl TryFrom<TwitchUserID> for UserID {
+    type Error = String;
+
+    fn try_from(value: TwitchUserID) -> Result<Self, Self::Error> {
+        let res = uuid::Uuid::parse_str(&value.0);
+        match res {
+            Ok(s) => {
+                return Ok(UserID(s));
+            }
+            Err(e) => {
+                return Err(format!("Error converting TwitchUserID to UserID: {}", e));
+            }
+        }
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[cfg_attr(

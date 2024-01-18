@@ -24,6 +24,7 @@ pub async fn save_twitch_message(
     Ok(())
 }
 
+// TODO: I think this is where we might be failing
 pub async fn upsert_twitch_user(
     pool: &sqlx::PgPool,
     twitch_user_id: &subd_types::TwitchUserID,

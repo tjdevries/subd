@@ -1,10 +1,11 @@
 use crate::client::TwitchChat;
+use anyhow::anyhow;
 use crate::model;
 use crate::model::save_twitch_message;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use subd_types::{Event, UserMessage, UserPlatform};
+use subd_types::{Event, UserMessage, UserPlatform, UserID, TwitchUserID};
 use tokio::sync::broadcast;
 use twitch_irc::message::ServerMessage;
 
@@ -59,12 +60,22 @@ impl EventHandler for TwitchMessageHandler {
             };
 
             // If we enable DB save
-            let user_id = model::upsert_twitch_user(
+            // We do not want to crash if we fail to make to a user
+            let res = model::upsert_twitch_user(
                 &self.pool,
                 &msg.sender.id,
                 &msg.sender.login,
             )
-            .await?;
+            .await;
+
+            let user_id = match res {
+                Ok(user_id) => user_id,
+                Err(e) => {
+                    eprintln!("Failed to upsert twitch user: {}", e);
+                    UserID::try_from(msg.sender.id).map_err(|e| anyhow!(e))?
+                }
+            };
+
             save_twitch_message(
                 &self.pool,
                 &user_id,
