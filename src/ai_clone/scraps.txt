@@ -1,0 +1,28 @@
+// let filter_enabled = obws::requests::filters::SetEnabled {
+//     source,
+//     filter: &filter_name,
+//     enabled: true,
+// };
+// Ok(obs_client.filters().set_enabled(filter_enabled).await?)
+
+// pub struct SceneItem {
+//     id: i32,
+//     index: i32,
+//     source_name: String,
+//
+//
+// }
+
+// &res = [
+//     SceneItem {
+//         id: 1,
+//         index: 0,
+//         source_name: "tes11",
+//         source_type: Input,
+//         input_kind: Some(
+//             "image_source",
+//         ),
+//         is_group: None,
+//     },
+// ]
+
