@@ -89,8 +89,11 @@ impl MoveSourceSettings {
 }
 
 impl MoveSourceSettingsBuilder {
-    pub fn new() -> MoveSourceSettingsBuilder {
-        MoveSourceSettingsBuilder::default()
+    pub fn new(source: String) -> MoveSourceSettingsBuilder {
+        MoveSourceSettingsBuilder {
+            source,
+            ..Default::default()
+        }
     }
 
     pub fn build(self) -> MoveSourceSettings {
@@ -169,6 +172,7 @@ impl MoveSourceSettingsBuilder {
 
 #[derive(Default, Debug)]
 pub struct MoveSourceSettingsBuilder {
+    pub source: String,
     pub bounds: Option<models::Coordinates>,
     pub scale: Option<models::Coordinates>,
     pub crop: Option<CropSettings>,

@@ -87,6 +87,8 @@ async fn recruit_new_bogan_member(
     let new_source =
         create_new_bogan_source(scene.clone(), path.clone(), obs_client)
             .await?;
+
+    println!("Creating Move Source: {} {}", scene, new_source);
     create_chroma_key_filter(&new_source, &obs_client).await?;
 
     // Do we have to call this???
@@ -96,22 +98,31 @@ async fn recruit_new_bogan_member(
 
     let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
 
+    // pos: x+-580.0 y+0.0 rot:+0.0 scale: x*0.300 y*0.300 crop: l 580 t 0 r 0 b 0
+    // pos: x 359.0 y 921.0 rot: 0.0 scale: x 0.211 y 0.211 crop: l 580 t 0 r 0 b 0
+
     // This is where we are trying to scale and crop our source
-    let scale = Coordinates::new(Some(0.3), Some(0.3));
+    let scale = Coordinates::new(Some(0.2), Some(0.2));
     let c = CropSettings::builder().left(580.0).build();
-    let filter_name = format!("Move_{}", SOURCE);
+    let filter_name = format!("Move_{}", new_source);
+
+    let x = 359.0;
+    let y = 921.0;
+
     if let Err(e) = move_transition::move_source(
         scene,
         new_source.clone(),
         filter_name.clone(),
-        Some(-580.0),
-        None,
+        Some(x),
+        Some(y),
         Some(c),
         Some(scale),
         obs_client,
     )
     .await
     {
+        // Error moving source: bogan_84 in scene BoganArmy with filter Move_bogan - Failed to update Filter: Move_bogan on So
+        // urce: BoganArmy
         eprintln!(
             "Error moving source: {} in scene {} with filter {} - {}",
             new_source, scene, filter_name, e,
@@ -141,8 +152,11 @@ async fn create_move_source_filter(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let move_source_settings =
-        move_source::MoveSourceSettingsBuilder::new().build();
+        move_source::MoveSourceSettingsBuilder::new(source.to_string()).build();
+
     let filter_name = format!("Move_{}", source);
+
+    // How is this on the right scene
     let new_filter: obws::requests::filters::Create<
         move_source::MoveSourceSettings,
     > = obws::requests::filters::Create {

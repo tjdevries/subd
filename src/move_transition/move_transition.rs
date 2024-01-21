@@ -137,7 +137,9 @@ pub async fn move_source(
     let filter_name = filter_name.into().clone();
     let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
 
+    println!("Move Source Settings ===");
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+    println!("=== Move Source Settings");
 
     move_transition::update_filter_and_enable(
         &scene.into(),

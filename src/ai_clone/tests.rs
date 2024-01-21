@@ -8,6 +8,12 @@ mod tests {
     #[tokio::test]
     async fn test_bogan_army() {
         let obs_client = create_obs_client().await.unwrap();
+        let filter = "Move_bogan_51";
+        let scene = "BoganArmy";
+        let filter_details =
+            obs_client.filters().get(scene, filter).await.unwrap();
+        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
+        println!("res: {}", &res);
     }
 
     #[tokio::test]
