@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use crate::ai_clone::chat;
+use crate::ai_clone::utils;
 use crate::constants;
 use crate::move_transition::models::Coordinates;
 use crate::move_transition::move_source;
@@ -9,12 +10,11 @@ use anyhow::Result;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::inputs::Create;
 use obws::Client as OBSClient;
-use std::path::Path;
+use serde::{Deserialize, Serialize};
 use stable_diffusion;
 use stable_diffusion::models::RequestType::Img2ImgFile;
 use stable_diffusion::stable_diffusion_from_image;
-use crate::ai_clone::chat;
-use crate::ai_clone::utils;
+use std::path::Path;
 
 // TODO move this to somewhere else / pull in from config
 const SCREENSHOT_SOURCE: &str = "begin-base";
@@ -23,11 +23,9 @@ const SOURCE: &str = "bogan";
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ChromaKey {
-    similarity: i32,
+    pub similarity: i32,
 }
 
-
-// pub mod something
 pub async fn create_and_show_bogan(
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
@@ -36,7 +34,8 @@ pub async fn create_and_show_bogan(
         chat::parse_args(&splitmsg, SCREENSHOT_SOURCE.to_string())?;
 
     let (filename, unique_identifier) =
-        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client).await?;
+        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
+            .await?;
 
     let req = stable_diffusion::models::GenerateAndArchiveRequestBuilder::new(
         prompt.clone(),
@@ -80,13 +79,86 @@ pub async fn create_and_show_bogan(
     recruit_new_bogan_member(path, &obs_client).await
 }
 
-
-
 async fn recruit_new_bogan_member(
     path: String,
     obs_client: &OBSClient,
 ) -> Result<()> {
     let scene = "BoganArmy";
+    let new_source =
+        create_new_bogan_source(scene.clone(), path.clone(), obs_client)
+            .await?;
+    create_chroma_key_filter(&new_source, &obs_client).await?;
+
+    // Do we have to call this???
+    let _ =
+        obs_source::update_image_source(&obs_client, new_source.clone(), path)
+            .await;
+
+    let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
+
+    // This is where we are trying to scale and crop our source
+    let scale = Coordinates::new(Some(0.3), Some(0.3));
+    let c = CropSettings::builder().left(580.0).build();
+    let filter_name = format!("Move_{}", SOURCE);
+    if let Err(e) = move_transition::move_source(
+        scene,
+        new_source.clone(),
+        filter_name.clone(),
+        Some(-580.0),
+        None,
+        Some(c),
+        Some(scale),
+        obs_client,
+    )
+    .await
+    {
+        eprintln!(
+            "Error moving source: {} in scene {} with filter {} - {}",
+            new_source, scene, filter_name, e,
+        );
+    };
+    Ok(())
+}
+
+// This needs to go in some other generic OBS filters file
+async fn create_chroma_key_filter(
+    source: &String,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let chroma_key = ChromaKey { similarity: 420 };
+    let new_filter = obws::requests::filters::Create {
+        source,
+        filter: "Chroma Key",
+        kind: "chroma_key_filter_v2",
+        settings: Some(chroma_key),
+    };
+    Ok(obs_client.filters().create(new_filter).await?)
+}
+
+async fn create_move_source_filter(
+    scene: &str,
+    source: &String,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let move_source_settings =
+        move_source::MoveSourceSettingsBuilder::new().build();
+    let filter_name = format!("Move_{}", source);
+    let new_filter: obws::requests::filters::Create<
+        move_source::MoveSourceSettings,
+    > = obws::requests::filters::Create {
+        source: &scene,
+        filter: &filter_name,
+        kind: constants::MOVE_SOURCE_FILTER_KIND,
+        settings: Some(move_source_settings),
+    };
+    Ok(obs_client.filters().create(new_filter).await?)
+}
+
+async fn create_new_bogan_source(
+    scene: &str,
+    path: String,
+    obs_client: &OBSClient,
+) -> Result<String> {
     let res = obs_client.scene_items().list(scene).await.unwrap();
     let index = res
         .iter()
@@ -108,52 +180,8 @@ async fn recruit_new_bogan_member(
         settings: Some(settings),
         enabled: Some(true),
     };
-    if let Err(e) = obs_client.inputs().create(c).await {
-        eprintln!("Error creating input: {}", e);
-    };
-    let chroma_key = ChromaKey { similarity: 420 };
-    let new_filter = obws::requests::filters::Create {
-        source: &new_source,
-        filter: "Chroma Key",
-        kind: "chroma_key_filter_v2",
-        settings: Some(chroma_key),
-    };
-    obs_client.filters().create(new_filter).await.unwrap();
-
-    let _ =
-        obs_source::update_image_source(&obs_client, new_source.clone(), path)
-            .await;
-
-    let move_source_settings =
-        move_source::MoveSourceSettingsBuilder::new().build();
-
-    let filter_name = format!("Move_{}", new_source);
-    let new_filter: obws::requests::filters::Create<
-        move_source::MoveSourceSettings,
-    > = obws::requests::filters::Create {
-        source: &scene,
-        filter: &filter_name,
-        kind: constants::MOVE_SOURCE_FILTER_KIND,
-        settings: Some(move_source_settings),
-    };
-    let _ = obs_client.filters().create(new_filter).await;
-
-    let scale = Coordinates::new(Some(0.3), Some(0.3));
-    let c = CropSettings::builder().left(580.0).build();
-    let filter_name = format!("Move_{}", SOURCE);
-    let _ = move_transition::move_source(
-        scene,
-        new_source,
-        filter_name,
-        Some(-580.0),
-        None,
-        Some(c),
-        Some(scale),
-        obs_client,
-    )
-    .await;
-
-    Ok(())
+    obs_client.inputs().create(c).await?;
+    Ok(new_source)
 }
 
 fn parse_scene_item_index(scene_item: &str) -> i32 {

@@ -1,12 +1,10 @@
 use anyhow::anyhow;
 use anyhow::Result;
 
-
 // TODO move this to somewhere else / pull in from config
 const SCREENSHOT_SOURCE: &str = "begin-base";
 const SCENE: &str = "AIAssets";
 const SOURCE: &str = "bogan";
-
 
 // Argument parsing should be closer to reading in the chat
 pub fn parse_args(

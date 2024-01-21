@@ -17,4 +17,3 @@ pub async fn take_screenshot(
         .await
         .map(|_| (filename, unique_identifier))
 }
-

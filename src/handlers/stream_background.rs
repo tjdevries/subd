@@ -225,7 +225,8 @@ pub async fn handle_stream_background_commands(
                 return Ok(());
             }
             if let Err(e) =
-                ai_clone::bogan::create_and_show_bogan(obs_client, splitmsg).await
+                ai_clone::bogan::create_and_show_bogan(obs_client, splitmsg)
+                    .await
             {
                 eprintln!("Error Creating Bogan: {}", e);
             }
