@@ -3,6 +3,36 @@ use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
 
 #[derive(Serialize, Deserialize, Debug, Default)]
+pub struct SingleSourceSetting {
+    pub source: String,
+
+    pub setting_float: f32,
+
+    pub setting_name: String,
+
+    #[serde(serialize_with = "single_setting")]
+    pub move_value_type: (),
+
+    #[serde(flatten)]
+    pub duration: EasingDuration,
+}
+
+impl SingleSourceSetting {
+    pub fn new(
+        source: impl Into<String>,
+        setting_name: impl Into<String>,
+        setting_float: f32,
+    ) -> Self {
+        Self {
+            source: source.into(),
+            setting_name: setting_name.into(),
+            setting_float,
+            ..Default::default()
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct SingleSetting {
     #[serde(rename = "filter")]
     pub target_filter: String,

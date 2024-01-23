@@ -440,3 +440,38 @@ pub async fn handle_obs_commands(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::obs::obs;
+    use serde_json::{json, Error, Value};
+
+    #[tokio::test]
+    async fn test_fetching_filter_settings() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+        // let filter = "Move0".to_string();
+        // let filter_details =
+        //     obs_client.filters().get(source, &filter).await.unwrap();
+        // println!("------------------------");
+        // println!("\n\tFilter Settings: {:?}", filter_details);
+        // println!("------------------------");
+
+        let source = "BeginOutline2";
+        let scene = "OutlineEffects";
+        let item_id = obs_source::find_id(scene, source, &obs_client)
+            .await
+            .unwrap();
+
+        println!("Item ID: {:?}", item_id);
+
+        // I want to see what this so I can write a struct to Deserialize
+        // But I don't know waht the values to be ignored
+        // serde::Value
+        let settings =
+            obs_client.inputs().settings::<Value>(source).await.unwrap();
+        println!("------------------------");
+        println!("\n\tSource: {:?}", settings);
+        println!("------------------------");
+    }
+}

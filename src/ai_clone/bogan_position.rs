@@ -111,16 +111,10 @@ mod tests {
         )
         .await
         .unwrap();
-        // let positions = vec![position_1];
 
         let bogan_1 = "bogan_13";
         let bogan_2 = "bogan_14";
         let bogan_3 = "bogan_15";
         let bogan_4 = "bogan_16";
-
-        let _ = move_bogan(scene, bogan_1, &position_2, &obs_client).await;
-        let _ = move_bogan(scene, bogan_2, &position_3, &obs_client).await;
-        let _ = move_bogan(scene, bogan_3, &position_4, &obs_client).await;
-        let _ = move_bogan(scene, bogan_4, &position_1, &obs_client).await;
     }
 }
