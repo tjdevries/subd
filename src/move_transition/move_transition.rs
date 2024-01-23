@@ -111,22 +111,25 @@ pub async fn move_source(
     scene: impl Into<String>,
     source: impl Into<String>,
     filter_name: impl Into<String>,
+    relative: bool,
     x: Option<f32>,
     y: Option<f32>,
     crop: Option<CropSettings>,
     scale: Option<Coordinates>,
+    duration: Option<duration::EasingDuration>,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let duration = EasingDuration::builder()
-        .duration(3000)
-        .easing_function(duration::EasingFunction::Bounce)
-        .easing_type(duration::EasingType::EaseIn)
-        .build();
-
-    dbg!(&duration);
+    let d = match duration {
+        Some(d) => d,
+        None => EasingDuration::builder()
+            .duration(3000)
+            .easing_function(duration::EasingFunction::Bounce)
+            .easing_type(duration::EasingType::EaseIn)
+            .build(),
+    };
 
     let b = MoveSourceSettings::builder()
-        .relative_transform(true)
+        .relative_transform(relative)
         .position(Coordinates::new(x, y));
 
     let b = if let Some(c) = crop { b.crop(c) } else { b };
@@ -135,7 +138,7 @@ pub async fn move_source(
     let ms = b.build();
 
     let filter_name = filter_name.into().clone();
-    let settings = MoveSource::new(source, filter_name.clone(), ms, duration);
+    let settings = MoveSource::new(source, filter_name.clone(), ms, d);
 
     println!("Move Source Settings ===");
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
@@ -302,8 +305,10 @@ mod tests {
             scene,
             source,
             filter_name,
+            true,
             Some(-100.0),
             Some(-100.0),
+            None,
             None,
             None,
             &obs_client,

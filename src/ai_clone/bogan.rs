@@ -1,10 +1,8 @@
+use crate::ai_clone::bogan_position;
 use crate::ai_clone::chat;
 use crate::ai_clone::utils;
 use crate::constants;
-use crate::move_transition::models::Coordinates;
 use crate::move_transition::move_source;
-use crate::move_transition::move_source::CropSettings;
-use crate::move_transition::move_transition;
 use crate::obs::obs_source;
 use anyhow::Result;
 use obws::requests::custom::source_settings::ImageSource;
@@ -37,6 +35,7 @@ pub async fn create_and_show_bogan(
         utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
             .await?;
 
+    println!("Generating Screenshot Variation w/ {}", prompt.clone());
     let req = stable_diffusion::models::GenerateAndArchiveRequestBuilder::new(
         prompt.clone(),
         unique_identifier,
@@ -44,8 +43,6 @@ pub async fn create_and_show_bogan(
     )
     .strength(strength.unwrap_or(0.4))
     .build();
-
-    println!("Generating Screenshot Variation w/ {}", prompt.clone());
     let path = stable_diffusion_from_image(&req).await?;
 
     let new_begin_source = constants::NEW_BEGIN_SOURCE.to_string();
@@ -62,20 +59,6 @@ pub async fn create_and_show_bogan(
         );
     };
 
-    let c = CropSettings::builder().left(580.0).build();
-    let filter_name = format!("Move_{}", SOURCE);
-    let _ = move_transition::move_source(
-        SCENE,
-        SOURCE,
-        filter_name,
-        Some(-580.0),
-        Some(-700.0),
-        Some(c),
-        None,
-        obs_client,
-    )
-    .await;
-
     recruit_new_bogan_member(path, &obs_client).await
 }
 
@@ -84,7 +67,7 @@ async fn recruit_new_bogan_member(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let scene = "BoganArmy";
-    let new_source =
+    let (new_source, index) =
         create_new_bogan_source(scene.clone(), path.clone(), obs_client)
             .await?;
 
@@ -98,36 +81,15 @@ async fn recruit_new_bogan_member(
 
     let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
 
+    bogan_position::rotate_bogan_order(scene, index, &obs_client).await;
+
+    // Use the index to move!
+    // index - 3 = hide
+    // index - 2 = position_4
+    // index - 1 = position_3
     // pos: x+-580.0 y+0.0 rot:+0.0 scale: x*0.300 y*0.300 crop: l 580 t 0 r 0 b 0
     // pos: x 359.0 y 921.0 rot: 0.0 scale: x 0.211 y 0.211 crop: l 580 t 0 r 0 b 0
 
-    // This is where we are trying to scale and crop our source
-    let scale = Coordinates::new(Some(0.2), Some(0.2));
-    let c = CropSettings::builder().left(580.0).build();
-    let filter_name = format!("Move_{}", new_source);
-
-    let x = 359.0;
-    let y = 921.0;
-
-    if let Err(e) = move_transition::move_source(
-        scene,
-        new_source.clone(),
-        filter_name.clone(),
-        Some(x),
-        Some(y),
-        Some(c),
-        Some(scale),
-        obs_client,
-    )
-    .await
-    {
-        // Error moving source: bogan_84 in scene BoganArmy with filter Move_bogan - Failed to update Filter: Move_bogan on So
-        // urce: BoganArmy
-        eprintln!(
-            "Error moving source: {} in scene {} with filter {} - {}",
-            new_source, scene, filter_name, e,
-        );
-    };
     Ok(())
 }
 
@@ -168,18 +130,24 @@ async fn create_move_source_filter(
     Ok(obs_client.filters().create(new_filter).await?)
 }
 
+pub async fn find_current_bogan_index(
+    scene: &str,
+    obs_client: &OBSClient,
+) -> Result<i32> {
+    let res = obs_client.scene_items().list(scene).await.unwrap();
+    Ok(res
+        .iter()
+        .map(|x| parse_scene_item_index(&x.source_name))
+        .max()
+        .unwrap_or(0))
+}
+
 async fn create_new_bogan_source(
     scene: &str,
     path: String,
     obs_client: &OBSClient,
-) -> Result<String> {
-    let res = obs_client.scene_items().list(scene).await.unwrap();
-    let index = res
-        .iter()
-        .map(|x| parse_scene_item_index(&x.source_name))
-        .max()
-        .unwrap()
-        + 1;
+) -> Result<(String, i32)> {
+    let index = find_current_bogan_index(scene, obs_client).await? + 1;
     let new_source = format!("bogan_{}", index);
     println!("Creating Scene Item: {}", new_source);
 
@@ -195,7 +163,7 @@ async fn create_new_bogan_source(
         enabled: Some(true),
     };
     obs_client.inputs().create(c).await?;
-    Ok(new_source)
+    Ok((new_source, index))
 }
 
 fn parse_scene_item_index(scene_item: &str) -> i32 {
