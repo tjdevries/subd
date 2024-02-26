@@ -95,6 +95,7 @@ async fn main() -> Result<()> {
         vec![
             "implict_soundeffects".to_string(),
             "explicit_soundeffects".to_string(),
+            "gen_art".to_string(),
             // "tts".to_string(),
             "ai_screenshots".to_string(),
             // "ai_screenshots_timer".to_string(),
@@ -415,6 +416,29 @@ async fn main() -> Result<()> {
                         obs_client,
                     },
                 );
+            }
+
+            // TODO: this doesn't need all these
+            "gen_art" => {
+                let elevenlabs_auth = Auth::from_env().unwrap();
+                let elevenlabs = Elevenlabs::new(
+                    elevenlabs_auth,
+                    "https://api.elevenlabs.io/v1/",
+                );
+                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let obs_client = create_obs_client().await?;
+                let twitch_config = get_chat_config();
+                let (_, twitch_client) = TwitchIRCClient::<
+                    SecureTCPTransport,
+                    StaticLoginCredentials,
+                >::new(twitch_config);
+                event_loop.push(handlers::gen_art_handler::GenArtHandler {
+                    pool: pool.clone(),
+                    twitch_client,
+                    sink,
+                    obs_client,
+                    elevenlabs,
+                });
             }
 
             _ => {

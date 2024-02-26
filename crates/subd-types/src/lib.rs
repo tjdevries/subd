@@ -149,15 +149,16 @@ pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
 
+    AiScenesRequest(AiScenesRequest),
+    AiScreenshotsRequest(AiScreenshotsRequest),
+    AiTelephoneRequest(AiTelephoneRequest),
     ChannelRewardRequest(ChannelRewardRequest),
     ElevenLabsRequest(ElevenLabsRequest),
-    AiScenesRequest(AiScenesRequest),
-    AiTelephoneRequest(AiTelephoneRequest),
-    AiScreenshotsRequest(AiScreenshotsRequest),
-    TransformOBSTextRequest(TransformOBSTextRequest),
-    StreamCharacterRequest(StreamCharacterRequest),
-    SourceVisibilityRequest(SourceVisibilityRequest),
+    GenArtRequest(GenArtRequest),
     SkyboxRequest(SkyboxRequest),
+    SourceVisibilityRequest(SourceVisibilityRequest),
+    StreamCharacterRequest(StreamCharacterRequest),
+    TransformOBSTextRequest(TransformOBSTextRequest),
     TriggerHotkeyRequest(TriggerHotkeyRequest),
 
     /// TwitchChatMessage is only used for messages
