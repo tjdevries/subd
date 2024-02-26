@@ -125,6 +125,9 @@ pub struct AiScreenshotsRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GenArtRequest {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiTelephoneRequest {
     // pub msg: String,
     // pub style_id: i32,
