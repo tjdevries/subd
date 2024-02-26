@@ -6,6 +6,33 @@ mod tests {
     use crate::obs::obs_source;
 
     #[tokio::test]
+    async fn test_remove_old_bogans() {
+        // Find all sources in a Scene
+        // Iterate through and delete
+        // Find all Filters in a scene (except the Chroma key)
+        // iterate through and delete
+        let obs_client = create_obs_client().await.unwrap();
+        let scene = "BoganArmy";
+
+        let items = obs_client.scene_items().list(scene).await.unwrap();
+        dbg!(&items);
+        // source_name: "bogan_122",
+
+        let filters = obs_client.filters().list(scene).await.unwrap();
+
+        for filter in filters {
+            if filter.name != "Chroma Key" {
+                let _ = obs_client.filters().remove(scene, &filter.name).await;
+            }
+        }
+
+        for item in items {
+            println!("{}", item.source_name);
+            obs_client.scene_items().remove(scene, item.id).await;
+        }
+    }
+
+    #[tokio::test]
     async fn test_bogan_army() {
         let obs_client = create_obs_client().await.unwrap();
         let filter = "Move_bogan_51";

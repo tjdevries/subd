@@ -34,8 +34,7 @@ pub async fn create_and_show_bogan(
 
     println!("Taking Screenshot");
     let (filename, unique_identifier) =
-        // utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
-        utils::take_screenshot("ArtMatt".to_string(), &obs_client)
+        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
             .await?;
 
     println!("Generating Screenshot Variation w/ {}", prompt.clone());
@@ -75,7 +74,8 @@ async fn recruit_new_bogan_member(
             .await?;
 
     println!("Creating Move Source: {} {}", scene, new_source);
-    create_chroma_key_filter(&new_source, &obs_client).await?;
+    // We have a Chroma key on the whole scene, instead of adding it to every single source
+    // create_chroma_key_filter(&new_source, &obs_client).await?;
 
     // Do we have to call this???
     let _ =
@@ -84,7 +84,7 @@ async fn recruit_new_bogan_member(
 
     let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
 
-    bogan_position::rotate_bogan_order(scene, index, &obs_client).await;
+    let _ = bogan_position::rotate_bogan_order(scene, index, &obs_client).await;
 
     // Use the index to move!
     // index - 3 = hide
