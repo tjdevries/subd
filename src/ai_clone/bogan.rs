@@ -28,11 +28,14 @@ pub async fn create_and_show_bogan(
     obs_client: &OBSClient,
     splitmsg: Vec<String>,
 ) -> Result<()> {
+    println!("Parsing Args");
     let (prompt, strength) =
         chat::parse_args(&splitmsg, SCREENSHOT_SOURCE.to_string())?;
 
+    println!("Taking Screenshot");
     let (filename, unique_identifier) =
-        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
+        // utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
+        utils::take_screenshot("ArtMatt".to_string(), &obs_client)
             .await?;
 
     println!("Generating Screenshot Variation w/ {}", prompt.clone());

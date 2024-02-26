@@ -101,15 +101,18 @@ mod tests {
     async fn test_glow_stroke_shadow() {
         assert_eq!(2 + 2, 4);
         let obs_client = obs::create_obs_client().await.unwrap();
-        // let filter = "Move0".to_string();
-        // let filter_details =
-        //     obs_client.filters().get(source, &filter).await.unwrap();
-        // println!("------------------------");
-        // println!("\n\tFilter Settings: {:?}", filter_details);
-        // println!("------------------------");
-
+        let filter = "Move_Outline";
         let scene = "OutlineEffects";
         let source = "BeginOutline1";
+
+        let filter_details =
+            obs_client.filters().get(source, &filter).await.unwrap();
+        println!("------------------------");
+        println!("\n\tFilter Settings: {:?}", filter_details);
+        println!("------------------------");
+
+        // assert_eq!(11, 0);
+
         let item_id = obs_source::find_id(scene, source, &obs_client)
             .await
             .unwrap();
@@ -133,22 +136,33 @@ mod tests {
         //     .build();
 
         let d = crate::move_transition::duration::EasingDuration::new(300);
-        let settings =
-            crate::move_transition::move_value::SingleSourceSetting {
-                source: source.to_string(),
-                setting_float: 10.0,
-                setting_name: "Stroke Size".to_string(),
-                duration: d,
-                ..Default::default()
-            };
+        // let settings =
+        //     crate::move_transition::move_value::SingleSourceSetting {
+        //         source: source.to_string(),
+        //         setting_float: 10.0,
+        //         setting_name: "Stroke Size".to_string(),
+        //         duration: d,
+        //         ..Default::default()
+        //     };
 
-        let _ = update_and_trigger_move_value_for_source(
+        let stroke_size_min = 0.0;
+        let stroke_size_max = 100.0;
+
+        let stroke_offset_min = 0.0;
+        let stroke_offset_max = 50.0;
+
+        if let Err(e) = update_and_trigger_move_value_for_source(
             &obs_client,
             source.into(),
-            "Stroke Size",
-            settings,
+            filter.into(),
+            // "stroke_size",
+            "stroke_offset",
+            1.0,
         )
-        .await;
+        .await
+        {
+            println!("Error: {:?}", e);
+        }
         // I need to use this generic value to update the move_transition
 
         // Pass this to the move_transistion

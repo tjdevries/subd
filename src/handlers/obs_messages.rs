@@ -2,6 +2,7 @@ use crate::chat_parser::parser;
 use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::move_transition;
+use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
@@ -106,6 +107,29 @@ pub async fn handle_obs_commands(
     println!("OBS Messages: Command: {:?}", command);
 
     let _ = match command {
+        "!stroke" => {
+            let stroke_value = splitmsg
+                .get(1)
+                .map(|v| v.parse::<f32>().unwrap_or(99.9))
+                .unwrap_or(99.9);
+            let filter = "Move_Outline";
+            let source = "BeginOutline1";
+
+            if let Err(e) = update_and_trigger_move_value_for_source(
+                &obs_client,
+                source.into(),
+                filter.into(),
+                "stroke_size",
+                // "stroke_offset",
+                stroke_value,
+            )
+            .await
+            {
+                println!("Error: {:?}", e);
+            }
+            Ok(())
+        }
+
         "!find" => {
             let filter_name = format!("Move_{}", source);
             move_transition::find_source(scene, source, filter_name, obs_client)

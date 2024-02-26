@@ -70,7 +70,8 @@ async fn move_bogan(
 ) -> Result<()> {
     // This is where we are trying to scale and crop our source
     let scale = Coordinates::new(Some(0.4), Some(0.4));
-    let c = CropSettings::builder().left(580.0).build();
+    let c = CropSettings::builder().build();
+    // let c = CropSettings::builder().left(580.0).build();
     let filter_name = format!("Move_{}", source);
 
     let d = EasingDuration::builder()

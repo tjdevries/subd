@@ -153,20 +153,21 @@ pub async fn move_source(
     .await
 }
 
-pub async fn update_and_trigger_move_value_for_source<
-    T: serde::Serialize + std::default::Default,
->(
+pub async fn update_and_trigger_move_value_for_source(
     obs_client: &OBSClient,
     source: &str,
     filter_name: &str,
-    filter_value: f32,
+    filter_setting_name: &str,
+    filter_setting_value: f32,
 ) -> Result<()> {
     // TODO: Figure out what is correct for this duration
     let settings = move_value::SingleSourceSetting::new(
         source,
-        filter_name.to_string(),
-        filter_value,
+        filter_setting_name.to_string(),
+        filter_setting_value,
     );
+
+    dbg!(&settings);
     update_filter_and_enable(source, &filter_name, settings, obs_client).await
 }
 
