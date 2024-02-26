@@ -8,6 +8,7 @@ pub mod chat_parser;
 pub mod commands;
 pub mod constants;
 pub mod elevenlabs;
+pub mod gen_art;
 pub mod handlers;
 pub mod move_transition;
 pub mod obs;

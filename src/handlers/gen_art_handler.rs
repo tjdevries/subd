@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::thread;
 use async_trait::async_trait;
 use elevenlabs_api::*;
 use events::EventHandler;
@@ -6,6 +7,7 @@ use obws::Client as OBSClient;
 use rodio::*;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use crate::gen_art::draw;
 
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -81,6 +83,9 @@ pub async fn handle_gen_art_requests(
     match command {
         "!art" => {
             println!("ART TIME");
+            thread::spawn(|| {
+                draw::draw();
+            }).join().expect("Thread panicked")
         }
 
         _ => {}

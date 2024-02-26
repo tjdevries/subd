@@ -1,7 +1,11 @@
 use nannou::prelude::*;
+use std::thread;
 
-fn draw() {
-    nannou::sketch(view).run()
+#[tokio::main]
+pub async fn draw() {
+    thread::spawn(|| {
+        nannou::sketch(view).run()
+    }).join().expect("Thread panicked")
 }
 
 fn view(app: &App, frame: Frame) {
