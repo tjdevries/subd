@@ -62,6 +62,7 @@ impl EventHandler for AiScenesHandler {
         // let obs_client_clone = obs_client.clone();
         // let locked_obs_client = obs_client_clone.lock().await;
 
+        println!("Starting AI Scenes Handler");
         loop {
             let event = rx.recv().await?;
             let ai_scene_req = match event {
@@ -69,6 +70,7 @@ impl EventHandler for AiScenesHandler {
                 _ => continue,
             };
 
+            println!("We have an AI Scenes request!");
             let (stable_diffusion_enabled, dalle_enabled) =
                 find_image_modes(self.pool.clone()).await?;
 

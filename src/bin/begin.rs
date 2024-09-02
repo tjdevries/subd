@@ -392,6 +392,8 @@ async fn main() -> Result<()> {
             }
 
             "twitch_eventsub" => {
+                println!("Attempting to run Twitch Event Sub");
+
                 // Twitch EventSub Events
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<

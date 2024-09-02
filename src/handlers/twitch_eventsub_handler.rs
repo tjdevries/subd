@@ -102,9 +102,14 @@ impl EventHandler for TwitchEventSubHandler {
     ) -> Result<()> {
         let clonable_obs_client = Arc::new(self.obs_client);
         let clonable_pool = Arc::new(self.pool);
+
+        println!("In TwitchEventSub Handler!");
         // This is need to create Reward Manager
+        //
+        // This should be expect
         let twitch_user_access_token =
-            env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN").unwrap();
+            env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
+                .expect("Missing TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN");
         let reqwest = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .build()?;
@@ -118,14 +123,19 @@ impl EventHandler for TwitchEventSubHandler {
         )
         .await?;
 
+        println!("about to Box Token!");
         let _box_token: &'static UserToken = Box::leak(Box::new(token));
         let _box_twitch_client: &'static HelixClient<reqwest::Client> =
             Box::leak(Box::new(twitch_reward_client));
 
+        println!("about to build reward manager!");
         let _broadcaster_id = "424038378";
         // RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
         let reward_manager = rewards::build_reward_manager().await?;
+        println!("we have 1 reward manager!!");
         let cloneable_reward_manager = Arc::new(reward_manager);
+
+        println!("Kicking off a new reward router!");
 
         // How do you specify Generic arguments to a function that is being passed to another
         // function?
@@ -348,6 +358,8 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     ai_scenes_map: HashMap<String, &ai_scene::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
+    println!("HANDLING AI SCENE!");
+
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
     let enable_dalle = state.dalle_mode;
     let enable_stable_diffusion = state.enable_stable_diffusion;

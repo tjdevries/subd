@@ -13,8 +13,10 @@ use twitch_api::twitch_oauth2::UserToken;
 pub async fn build_reward_manager<'a>(
 ) -> Result<RewardManager<'a, reqwest::Client>> {
     let twitch_user_access_token =
-        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")?;
-    let broadcaster_id: String = env::var("TWITCH_BROADCAST_ID")?;
+        env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
+            .expect("missing env var TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN");
+    let broadcaster_id: String = env::var("TWITCH_BROADCAST_ID")
+        .expect("missing env var TWITCH_BROADCAST_ID");
 
     let reqwest = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())

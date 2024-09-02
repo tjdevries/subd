@@ -70,7 +70,7 @@ all:
 	cargo run --bin begin -- --enable-all
 
 small:
-	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving
+	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving twitch_eventsub
 
 begin:
 	cargo run --bin begin -- --enable-all
