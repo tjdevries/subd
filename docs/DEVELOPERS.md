@@ -112,6 +112,7 @@ If you want to take full advantage of all OBS features, you need to have a
 couple Plugins installed.
 
 - [https://github.com/Xaymar/obs-StreamFX](StreamFX)
+    - We are no longer trying to use StreamFX
 - [https://github.com/exeldro/obs-move-transition](Move-Transition)
 
 Once you have these installed, you need to make sure your sources have the
