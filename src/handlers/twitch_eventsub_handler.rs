@@ -110,6 +110,7 @@ impl EventHandler for TwitchEventSubHandler {
         let twitch_user_access_token =
             env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
                 .expect("Missing TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN");
+
         let reqwest = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .build()?;

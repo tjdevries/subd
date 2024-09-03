@@ -104,6 +104,7 @@ pub async fn handle_obs_commands(
         _ => ("Memes", source),
     };
 
+    println!("WE ARE READY TO OBS");
     println!("OBS Messages: Command: {:?}", command);
 
     let _ = match command {
