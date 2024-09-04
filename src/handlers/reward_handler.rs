@@ -144,6 +144,49 @@ async fn route_messages<C: twitch_api::HttpClient>(
 
             return Ok(());
         }
+        "!inflation" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            println!("Inflation!");
+            let ai_scenes = current_ai_scenes()?;
+
+            let new_cost = 10000;
+            for scene in ai_scenes.scenes {
+                let reward_res = match twitch_rewards::find_by_title(
+                    &pool,
+                    scene.reward_title.to_string(),
+                )
+                .await
+                {
+                    Ok(res) => res,
+                    Err(_) => continue,
+                };
+                let update_reward_result = reward_manager
+                    .update_reward(reward_res.twitch_id.to_string(), new_cost)
+                    .await;
+                if let Err(e) = update_reward_result {
+                    eprintln!("Error updating reward: {}", e);
+                    continue;
+                }
+
+                let update_cost_result = twitch_rewards::update_cost(
+                    &pool,
+                    scene.reward_title,
+                    new_cost as i32,
+                )
+                .await;
+                if let Err(e) = update_cost_result {
+                    eprintln!("Error updating cost: {}", e);
+                }
+            }
+
+            let _ = send_message(
+                &twitch_client,
+                "INFLATION HIT! ALL PRICES RAISED TO 10000!",
+            )
+            .await;
+        }
         _ => {}
     }
     Ok(())
