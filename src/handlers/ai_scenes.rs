@@ -415,7 +415,7 @@ async fn determine_voice_to_use(
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // We should replace this with an API call
     // or call it every once-in-a-while and "cache"
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+    let data = fs::read_to_string("data/voices.json").expect("Unable to read file");
     let voice_list: ai_scene::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
