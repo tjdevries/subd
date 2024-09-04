@@ -137,17 +137,22 @@ impl EventHandler for ElevenLabsHandler {
                 text: chat_message,
                 voice_settings: None,
             };
+            println!("Calling TTS");
             let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
             let bytes = match tts_result {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!("ElevenLabs TTS Error: {:?}", e);
+
+                    // How do I not crash
                     continue;
                 }
             };
+            println!("Done Calling TTS");
 
             // w/ Extension
             let full_filename = format!("{}.wav", filename);
+            // TODO: Don't reference begin's computer
             let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
             let mut local_audio_path =
                 format!("{}/{}", tts_folder, full_filename);

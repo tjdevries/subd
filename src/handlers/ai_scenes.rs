@@ -89,13 +89,19 @@ impl EventHandler for AiScenesHandler {
             let chat_message =
                 sanitize_chat_message(ai_scene_req.message.clone());
 
-            let local_audio_path = generate_and_save_tts_audio(
+            let local_audio_path = match generate_and_save_tts_audio(
                 final_voice.clone(),
                 filename,
                 chat_message,
                 &self.elevenlabs,
                 &ai_scene_req,
-            )?;
+            ) {
+                Ok(path) => path,
+                Err(e) => {
+                    println!("Failed to generate audio: {}", e);
+                    continue;
+                }
+            };
 
             if let Some(music_bg) = ai_scene_req.music_bg {
                 let _ = send_message(&locked_client, music_bg.clone()).await;
@@ -186,6 +192,8 @@ fn generate_and_save_tts_audio(
 
     // w/ Extension
     let full_filename = format!("{}.wav", filename);
+
+    // TODO: remove begin references
     let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
     let local_audio_path = format!("{}/{}", tts_folder, full_filename);
     std::fs::write(local_audio_path.clone(), bytes)?;
@@ -415,7 +423,8 @@ async fn determine_voice_to_use(
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // We should replace this with an API call
     // or call it every once-in-a-while and "cache"
-    let data = fs::read_to_string("data/voices.json").expect("Unable to read file");
+    let data =
+        fs::read_to_string("data/voices.json").expect("Unable to read file");
     let voice_list: ai_scene::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 

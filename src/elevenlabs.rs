@@ -277,7 +277,8 @@ pub fn add_reverb(local_audio_path: String) -> Result<String> {
 pub fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // We should replace this with an API call
     // or call it every once-in-a-while and "cache"
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+    let data =
+        fs::read_to_string("data/voices.json").expect("Unable to read file");
     let voice_list: VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
@@ -314,7 +315,8 @@ pub fn sanitize_chat_message(raw_msg: String) -> String {
 }
 
 pub fn find_random_voice() -> (String, String) {
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
+    let data =
+        fs::read_to_string("data/voices.json").expect("Unable to read file");
 
     let voice_list: VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
