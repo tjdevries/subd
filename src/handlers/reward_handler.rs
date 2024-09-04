@@ -83,8 +83,10 @@ async fn route_messages<C: twitch_api::HttpClient>(
             if not_beginbot {
                 return Ok(());
             }
+            println!("Flash Sale");
             let ai_scenes = current_ai_scenes()?;
             let title = find_random_ai_scene_title(ai_scenes)?;
+            println!("Flash Sale: {}", title);
             let _ =
                 flash_sale(title, reward_manager, pool, twitch_client).await?;
         }
@@ -161,6 +163,7 @@ fn find_random_ai_scene_title(ai_scenes: ai_scene::AIScenes) -> Result<String> {
     Ok(random_scene.reward_title.clone())
 }
 
+// Don't Hardcode these
 // TODO: Don't hardcode this
 fn current_ai_scenes() -> Result<ai_scene::AIScenes> {
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
