@@ -87,8 +87,35 @@ async fn route_messages<C: twitch_api::HttpClient>(
             let ai_scenes = current_ai_scenes()?;
             let title = find_random_ai_scene_title(ai_scenes)?;
             println!("Flash Sale: {}", title);
-            let _ =
-                flash_sale(title, reward_manager, pool, twitch_client).await?;
+            let flash_sale_msg =
+                flash_sale(title, reward_manager, pool).await?;
+            println!("{}", flash_sale_msg);
+            let _ = send_message(&twitch_client, flash_sale_msg).await;
+        }
+        "!blowout_sale" => {
+            if not_beginbot {
+                return Ok(());
+            }
+            println!("Blowout Sale!");
+            let ai_scenes = current_ai_scenes()?;
+            for scene in ai_scenes.scenes {
+                println!("Blowout Sale: {}", scene.reward_title);
+                match flash_sale(
+                    scene.reward_title.clone(),
+                    reward_manager,
+                    pool,
+                )
+                .await
+                {
+                    Ok(flash_sale_msg) => println!("{}", flash_sale_msg),
+                    Err(_) => println!(
+                        "Error in flash sale for {}. Retrying...",
+                        scene.reward_title
+                    ),
+                }
+            }
+
+            let _ = send_message(&twitch_client, "BLOWOUT SALE!!! ALL SOUNDS ARE GOING FOR CHEAP. CHEAP. CHEAP! ").await;
         }
 
         "!bootstrap_rewards" => {
@@ -126,8 +153,7 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
     title: String,
     reward_manager: &rewards::RewardManager<'_, C>,
     pool: &sqlx::PgPool,
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-) -> Result<()> {
+) -> Result<String> {
     // This goes in subd-twitch
     // If we don't have a reward for that Thang
     let reward_res =
@@ -149,9 +175,8 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
         "Flash Sale! {} - New Low Price! {}",
         reward_res.title, flash_cost
     );
-    let _ = send_message(&twitch_client, msg).await;
 
-    Ok(())
+    Ok(msg)
 }
 
 fn find_random_ai_scene_title(ai_scenes: ai_scene::AIScenes) -> Result<String> {
