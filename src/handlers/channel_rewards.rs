@@ -273,7 +273,7 @@ pub async fn handle_obs_commands(
             for scene in ai_scenes.scenes {
                 println!("Scene: {:?}", scene);
                 
-                if scene.reward_title == "Ask Teej a Question" {
+                if scene.reward_title == "Ask Melkey a Question" {
                     let cost = scene.cost * 10;
                     let res = reward_manager
                         .create_reward(&scene.reward_title, cost)
