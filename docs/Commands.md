@@ -17,5 +17,7 @@ Lower the prices of AI-Scene Channel Rewards to 100 Channel Points
 Turns off music in OBS BackgroundMusic scene
 !nothing 
 
+!no_global_voice
 
-
+!global_voice
+        

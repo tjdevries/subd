@@ -96,10 +96,21 @@ impl EventHandler for ElevenLabsHandler {
             )
             .await;
 
+            // We sometimes pass a voice with the message, for various effects
+            // And we are overwriting the global voice because of that
+            // Seems kind wrong
             let final_voice = match msg.voice {
-                Some(voice) => voice,
+                Some(voice) => {
+                    if is_global_voice_enabled {
+                        println!("Using Global Voice");
+                        global_voice.clone()
+                    } else {
+                        voice
+                    }
+                }
                 None => {
                     if is_global_voice_enabled {
+                        println!("Using Global Voice");
                         global_voice.clone()
                     } else {
                         match user_voice_opt {
