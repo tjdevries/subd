@@ -271,7 +271,9 @@ pub async fn handle_obs_commands(
 
             // WE could make this more dynamic
             for scene in ai_scenes.scenes {
-                if scene.reward_title == "Comedy Trailer" {
+                println!("Scene: {:?}", scene);
+                
+                if scene.reward_title == "Ask Teej a Question" {
                     let cost = scene.cost * 10;
                     let res = reward_manager
                         .create_reward(&scene.reward_title, cost)
