@@ -55,6 +55,8 @@ impl image_generation::GenerateImage for DalleRequest {
                         eprintln!("Error processing Dalle Request: {}", e);
                     };
                 }
+            } else {
+                eprintln!("Error: Dalle request failed");
             }
 
             return "".to_string();
@@ -134,7 +136,8 @@ async fn dalle_request(prompt: String) -> Result<ImageResponse> {
     let client = reqwest::Client::new();
 
     // TODO: read from the database
-    let size = "1024x1024";
+    // let size = "1024x1024";
+    let size = "1792x1024";
     // let size = "1280x720";
     // 1280 pixels wide by 720
     let model = "dall-e-3";
