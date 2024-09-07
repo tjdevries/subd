@@ -109,7 +109,7 @@ struct AudioGenerationData {
 
 async fn generate_audio_by_prompt(
     data: AudioGenerationData,
-) -> Result<SunoResponse> {
+) -> Result<serde_json::Value> {
     let base_url = "http://localhost:3000";
     let client = Client::new();
     let url = format!("{}/api/generate", base_url);
@@ -126,7 +126,7 @@ async fn generate_audio_by_prompt(
         .header("Content-Type", "application/json")
         .send()
         .await?;
-    Ok(response.json::<SunoResponse>().await?)
+    Ok(response.json::<serde_json::Value>().await?)
 }
 
 pub async fn handle_requests(
@@ -160,16 +160,22 @@ pub async fn handle_requests(
             };
             let res = generate_audio_by_prompt(data).await;
             match res {
-                Ok(suno_response) => {
-                    println!("JSON Response: {:#?}", suno_response);
+                Ok(json_response) => {
+                    println!("JSON Response: {:#?}", json_response);
+
+                    let audio_url = &json_response["audio_url"];
+                    let id = &json_response["id"];
 
                     // Now you can use suno_response
-                    println!("Generated audio: {}", suno_response.audio_url);
+                    // println!("Generated audio: {}", audio_url.clone());
                     let file_name =
-                        format!("ai_songs/{}.mp3", suno_response.id);
+                        format!("ai_songs/{}.mp3", id);
                     let mut file = tokio::fs::File::create(&file_name).await?;
+                    let url = &audio_url.to_string();
+                    println!("URL: {}", url);
+                    
                     let response =
-                        reqwest::get(&suno_response.audio_url).await?;
+                        reqwest::get(&audio_url.to_string()).await?;
                     let content = response.bytes().await?;
                     tokio::io::copy(&mut content.as_ref(), &mut file).await?;
                     println!("Downloaded audio to: {}", file_name);
