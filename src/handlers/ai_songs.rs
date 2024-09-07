@@ -1,4 +1,7 @@
 use anyhow::anyhow;
+
+use url::Url;
+// use reqwest::url::{Url, ParseError};
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -121,13 +124,18 @@ async fn generate_audio_by_prompt(
         "wait_audio": data.wait_audio,
     });
     let response = client
-        .post(&url)
-        .json(&payload)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-    Ok(response.json::<serde_json::Value>().await?)
+            .post(&url)
+            .json(&payload)
+            .header("Content-Type", "application/json")
+            .send()
+            .await?;
+        let raw_json = response.text().await?;
+        let tmp_file_path = format!("tmp/raw_response_{}.json", chrono::Utc::now().timestamp());
+        tokio::fs::write(&tmp_file_path, &raw_json).await?;
+        println!("Raw JSON saved to: {}", tmp_file_path);
+        Ok(serde_json::from_str::<serde_json::Value>(&raw_json)?)
 }
+
 
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
@@ -163,21 +171,25 @@ pub async fn handle_requests(
                 Ok(json_response) => {
                     println!("JSON Response: {:#?}", json_response);
 
-                    let audio_url = &json_response["audio_url"];
-                    let id = &json_response["id"];
+                    let audio_url = &json_response[0]["audio_url"];
+                    let id = &json_response[0]["id"];
 
                     // Now you can use suno_response
                     // println!("Generated audio: {}", audio_url.clone());
                     let file_name =
                         format!("ai_songs/{}.mp3", id);
                     let mut file = tokio::fs::File::create(&file_name).await?;
-                    let url = &audio_url.to_string();
-                    println!("URL: {}", url);
                     
-                    let response =
-                        reqwest::get(&audio_url.to_string()).await?;
+                    let url = match audio_url.as_str() {
+                        Some(url) => url,
+                        None => {
+                            return Err(anyhow!("No audio_url found"));
+                        }
+                    };
+                    
+                    let response = reqwest::get(url).await?;
                     let content = response.bytes().await?;
-                    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
+                    takio::io::copy(&mut content.as_ref(), &mut file).await?;
                     println!("Downloaded audio to: {}", file_name);
                 }
                 Err(e) => {

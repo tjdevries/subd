@@ -79,6 +79,7 @@ strum = { version = "0.25.0", features = ["strum_macros", "derive"] }
 case = "1.0.0"
 convert_case = "0.6.0"
 serde_with = { features = ["macros"], version = "3.4.0"}
+url = "2.5.2"
 
 [workspace]
 members = ["crates/*"]
