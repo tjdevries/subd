@@ -308,6 +308,5 @@ mod tests {
         //     &obs_client,
         // )
         // .await;
-
     }
 }
