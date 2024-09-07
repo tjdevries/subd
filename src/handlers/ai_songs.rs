@@ -1,5 +1,7 @@
 use anyhow::anyhow;
+use std::io::Cursor;
 
+use std::fs;
 use url::Url;
 // use reqwest::url::{Url, ParseError};
 use anyhow::Result;
@@ -24,32 +26,50 @@ pub struct AISongsHandler {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SunoResponse {
     pub id: String,
     pub video_url: String,
     pub audio_url: String,
     pub image_url: String,
-    pub image_large_url: String,
-    pub is_video_pending: bool,
+    pub image_large_url: Option<String>,
+    pub is_video_pending: Option<bool>,
+
+    #[serde(default)]
     pub major_model_version: String,
     pub model_name: String,
+
+    #[serde(default)]
     pub metadata: Metadata,
+    
+    #[serde(default)]
     pub display_name: String,
+
+    #[serde(default)]
     pub handle: String,
+    #[serde(default)]
     pub is_handle_updated: bool,
+    #[serde(default)]
     pub avatar_image_url: String,
+    #[serde(default)]
     pub is_following_creator: bool,
+    #[serde(default)]
     pub user_id: String,
+    #[serde(default)]
     pub created_at: String,
+    #[serde(default)]
     pub status: String,
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub play_count: i32,
+    #[serde(default)]
     pub upvote_count: i32,
+    #[serde(default)]
     pub is_public: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Metadata {
     pub tags: String,
     pub prompt: String,
@@ -189,7 +209,7 @@ pub async fn handle_requests(
                     
                     let response = reqwest::get(url).await?;
                     let content = response.bytes().await?;
-                    takio::io::copy(&mut content.as_ref(), &mut file).await?;
+                    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
                     println!("Downloaded audio to: {}", file_name);
                 }
                 Err(e) => {
@@ -204,4 +224,30 @@ pub async fn handle_requests(
             return Ok(());
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[tokio::test]
+    async fn test_parsing_json() {
+        let f = fs::read_to_string("tmp/raw_response_1725750380.json").expect("Failed to open file");
+        let suno_responses: Vec<SunoResponse> = serde_json::from_str(&f).expect("Failed to parse JSON");
+
+        let url = suno_responses[0].audio_url.as_str();
+        println!("Suno URL: {}", suno_responses[0].audio_url.as_str());
+        let id = &suno_responses[0].id;
+
+        // tokio::io::copy(&mut content.as_ref(), &mut file).await.unwrap();
+
+        let file_name = format!("ai_songs/{}.mp3", id);
+        let response = reqwest::get(url).await.unwrap();
+        let mut file = std::fs::File::create(file_name).unwrap();
+        let mut content =  Cursor::new(response.bytes().await.unwrap());
+        std::io::copy(&mut content, &mut file).unwrap();
+
+        // assert!(!suno_responses.is_empty());
+        // assert_eq!(suno_responses[0].status, "completed");
+    }
 }
