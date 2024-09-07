@@ -32,16 +32,16 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_bogan_army() {
-        let obs_client = create_obs_client().await.unwrap();
-        let filter = "Move_bogan_51";
-        let scene = "BoganArmy";
-        let filter_details =
-            obs_client.filters().get(scene, filter).await.unwrap();
-        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        println!("res: {}", &res);
-    }
+    // #[tokio::test]
+    // async fn test_bogan_army() {
+    //     let obs_client = create_obs_client().await.unwrap();
+    //     let filter = "Move_bogan_51";
+    //     let scene = "BoganArmy";
+    //     let filter_details =
+    //         obs_client.filters().get(scene, filter).await.unwrap();
+    //     let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
+    //     println!("res: {}", &res);
+    // }
 
     #[tokio::test]
     async fn test_chat_bogan() {
@@ -57,29 +57,29 @@ mod tests {
         // Just enable a filter
     }
 
-    #[tokio::test]
-    async fn test_create_chroma_key() {
-        let obs_client = create_obs_client().await.unwrap();
-        let filter = "Chroma Key";
-        let source = "bogan_12";
-        let filter_details =
-            obs_client.filters().get("bogan_12", filter).await.unwrap();
-        let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
-        println!("res: {:?}", &res);
-
-        let chroma_key = bogan::ChromaKey { similarity: 420 };
-        let new_filter = obws::requests::filters::Create {
-            source,
-            filter: "chroma_key_filter_v2",
-            kind: constants::STREAM_FX_INTERNAL_FILTER_NAME,
-            settings: Some(chroma_key),
-        };
-        obs_client.filters().create(new_filter).await.unwrap();
-
-        // let scene_item = "bogan_11";
-        // let res = parse_scene_item_index(scene_item);
-        // assert_eq!(11, res);
-    }
+    // #[tokio::test]
+    // async fn test_create_chroma_key() {
+    //     let obs_client = create_obs_client().await.unwrap();
+    //     let filter = "Chroma Key";
+    //     let source = "bogan_12";
+    //     let filter_details =
+    //         obs_client.filters().get("bogan_12", filter).await.unwrap();
+    //     let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
+    //     println!("res: {:?}", &res);
+    //
+    //     let chroma_key = bogan::ChromaKey { similarity: 420 };
+    //     let new_filter = obws::requests::filters::Create {
+    //         source,
+    //         filter: "chroma_key_filter_v2",
+    //         kind: constants::STREAM_FX_INTERNAL_FILTER_NAME,
+    //         settings: Some(chroma_key),
+    //     };
+    //     obs_client.filters().create(new_filter).await.unwrap();
+    //
+    //     // let scene_item = "bogan_11";
+    //     // let res = parse_scene_item_index(scene_item);
+    //     // assert_eq!(11, res);
+    // }
     // use crate::move_transition::duration;
     // use crate::move_transition::models::Coordinates;
 

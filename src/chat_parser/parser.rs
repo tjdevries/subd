@@ -275,14 +275,18 @@ mod tests {
     async fn test_filters() {
         // let default_filter_name = "3D-Transform-Perspective".to_string();
         // klet default_filter_name = "3D-Transform-Orthographic".to_string();
-        let default_filter_name = "Move_3D-Transform-Orthographic".to_string();
+        let default_filter_name = "3D-Transform-Orthographic".to_string();
 
+        println!("Am I losing it?");
         let obs_client = obs::create_obs_client().await.unwrap();
         let filter_details = obs_client
             .filters()
             .get("begin", &default_filter_name)
             .await
             .unwrap();
+        println!("------------------------");
+        println!("\n\tFilter Settings: {:?}", filter_details);
+        println!("------------------------");
 
         // let settings = ThreeDTransformPerspective {
         //     field_of_view: Some(122.6),
@@ -305,8 +309,5 @@ mod tests {
         // )
         // .await;
 
-        println!("------------------------");
-        println!("\n\tFilter Settings: {:?}", filter_details);
-        println!("------------------------");
     }
 }
