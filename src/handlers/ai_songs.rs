@@ -3,6 +3,7 @@ use tokio::sync::broadcast;
 use anyhow::anyhow;
 use anyhow::Result;
 use obws::Client as OBSClient;
+use reqwest::Client;
 use events::EventHandler;
 use sqlx::PgPool;
 use rodio::Sink;
@@ -77,6 +78,34 @@ impl EventHandler for AISongsHandler {
     }
 }
 
+
+#[derive(Default, Debug)]
+struct AudioGenerationData {
+    prompt: String,
+    make_instrumental: bool,
+    wait_audio: bool,
+}
+
+async fn generate_audio_by_prompt(data: AudioGenerationData) -> Result<serde_json::Value> {
+    let base_url = "http://localhost:3000";
+    let client = Client::new();
+    let url = format!("{}/api/generate", base_url);
+
+    // There must be a simpler way
+    let payload = serde_json::json!({
+        "prompt": data.prompt,
+        "make_instrumental": data.make_instrumental,
+        "wait_audio": data.wait_audio,
+    });
+    let response = client.post(&url)
+        .json(&payload)
+        .header("Content-Type", "application/json")
+        .send()
+        .await?;
+    let json_response = response.json().await?;
+    Ok(json_response)
+}
+
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
@@ -92,18 +121,21 @@ pub async fn handle_requests(
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
+    let prompt = splitmsg[1..].to_vec().join(" ");
     
-    // let default = "".to_string();
-    // let image_url = splitmsg.get(1).unwrap_or(&default);
-    // let prompt = if splitmsg.len() > 1 {
-    //     splitmsg[2..].to_vec().join(" ")
-    // } else {
-    //     "".to_string()
-    // };
-
     match command {
         "!song" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
             println!("It's Song time!");
+            let data = AudioGenerationData {
+                prompt: prompt,
+                make_instrumental: false,
+                wait_audio: true,
+            };
+            let res = generate_audio_by_prompt(data).await;
             // We have some text
             return Ok(());
         }
