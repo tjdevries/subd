@@ -108,6 +108,7 @@ async fn main() -> Result<()> {
             "twitch_eventsub".to_string(),
             "dynamic_stream_background".to_string(),
             "channel_rewards".to_string(),
+            "ai_songs".to_string(),
         ]
     } else {
         args.enable
@@ -416,6 +417,22 @@ async fn main() -> Result<()> {
                         obs_client,
                     },
                 );
+            }
+
+            "ai_songs" => {
+                let obs_client = create_obs_client().await?;
+                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let twitch_config = get_chat_config();
+                let (_, twitch_client) = TwitchIRCClient::<
+                    SecureTCPTransport,
+                    StaticLoginCredentials,
+                >::new(twitch_config);
+                event_loop.push(handlers::ai_songs::AISongsHandler {
+                    pool: pool.clone(),
+                    sink,
+                    obs_client,
+                    twitch_client,
+                });
             }
 
             _ => {

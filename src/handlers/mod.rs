@@ -1,3 +1,4 @@
+pub mod ai_songs;
 pub mod ai_scenes;
 pub mod ai_screenshots;
 pub mod ai_screenshots_timer;
