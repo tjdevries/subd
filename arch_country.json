@@ -1,0 +1,31 @@
+{
+  "id": "33cab0ea-7370-431c-a898-0f156ec119ae",
+  "video_url": "https://cdn1.suno.ai/33cab0ea-7370-431c-a898-0f156ec119ae.mp4",
+  "audio_url": "https://cdn1.suno.ai/33cab0ea-7370-431c-a898-0f156ec119ae.mp3",
+  "image_url": "https://cdn2.suno.ai/image_33cab0ea-7370-431c-a898-0f156ec119ae.jpeg",
+  "image_large_url": "https://cdn2.suno.ai/image_large_33cab0ea-7370-431c-a898-0f156ec119ae.jpeg",
+  "is_video_pending": false,
+  "major_model_version": "v3.5",
+  "model_name": "chirp-v3.5",
+  "metadata": {
+    "tags": "fast rock lively",
+    "prompt": "[Verse]\nI see their eyes in the dark pain\nWith Arch Linux it's all strain\nWeeks of fixing just to restart\nDon't let them Arch it'll break their heart\n\n[Verse 2]\nCommand lines left undefined\nPuzzles scattered in their mind\nPackages scattered like a cruel dart\nDon't let them Arch it'll tear them apart\n\n[Chorus]\nKeep them happy keep them free\nAway from Arch Linux misery\nFast and simple that's the key\nDon't let them Arch oh can't you see\n\n[Verse 3]\nDrivers missing they scream loud\nIn their sadness they're so bowed\nSimple pleasures they can't find\nDon't let them Arch they'll lose their mind\n\n[Bridge]\nFrom distro hops and endless woe\nThere's a way their joy can grow\nHappiness in a basic start\nDon't let them Arch protect their heart\n\n[Chorus]\nKeep them happy keep them free\nAway from Arch Linux misery\nFast and simple that's the key\nDon't let them Arch oh can't you see",
+    "gpt_description_prompt": "A popular song about not letting friends use Arch Linux, so they will be happy, sung by a deep-voiced male singer, fast and lively. The lyrics depict the sorrow of people using Arch Linux.",
+    "type": "gen",
+    "duration": 170.28,
+    "refund_credits": false,
+    "stream": true
+  },
+  "display_name": "EchoingCounterpoint4196",
+  "handle": "echoingcounterpoint4196",
+  "is_handle_updated": false,
+  "avatar_image_url": "https://cdn1.suno.ai/defaultPink.webp",
+  "is_following_creator": false,
+  "user_id": "554302f5-565d-4715-b0fc-e7c84e49a150",
+  "created_at": "2024-09-07T21:39:35.278Z",
+  "status": "complete",
+  "title": "Don't Let Them Arch",
+  "play_count": 0,
+  "upvote_count": 0,
+  "is_public": false
+}
