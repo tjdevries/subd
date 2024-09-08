@@ -221,7 +221,7 @@ pub async fn handle_requests(
                 return Ok(());
             }
             println!("\tTurning it Up!");
-            sink.set_volume(sink.volume() * 1.10);
+            sink.set_volume(sink.volume() * 1.20);
             return Ok(());
         }
 
@@ -230,7 +230,7 @@ pub async fn handle_requests(
                 return Ok(());
             }
             println!("\tTurning it Down!");
-            sink.set_volume(sink.volume() * 0.90);
+            sink.set_volume(sink.volume() * 0.80);
             return Ok(());
         }
 

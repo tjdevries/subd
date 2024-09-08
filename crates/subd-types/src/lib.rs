@@ -17,7 +17,9 @@ pub mod consts;
 pub mod twitch;
 
 // TODO: How do we derive this better?
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash, Default,
+)]
 pub struct UserID(pub uuid::Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
@@ -42,7 +44,7 @@ impl TryFrom<TwitchUserID> for UserID {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[cfg_attr(
     feature = "sql",
     derive(sqlx::Type),
@@ -53,9 +55,12 @@ pub enum UserPlatform {
     Youtube,
     Github,
     Discord,
+
+    #[default]
+    Internal,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserMessage {
     pub user_id: UserID,
     pub user_name: String,

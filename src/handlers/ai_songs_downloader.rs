@@ -136,7 +136,7 @@ struct AudioGenerationData {
 }
 
 pub async fn handle_requests(
-    _tx: &broadcast::Sender<Event>,
+    tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     _twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
@@ -169,7 +169,7 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            return download_and_play(&id.to_string()).await;
+            return download_and_play(tx, &id.to_string()).await;
         }
 
         "!create_song" | "!song" => {
@@ -192,7 +192,7 @@ pub async fn handle_requests(
                     )
                     .await?;
 
-                    download_and_play(&id.to_string()).await
+                    download_and_play(tx, &id.to_string()).await
                 }
                 // TODO: Explore
                 // Should we send a message to Twitch?
@@ -237,8 +237,12 @@ async fn generate_audio_by_prompt(
 }
 
 // How do we call this and NOT block
-async fn download_and_play(id: &String) -> Result<()> {
+async fn download_and_play(
+    tx: &broadcast::Sender<Event>,
+    id: &String,
+) -> Result<()> {
     let id = id.clone();
+    let tx = tx.clone();
 
     thread::spawn(|| {
         let rt = Runtime::new().unwrap();
@@ -254,6 +258,15 @@ async fn download_and_play(id: &String) -> Result<()> {
 
                 if response.status().is_success() {
                     let _file = just_download(response, id.to_string()).await;
+
+                    // How can I send an explicit message to play the song ot this handler
+                    let _ =
+                        tx.send(Event::UserMessage(subd_types::UserMessage {
+                            user_name: "beginbot".to_string(),
+                            contents: format!("!play {}", id.to_string()),
+                            ..Default::default() // user_name: msg.user_name,
+                        }));
+
                     break;
                 }
 
