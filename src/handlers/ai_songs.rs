@@ -176,10 +176,12 @@ pub async fn handle_requests(
                     return Ok(());
                 }
             };
+            return Ok(())
 
-            let file = BufReader::new(mp3);
-            sink.set_volume(0.3);
-            return play_sound_with_sink(sink, file).await;
+            // we want the other Way of Printing
+            // We want to inform we are on the queue
+            // let file = BufReader::new(mp3);
+            // return play_sound_with_sink(sink, file).await;
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -320,6 +322,8 @@ async fn play_sound_with_sink(
         }
     };
     sink.append(sound);
+
+    // This could be a message
     return Ok(());
 }
 

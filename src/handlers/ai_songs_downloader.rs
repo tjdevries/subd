@@ -5,16 +5,17 @@ use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use reqwest::Client;
-use rodio::Decoder;
-use rodio::Sink;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
+// use rodio::Decoder;
+// use rodio::Sink;
 use std::fs;
+use std::io::Cursor;
+use std::time;
+use url::Url;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::Cursor;
 use std::thread;
-use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
@@ -22,7 +23,6 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use url::Url;
 
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
@@ -257,7 +257,6 @@ async fn generate_audio_by_prompt(
     Ok(serde_json::from_str::<serde_json::Value>(&raw_json)?)
 }
 
-// How do we call this and NOT block
 async fn download_and_play(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<Event>,
