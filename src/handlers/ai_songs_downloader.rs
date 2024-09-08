@@ -167,7 +167,13 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            return download_and_play(twitch_client, tx, msg.user_name, &id.to_string()).await;
+            return download_and_play(
+                twitch_client,
+                tx,
+                msg.user_name,
+                &id.to_string(),
+            )
+            .await;
         }
 
         "!create_song" | "!song" => {
@@ -189,9 +195,13 @@ pub async fn handle_requests(
                         &json_response.to_string(),
                     )
                     .await?;
-                    let _ =
-                        download_and_play(twitch_client, tx, msg.user_name.clone(), &id.to_string())
-                            .await;
+                    let _ = download_and_play(
+                        twitch_client,
+                        tx,
+                        msg.user_name.clone(),
+                        &id.to_string(),
+                    )
+                    .await;
 
                     let id = &json_response[1]["id"].as_str().unwrap();
                     tokio::fs::write(
@@ -199,7 +209,13 @@ pub async fn handle_requests(
                         &json_response.to_string(),
                     )
                     .await?;
-                    download_and_play(twitch_client, tx, msg.user_name, &id.to_string()).await
+                    download_and_play(
+                        twitch_client,
+                        tx,
+                        msg.user_name,
+                        &id.to_string(),
+                    )
+                    .await
                 }
                 Err(e) => {
                     eprintln!("Error generating audio: {}", e);
@@ -267,7 +283,7 @@ async fn download_and_play(
                 if response.status().is_success() {
                     let _file = just_download(response, id.to_string()).await;
 
-                    let info = format!("{}'s song {} added to the Queue", user_name, id.to_string());
+                    let info = format!("@{}'s song {} added to the Queue. Begin needs to !skip to get to your position faster", user_name, id.to_string());
 
                     // Send a Message to Twitch that the song is queued
                     // Send a UserMessage so the song is added to the Queue using the !play command
