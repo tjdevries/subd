@@ -1,9 +1,12 @@
 use anyhow::anyhow;
+use std::fs::File;
+use std::thread;
+use rodio::Decoder;
+use std::io::BufReader;
 use std::io::Cursor;
-
+use std::time;
 use std::fs;
 use url::Url;
-// use reqwest::url::{Url, ParseError};
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -191,32 +194,17 @@ pub async fn handle_requests(
                 Ok(json_response) => {
                     println!("JSON Response: {:#?}", json_response);
 
+                    // Use status maybe eventually
                     let status = &json_response[0]["status"];
-                    let audio_url = &json_response[0]["audio_url"];
                     let id = &json_response[0]["id"];
                     
-                    let tmp_file_path = format!("tmp/suno_responses/{}.json", id);
+                    let tmp_file_path = format!("tmp/suno_responses/{}.json", id.as_str().unwrap());
                     tokio::fs::write(&tmp_file_path, &json_response.to_string()).await?;
 
-                    // Use this id to save
-
-                    // Now you can use suno_response
-                    // println!("Generated audio: {}", audio_url.clone());
                     let file_name =
                         format!("ai_songs/{}.mp3", id);
                     let mut file = tokio::fs::File::create(&file_name).await?;
-                    
-                    // This is based off the Audio URL
-                    // let url = match audio_url.as_str() {
-                    //     Some(url) => url,
-                    //     None => {
-                    //         return Err(anyhow!("No audio_url found"));
-                    //     }
-                    // };
-                    // let response = reqwest::get(url).await?;
 
-                    // we are going to sleep and test
-                    // then we will loop
                     let mut response;
                     loop {
                         let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id.as_str().unwrap());
@@ -226,6 +214,31 @@ pub async fn handle_requests(
                             let content = response.bytes().await?;
                             tokio::io::copy(&mut content.as_ref(), &mut file).await?;
                             println!("Downloaded audio to: {}", file_name);
+                            let mp3 = match File::open(format!("{}", file_name))
+                            {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    eprintln!("Error opening sound file: {}", e);
+                                    continue;
+                                }
+                            };
+
+                            
+                            let file = BufReader::new(mp3);
+                            sink.set_volume(0.5);
+                            let sound = match Decoder::new(BufReader::new(file)) {
+                                Ok(v) => v,
+                                Err(e) => {
+                                    eprintln!("Error decoding sound file: {}", e);
+                                    continue;
+                                }
+                            };
+
+                            sink.append(sound);
+                            sink.sleep_until_end();
+                            let sleep_time = time::Duration::from_millis(100);
+                            thread::sleep(sleep_time);
+                            // We need to play the song here
                             break;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
