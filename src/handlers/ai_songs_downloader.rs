@@ -167,7 +167,7 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            return download_and_play(twitch_client, tx, &id.to_string()).await;
+            return download_and_play(twitch_client, tx, msg.user_name, &id.to_string()).await;
         }
 
         "!create_song" | "!song" => {
@@ -180,20 +180,27 @@ pub async fn handle_requests(
             let res = generate_audio_by_prompt(data).await;
             match res {
                 Ok(json_response) => {
+                    // There is a better way of doing this
                     println!("JSON Response: {:#?}", json_response);
 
-                    // TODO: download both songs
                     let id = &json_response[0]["id"].as_str().unwrap();
                     tokio::fs::write(
                         format!("tmp/suno_responses/{}.json", id),
                         &json_response.to_string(),
                     )
                     .await?;
+                    let _ =
+                        download_and_play(twitch_client, tx, msg.user_name.clone(), &id.to_string())
+                            .await;
 
-                    download_and_play(twitch_client, tx, &id.to_string()).await
+                    let id = &json_response[1]["id"].as_str().unwrap();
+                    tokio::fs::write(
+                        format!("tmp/suno_responses/{}.json", id),
+                        &json_response.to_string(),
+                    )
+                    .await?;
+                    download_and_play(twitch_client, tx, msg.user_name, &id.to_string()).await
                 }
-                // TODO: Explore
-                // Should we send a message to Twitch?
                 Err(e) => {
                     eprintln!("Error generating audio: {}", e);
                     return Ok(());
@@ -238,6 +245,7 @@ async fn generate_audio_by_prompt(
 async fn download_and_play(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<Event>,
+    user_name: String,
     id: &String,
 ) -> Result<()> {
     let id = id.clone();
@@ -259,10 +267,11 @@ async fn download_and_play(
                 if response.status().is_success() {
                     let _file = just_download(response, id.to_string()).await;
 
-                    let info = format!("{} added to the Queue", id.to_string());
+                    let info = format!("{}'s song {} added to the Queue", user_name, id.to_string());
+
+                    // Send a Message to Twitch that the song is queued
+                    // Send a UserMessage so the song is added to the Queue using the !play command
                     let _ = send_message(&twitch_client, info).await;
-                    // We are going to play the song
-                    // How can I send an explicit message to play the song ot this handler
                     let _ =
                         tx.send(Event::UserMessage(subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
