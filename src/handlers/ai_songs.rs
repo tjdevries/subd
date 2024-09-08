@@ -221,7 +221,7 @@ pub async fn handle_requests(
                     };
 
                     sink.append(sound);
-                    sink.sleep_until_end();
+                    // sink.sleep_until_end();
                     let sleep_time = time::Duration::from_millis(100);
                     thread::sleep(sleep_time);
                     break;
@@ -231,19 +231,38 @@ pub async fn handle_requests(
 
             return Ok(());
         }
-        "!play" => {
+        "!speedup" => {
             if _not_beginbot {
                 return Ok(());
             }
-            // sink.skip_one();
+            println!("\tSpeeding up!");
+            sink.set_speed(sink.speed() * 1.25);
+            return Ok(())
+        }
+        "!normal" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tNormal Time");
+            sink.set_speed(1.0);
+            return Ok(())
+        }
+        "!slowdown" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tSlowin down!");
+            sink.set_speed(sink.speed() * 0.75);
+            return Ok(())
+        }
+        "!queue" => {
+            if _not_beginbot {
+                return Ok(());
+            }
 
             let id = splitmsg[1].as_str();
 
-            // let mp3_file = format!("tmp/suno_responses/{}.json", id);
-            // let f = fs::read_to_string(mp3_file).expect("Failed to open file");
-            // let suno_responses: Vec<SunoResponse> = serde_json::from_str(&f).expect("Failed to parse JSON");
-
-            println!("Playing {}", id);
+            println!("\tQueuing {}", id);
             let file_name = format!("ai_songs/{}.mp3", id);
             let mp3 = match File::open(format!("{}", file_name)) {
                 Ok(v) => v,
@@ -253,8 +272,9 @@ pub async fn handle_requests(
                 }
             };
 
+            sink.set_speed(0.5);
             let file = BufReader::new(mp3);
-            sink.set_volume(0.2);
+            sink.set_volume(0.3);
             let sound = match Decoder::new(BufReader::new(file)) {
                 Ok(v) => v,
                 Err(e) => {
@@ -262,10 +282,12 @@ pub async fn handle_requests(
                     return Ok(());
                 }
             };
+            println!("\tAppending sound in Queue");
             sink.append(sound);
-            sink.sleep_until_end();
-            let sleep_time = time::Duration::from_millis(100);
-            thread::sleep(sleep_time);
+            println!("\tFininshed appending sound to Queue");
+            // sink.sleep_until_end();
+            // let sleep_time = time::Duration::from_millis(100);
+            // thread::sleep(sleep_time);
             return Ok(());
         }
 
@@ -274,7 +296,7 @@ pub async fn handle_requests(
                 return Ok(());
             }
 
-            println!("We are trying to skip!");
+            println!("\tAttempting to Skip!");
             sink.skip_one();
             return Ok(());
         }
@@ -353,7 +375,7 @@ pub async fn handle_requests(
                             };
 
                             sink.append(sound);
-                            sink.sleep_until_end();
+                            // sink.sleep_until_end();
                             let sleep_time = time::Duration::from_millis(100);
                             thread::sleep(sleep_time);
                             break;
