@@ -16,6 +16,7 @@ use std::io::Cursor;
 use std::thread;
 use std::time;
 use subd_types::{Event, UserMessage};
+use twitch_chat::client::send_message;
 use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -134,7 +135,7 @@ pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     sink: &Sink,
-    _twitch_client: &TwitchIRCClient<
+    twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
         StaticLoginCredentials,
     >,
@@ -153,7 +154,6 @@ pub async fn handle_requests(
     // }
 
     let command = splitmsg[0].as_str();
-    let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
         "!play" => {
@@ -176,12 +176,12 @@ pub async fn handle_requests(
                     return Ok(());
                 }
             };
-            return Ok(())
 
-            // we want the other Way of Printing
-            // We want to inform we are on the queue
-            // let file = BufReader::new(mp3);
-            // return play_sound_with_sink(sink, file).await;
+            let info = format!("@{} added {} to Queue", msg.user_name, id);
+            let _ = send_message(&twitch_client, info).await;
+            // Should this print a message to Twitch
+            let file = BufReader::new(mp3);
+            return play_sound_with_sink(sink, file).await;
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -323,6 +323,7 @@ async fn play_sound_with_sink(
     };
     sink.append(sound);
 
+    // This could
     // This could be a message
     return Ok(());
 }
