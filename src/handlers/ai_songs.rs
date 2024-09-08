@@ -183,6 +183,13 @@ pub async fn handle_requests(
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
+        "!next" => {
+            if _not_beginbot {
+                return Ok(())
+            }
+            sink.skip_one();
+            return Ok(())
+        },
         "!song" => {
             if !is_sub && !is_vip && !is_mod && _not_beginbot {
                 return Ok(());
@@ -231,7 +238,7 @@ pub async fn handle_requests(
 
                             
                             let file = BufReader::new(mp3);
-                            sink.set_volume(0.1);
+                            sink.set_volume(0.2);
                             let sound = match Decoder::new(BufReader::new(file)) {
                                 Ok(v) => v,
                                 Err(e) => {

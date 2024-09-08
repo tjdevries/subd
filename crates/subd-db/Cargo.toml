@@ -16,4 +16,5 @@ sqlx.workspace = true
 tokio = { workspace = true, features = [ "macros", "rt" ] }
 uuid.workspace = true
 
-rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
+# rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
+# rodio = { git = "https://github.com/RustAudio/rodio", default-features = true, features = [ "symphonia-all" ] }
