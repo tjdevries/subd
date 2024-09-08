@@ -290,6 +290,17 @@ pub async fn handle_requests(
             // thread::sleep(sleep_time);
             return Ok(());
         }
+        
+        "!play" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            println!("\tAttempting to play!");
+            sink.play();
+            println!("\tDone Attempting to play!");
+            return Ok(());
+        }
 
         "!skip" => {
             if _not_beginbot {
@@ -298,6 +309,19 @@ pub async fn handle_requests(
 
             println!("\tAttempting to Skip!");
             sink.skip_one();
+            sink.play();
+            println!("\tDone Attempting to Skip!");
+            return Ok(());
+        }
+
+        "!stop" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            println!("\tAttempting to Stop!");
+            sink.stop();
+            println!("\tDone Attempting to Stop!");
             return Ok(());
         }
         "!song" => {
