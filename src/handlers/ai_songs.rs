@@ -150,7 +150,7 @@ async fn generate_audio_by_prompt(
             .send()
             .await?;
         let raw_json = response.text().await?;
-        let tmp_file_path = format!("tmp/raw_response_{}.json", chrono::Utc::now().timestamp());
+        let tmp_file_path = format!("tmp/suno_responses/{}.json", chrono::Utc::now().timestamp());
         tokio::fs::write(&tmp_file_path, &raw_json).await?;
         println!("Raw JSON saved to: {}", tmp_file_path);
         Ok(serde_json::from_str::<serde_json::Value>(&raw_json)?)
@@ -191,8 +191,14 @@ pub async fn handle_requests(
                 Ok(json_response) => {
                     println!("JSON Response: {:#?}", json_response);
 
+                    let status = &json_response[0]["status"];
                     let audio_url = &json_response[0]["audio_url"];
                     let id = &json_response[0]["id"];
+                    
+                    let tmp_file_path = format!("tmp/suno_responses/{}.json", id);
+                    tokio::fs::write(&tmp_file_path, &json_response.to_string()).await?;
+
+                    // Use this id to save
 
                     // Now you can use suno_response
                     // println!("Generated audio: {}", audio_url.clone());
@@ -200,17 +206,31 @@ pub async fn handle_requests(
                         format!("ai_songs/{}.mp3", id);
                     let mut file = tokio::fs::File::create(&file_name).await?;
                     
-                    let url = match audio_url.as_str() {
-                        Some(url) => url,
-                        None => {
-                            return Err(anyhow!("No audio_url found"));
+                    // This is based off the Audio URL
+                    // let url = match audio_url.as_str() {
+                    //     Some(url) => url,
+                    //     None => {
+                    //         return Err(anyhow!("No audio_url found"));
+                    //     }
+                    // };
+                    // let response = reqwest::get(url).await?;
+
+                    // we are going to sleep and test
+                    // then we will loop
+                    let mut response;
+                    loop {
+                        let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id.as_str().unwrap());
+                        println!("Attempting to Download song at: {}", cdn_url);
+                        response = reqwest::get(&cdn_url).await?;
+                        if response.status().is_success() {
+                            let content = response.bytes().await?;
+                            tokio::io::copy(&mut content.as_ref(), &mut file).await?;
+                            println!("Downloaded audio to: {}", file_name);
+                            break;
                         }
-                    };
+                        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                    }
                     
-                    let response = reqwest::get(url).await?;
-                    let content = response.bytes().await?;
-                    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
-                    println!("Downloaded audio to: {}", file_name);
                 }
                 Err(e) => {
                     eprintln!("Error generating audio: {}", e);
@@ -235,14 +255,15 @@ mod tests {
         let f = fs::read_to_string("tmp/raw_response_1725750380.json").expect("Failed to open file");
         let suno_responses: Vec<SunoResponse> = serde_json::from_str(&f).expect("Failed to parse JSON");
 
-        let url = suno_responses[0].audio_url.as_str();
-        println!("Suno URL: {}", suno_responses[0].audio_url.as_str());
-        let id = &suno_responses[0].id;
-
+        // let url = suno_responses[0].audio_url.as_str();
         // tokio::io::copy(&mut content.as_ref(), &mut file).await.unwrap();
-
+        let id = &suno_responses[0].id;
+        println!("Suno URL: {}", suno_responses[0].audio_url.as_str());
+        
+        let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
         let file_name = format!("ai_songs/{}.mp3", id);
-        let response = reqwest::get(url).await.unwrap();
+        
+        let response = reqwest::get(cdn_url).await.unwrap();
         let mut file = std::fs::File::create(file_name).unwrap();
         let mut content =  Cursor::new(response.bytes().await.unwrap());
         std::io::copy(&mut content, &mut file).unwrap();
