@@ -274,11 +274,39 @@ pub async fn handle_requests(
             println!("\tDone Attempting to Stop!");
             return Ok(());
         }
+
+        // Reverb
         _ => {
             return Ok(());
         }
     }
 }
+
+// pub fn add_reverb(local_audio_path: String) -> Result<String> {
+//     let audio_dest_path = add_postfix_to_filepath(
+//         local_audio_path.clone(),
+//         "_reverb".to_string(),
+//     );
+//     Command::new("sox")
+//         .args(&[
+//             "-t",
+//             "wav",
+//             &local_audio_path,
+//             &audio_dest_path,
+//             "gain",
+//             "-2",
+//             "reverb",
+//             "70",
+//             "100",
+//             "50",
+//             "100",
+//             "10",
+//             "2",
+//         ])
+//         .status()
+//         .expect("Failed to execute sox");
+//     Ok(audio_dest_path)
+// }
 
 async fn play_sound_with_sink(
     sink: &Sink,

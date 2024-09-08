@@ -18,6 +18,7 @@ use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
+use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -138,10 +139,7 @@ struct AudioGenerationData {
 pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
-    _twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     _pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -169,7 +167,7 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            return download_and_play(tx, &id.to_string()).await;
+            return download_and_play(twitch_client, tx, &id.to_string()).await;
         }
 
         "!create_song" | "!song" => {
@@ -192,7 +190,7 @@ pub async fn handle_requests(
                     )
                     .await?;
 
-                    download_and_play(tx, &id.to_string()).await
+                    download_and_play(twitch_client, tx, &id.to_string()).await
                 }
                 // TODO: Explore
                 // Should we send a message to Twitch?
@@ -238,11 +236,13 @@ async fn generate_audio_by_prompt(
 
 // How do we call this and NOT block
 async fn download_and_play(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<Event>,
     id: &String,
 ) -> Result<()> {
     let id = id.clone();
     let tx = tx.clone();
+    let twitch_client = twitch_client.clone();
 
     thread::spawn(|| {
         let rt = Runtime::new().unwrap();
@@ -259,6 +259,9 @@ async fn download_and_play(
                 if response.status().is_success() {
                     let _file = just_download(response, id.to_string()).await;
 
+                    let info = format!("{} added to the Queue", id.to_string());
+                    let _ = send_message(&twitch_client, info).await;
+                    // We are going to play the song
                     // How can I send an explicit message to play the song ot this handler
                     let _ =
                         tx.send(Event::UserMessage(subd_types::UserMessage {
