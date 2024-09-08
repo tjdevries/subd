@@ -182,19 +182,19 @@ pub async fn handle_requests(
     // let is_mod = msg.roles.is_twitch_mod();
     // let is_vip = msg.roles.is_twitch_vip();
     // let is_sub = msg.roles.is_twitch_sub();
+    // if !is_sub && !is_vip && !is_mod && _not_beginbot {
+    //     return Ok(());
+    // }
 
     let command = splitmsg[0].as_str();
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
         "!create_song" | "!song" => {
-            // if !is_sub && !is_vip && !is_mod && _not_beginbot {
-            //     return Ok(());
-            // }
 
             println!("It's Song time!");
             let data = AudioGenerationData {
-                prompt: prompt,
+                prompt,
                 make_instrumental: false,
                 wait_audio: true,
             };
@@ -213,9 +213,9 @@ pub async fn handle_requests(
 
                     download_and_play(sink, &id.to_string()).await
                 }
+                // TODO: Explore
+                // Should we send a message to Twitch?
                 Err(e) => {
-                    // TODO: Explore
-                    // Should we send a message to Twitch?
                     eprintln!("Error generating audio: {}", e);
                     return Ok(());
                 }
@@ -260,6 +260,10 @@ pub async fn handle_requests(
             return play_sound_with_sink(sink, file).await;
         }
 
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+        // ~~~~~ AUXILARY COMMANDS ~~~~ //
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
         "!pause" => {
             if _not_beginbot {
                 return Ok(());
@@ -282,9 +286,6 @@ pub async fn handle_requests(
             return Ok(());
         }
 
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-        // ~~~~~ AUXILARY COMMANDS ~~~~ //
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
         "!speedup" => {
             if _not_beginbot {
                 return Ok(());
