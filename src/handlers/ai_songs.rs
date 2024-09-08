@@ -21,6 +21,8 @@ use twitch_irc::{
 };
 use url::Url;
 
+use crate::audio::play_sound;
+
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
 pub struct AISongsHandler {
@@ -185,58 +187,103 @@ pub async fn handle_requests(
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
+        "!create_song" => {
+            // if !is_sub && !is_vip && !is_mod && _not_beginbot {
+            //     return Ok(());
+            // }
+
+            println!("It's Song time!");
+            let data = AudioGenerationData {
+                prompt: prompt,
+                make_instrumental: false,
+                wait_audio: true,
+            };
+            let res = generate_audio_by_prompt(data).await;
+            match res {
+                Ok(json_response) => {
+                    println!("JSON Response: {:#?}", json_response);
+
+                    // TODO: download both songs
+                    let id = &json_response[0]["id"].as_str().unwrap();
+                    tokio::fs::write(
+                        format!("tmp/suno_responses/{}.json", id),
+                        &json_response.to_string(),
+                    )
+                    .await?;
+
+                    return download_and_play(sink, &id.to_string()).await;
+                }
+                Err(e) => {
+                    // TODO: Explore
+                    // Should we send a message to Twitch?
+                    eprintln!("Error generating audio: {}", e);
+                    return Ok(());
+                }
+            }
+        }
+
         "!download" => {
             if _not_beginbot {
                 return Ok(());
             }
 
             let id = splitmsg[1].as_str();
+            return download_and_play(sink, &id.to_string()).await;
+        }
 
-            let file_name = format!("ai_songs/{}.mp3", id);
-            let mut file = tokio::fs::File::create(&file_name).await?;
-
-            println!("Start of Downloading song: {}", id);
-            let mut response;
-            loop {
-                let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
-
-                // What is this affecting
-                response = reqwest::get(&cdn_url).await?;
-                if response.status().is_success() {
-                    play_and_download(sink, &id.to_string()).await?;
-
-                    let content = response.bytes().await?;
-                    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
-                    println!("Downloaded audio to: {}", file_name);
-                    let mp3 = match File::open(format!("{}", file_name)) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            eprintln!("Error opening sound file: {}", e);
-                            continue;
-                        }
-                    };
-
-                    let file = BufReader::new(mp3);
-                    sink.set_volume(0.2);
-                    let sound = match Decoder::new(BufReader::new(file)) {
-                        Ok(v) => v,
-                        Err(e) => {
-                            eprintln!("Error decoding sound file: {}", e);
-                            continue;
-                        }
-                    };
-
-                    sink.append(sound);
-                    // sink.sleep_until_end();
-                    // let sleep_time = time::Duration::from_millis(100);
-                    // std::thread::sleep(sleep_time);
-                    break;
-                }
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        "!play" => {
+            if _not_beginbot {
+                return Ok(());
             }
 
+            // TODO: We shouldn't crash on this!
+            let id = match splitmsg.get(1) {
+                Some(id) => id.as_str(),
+                None => return Ok(()),
+            };
+
+            println!("\tQueuing {}", id);
+            let file_name = format!("ai_songs/{}.mp3", id);
+            let mp3 = match File::open(format!("{}", file_name)) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error opening sound file: {}", e);
+                    return Ok(());
+                }
+            };
+
+            let file = BufReader::new(mp3);
+            sink.set_volume(0.3);
+            return play_sound_with_sink(sink, file).await;
+        }
+        
+        "!pause" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            println!("\tAttempting to play!");
+            sink.pause();
+            println!("\tDone Attempting to play!");
             return Ok(());
         }
+        
+        "!unpause" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            println!("\tAttempting to play!");
+            sink.play();
+            println!("\tDone Attempting to play!");
+            return Ok(());
+        }
+
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+        // ~~~~~ AUXILARY COMMANDS ~~~~ //
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+        
         "!speedup" => {
             if _not_beginbot {
                 return Ok(());
@@ -282,53 +329,6 @@ pub async fn handle_requests(
             return Ok(());
         }
 
-        "!queue" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            let id = splitmsg[1].as_str();
-
-            println!("\tQueuing {}", id);
-            let file_name = format!("ai_songs/{}.mp3", id);
-            let mp3 = match File::open(format!("{}", file_name)) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error opening sound file: {}", e);
-                    return Ok(());
-                }
-            };
-
-            sink.set_speed(0.5);
-            let file = BufReader::new(mp3);
-            sink.set_volume(0.3);
-            let sound = match Decoder::new(BufReader::new(file)) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error decoding sound file: {}", e);
-                    return Ok(());
-                }
-            };
-            println!("\tAppending sound in Queue");
-            sink.append(sound);
-            println!("\tFininshed appending sound to Queue");
-            // sink.sleep_until_end();
-            // let sleep_time = time::Duration::from_millis(100);
-            // thread::sleep(sleep_time);
-            return Ok(());
-        }
-
-        "!play" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            println!("\tAttempting to play!");
-            sink.play();
-            println!("\tDone Attempting to play!");
-            return Ok(());
-        }
-
         "!skip" => {
             if _not_beginbot {
                 return Ok(());
@@ -350,43 +350,6 @@ pub async fn handle_requests(
             sink.stop();
             println!("\tDone Attempting to Stop!");
             return Ok(());
-        }
-        "!song" => {
-            // if !is_sub && !is_vip && !is_mod && _not_beginbot {
-            //     return Ok(());
-            // }
-
-            println!("It's Song time!");
-            let data = AudioGenerationData {
-                prompt: prompt,
-                make_instrumental: false,
-                wait_audio: true,
-            };
-            let res = generate_audio_by_prompt(data).await;
-            match res {
-                Ok(json_response) => {
-                    println!("JSON Response: {:#?}", json_response);
-
-                    // TODO: download both songs
-                    // Use status maybe eventually
-                    let _status = &json_response[0]["status"];
-                    let id = &json_response[0]["id"].as_str().unwrap();
-                    let tmp_file_path =
-                        format!("tmp/suno_responses/{}.json", id,);
-                    tokio::fs::write(
-                        &tmp_file_path,
-                        &json_response.to_string(),
-                    )
-                    .await?;
-
-                    play_and_download(sink, &id.to_string()).await;
-                    return Ok(());
-                }
-                Err(e) => {
-                    eprintln!("Error generating audio: {}", e);
-                    return Ok(());
-                }
-            }
         }
         _ => {
             return Ok(());
@@ -417,28 +380,33 @@ async fn just_download(
     return Ok(file);
 }
 
-async fn play_and_download(sink: &Sink, id: &String) -> Result<()> {
+async fn play_sound_with_sink(sink: &Sink, file: BufReader<File>) -> Result<()> {
+    let sound = match Decoder::new(BufReader::new(file)) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error decoding sound file: {}", e);
+            return Err(anyhow!("Error decoding sound file: {}", e));
+        }
+    };
+    sink.append(sound);
+    return Ok(())
+}
+
+async fn download_and_play(sink: &Sink, id: &String) -> Result<()> {
     let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id.as_str());
 
+    // TODO: Should we use a count instead?
     let mut response;
     loop {
-        println!("Attempting to Download song at: {}", cdn_url);
+        println!("{} | Attempting to Download song at: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), cdn_url);
         response = reqwest::get(&cdn_url).await?;
+
         if response.status().is_success() {
-            // This loop is blocking
             let file = just_download(response, id.to_string()).await?;
-
+            
             sink.set_volume(0.2);
-            let sound = match Decoder::new(BufReader::new(file)) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error decoding sound file: {}", e);
-                    continue;
-                }
-            };
-
-            sink.append(sound);
-            break;
+            let _ = play_sound_with_sink(sink, file).await;
+            break
         }
 
         // Sleep for 5 seconds before trying again
