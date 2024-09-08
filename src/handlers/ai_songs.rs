@@ -183,6 +183,97 @@ pub async fn handle_requests(
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
+        "!download" => {
+            if _not_beginbot {
+                return Ok(())
+            }
+            
+            let id = splitmsg[1].as_str();
+            
+            let file_name =
+                format!("ai_songs/{}.mp3", id);
+            let mut file = tokio::fs::File::create(&file_name).await?;
+
+            let mut response;
+            loop {
+                let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
+                println!("Attempting to Download song at: {}", cdn_url);
+                response = reqwest::get(&cdn_url).await?;
+                if response.status().is_success() {
+                    let content = response.bytes().await?;
+                    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
+                    println!("Downloaded audio to: {}", file_name);
+                    let mp3 = match File::open(format!("{}", file_name))
+                    {
+                        Ok(v) => v,
+                        Err(e) => {
+                            eprintln!("Error opening sound file: {}", e);
+                            continue;
+                        }
+                    };
+
+                    
+                    let file = BufReader::new(mp3);
+                    sink.set_volume(0.2);
+                    let sound = match Decoder::new(BufReader::new(file)) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            eprintln!("Error decoding sound file: {}", e);
+                            continue;
+                        }
+                    };
+
+                    sink.append(sound);
+                    sink.sleep_until_end();
+                    let sleep_time = time::Duration::from_millis(100);
+                    thread::sleep(sleep_time);
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            }
+            
+            return Ok(())
+        }
+        "!play" => {
+            if _not_beginbot {
+                return Ok(())
+            }
+            sink.skip_one();
+            
+            let id = splitmsg[1].as_str();
+            
+            // let mp3_file = format!("tmp/suno_responses/{}.json", id);
+            // let f = fs::read_to_string(mp3_file).expect("Failed to open file");
+            // let suno_responses: Vec<SunoResponse> = serde_json::from_str(&f).expect("Failed to parse JSON");
+            
+            let file_name =
+                format!("ai_songs/{}.mp3", id);
+            println!("Downloaded audio to: {}", file_name);
+            let mp3 = match File::open(format!("{}", file_name))
+            {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error opening sound file: {}", e);
+                    return Ok(());
+                }
+            };
+
+            
+            let file = BufReader::new(mp3);
+            sink.set_volume(0.2);
+            let sound = match Decoder::new(BufReader::new(file)) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Error decoding sound file: {}", e);
+                    return Ok(());
+                }
+            };
+            sink.append(sound);
+            sink.sleep_until_end();
+            let sleep_time = time::Duration::from_millis(100);
+            thread::sleep(sleep_time);
+            return Ok(())
+        },
         "!next" => {
             if _not_beginbot {
                 return Ok(())
@@ -260,6 +351,7 @@ pub async fn handle_requests(
                 Err(e) => {
                     eprintln!("Error generating audio: {}", e);
                 }
+                
             }
             // We have some text
             return Ok(());
