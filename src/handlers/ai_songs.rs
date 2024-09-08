@@ -8,18 +8,18 @@ use rodio::Decoder;
 use rodio::Sink;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::fs;
 use std::fs::File;
 use std::io::BufReader;
+use std::fs;
 use std::io::Cursor;
 use std::thread;
 use std::time;
+use url::Url;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use url::Url;
 
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
@@ -194,15 +194,19 @@ pub async fn handle_requests(
 
             let file_name = format!("ai_songs/{}.mp3", id);
             let mut file = tokio::fs::File::create(&file_name).await?;
+            
 
+            println!("Start of Downloading song: {}", id);
             let mut response;
             loop {
                 let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
-                println!("Attempting to Download song at: {}", cdn_url);
 
                 // What is this affecting
                 response = reqwest::get(&cdn_url).await?;
                 if response.status().is_success() {
+
+                    play_and_download(sink, &id.to_string()).await?;
+                    
                     let content = response.bytes().await?;
                     tokio::io::copy(&mut content.as_ref(), &mut file).await?;
                     println!("Downloaded audio to: {}", file_name);
@@ -347,10 +351,10 @@ pub async fn handle_requests(
                     // TODO: download both songs
                     // Use status maybe eventually
                     let _status = &json_response[0]["status"];
-                    let id = &json_response[0]["id"];
+                    let id = &json_response[0]["id"].as_str().unwrap();
                     let tmp_file_path = format!(
                         "tmp/suno_responses/{}.json",
-                        id.as_str().unwrap()
+                        id,
                     );
                     tokio::fs::write(
                         &tmp_file_path,
@@ -358,7 +362,7 @@ pub async fn handle_requests(
                     )
                     .await?;
 
-                    download_song(sink, id.to_string()).await?;
+                    play_and_download(sink, &id.to_string()).await;
                     return Ok(());
                 }
                 Err(e) => {
@@ -374,28 +378,36 @@ pub async fn handle_requests(
 }
 
 // We should return the file and have it played somewhere else
-async fn download_song(sink: &Sink, id: String) -> Result<()> {
+async fn just_download(response: reqwest::Response, id: String) -> Result<BufReader<File>> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mut file = tokio::fs::File::create(&file_name).await?;
 
+    let content = response.bytes().await?;
+    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
+    println!("Downloaded audio to: {}", file_name);
+    let mp3 = match File::open(format!("{}", file_name)) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Error opening sound file: {}", e);
+            return Err(anyhow!("Error opening sound file: {}", e))
+        }
+    };
+    let file = BufReader::new(mp3);
+            
+   return Ok(file);
+}
+
+async fn play_and_download(sink: &Sink, id: &String) -> Result<()> {
+    let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id.as_str());
+    
     let mut response;
     loop {
-        let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
         println!("Attempting to Download song at: {}", cdn_url);
         response = reqwest::get(&cdn_url).await?;
         if response.status().is_success() {
-            let content = response.bytes().await?;
-            tokio::io::copy(&mut content.as_ref(), &mut file).await?;
-            println!("Downloaded audio to: {}", file_name);
-            let mp3 = match File::open(format!("{}", file_name)) {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!("Error opening sound file: {}", e);
-                    continue;
-                }
-            };
 
-            let file = BufReader::new(mp3);
+            let file = just_download(response, id.to_string()).await?;
+            
             sink.set_volume(0.2);
             let sound = match Decoder::new(BufReader::new(file)) {
                 Ok(v) => v,
@@ -406,9 +418,6 @@ async fn download_song(sink: &Sink, id: String) -> Result<()> {
             };
 
             sink.append(sound);
-            // sink.sleep_until_end();
-            // let sleep_time = time::Duration::from_millis(100);
-            // thread::sleep(sleep_time);
             break;
         }
 
