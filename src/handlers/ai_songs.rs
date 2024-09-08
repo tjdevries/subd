@@ -157,6 +157,34 @@ pub async fn handle_requests(
     let command = splitmsg[0].as_str();
 
     match command {
+        
+        "!reverb" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            let id = match splitmsg.get(1) {
+                Some(id) => id.as_str(),
+                None => return Ok(()),
+            };
+            println!("\tQueuing {}", id);
+            let info = format!("@{} added {} to Queue", msg.user_name, id);
+            let _ = send_message(&twitch_client, info).await;
+
+            let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
+            let file_name = format!("ai_songs/{}.mp3", id);
+            let mp3 = match File::open(&file_name) {
+                Ok(file) => file,
+                Err(e) => {
+               eprintln!("Error opening sound file: {}", e);
+                    return Ok(());
+                }
+            };
+
+            // Should this print a message to Twitch
+            let file = BufReader::new(mp3);
+            return play_sound_with_sink(sink, true, file).await;
+        }
         "!play" => {
             if _not_beginbot {
                 return Ok(());
@@ -182,7 +210,7 @@ pub async fn handle_requests(
 
             // Should this print a message to Twitch
             let file = BufReader::new(mp3);
-            return play_sound_with_sink(sink, file).await;
+            return play_sound_with_sink(sink, false, file).await;
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
@@ -313,17 +341,18 @@ pub async fn handle_requests(
 
 async fn play_sound_with_sink(
     sink: &Sink,
+    reverb: bool,
     file: BufReader<File>,
 ) -> Result<()> {
     let _sound = match Decoder::new(BufReader::new(file)) {
         Ok(v) => {
-            // 
-            // This Is Reverb on every sound
-            // let reverb = v.buffered().reverb(Duration::from_millis(70), 1.0);
-            // sink.append(reverb);
-            //
-            // This Is the Normie Version
-            sink.append(v);
+            if reverb {
+                let reverb = v.buffered().reverb(Duration::from_millis(70), 1.0);
+                sink.append(reverb);
+            } else {
+                sink.append(v);
+                return Ok(());
+            };
         },
         Err(e) => {
             eprintln!("Error decoding sound file: {}", e);
