@@ -1,11 +1,12 @@
 use crate::audio::play_sound;
+use rodio::{Decoder, Source};
+use std::time::Duration;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use reqwest::Client;
-use rodio::Decoder;
 use rodio::Sink;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -315,13 +316,15 @@ async fn play_sound_with_sink(
     file: BufReader<File>,
 ) -> Result<()> {
     let sound = match Decoder::new(BufReader::new(file)) {
-        Ok(v) => v,
+        Ok(v) => {
+            let reverb = v.buffered().reverb(Duration::from_millis(70), 1.0);
+            sink.append(reverb);
+        },
         Err(e) => {
             eprintln!("Error decoding sound file: {}", e);
             return Err(anyhow!("Error decoding sound file: {}", e));
         }
     };
-    sink.append(sound);
 
     // This could
     // This could be a message
