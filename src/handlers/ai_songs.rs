@@ -198,12 +198,11 @@ pub async fn handle_requests(
             let info = format!("@{} added {} to Queue", msg.user_name, id);
             let _ = send_message(&twitch_client, info).await;
 
-            let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
             let file_name = format!("ai_songs/{}.mp3", id);
             let mp3 = match File::open(&file_name) {
                 Ok(file) => file,
                 Err(e) => {
-               eprintln!("Error opening sound file: {}", e);
+                    eprintln!("Error opening sound file: {}", e);
                     return Ok(());
                 }
             };
