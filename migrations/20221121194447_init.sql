@@ -42,6 +42,12 @@ CREATE TABLE user_roles (
   -- ...
 );
 
+CREATE TABLE suno_request ()
+  user_id UUID UNIQUE NOT NULL references users,
+  request TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE user_theme_songs (
     user_id UUID UNIQUE NOT NULL references users,
     song BYTEA NOT NULL
