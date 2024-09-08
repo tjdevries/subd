@@ -42,7 +42,7 @@ either = "1.6.1"
 # rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
 # rodio = { git = "https://github.com/RustAudio/rodio", rev = "e9a85ec2543d5d9689e8530712b4a6b15af8c7e8", default-features = false, features = [ "symphonia-all" ] }
 
-# Fixes skip bug
+# Fixes skip bug skip_one
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
 
 # rodio = { version = "0.19.0", default-features = false, features = [ "symphonia-all" ] }
