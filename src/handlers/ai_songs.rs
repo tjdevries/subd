@@ -179,15 +179,15 @@ pub async fn handle_requests(
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
 
-    let is_mod = msg.roles.is_twitch_mod();
-    let is_vip = msg.roles.is_twitch_vip();
-    let is_sub = msg.roles.is_twitch_sub();
+    // let is_mod = msg.roles.is_twitch_mod();
+    // let is_vip = msg.roles.is_twitch_vip();
+    // let is_sub = msg.roles.is_twitch_sub();
 
     let command = splitmsg[0].as_str();
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
-        "!create_song" => {
+        "!create_song" | "!song" => {
             // if !is_sub && !is_vip && !is_mod && _not_beginbot {
             //     return Ok(());
             // }
@@ -211,7 +211,7 @@ pub async fn handle_requests(
                     )
                     .await?;
 
-                    return download_and_play(sink, &id.to_string()).await;
+                    download_and_play(sink, &id.to_string()).await
                 }
                 Err(e) => {
                     // TODO: Explore
@@ -227,7 +227,10 @@ pub async fn handle_requests(
                 return Ok(());
             }
 
-            let id = splitmsg[1].as_str();
+            let id = match splitmsg.get(1) {
+                Some(id) => id.as_str(),
+                None => return Ok(()),
+            };
             return download_and_play(sink, &id.to_string()).await;
         }
 
@@ -236,13 +239,13 @@ pub async fn handle_requests(
                 return Ok(());
             }
 
-            // TODO: We shouldn't crash on this!
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
 
             println!("\tQueuing {}", id);
+
             let file_name = format!("ai_songs/{}.mp3", id);
             let mp3 = match File::open(format!("{}", file_name)) {
                 Ok(v) => v,
@@ -256,7 +259,7 @@ pub async fn handle_requests(
             sink.set_volume(0.3);
             return play_sound_with_sink(sink, file).await;
         }
-        
+
         "!pause" => {
             if _not_beginbot {
                 return Ok(());
@@ -267,7 +270,7 @@ pub async fn handle_requests(
             println!("\tDone Attempting to play!");
             return Ok(());
         }
-        
+
         "!unpause" => {
             if _not_beginbot {
                 return Ok(());
@@ -279,11 +282,9 @@ pub async fn handle_requests(
             return Ok(());
         }
 
-
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
         // ~~~~~ AUXILARY COMMANDS ~~~~ //
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-        
         "!speedup" => {
             if _not_beginbot {
                 return Ok(());
@@ -380,7 +381,10 @@ async fn just_download(
     return Ok(file);
 }
 
-async fn play_sound_with_sink(sink: &Sink, file: BufReader<File>) -> Result<()> {
+async fn play_sound_with_sink(
+    sink: &Sink,
+    file: BufReader<File>,
+) -> Result<()> {
     let sound = match Decoder::new(BufReader::new(file)) {
         Ok(v) => v,
         Err(e) => {
@@ -389,7 +393,7 @@ async fn play_sound_with_sink(sink: &Sink, file: BufReader<File>) -> Result<()> 
         }
     };
     sink.append(sound);
-    return Ok(())
+    return Ok(());
 }
 
 async fn download_and_play(sink: &Sink, id: &String) -> Result<()> {
@@ -398,15 +402,19 @@ async fn download_and_play(sink: &Sink, id: &String) -> Result<()> {
     // TODO: Should we use a count instead?
     let mut response;
     loop {
-        println!("{} | Attempting to Download song at: {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), cdn_url);
+        println!(
+            "{} | Attempting to Download song at: {}",
+            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+            cdn_url
+        );
         response = reqwest::get(&cdn_url).await?;
 
         if response.status().is_success() {
             let file = just_download(response, id.to_string()).await?;
-            
+
             sink.set_volume(0.2);
             let _ = play_sound_with_sink(sink, file).await;
-            break
+            break;
         }
 
         // Sleep for 5 seconds before trying again
