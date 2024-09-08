@@ -174,12 +174,17 @@ pub async fn handle_requests(
 ) -> Result<()> {
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
+    
+    let is_mod = msg.roles.is_twitch_mod();
+    let is_vip = msg.roles.is_twitch_vip();
+    let is_sub = msg.roles.is_twitch_sub();
+
     let command = splitmsg[0].as_str();
     let prompt = splitmsg[1..].to_vec().join(" ");
 
     match command {
         "!song" => {
-            if _not_beginbot {
+            if !is_sub && !is_vip && !is_mod && _not_beginbot {
                 return Ok(());
             }
 
@@ -194,6 +199,7 @@ pub async fn handle_requests(
                 Ok(json_response) => {
                     println!("JSON Response: {:#?}", json_response);
 
+                    // TODO: download both songs
                     // Use status maybe eventually
                     let status = &json_response[0]["status"];
                     let id = &json_response[0]["id"];
@@ -202,7 +208,7 @@ pub async fn handle_requests(
                     tokio::fs::write(&tmp_file_path, &json_response.to_string()).await?;
 
                     let file_name =
-                        format!("ai_songs/{}.mp3", id);
+                        format!("ai_songs/{}.mp3", id.as_str().unwrap());
                     let mut file = tokio::fs::File::create(&file_name).await?;
 
                     let mut response;
@@ -225,7 +231,7 @@ pub async fn handle_requests(
 
                             
                             let file = BufReader::new(mp3);
-                            sink.set_volume(0.5);
+                            sink.set_volume(0.1);
                             let sound = match Decoder::new(BufReader::new(file)) {
                                 Ok(v) => v,
                                 Err(e) => {
@@ -238,7 +244,6 @@ pub async fn handle_requests(
                             sink.sleep_until_end();
                             let sleep_time = time::Duration::from_millis(100);
                             thread::sleep(sleep_time);
-                            // We need to play the song here
                             break;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
