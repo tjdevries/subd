@@ -433,6 +433,20 @@ async fn main() -> Result<()> {
                     obs_client,
                     twitch_client,
                 });
+
+                let obs_client = create_obs_client().await?;
+                let twitch_config = get_chat_config();
+                let (_, twitch_client) = TwitchIRCClient::<
+                    SecureTCPTransport,
+                    StaticLoginCredentials,
+                >::new(twitch_config);
+                event_loop.push(
+                    handlers::ai_songs_downloader::AISongsDownloader {
+                        pool: pool.clone(),
+                        obs_client,
+                        twitch_client,
+                    },
+                );
             }
 
             _ => {
