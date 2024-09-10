@@ -132,6 +132,16 @@ impl EventHandler for AISongsHandler {
     }
 }
 
+async fn get_audio_information(id: &str) -> Result<SunoResponse> {
+    let base_url = "https://api.suno.ai"; // Replace with the actual base URL
+    let url = format!("{}/api/get?ids={}", base_url, id);
+    
+    let client = reqwest::Client::new();
+    let response = client.get(&url).send().await?;
+    let suno_response: Vec<SunoResponse> = response.json().await?;
+    
+    suno_response.into_iter().next().ok_or_else(|| anyhow!("No audio information found"))
+}
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
@@ -157,6 +167,17 @@ pub async fn handle_requests(
     let command = splitmsg[0].as_str();
 
     match command {
+        "!info" => {
+            let id = match splitmsg.get(1) {
+                Some(id) => id.as_str(),
+                None => return Ok(()),
+            };
+            
+            let res = get_audio_information(id).await?;
+            println!("Suno Response: {:?}", res);
+            // We query for info
+            return Ok(())
+        }
         
         "!reverb" => {
             if _not_beginbot {
