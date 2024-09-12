@@ -10,12 +10,11 @@ use sqlx::PgPool;
 // use rodio::Decoder;
 // use rodio::Sink;
 use std::fs;
-use std::io::Cursor;
-use std::time;
-use url::Url;
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Cursor;
 use std::thread;
+use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
@@ -23,6 +22,7 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use url::Url;
 
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
@@ -177,7 +177,7 @@ pub async fn handle_requests(
         }
 
         "!create_song" | "!song" => {
-            println!("It's Song time!");
+            println!("\tIt's Song time!");
             let data = AudioGenerationData {
                 prompt,
                 make_instrumental: false,
@@ -188,32 +188,20 @@ pub async fn handle_requests(
                 Ok(json_response) => {
                     // There is a better way of doing this
                     println!("JSON Response: {:#?}", json_response);
-
-                    let id = &json_response[0]["id"].as_str().unwrap();
-                    tokio::fs::write(
-                        format!("tmp/suno_responses/{}.json", id),
-                        &json_response.to_string(),
-                    )
-                    .await?;
-                    let _ = download_and_play(
+                    let _ = parse_suno_response_download_and_play(
                         twitch_client,
                         tx,
+                        json_response.clone(),
+                        0,
                         msg.user_name.clone(),
-                        &id.to_string(),
                     )
                     .await;
-
-                    let id = &json_response[1]["id"].as_str().unwrap();
-                    tokio::fs::write(
-                        format!("tmp/suno_responses/{}.json", id),
-                        &json_response.to_string(),
-                    )
-                    .await?;
-                    download_and_play(
+                    parse_suno_response_download_and_play(
                         twitch_client,
                         tx,
-                        msg.user_name,
-                        &id.to_string(),
+                        json_response,
+                        1,
+                        msg.user_name.clone(),
                     )
                     .await
                 }
@@ -284,9 +272,6 @@ async fn download_and_play(
 
                     let info = format!("@{}'s song {} added to the Queue. Begin needs to !skip to get to your position faster", user_name, id.to_string());
 
-                    // Send a Message to Twitch that the song is queued
-                    // Send a UserMessage so the song is added to the Queue using the !play command
-                    let _ = send_message(&twitch_client, info).await;
                     let _ =
                         tx.send(Event::UserMessage(subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
@@ -303,6 +288,22 @@ async fn download_and_play(
         })
     });
     return Ok(());
+}
+
+async fn parse_suno_response_download_and_play(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    tx: &broadcast::Sender<Event>,
+    json_response: serde_json::Value,
+    index: usize,
+    user_name: String,
+) -> Result<()> {
+    let id = &json_response[index]["id"].as_str().unwrap();
+    tokio::fs::write(
+        format!("tmp/suno_responses/{}.json", id),
+        &json_response.to_string(),
+    )
+    .await?;
+    download_and_play(twitch_client, tx, user_name, &id.to_string()).await
 }
 
 // We should return the file and have it played somewhere else

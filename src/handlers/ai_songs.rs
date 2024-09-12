@@ -1,6 +1,4 @@
 use crate::audio::play_sound;
-use rodio::{Decoder, Source};
-use std::time::Duration;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -8,6 +6,7 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use reqwest::Client;
 use rodio::Sink;
+use rodio::{Decoder, Source};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::fs;
@@ -16,9 +15,10 @@ use std::io::BufReader;
 use std::io::Cursor;
 use std::thread;
 use std::time;
+use std::time::Duration;
 use subd_types::{Event, UserMessage};
-use twitch_chat::client::send_message;
 use tokio::sync::broadcast;
+use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -132,24 +132,51 @@ impl EventHandler for AISongsHandler {
     }
 }
 
+async fn play_audio(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    sink: &Sink,
+    id: &str,
+    user_name: &str,
+    reverb: bool,
+) -> Result<()> {
+    println!("\tQueuing {}", id);
+    let info = format!("@{} added {} to Queue", user_name, id);
+    let _ = send_message(&twitch_client, info).await;
+
+    let file_name = format!("ai_songs/{}.mp3", id);
+    let mp3 = match File::open(&file_name) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Error opening sound file: {}", e);
+            return Ok(());
+        }
+    };
+
+    let file = BufReader::new(mp3);
+    return play_sound_with_sink(sink, reverb, file).await;
+}
+
 async fn get_audio_information(id: &str) -> Result<SunoResponse> {
-    let base_url = "https://api.suno.ai"; // Replace with the actual base URL
+    let base_url = "http://localhost:3000";
+    // This actually works
+    // let base_url = "https://api.suno.ai";
     let url = format!("{}/api/get?ids={}", base_url, id);
-    
+
     let client = reqwest::Client::new();
     let response = client.get(&url).send().await?;
     let suno_response: Vec<SunoResponse> = response.json().await?;
-    
-    suno_response.into_iter().next().ok_or_else(|| anyhow!("No audio information found"))
+
+    suno_response
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow!("No audio information found"))
 }
+
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     sink: &Sink,
-    twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     _pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -172,13 +199,13 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            
+
             let res = get_audio_information(id).await?;
             println!("Suno Response: {:?}", res);
             // We query for info
-            return Ok(())
+            return Ok(());
         }
-        
+
         "!reverb" => {
             if _not_beginbot {
                 return Ok(());
@@ -186,26 +213,29 @@ pub async fn handle_requests(
 
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
-                None => return Ok(()),
-            };
-            println!("\tQueuing {}", id);
-            let info = format!("@{} added {} to Queue", msg.user_name, id);
-            let _ = send_message(&twitch_client, info).await;
-
-            let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
-            let file_name = format!("ai_songs/{}.mp3", id);
-            let mp3 = match File::open(&file_name) {
-                Ok(file) => file,
-                Err(e) => {
-               eprintln!("Error opening sound file: {}", e);
+                None => {
+                    println!("No ID Found to reverb to add reverb");
                     return Ok(());
                 }
             };
 
-            // Should this print a message to Twitch
-            let file = BufReader::new(mp3);
-            return play_sound_with_sink(sink, true, file).await;
+            // TODO: relook at reverb
+            // sink.try_seek() and you might need the position before you move it
+            // add_source(song, reverb) ->sink.skip_one(); sink.seek(sink.get_pos())
+            println!("\tQueuing w/ Reverb {}", id);
+            let reverb = true;
+            return play_audio(
+                &twitch_client,
+                &sink,
+                id,
+                &msg.user_name,
+                reverb,
+            )
+            .await;
         }
+        // ================= //
+        // Playback Controls //
+        // ================= //
         "!play" => {
             if _not_beginbot {
                 return Ok(());
@@ -215,27 +245,22 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            println!("\tQueuing {}", id);
-            let info = format!("@{} added {} to Queue", msg.user_name, id);
+
+            let reverb = false;
+
+            let audio_info = get_audio_information(id).await?;
+            let info = format!("Audio Info: {}", audio_info.title);
             let _ = send_message(&twitch_client, info).await;
-
-            let file_name = format!("ai_songs/{}.mp3", id);
-            let mp3 = match File::open(&file_name) {
-                Ok(file) => file,
-                Err(e) => {
-                    eprintln!("Error opening sound file: {}", e);
-                    return Ok(());
-                }
-            };
-
-            // Should this print a message to Twitch
-            let file = BufReader::new(mp3);
-            return play_sound_with_sink(sink, false, file).await;
+            return play_audio(
+                &twitch_client,
+                &sink,
+                id,
+                &msg.user_name,
+                reverb,
+            )
+            .await;
         }
 
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-        // ~~~~~ AUXILARY COMMANDS ~~~~ //
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
         "!pause" => {
             if _not_beginbot {
                 return Ok(());
@@ -255,51 +280,6 @@ pub async fn handle_requests(
             println!("\tAttempting to play!");
             sink.play();
             println!("\tDone Attempting to play!");
-            return Ok(());
-        }
-
-        "!speedup" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tSpeeding up!");
-            sink.set_speed(sink.speed() * 1.25);
-            return Ok(());
-        }
-
-        "!up" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tTurning it Up!");
-            sink.set_volume(sink.volume() * 1.20);
-            return Ok(());
-        }
-
-        "!down" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tTurning it Down!");
-            sink.set_volume(sink.volume() * 0.80);
-            return Ok(());
-        }
-
-        "!normal" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tNormal Time");
-            sink.set_speed(1.0);
-            return Ok(());
-        }
-
-        "!slowdown" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tSlowin down!");
-            sink.set_speed(sink.speed() * 0.75);
             return Ok(());
         }
 
@@ -326,38 +306,99 @@ pub async fn handle_requests(
             return Ok(());
         }
 
+        // =============== //
+        // Speed Controls //
+        // =============== //
+        "!nightcore" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\nNightcore Time");
+            sink.set_speed(2.0);
+            return Ok(());
+        }
+
+        "!doom" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\nDoom Time");
+            sink.set_speed(0.5);
+            return Ok(());
+        }
+
+        "!normal" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tNormal Time");
+            sink.set_speed(1.0);
+            return Ok(());
+        }
+
+        "!speedup" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tSpeeding up!");
+            sink.set_speed(sink.speed() * 1.25);
+            return Ok(());
+        }
+
+        "!slowdown" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tSlowin down!");
+            sink.set_speed(sink.speed() * 0.75);
+            return Ok(());
+        }
+
+        // =============== //
+        // Volume Controls //
+        // =============== //
+        "!up" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tTurning it Up!");
+            sink.set_volume(sink.volume() * 1.20);
+            return Ok(());
+        }
+
+        "!down" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tTurning it Down!");
+            sink.set_volume(sink.volume() * 0.80);
+            return Ok(());
+        }
+
+        "!coding_volume" | "!quiet" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tTurning it down so we can code!");
+            sink.set_volume(0.1);
+            return Ok(());
+        }
+
+        "!party_volume" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+            println!("\tParty Volume");
+            sink.set_volume(1.0);
+            return Ok(());
+        }
+
         // Reverb
         _ => {
             return Ok(());
         }
     }
 }
-
-// pub fn add_reverb(local_audio_path: String) -> Result<String> {
-//     let audio_dest_path = add_postfix_to_filepath(
-//         local_audio_path.clone(),
-//         "_reverb".to_string(),
-//     );
-//     Command::new("sox")
-//         .args(&[
-//             "-t",
-//             "wav",
-//             &local_audio_path,
-//             &audio_dest_path,
-//             "gain",
-//             "-2",
-//             "reverb",
-//             "70",
-//             "100",
-//             "50",
-//             "100",
-//             "10",
-//             "2",
-//         ])
-//         .status()
-//         .expect("Failed to execute sox");
-//     Ok(audio_dest_path)
-// }
 
 async fn play_sound_with_sink(
     sink: &Sink,
@@ -367,13 +408,14 @@ async fn play_sound_with_sink(
     let _sound = match Decoder::new(BufReader::new(file)) {
         Ok(v) => {
             if reverb {
-                let reverb = v.buffered().reverb(Duration::from_millis(70), 1.0);
+                let reverb =
+                    v.buffered().reverb(Duration::from_millis(70), 1.0);
                 sink.append(reverb);
             } else {
                 sink.append(v);
                 return Ok(());
             };
-        },
+        }
         Err(e) => {
             eprintln!("Error decoding sound file: {}", e);
             return Err(anyhow!("Error decoding sound file: {}", e));
