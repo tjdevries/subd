@@ -1,18 +1,18 @@
 use crate::openai::dalle;
-use std::io::Write;
-use std::fs::File;
-use std::path::Path;
-use anyhow::anyhow;
-use base64::engine;
-use base64::{engine::general_purpose, Engine as _};
 use crate::telephone;
+use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
+use base64::engine;
+use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rand::seq::SliceRandom;
 use rodio::*;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use std::thread;
 use std::time;
 use subd_types::Event;
@@ -147,17 +147,15 @@ struct FalResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct TurboImageResult {
-
     // That fact this is string is wrong?
     url: String,
     width: u32,
     height: u32,
 }
 
-use std::error::Error;
 use regex::Regex;
+use std::error::Error;
 // use base64::decode;
-
 
 // ================
 
@@ -185,7 +183,8 @@ async fn process_images(timestamp: &str, json_path: &str) -> Result<()> {
     let data: Data = serde_json::from_str(&json_data)?;
 
     // Regex to match data URLs
-    let data_url_regex = Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
+    let data_url_regex =
+        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
 
     for (index, image) in data.images.iter().enumerate() {
         // Match the data URL and extract MIME type and base64 data
@@ -204,13 +203,13 @@ async fn process_images(timestamp: &str, json_path: &str) -> Result<()> {
             };
 
             // We might want to look for an ID here or make sure we are using the same json
-            let filename = format!("tmp/fal_images/{}.{}", timestamp, extension);
+            let filename =
+                format!("tmp/fal_images/{}.{}", timestamp, extension);
 
             // Save the image bytes to a file
             let mut file = File::create(&filename)?;
             file.write_all(&image_bytes)?;
 
-            
             let filename = format!("./tmp/dalle-1.png");
             let _ = File::create(&Path::new(&filename))
                 .map(|mut f| f.write_all(&image_bytes))
@@ -225,10 +224,38 @@ async fn process_images(timestamp: &str, json_path: &str) -> Result<()> {
     Ok(())
 }
 
+async fn create_turbo_image(prompt: String) -> Result<()> {
+    // Can I move this into it's own function that takes a prompt?
+    // So here is as silly place I can run fal
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    // let model = "fal-ai/stable-cascade";
+    let model = "fal-ai/fast-turbo-diffusion";
+
+    let res = client
+        .run(
+            model,
+            serde_json::json!({
+                "prompt": prompt,
+                "image_size": "landscape_16_9",
+            }),
+        )
+        .await
+        .unwrap();
+
+    let raw_json = res.bytes().await.unwrap();
+    let timestamp = chrono::Utc::now().timestamp();
+    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+    tokio::fs::write(&json_path, &raw_json).await.unwrap();
+    let _ = process_images(&timestamp.to_string(), &json_path).await;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[tokio::test]
     async fn test_parsing_fal() {
         // Saved w/ Text
@@ -237,75 +264,14 @@ mod tests {
         // Saved with bytes
         let timestamp = "1726347150";
         let tmp_file_path = format!("tmp/fal_responses/{}.json", timestamp);
-        
+
         process_images(&timestamp, &tmp_file_path).await.unwrap();
-            
-        // Read the JSON file
-        // let json_content = tokio::fs::read_to_string(&tmp_file_path).await.unwrap();
-        // 
-        // // Parse the JSON into a generic Value
-        // let parsed: FalResponse = serde_json::from_str(&json_content).unwrap();
-        // // let parsed: serde_json::Value = serde_json::from_str(&json_content).unwrap();
-        // 
-        // println!("\n\n--------");
-        // for o in parsed.images {
-        //     let image_data = general_purpose::STANDARD
-        //         .decode(o.url);
-        //         // .map_err(|e| anyhow!(e.to_string()));
-        //         // .and_then(|v| Ok(v));
-        //     //
-        //     println!("Image Data {:?}", image_data);
-        //     
-        //     // let archive_file = format!("tmp/fal_images/{}.png", chrono::Utc::now().timestamp());
-        //     // let _ = File::create(&Path::new(&archive_file))
-        //     //     .map(|mut f| f.write_all(&image_data))
-        //     //         .with_context(|| format!("Error creating: {}", archive_file)).unwrap();
-        //     }
-        //     
-        // // You can now access the parsed data
-        // // println!("Parsed JSON: {:?}", parsed);
-        // 
-        // // If you want to parse into a specific struct, you can do:
-        // // let output: Output = serde_json::from_str(&json_content).unwrap();
-        // // println!("Parsed Output: {:?}", output);
     }
-    
+
     #[tokio::test]
     async fn test_fal() {
-        // So here is as silly place I can run fal
-         let client = FalClient::new(ClientCredentials::from_env());
-
-        // let model = "fal-ai/stable-cascade";
-        let model = "fal-ai/fast-turbo-diffusion";
-        
-        let res = client
-            .run(
-                model,
-                serde_json::json!({
-                    "prompt": "A Orange lego Cat eating lego lasagna",
-                }),
-            )
-            .await
-            .unwrap();
-
-        let raw_json = res.bytes().await.unwrap();
-        let timestamp = chrono::Utc::now().timestamp();
-        let json_path = format!("tmp/fal_responses/{}.json", timestamp);
-        tokio::fs::write(&json_path, &raw_json).await.unwrap();
-        let _ = process_images(&timestamp.to_string(), &json_path).await;
-        
-
-        // so now we could just process the image here
-
-        // let output: Output = serde_json::from_str(&raw_json).unwrap();
-
-        // So we don't have URL here
-        // let url = output.images[0].url.clone();
-        // let filename = url.split('/').last().unwrap();
-
-        // download_image(&url, format!("{}/{}", "images", filename).as_str())
-        //     .await
-        //     .unwrap();
+        let prompt = "Magical Cat wearing a wizard hat";
+        create_turbo_image(prompt.to_string()).await;
     }
 
     #[test]
