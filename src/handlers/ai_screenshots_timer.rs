@@ -114,9 +114,53 @@ pub fn generate_random_prompt() -> String {
     selected_choice.to_string()
 }
 
+// =================================================
+
+use fal_rust::{
+    client::{ClientCredentials, FalClient},
+    utils::download_image,
+};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ImageResult {
+    url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Output {
+    images: Vec<ImageResult>,
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    #[tokio::test]
+    async fn test_fal() {
+        // So here is as silly place I can run fal
+         let client = FalClient::new(ClientCredentials::from_env());
+
+        let res = client
+            .run(
+                "fal-ai/stable-cascade",
+                serde_json::json!({
+                    "prompt": "A large waterfall in the middle of a volcano, surrounded by lush greenery and children's playground equipment.",
+                }),
+            )
+            .await
+            .unwrap();
+
+        let output: Output = res.json::<Output>().await.unwrap();
+
+        let url = output.images[0].url.clone();
+        let filename = url.split('/').last().unwrap();
+
+        download_image(&url, format!("{}/{}", "images", filename).as_str())
+            .await
+            .unwrap();
+    }
 
     #[test]
     fn test_screenshot_variation() {

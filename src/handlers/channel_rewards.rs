@@ -445,6 +445,44 @@ fn find_easing_indicies(
     (*easing_type_index, *easing_function_index)
 }
 
+pub fn build_wide_request(
+    splitmsg: Vec<String>,
+    arg_positions: Vec<WideArgPosition>,
+) -> Result<WideRequest, String> {
+    let default_source = "begin".to_string();
+    let default_scene = PRIMARY_CAM_SCENE.to_string();
+
+    let mut req = WideRequest {
+        ..Default::default()
+    };
+
+    for (index, arg) in arg_positions.iter().enumerate() {
+        match arg {
+            WideArgPosition::Source(source) => {
+                req.source = splitmsg.get(index).unwrap_or(source).to_string()
+            }
+            WideArgPosition::X(x) => {
+                if let Some(x) = splitmsg
+                    .get(index)
+                    .and_then(|m| Some(m.parse::<f32>().unwrap_or(100.0)))
+                {
+                    req.x = x
+                }
+            }
+            WideArgPosition::Duration(duration) => {
+                if let Some(duration) = splitmsg
+                    .get(index)
+                    .and_then(|m| Some(m.parse::<u64>().unwrap_or(3000)))
+                {
+                    req.duration = duration
+                }
+            }
+        }
+    }
+
+    return Ok(req);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -484,42 +522,4 @@ mod tests {
             find_easing_indicies("ease-in".to_string(), "bounce".to_string());
         assert_eq!(res, (1, 9));
     }
-}
-
-pub fn build_wide_request(
-    splitmsg: Vec<String>,
-    arg_positions: Vec<WideArgPosition>,
-) -> Result<WideRequest, String> {
-    let default_source = "begin".to_string();
-    let default_scene = PRIMARY_CAM_SCENE.to_string();
-
-    let mut req = WideRequest {
-        ..Default::default()
-    };
-
-    for (index, arg) in arg_positions.iter().enumerate() {
-        match arg {
-            WideArgPosition::Source(source) => {
-                req.source = splitmsg.get(index).unwrap_or(source).to_string()
-            }
-            WideArgPosition::X(x) => {
-                if let Some(x) = splitmsg
-                    .get(index)
-                    .and_then(|m| Some(m.parse::<f32>().unwrap_or(100.0)))
-                {
-                    req.x = x
-                }
-            }
-            WideArgPosition::Duration(duration) => {
-                if let Some(duration) = splitmsg
-                    .get(index)
-                    .and_then(|m| Some(m.parse::<u64>().unwrap_or(3000)))
-                {
-                    req.duration = duration
-                }
-            }
-        }
-    }
-
-    return Ok(req);
 }
