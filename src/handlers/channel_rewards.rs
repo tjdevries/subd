@@ -1,13 +1,13 @@
 use crate::ai_scenes;
+use crate::constants;
 use crate::move_transition;
 use crate::move_transition_bootstrap;
 use crate::move_transition_effects;
-use crate::constants;
-use crate::obs_combo;
 use crate::obs::obs;
 use crate::obs::obs_hotkeys;
 use crate::obs::obs_scenes;
 use crate::obs::obs_source;
+use crate::obs_combo;
 use crate::openai::openai;
 use crate::sdf_effects;
 use crate::stream_character;
@@ -272,7 +272,7 @@ pub async fn handle_obs_commands(
             // WE could make this more dynamic
             for scene in ai_scenes.scenes {
                 println!("Scene: {:?}", scene);
-                
+
                 if scene.reward_title == "Ask Melkey a Question" {
                     let cost = scene.cost * 10;
                     let res = reward_manager
@@ -486,11 +486,6 @@ pub fn build_wide_request(
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    #[tokio::test]
-    async fn test_fal() {
-        assert!(false);
-    }
 
     #[tokio::test]
     async fn test_screenshotting() {
