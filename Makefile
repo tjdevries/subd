@@ -5,7 +5,7 @@ good:
 	RUSTFLAGS=-Awarnings cargo build --bin begin
 	
 ff:
-	cargo test test_obs_sources -- --nocapture
+	cargo test test_fal -- --nocapture
 	
 ft:
 	cargo test test_transform_filters -- --nocapture

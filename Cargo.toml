@@ -39,6 +39,8 @@ axum = "0.5.4"
 futures = "0.3.21"
 obws = "0.10"
 either = "1.6.1"
+# fal-rust = { git = "https://github.com/davidbegin/fal-rust" }
+fal-rust = { path = "../fal-rust" }
 # rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }
 # rodio = { git = "https://github.com/RustAudio/rodio", rev = "e9a85ec2543d5d9689e8530712b4a6b15af8c7e8", default-features = false, features = [ "symphonia-all" ] }
 

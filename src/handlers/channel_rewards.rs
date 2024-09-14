@@ -448,6 +448,11 @@ fn find_easing_indicies(
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    #[tokio::test]
+    async fn test_fal() {
+        assert!(false);
+    }
 
     #[tokio::test]
     async fn test_screenshotting() {

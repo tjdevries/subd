@@ -249,7 +249,13 @@ pub async fn handle_requests(
             let reverb = false;
 
             let audio_info = get_audio_information(id).await?;
-            let info = format!("Audio Info: {}", audio_info.title);
+            let info = format!(
+                "Audio for @{}: {} | {}",
+                msg.user_name,
+                audio_info.title,
+                audio_info.metadata.tags,
+            );
+            
             let _ = send_message(&twitch_client, info).await;
             return play_audio(
                 &twitch_client,
@@ -314,7 +320,7 @@ pub async fn handle_requests(
                 return Ok(());
             }
             println!("\nNightcore Time");
-            sink.set_speed(2.0);
+            sink.set_speed(1.5);
             return Ok(());
         }
 
@@ -449,7 +455,7 @@ mod tests {
         let response = reqwest::get(cdn_url).await.unwrap();
         let mut file = tokio::fs::File::create(file_name).await.unwrap();
         let mut content = Cursor::new(response.bytes().await.unwrap());
-        std::io::copy(&mut content, &mut file).unwrap();
+        // std::io::copy(&mut content, &mut file).unwrap();
 
         // assert!(!suno_responses.is_empty());
         // assert_eq!(suno_responses[0].status, "completed");
