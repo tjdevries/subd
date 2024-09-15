@@ -51,10 +51,37 @@ impl EventHandler for FalHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        // loop {
-        //    // We want to
-        // }
-        return Ok(());
+        loop {
+            let event = rx.recv().await?;
+            let msg = match event {
+                Event::UserMessage(msg) => msg,
+                _ => continue,
+            };
+
+            let splitmsg = msg
+                .contents
+                .split(" ")
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            match handle_fal_commands(
+                &tx,
+                &self.obs_client,
+                &self.twitch_client,
+                &self.pool,
+                &self.sink,
+                splitmsg,
+                msg,
+            )
+            .await
+            {
+                Ok(_) => {}
+                Err(err) => {
+                    eprintln!("Error: {err}");
+                    continue;
+                }
+            }
+        }
     }
 }
 
@@ -77,14 +104,32 @@ pub async fn handle_fal_commands(
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
+    let word_count = msg.contents.split_whitespace().count();
+    let mut theme = "";
 
     match command {
+        "!theme" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            // I should be saving to a database
+            // theme = &splitmsg
+            //     .iter()
+            //     .skip(1)
+            //     .map(AsRef::as_ref)
+            //     .collect::<Vec<&str>>()
+            //     .join(" ");
+        }
+
         "!fal" => {}
 
         _ => {
-            // This is wierd spot, but whatever, just testing
-            let prompt = msg.contents;
-            create_turbo_image(prompt).await?;
+            if !command.starts_with('!') && word_count > 1 {
+                let prompt = msg.contents;
+                let final_prompt = format!("{} {}", theme, prompt);
+                create_turbo_image(final_prompt).await?;
+            }
         }
     };
 

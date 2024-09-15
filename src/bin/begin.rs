@@ -109,6 +109,7 @@ async fn main() -> Result<()> {
             "dynamic_stream_background".to_string(),
             "channel_rewards".to_string(),
             "ai_songs".to_string(),
+            "turbo_bg".to_string(),
         ]
     } else {
         args.enable
@@ -417,6 +418,23 @@ async fn main() -> Result<()> {
                         obs_client,
                     },
                 );
+            }
+
+            "turbo_bg" => {
+                println!("Turbo BG time");
+                let obs_client = create_obs_client().await?;
+                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let twitch_config = get_chat_config();
+                let (_, twitch_client) = TwitchIRCClient::<
+                    SecureTCPTransport,
+                    StaticLoginCredentials,
+                >::new(twitch_config);
+                event_loop.push(handlers::fal_handler::FalHandler {
+                    pool: pool.clone(),
+                    sink,
+                    obs_client,
+                    twitch_client,
+                });
             }
 
             "ai_songs" => {
