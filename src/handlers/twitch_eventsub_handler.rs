@@ -359,6 +359,7 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     ai_scenes_map: HashMap<String, &ai_scene::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
+    // These aren't all AI scenes
     println!("HANDLING AI SCENE!");
 
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
@@ -367,6 +368,8 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
 
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
+
+    // So if we have the reward title here we can filter
 
     let user_input = match event.user_input.clone() {
         Some(input) => input,
@@ -385,6 +388,18 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     )
     .await;
 
+    if command == "Set Theme"  {
+        println!("Setting the Theme: {}", &user_input);
+        twitch_stream_state::set_ai_background_theme(&pool, &user_input).await?;
+        // we need from the othere theme
+    }
+
+    // I don't understand what this is doing
+    // we are just saving and finding above
+    //
+    // we are looking through the scenes to match here
+    //
+    // if we don't have 
     match ai_scenes_map.get(&command) {
         Some(scene) => {
             let user_input = event.user_input.unwrap();
