@@ -388,9 +388,10 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     )
     .await;
 
-    if command == "Set Theme"  {
+    if command == "Set Theme" {
         println!("Setting the Theme: {}", &user_input);
-        twitch_stream_state::set_ai_background_theme(&pool, &user_input).await?;
+        twitch_stream_state::set_ai_background_theme(&pool, &user_input)
+            .await?;
         // we need from the othere theme
     }
 
@@ -399,7 +400,7 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     //
     // we are looking through the scenes to match here
     //
-    // if we don't have 
+    // if we don't have
     match ai_scenes_map.get(&command) {
         Some(scene) => {
             let user_input = event.user_input.unwrap();

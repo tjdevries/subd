@@ -422,10 +422,9 @@ async fn main() -> Result<()> {
 
             "turbo_bg" => {
                 println!("Turbo BG time");
-                
+
                 let obs_client = create_obs_client().await?;
-                
-                
+
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,
@@ -436,7 +435,7 @@ async fn main() -> Result<()> {
                 // let (sink, mut queue_rx) = rodio::Sink::new_idle();
                 // println!("{:?}", queue_rx.next());
                 // stream_handle.play_raw(queue_rx)?;
-                
+
                 event_loop.push(handlers::fal_handler::FalHandler {
                     // queue_rx: queue_rx,
                     pool: pool.clone(),

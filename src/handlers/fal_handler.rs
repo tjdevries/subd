@@ -1,5 +1,5 @@
-use crate::{constants, twitch_stream_state};
 use crate::audio;
+use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -53,7 +53,6 @@ impl EventHandler for FalHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -109,7 +108,6 @@ pub async fn handle_fal_commands(
     let command = splitmsg[0].as_str();
     let word_count = msg.contents.split_whitespace().count();
 
-    
     // THIS IS DUMB
     // let (_stream, stream_handle) =
     //     audio::get_output_stream("pulse").expect("stream handle");
@@ -119,7 +117,7 @@ pub async fn handle_fal_commands(
 
     match command {
         "!theme" => {
-            if _not_beginbot {
+            if _not_beginbot && !is_mod {
                 return Ok(());
             }
             let theme = &splitmsg
@@ -143,7 +141,7 @@ pub async fn handle_fal_commands(
                     twitch_stream_state::get_ai_background_theme(pool).await?;
                 let final_prompt = format!("{} {}", theme, prompt);
                 create_turbo_image(final_prompt).await?;
-                
+
                 // let theme = "Waifu";
                 // let final_prompt = format!("{} {}", theme, prompt);
                 // create_turbo_image(final_prompt).await?;
