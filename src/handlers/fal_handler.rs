@@ -1,9 +1,9 @@
+use crate::audio;
+use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
-use crate::audio;
-use crate::{constants, twitch_stream_state};
 use events::EventHandler;
 use mime_guess::MimeGuess;
 use obws::Client as OBSClient;
@@ -15,20 +15,21 @@ use serde_json::json;
 use std::io::Write;
 use std::path::Path;
 use subd_types::{Event, UserMessage};
+use tokio::time::{sleep, Duration};
 
 // Which do I need?
 // use std::fs::File;
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt; 
 use tokio::fs::File;
+use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 use tokio::sync::broadcast;
 
-use twitch_irc::{
-    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
-};
 use fal_rust::{
     client::{ClientCredentials, FalClient},
     utils::download_image,
+};
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
 #[derive(Deserialize)]
@@ -132,10 +133,29 @@ pub async fn handle_fal_commands(
 
         "!talk" => {
             // Replace with your local file paths specific to fal
-            let fal_image_file_path = "prime.jpg";
-            let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
-            
+            let fal_image_file_path = "green_prime.png";
+            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110651_zanuss_prime.wav";
+            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110588_ninja_tron_prime.wav";
+            let fal_audio_file_path =
+                "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
+
             handle_talk_command().await?;
+
+            let scene = "Primary";
+            let source = "prime-talking-video";
+            let _ = crate::obs::obs_source::set_enabled(
+                scene, source, false, obs_client,
+            )
+            .await;
+
+            // Not sure if I have to wait ofr how long to wait
+            sleep(Duration::from_millis(100)).await;
+
+            let _ = crate::obs::obs_source::set_enabled(
+                scene, source, true, obs_client,
+            )
+            .await;
 
             // // Read and encode the image file to a data URI for fal
             // let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
@@ -179,24 +199,38 @@ pub async fn handle_fal_commands(
 }
 
 async fn handle_talk_command() -> Result<()> {
+    let fal_image_file_path = "green_prime.png";
+    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110651_zanuss_prime.wav";
+
+    let fal_audio_file_path =
+        "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
     // Replace with your local file paths specific to fal
-    let fal_image_file_path = "prime.jpg";
-    let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+    // let fal_image_file_path = "prime.jpg";
+    // // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059427_carlvandergeest_prime.wav";
 
     // Read and encode the image file to a data URI for fal
-    let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
+    let fal_source_image_data_uri =
+        fal_encode_file_as_data_uri(fal_image_file_path).await?;
 
     // Read and encode the audio file to a data URI for fal
-    let fal_driven_audio_data_uri = fal_encode_file_as_data_uri(fal_audio_file_path).await?;
+    let fal_driven_audio_data_uri =
+        fal_encode_file_as_data_uri(fal_audio_file_path).await?;
 
     // Submit the request to fal and handle the result
-    match fal_submit_sadtalker_request(&fal_source_image_data_uri, &fal_driven_audio_data_uri).await
+    match fal_submit_sadtalker_request(
+        &fal_source_image_data_uri,
+        &fal_driven_audio_data_uri,
+    )
+    .await
     {
         Ok(fal_result) => {
             println!("fal Result: {}", fal_result);
 
             // Parse the fal_result JSON
-            let fal_result_json: serde_json::Value = serde_json::from_str(&fal_result)?;
+            let fal_result_json: serde_json::Value =
+                serde_json::from_str(&fal_result)?;
             // Extract the video URL
             if let Some(video_obj) = fal_result_json.get("video") {
                 if let Some(url_value) = video_obj.get("url") {
@@ -213,10 +247,11 @@ async fn handle_talk_command() -> Result<()> {
                         let timestamp = chrono::Utc::now().timestamp();
 
                         // Save the video to ./tmp/fal_videos
-                        let video_path = format!("./tmp/fal_videos/{}.mp4", timestamp);
+                        let video_path =
+                            format!("./tmp/fal_videos/{}.mp4", timestamp);
                         tokio::fs::write(&video_path, &video_bytes).await?;
                         println!("Video saved to {}", video_path);
-                        
+
                         let video_path = "./prime.mp4";
                         tokio::fs::write(&video_path, &video_bytes).await?;
                         println!("Video saved to {}", video_path);
@@ -250,7 +285,8 @@ async fn process_images(
     let data: FalData = serde_json::from_str(&json_data)?;
 
     // Regex to match data URLs
-    let data_url_regex = Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
+    let data_url_regex =
+        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
 
     for (index, image) in data.images.iter().enumerate() {
         // Match the data URL and extract MIME type and base64 data
@@ -269,39 +305,42 @@ async fn process_images(
             };
 
             // Construct the filename using the timestamp and extension
-            let filename = format!("tmp/fal_images/{}.{}", timestamp, extension);
+            let filename =
+                format!("tmp/fal_images/{}.{}", timestamp, extension);
 
             // Save the image bytes to a file asynchronously
-            let mut file = File::create(&filename)
-                .await
-                .with_context(|| format!("Error creating file: {}", filename))?;
-            file.write_all(&image_bytes)
-                .await
-                .with_context(|| format!("Error writing to file: {}", filename))?;
+            let mut file =
+                File::create(&filename).await.with_context(|| {
+                    format!("Error creating file: {}", filename)
+                })?;
+            file.write_all(&image_bytes).await.with_context(|| {
+                format!("Error writing to file: {}", filename)
+            })?;
 
             // **New Code Start**
             // Also save the image to "./tmp/dalle-1.png"
             let additional_filename = "./tmp/dalle-1.png";
-            let mut additional_file = File::create(additional_filename)
-                .await
-                .with_context(|| format!("Error creating file: {}", additional_filename))?;
-            additional_file
-                .write_all(&image_bytes)
-                .await
-                .with_context(|| format!("Error writing to file: {}", additional_filename))?;
+            let mut additional_file =
+                File::create(additional_filename).await.with_context(|| {
+                    format!("Error creating file: {}", additional_filename)
+                })?;
+            additional_file.write_all(&image_bytes).await.with_context(
+                || format!("Error writing to file: {}", additional_filename),
+            )?;
             println!("Also saved to {}", additional_filename);
             // **New Code End**
 
             // Optionally save the image to an additional location
             if let Some(extra_folder) = extra_save_folder {
-                let extra_filename = format!("{}/{}.{}", extra_folder, timestamp, extension);
-                let mut extra_file = File::create(&extra_filename)
-                    .await
-                    .with_context(|| format!("Error creating file: {}", extra_filename))?;
-                extra_file
-                    .write_all(&image_bytes)
-                    .await
-                    .with_context(|| format!("Error writing to file: {}", extra_filename))?;
+                let extra_filename =
+                    format!("{}/{}.{}", extra_folder, timestamp, extension);
+                let mut extra_file =
+                    File::create(&extra_filename).await.with_context(|| {
+                        format!("Error creating file: {}", extra_filename)
+                    })?;
+                extra_file.write_all(&image_bytes).await.with_context(
+                    || format!("Error writing to file: {}", extra_filename),
+                )?;
             }
 
             println!("Saved {}", filename);
@@ -398,12 +437,14 @@ async fn fal_submit_sadtalker_request(
     // Send a POST request to the fal 'sadtalker' API endpoint
     let fal_response = fal_client
         .run(
-             "fal-ai/sadtalker",
+            "fal-ai/sadtalker",
             serde_json::json!({
                 "source_image_url": fal_source_image_data_uri,
                 "driven_audio_url": fal_driven_audio_data_uri,
             }),
-        ).await.unwrap();
+        )
+        .await
+        .unwrap();
 
     // Check if the request was successful
     if fal_response.status().is_success() {
@@ -412,7 +453,10 @@ async fn fal_submit_sadtalker_request(
         Ok(fal_result)
     } else {
         // Return an error with the status code
-        Err(anyhow!(format!( "fal request failed with status: {}", fal_response.status())))
+        Err(anyhow!(format!(
+            "fal request failed with status: {}",
+            fal_response.status()
+        )))
     }
 }
 
@@ -428,7 +472,8 @@ async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
     let fal_encoded_data = general_purpose::STANDARD.encode(&fal_file_data);
 
     // Convert the encoded data to a String
-    let fal_encoded_data_string = String::from_utf8(fal_encoded_data.into_bytes())?;
+    let fal_encoded_data_string =
+        String::from_utf8(fal_encoded_data.into_bytes())?;
 
     // Guess the MIME type based on the file extension
     let fal_mime_type = MimeGuess::from_path(file_path)
@@ -437,11 +482,8 @@ async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
         .to_string();
 
     // Create the data URI for fal
-    let fal_data_uri = format!(
-        "data:{};base64,{}",
-        fal_mime_type,
-        fal_encoded_data_string
-    );
+    let fal_data_uri =
+        format!("data:{};base64,{}", fal_mime_type, fal_encoded_data_string);
 
     Ok(fal_data_uri)
 }
