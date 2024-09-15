@@ -313,18 +313,12 @@ async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    for (i, line) in lyric_lines.iter().enumerate() {
-        // I am creating images
-        // but its the other function
-        // This needs the folder
+    for (_i, line) in lyric_lines.iter().enumerate() {
         fal_handler::create_turbo_image_in_folder(
             line.to_string(),
             &folder_path,
         )
         .await?;
-        // We need ot call the image_creation here
-        // let image_path = format!("{}/image_{}.png", folder_path, i);
-        // fal_handler::generate_image_from_text(line, &image_path).await?;
     }
 
     download_and_play(twitch_client, tx, user_name, &id.to_string()).await

@@ -204,7 +204,9 @@ async fn process_images(
                 let suno_folder = extra_save_folder.unwrap();
                 let _ = File::create(&Path::new(&suno_folder))
                     .map(|mut f| f.write_all(&image_bytes))
-                    .with_context(|| format!("Error creating: {}", suno_folder))?;
+                    .with_context(|| {
+                        format!("Error creating: {}", suno_folder)
+                    })?;
             }
         } else {
             eprintln!("Invalid data URL for image at index {}", index);
@@ -243,7 +245,12 @@ pub async fn create_turbo_image_in_folder(
 
     // This is not the folder
     // let save_folder = "tmp/fal_images";
-    let _ = process_images(&timestamp.to_string(), &json_path, Some(&suno_save_folder)).await;
+    let _ = process_images(
+        &timestamp.to_string(),
+        &json_path,
+        Some(&suno_save_folder),
+    )
+    .await;
 
     Ok(())
 }
@@ -254,6 +261,7 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
     // So here is as silly place I can run fal
     let client = FalClient::new(ClientCredentials::from_env());
 
+    // let model = "fal-ai/stable-cascade/sote-diffusion";
     // let model = "fal-ai/stable-cascade";
     let model = "fal-ai/fast-turbo-diffusion";
 
