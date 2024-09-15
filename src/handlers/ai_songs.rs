@@ -249,12 +249,12 @@ pub async fn handle_requests(
             let reverb = false;
 
             let audio_info = get_audio_information(id).await?;
-            let info = format!(
-                "Audio for @{}: {} | {}",
-                msg.user_name, audio_info.title, audio_info.metadata.tags,
-            );
+            // let info = format!(
+            //     "Audio for @{}: {} | {}",
+            //     msg.user_name, audio_info.title, audio_info.metadata.tags,
+            // );
+            // let _ = send_message(&twitch_client, info).await;
 
-            let _ = send_message(&twitch_client, info).await;
             return play_audio(
                 &twitch_client,
                 &sink,

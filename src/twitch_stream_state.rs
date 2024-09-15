@@ -42,6 +42,25 @@ impl twitch_stream_state::Model {
     }
 }
 
+pub async fn set_ai_background_theme(pool: &PgPool, theme: &str) -> Result<()> {
+    let _res = sqlx::query!(
+        "UPDATE twitch_stream_state SET ai_background_theme = $1",
+        theme,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_ai_background_theme(pool: &PgPool) -> Result<String> {
+    let res =
+        sqlx::query!("SELECT ai_background_theme FROM twitch_stream_state")
+            .fetch_one(pool)
+            .await?;
+    Ok(res.ai_background_theme.unwrap_or_default())
+}
+
 pub async fn enable_stable_diffusion(pool: &PgPool) -> Result<()> {
     let _res = sqlx::query!(
         "UPDATE twitch_stream_state SET enable_stable_diffusion = $1",

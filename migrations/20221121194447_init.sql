@@ -12,8 +12,9 @@ CREATE TABLE twitch_stream_state(
   global_voice boolean NOT NULL DEFAULT false,
   
   dalle_model TEXT NOT NULL DEFAULT "dalle-3",
-  dalle_mode boolean NOT NULL DEFAULT true
-  enable_stable_diffusion boolean NOT NULL DEFAULT false
+  dalle_mode boolean NOT NULL DEFAULT true,
+  enable_stable_diffusion boolean NOT NULL DEFAULT false,
+  ai_background_theme TEXT,
 );
 
 CREATE TABLE user_stream_character_information(

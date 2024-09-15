@@ -1,4 +1,4 @@
-use crate::constants;
+use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -105,28 +105,31 @@ pub async fn handle_fal_commands(
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
     let word_count = msg.contents.split_whitespace().count();
-    let mut theme = "";
 
     match command {
         "!theme" => {
             if _not_beginbot {
                 return Ok(());
             }
-
-            // I should be saving to a database
-            // theme = &splitmsg
-            //     .iter()
-            //     .skip(1)
-            //     .map(AsRef::as_ref)
-            //     .collect::<Vec<&str>>()
-            //     .join(" ");
+            let theme = &splitmsg
+                .iter()
+                .skip(1)
+                .map(AsRef::as_ref)
+                .collect::<Vec<&str>>()
+                .join(" ");
+            twitch_stream_state::set_ai_background_theme(pool, &theme).await?;
         }
 
         "!fal" => {}
 
         _ => {
-            if !command.starts_with('!') && word_count > 1 {
+            if !command.starts_with('!')
+                && !command.starts_with('@')
+                && word_count > 1
+            {
                 let prompt = msg.contents;
+                let theme =
+                    twitch_stream_state::get_ai_background_theme(pool).await?;
                 let final_prompt = format!("{} {}", theme, prompt);
                 create_turbo_image(final_prompt).await?;
             }
