@@ -116,13 +116,6 @@ pub async fn handle_fal_commands(
     let command = splitmsg[0].as_str();
     let word_count = msg.contents.split_whitespace().count();
 
-    // THIS IS DUMB
-    // let (_stream, stream_handle) =
-    //     audio::get_output_stream("pulse").expect("stream handle");
-    // let (sink, mut queue_rx) = rodio::Sink::new_idle();
-    // println!("{:?}", queue_rx.next());
-    // stream_handle.play_raw(queue_rx)?;
-
     match command {
         "!theme" => {
             if _not_beginbot && !is_mod {
@@ -182,70 +175,6 @@ pub async fn handle_fal_commands(
 
     Ok(())
 }
-
-// async fn process_images(
-//     timestamp: &str,
-//     json_path: &str,
-//     extra_save_folder: Option<&str>,
-// ) -> Result<()> {
-//     // Read the JSON file asynchronously
-//
-//     // need to take the json_path name and extract out the timestamp
-//     let json_data = tokio::fs::read_to_string(json_path).await?;
-//
-//     // Parse the JSON data into the Data struct
-//     let data: FalData = serde_json::from_str(&json_data)?;
-//
-//     // Regex to match data URLs
-//     let data_url_regex =
-//         Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-//
-//     for (index, image) in data.images.iter().enumerate() {
-//         // Match the data URL and extract MIME type and base64 data
-//         if let Some(captures) = data_url_regex.captures(&image.url) {
-//             let mime_type = captures.name("mime").unwrap().as_str();
-//             let base64_data = captures.name("data").unwrap().as_str();
-//
-//             // Decode the base64 data
-//             let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
-//
-//             // Determine the file extension based on the MIME type
-//             let extension = match mime_type {
-//                 "image/png" => "png",
-//                 "image/jpeg" => "jpg",
-//                 _ => "bin", // Default to binary if unknown type
-//             };
-//
-//             // We might want to look for an ID here or make sure we are using the same json
-//             let filename =
-//                 format!("tmp/fal_images/{}.{}", timestamp, extension);
-//
-//             // Save the image bytes to a file
-//             let mut file = File::create(&filename).await?;
-//             file.write_all(&image_bytes).await?;
-//
-//             let filename = format!("./tmp/dalle-1.png");
-//             let _ = File::create(&Path::new(&filename)).await
-//                 .map(|mut f| f.write_all(&image_bytes))
-//                 .with_context(|| format!("Error creating: {}", filename))?;
-//
-//             println!("Saved {}", filename);
-//
-//             if extra_save_folder.is_some() {
-//                 let suno_folder = extra_save_folder.unwrap();
-//                 let _ = File::create(&Path::new(&suno_folder)).await
-//                     .map(|mut f| f.write_all(&image_bytes))
-//                     .with_context(|| {
-//                         format!("Error creating: {}", suno_folder)
-//                     })?;
-//             }
-//         } else {
-//             eprintln!("Invalid data URL for image at index {}", index);
-//         }
-//     }
-//
-//     Ok(())
-// }
 
 async fn process_images(
     timestamp: &str,
@@ -321,67 +250,6 @@ async fn process_images(
 
     Ok(())
 }
-// async fn process_images(
-//     timestamp: &str,
-//     json_path: &str,
-//     extra_save_folder: Option<&str>,
-// ) -> Result<()> {
-//     // Read the JSON file asynchronously
-//     let json_data = tokio::fs::read_to_string(json_path).await?;
-//
-//     // Parse the JSON data into the FalData struct
-//     let data: FalData = serde_json::from_str(&json_data)?;
-//
-//     // Regex to match data URLs
-//     let data_url_regex = Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-//
-//     for (index, image) in data.images.iter().enumerate() {
-//         // Match the data URL and extract MIME type and base64 data
-//         if let Some(captures) = data_url_regex.captures(&image.url) {
-//             let mime_type = captures.name("mime").unwrap().as_str();
-//             let base64_data = captures.name("data").unwrap().as_str();
-//
-//             // Decode the base64 data
-//             let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
-//
-//             // Determine the file extension based on the MIME type
-//             let extension = match mime_type {
-//                 "image/png" => "png",
-//                 "image/jpeg" => "jpg",
-//                 _ => "bin", // Default to binary if unknown type
-//             };
-//
-//             // Construct the filename using the timestamp and extension
-//             let filename = format!("tmp/fal_images/{}.{}", timestamp, extension);
-//
-//             // Save the image bytes to a file asynchronously
-//             let mut file = File::create(&filename)
-//                 .await
-//                 .with_context(|| format!("Error creating file: {}", filename))?;
-//             file.write_all(&image_bytes)
-//                 .await
-//                 .with_context(|| format!("Error writing to file: {}", filename))?;
-//
-//             // Optionally save the image to an additional location
-//             if let Some(extra_folder) = extra_save_folder {
-//                 let extra_filename = format!("{}/{}.{}", extra_folder, timestamp, extension);
-//                 let mut extra_file = File::create(&extra_filename)
-//                     .await
-//                     .with_context(|| format!("Error creating file: {}", extra_filename))?;
-//                 extra_file
-//                     .write_all(&image_bytes)
-//                     .await
-//                     .with_context(|| format!("Error writing to file: {}", extra_filename))?;
-//             }
-//
-//             println!("Saved {}", filename);
-//         } else {
-//             eprintln!("Invalid data URL for image at index {}", index);
-//         }
-//     }
-//
-//     Ok(())
-// }
 
 pub async fn create_turbo_image_in_folder(
     prompt: String,
@@ -457,7 +325,6 @@ async fn fal_submit_sadtalker_request(
     fal_source_image_data_uri: &str,
     fal_driven_audio_data_uri: &str,
 ) -> Result<String> {
-    // Create an asynchronous HTTP client
     let fal_client = FalClient::new(ClientCredentials::from_env());
 
     // Prepare the JSON payload specific to fal
@@ -469,7 +336,7 @@ async fn fal_submit_sadtalker_request(
     // Send a POST request to the fal 'sadtalker' API endpoint
     let fal_response = fal_client
         .run(
-            "https://api.fal-ai.com/models/sadtalker",
+             "fal-ai/sadtalker",
             serde_json::json!({
                 "source_image_url": fal_source_image_data_uri,
                 "driven_audio_url": fal_driven_audio_data_uri,
@@ -516,30 +383,6 @@ async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
 
     Ok(fal_data_uri)
 }
-
-// Function to read and encode a file into a Base64 data URI for fal
-// async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
-//     // Open the file asynchronously
-//     let mut fal_file = File::open(file_path).await?;
-//     let mut fal_file_data = Vec::new();
-//
-//     // Read the entire file into the buffer
-//     fal_file.read_to_end(&mut fal_file_data).await?;
-//
-//     // Encode the file data to Base64
-//     let fal_encoded_data = general_purpose::STANDARD.decode(&fal_file_data)?;
-//
-//     // Guess the MIME type based on the file extension
-//     let fal_mime_type = MimeGuess::from_path(file_path)
-//         .first_or_octet_stream()
-//         .essence_str()
-//         .to_string();
-//
-//     // Create the data URI for fal
-//     let fal_data_uri = format!("data:{};base64,{}", fal_mime_type, fal_encoded_data);
-//
-//     Ok(fal_data_uri)
-// }
 
 #[cfg(test)]
 mod tests {
