@@ -1,23 +1,30 @@
-use crate::audio;
-use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
+use crate::audio;
+use crate::{constants, twitch_stream_state};
 use events::EventHandler;
+use mime_guess::MimeGuess;
 use obws::Client as OBSClient;
 use regex::Regex;
+use reqwest::Client;
 use rodio::*;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use serde_json::json;
 use std::io::Write;
 use std::path::Path;
 use subd_types::{Event, UserMessage};
+
+// Which do I need?
+// use tokio::fs::File;
+use std::fs::File;
+use tokio::io::AsyncReadExt;
 use tokio::sync::broadcast;
+
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-
 use fal_rust::{
     client::{ClientCredentials, FalClient},
     utils::download_image,
@@ -128,6 +135,7 @@ pub async fn handle_fal_commands(
                 .join(" ");
             twitch_stream_state::set_ai_background_theme(pool, &theme).await?;
         }
+        
 
         "!fal" => {}
 
@@ -283,6 +291,41 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
     let _ = process_images(&timestamp.to_string(), &json_path, None).await;
 
     Ok(())
+}
+
+// Function to submit the request to the fal 'sadtalker' model
+async fn fal_submit_sadtalker_request(
+    fal_source_image_data_uri: &str,
+    fal_driven_audio_data_uri: &str,
+) -> Result<String> {
+    // Create an asynchronous HTTP client
+    let fal_client = FalClient::new(ClientCredentials::from_env());
+
+    // Prepare the JSON payload specific to fal
+    // let fal_arguments = json!({
+    //     "source_image_url": fal_source_image_data_uri,
+    //     "driven_audio_url": fal_driven_audio_data_uri,
+    // });
+
+    // Send a POST request to the fal 'sadtalker' API endpoint
+    let fal_response = fal_client
+        .run(
+            "https://api.fal-ai.com/models/sadtalker",
+            serde_json::json!({
+                "source_image_url": fal_source_image_data_uri,
+                "driven_audio_url": fal_driven_audio_data_uri,
+            }),
+        ).await.unwrap();
+
+    // Check if the request was successful
+    if fal_response.status().is_success() {
+        // Retrieve the response body as text
+        let fal_result = fal_response.text().await?;
+        Ok(fal_result)
+    } else {
+        // Return an error with the status code
+        Err(anyhow!(format!( "fal request failed with status: {}", fal_response.status())))
+    }
 }
 
 #[cfg(test)]
