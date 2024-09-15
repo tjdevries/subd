@@ -6,6 +6,7 @@ pub mod ai_songs_downloader;
 pub mod ai_telephone;
 pub mod chatgpt_response_handler;
 pub mod elevenlabs_handler;
+pub mod fal_handler;
 pub mod music_scenes_handler;
 pub mod obs_messages;
 pub mod reward_handler;
