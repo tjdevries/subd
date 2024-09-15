@@ -24,6 +24,8 @@ use twitch_irc::{
 };
 use url::Url;
 
+use super::fal_handler;
+
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
 pub struct AISongsDownloader {
@@ -298,11 +300,33 @@ async fn parse_suno_response_download_and_play(
     user_name: String,
 ) -> Result<()> {
     let id = &json_response[index]["id"].as_str().unwrap();
+
+    let lyrics = &json_response[index]["lyric"].as_str().unwrap();
+    let lyric_lines: Vec<&str> = lyrics.split('\n').collect();
+
+    let folder_path = format!("tmp/suno_responses/{}", id);
+    tokio::fs::create_dir_all(&folder_path).await?;
+
     tokio::fs::write(
         format!("tmp/suno_responses/{}.json", id),
         &json_response.to_string(),
     )
     .await?;
+
+    for (i, line) in lyric_lines.iter().enumerate() {
+        // I am creating images
+        // but its the other function
+        // This needs the folder
+        fal_handler::create_turbo_image_in_folder(
+            line.to_string(),
+            &folder_path,
+        )
+        .await?;
+        // We need ot call the image_creation here
+        // let image_path = format!("{}/image_{}.png", folder_path, i);
+        // fal_handler::generate_image_from_text(line, &image_path).await?;
+    }
+
     download_and_play(twitch_client, tx, user_name, &id.to_string()).await
 }
 

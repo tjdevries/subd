@@ -152,7 +152,11 @@ pub async fn handle_fal_commands(
     Ok(())
 }
 
-async fn process_images(timestamp: &str, json_path: &str) -> Result<()> {
+async fn process_images(
+    timestamp: &str,
+    json_path: &str,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
     // Read the JSON file asynchronously
 
     // need to take the json_path name and extract out the timestamp
@@ -203,7 +207,10 @@ async fn process_images(timestamp: &str, json_path: &str) -> Result<()> {
     Ok(())
 }
 
-async fn create_turbo_image(prompt: String) -> Result<()> {
+pub async fn create_turbo_image_in_folder(
+    prompt: String,
+    suno_save_folder: &String,
+) -> Result<()> {
     // Can I move this into it's own function that takes a prompt?
     // So here is as silly place I can run fal
     let client = FalClient::new(ClientCredentials::from_env());
@@ -226,7 +233,36 @@ async fn create_turbo_image(prompt: String) -> Result<()> {
     let timestamp = chrono::Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
     tokio::fs::write(&json_path, &raw_json).await.unwrap();
-    let _ = process_images(&timestamp.to_string(), &json_path).await;
+    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
+
+    Ok(())
+}
+
+// This is too specific
+pub async fn create_turbo_image(prompt: String) -> Result<()> {
+    // Can I move this into it's own function that takes a prompt?
+    // So here is as silly place I can run fal
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    // let model = "fal-ai/stable-cascade";
+    let model = "fal-ai/fast-turbo-diffusion";
+
+    let res = client
+        .run(
+            model,
+            serde_json::json!({
+                "prompt": prompt,
+                "image_size": "landscape_16_9",
+            }),
+        )
+        .await
+        .unwrap();
+
+    let raw_json = res.bytes().await.unwrap();
+    let timestamp = chrono::Utc::now().timestamp();
+    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+    tokio::fs::write(&json_path, &raw_json).await.unwrap();
+    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
 
     Ok(())
 }
@@ -246,7 +282,9 @@ mod tests {
         let timestamp = "1726347150";
         let tmp_file_path = format!("tmp/fal_responses/{}.json", timestamp);
 
-        process_images(&timestamp, &tmp_file_path).await.unwrap();
+        process_images(&timestamp, &tmp_file_path, None)
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
