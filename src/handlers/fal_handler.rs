@@ -134,23 +134,25 @@ pub async fn handle_fal_commands(
             // Replace with your local file paths specific to fal
             let fal_image_file_path = "prime.jpg";
             let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+            
+            handle_talk_command().await?;
 
-            // Read and encode the image file to a data URI for fal
-            let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
-
-            // Read and encode the audio file to a data URI for fal
-            let fal_driven_audio_data_uri = fal_encode_file_as_data_uri(fal_audio_file_path).await?;
-
-            // Submit the request to fal and handle the result
-            match fal_submit_sadtalker_request(&fal_source_image_data_uri, &fal_driven_audio_data_uri).await
-            {
-                Ok(fal_result) => {
-                    println!("fal Result: {}", fal_result);
-                }
-                Err(e) => {
-                    eprintln!("fal Error: {}", e);
-                }
-            }
+            // // Read and encode the image file to a data URI for fal
+            // let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
+            //
+            // // Read and encode the audio file to a data URI for fal
+            // let fal_driven_audio_data_uri = fal_encode_file_as_data_uri(fal_audio_file_path).await?;
+            //
+            // // Submit the request to fal and handle the result
+            // match fal_submit_sadtalker_request(&fal_source_image_data_uri, &fal_driven_audio_data_uri).await
+            // {
+            //     Ok(fal_result) => {
+            //         println!("fal Result: {}", fal_result);
+            //     }
+            //     Err(e) => {
+            //         eprintln!("fal Error: {}", e);
+            //     }
+            // }
         }
 
         "!fal" => {}
@@ -172,6 +174,66 @@ pub async fn handle_fal_commands(
             }
         }
     };
+
+    Ok(())
+}
+
+async fn handle_talk_command() -> Result<()> {
+    // Replace with your local file paths specific to fal
+    let fal_image_file_path = "prime.jpg";
+    let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
+
+    // Read and encode the image file to a data URI for fal
+    let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
+
+    // Read and encode the audio file to a data URI for fal
+    let fal_driven_audio_data_uri = fal_encode_file_as_data_uri(fal_audio_file_path).await?;
+
+    // Submit the request to fal and handle the result
+    match fal_submit_sadtalker_request(&fal_source_image_data_uri, &fal_driven_audio_data_uri).await
+    {
+        Ok(fal_result) => {
+            println!("fal Result: {}", fal_result);
+
+            // Parse the fal_result JSON
+            let fal_result_json: serde_json::Value = serde_json::from_str(&fal_result)?;
+            // Extract the video URL
+            if let Some(video_obj) = fal_result_json.get("video") {
+                if let Some(url_value) = video_obj.get("url") {
+                    if let Some(url) = url_value.as_str() {
+                        // Download the video
+                        let client = reqwest::Client::new();
+                        let resp = client.get(url).send().await?;
+                        let video_bytes = resp.bytes().await?;
+
+                        // Ensure the directory exists
+                        tokio::fs::create_dir_all("./tmp/fal_videos").await?;
+
+                        // Generate a timestamp for the filename
+                        let timestamp = chrono::Utc::now().timestamp();
+
+                        // Save the video to ./tmp/fal_videos
+                        let video_path = format!("./tmp/fal_videos/{}.mp4", timestamp);
+                        tokio::fs::write(&video_path, &video_bytes).await?;
+                        println!("Video saved to {}", video_path);
+                        
+                        let video_path = "./prime.mp4";
+                        tokio::fs::write(&video_path, &video_bytes).await?;
+                        println!("Video saved to {}", video_path);
+                    } else {
+                        eprintln!("Error: 'url' is not a string");
+                    }
+                } else {
+                    eprintln!("Error: 'url' field not found in 'video' object");
+                }
+            } else {
+                eprintln!("Error: 'video' field not found in fal_result");
+            }
+        }
+        Err(e) => {
+            eprintln!("fal Error: {}", e);
+        }
+    }
 
     Ok(())
 }
