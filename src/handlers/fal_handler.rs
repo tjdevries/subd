@@ -199,6 +199,13 @@ async fn process_images(
                 .with_context(|| format!("Error creating: {}", filename))?;
 
             println!("Saved {}", filename);
+
+            if extra_save_folder.is_some() {
+                let suno_folder = extra_save_folder.unwrap();
+                let _ = File::create(&Path::new(&suno_folder))
+                    .map(|mut f| f.write_all(&image_bytes))
+                    .with_context(|| format!("Error creating: {}", suno_folder))?;
+            }
         } else {
             eprintln!("Invalid data URL for image at index {}", index);
         }
@@ -233,7 +240,10 @@ pub async fn create_turbo_image_in_folder(
     let timestamp = chrono::Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
     tokio::fs::write(&json_path, &raw_json).await.unwrap();
-    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
+
+    // This is not the folder
+    // let save_folder = "tmp/fal_images";
+    let _ = process_images(&timestamp.to_string(), &json_path, Some(&suno_save_folder)).await;
 
     Ok(())
 }
