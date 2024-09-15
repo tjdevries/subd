@@ -197,7 +197,10 @@ pub async fn handle_requests(
         "!info" => {
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
-                None => return Ok(()),
+                None => {
+                    sink.queue_tx
+                    // Get current info
+                }
             };
 
             let res = get_audio_information(id).await?;
