@@ -17,9 +17,9 @@ import mimetypes
 # These files are tooo big!
 # I'd have to chunk
 # Replace with your local file paths
-image_file_path = '1726370983.jpg'
+image_file_path = 'prime.jpg'
 # audio_file_path = 'ff5608b5-055a-434a-a380-436e09436c9f.mp3'
-audio_file_path = 'outputfile.mp3'
+audio_file_path = 'TwitchChatTTSRecordings/1701059381_beginbot_prime.wav'
 
 # Get the MIME type of the image file
 image_mime_type, _ = mimetypes.guess_type(image_file_path)
