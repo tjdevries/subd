@@ -1,4 +1,5 @@
 use crate::{constants, twitch_stream_state};
+use crate::audio;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -37,6 +38,7 @@ struct FalData {
 }
 
 pub struct FalHandler {
+    // pub queue_rx: &'static queue::SourcesQueueOutput<f32>,
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
     pub sink: Sink,
@@ -51,6 +53,7 @@ impl EventHandler for FalHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -106,6 +109,14 @@ pub async fn handle_fal_commands(
     let command = splitmsg[0].as_str();
     let word_count = msg.contents.split_whitespace().count();
 
+    
+    // THIS IS DUMB
+    // let (_stream, stream_handle) =
+    //     audio::get_output_stream("pulse").expect("stream handle");
+    // let (sink, mut queue_rx) = rodio::Sink::new_idle();
+    // println!("{:?}", queue_rx.next());
+    // stream_handle.play_raw(queue_rx)?;
+
     match command {
         "!theme" => {
             if _not_beginbot {
@@ -132,6 +143,10 @@ pub async fn handle_fal_commands(
                     twitch_stream_state::get_ai_background_theme(pool).await?;
                 let final_prompt = format!("{} {}", theme, prompt);
                 create_turbo_image(final_prompt).await?;
+                
+                // let theme = "Waifu";
+                // let final_prompt = format!("{} {}", theme, prompt);
+                // create_turbo_image(final_prompt).await?;
             }
         }
     };

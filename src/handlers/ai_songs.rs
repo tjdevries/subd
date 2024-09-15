@@ -198,8 +198,10 @@ pub async fn handle_requests(
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
                 None => {
-                    sink.queue_tx
+                    // sink.queue_tx
                     // Get current info
+                    println!("COMING SOON");
+                    return Ok(());
                 }
             };
 

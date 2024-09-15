@@ -306,5 +306,5 @@ fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
         "/home/begin/stream/Stream/BackgroundMusic/{}/{}",
         folder_path, new_music
     );
-    Some(full_path)
+Some(full_path)
 }
