@@ -106,16 +106,16 @@ mod tests {
         let obs_client = obs::create_obs_client().await.unwrap();
 
         let scene = "BoganArmy";
-        let index = crate::ai_clone::bogan::find_current_bogan_index(
+        let _index = crate::ai_clone::bogan::find_current_bogan_index(
             scene,
             &obs_client,
         )
         .await
         .unwrap();
 
-        let bogan_1 = "bogan_13";
-        let bogan_2 = "bogan_14";
-        let bogan_3 = "bogan_15";
-        let bogan_4 = "bogan_16";
+        let _bogan_1 = "bogan_13";
+        let _bogan_2 = "bogan_14";
+        let _bogan_3 = "bogan_15";
+        let _bogan_4 = "bogan_16";
     }
 }

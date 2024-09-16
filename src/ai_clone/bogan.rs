@@ -16,8 +16,8 @@ use std::path::Path;
 
 // TODO move this to somewhere else / pull in from config
 const SCREENSHOT_SOURCE: &str = "begin-base";
-const SCENE: &str = "AIAssets";
-const SOURCE: &str = "bogan";
+//const SCENE: &str = "AIAssets";
+//const SOURCE: &str = "bogan";
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ChromaKey {
@@ -70,8 +70,7 @@ async fn recruit_new_bogan_member(
 ) -> Result<()> {
     let scene = "BoganArmy";
     let (new_source, index) =
-        create_new_bogan_source(scene.clone(), path.clone(), obs_client)
-            .await?;
+        create_new_bogan_source(scene, path.clone(), obs_client).await?;
 
     println!("Creating Move Source: {} {}", scene, new_source);
     // We have a Chroma key on the whole scene, instead of adding it to every single source

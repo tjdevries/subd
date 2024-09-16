@@ -75,17 +75,16 @@ pub async fn ask_chat_gpt(
     // let model = "gpt-4";
     let model = "gpt-3.5-turbo";
 
-    let chat_completion =
-        match ChatCompletion::builder(model.clone(), messages.clone())
-            .create()
-            .await
-        {
-            Ok(completion) => completion,
-            Err(e) => {
-                println!("\n\tChat GPT error occurred: {}", e);
-                return Err(e.to_string());
-            }
-        };
+    let chat_completion = match ChatCompletion::builder(model, messages.clone())
+        .create()
+        .await
+    {
+        Ok(completion) => completion,
+        Err(e) => {
+            println!("\n\tChat GPT error occurred: {}", e);
+            return Err(e.to_string());
+        }
+    };
 
     chat_completion
         .choices
@@ -202,17 +201,16 @@ pub async fn ask_gpt_vision(
     println!("GPT Vision:\n\n {}", debug);
     let model = "gpt-4-vision-preview";
 
-    let chat_completion =
-        match ChatCompletion::builder(model.clone(), messages.clone())
-            .create()
-            .await
-        {
-            Ok(completion) => completion,
-            Err(e) => {
-                println!("\n\tChat GPT error occurred: {}", e);
-                return Err(e.to_string());
-            }
-        };
+    let chat_completion = match ChatCompletion::builder(model, messages.clone())
+        .create()
+        .await
+    {
+        Ok(completion) => completion,
+        Err(e) => {
+            println!("\n\tChat GPT error occurred: {}", e);
+            return Err(e.to_string());
+        }
+    };
 
     chat_completion
         .choices

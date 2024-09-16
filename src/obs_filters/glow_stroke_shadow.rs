@@ -37,25 +37,25 @@ impl GlowStrokeShadowSettings {
 }
 
 pub struct GlowStrokeShadowSettingsBuilder {
-    fill: Option<bool>,
-    stroke_fill_color: Option<i32>,
-    stroke_fill_source: Option<String>,
-    stroke_fill_type: Option<FillTypes>,
+    _fill: Option<bool>,
+    _stroke_fill_color: Option<i32>,
+    _stroke_fill_source: Option<String>,
+    _stroke_fill_type: Option<FillTypes>,
     stroke_offset: Option<f32>,
     stroke_size: Option<f32>,
-    stroke_source: Option<String>,
+    _stroke_source: Option<String>,
 }
 
 impl GlowStrokeShadowSettingsBuilder {
     pub fn new() -> Self {
         Self {
-            fill: None,
-            stroke_fill_color: None,
-            stroke_fill_source: None,
-            stroke_fill_type: None,
+            _fill: None,
+            _stroke_fill_color: None,
+            _stroke_fill_source: None,
+            _stroke_fill_type: None,
             stroke_offset: None,
             stroke_size: None,
-            stroke_source: None,
+            _stroke_source: None,
         }
     }
 
@@ -95,7 +95,7 @@ mod tests {
     use super::*;
     use crate::obs::obs;
     use crate::obs::obs_source;
-    use serde_json::{json, Error, Value};
+    use serde_json::Value;
 
     #[tokio::test]
     async fn test_glow_stroke_shadow() {
@@ -135,7 +135,7 @@ mod tests {
         //     .stroke_offset(10.0)
         //     .build();
 
-        let d = crate::move_transition::duration::EasingDuration::new(300);
+        let _d = crate::move_transition::duration::EasingDuration::new(300);
         // let settings =
         //     crate::move_transition::move_value::SingleSourceSetting {
         //         source: source.to_string(),
@@ -145,11 +145,11 @@ mod tests {
         //         ..Default::default()
         //     };
 
-        let stroke_size_min = 0.0;
-        let stroke_size_max = 100.0;
+        let _stroke_size_min = 0.0;
+        let _stroke_size_max = 100.0;
 
-        let stroke_offset_min = 0.0;
-        let stroke_offset_max = 50.0;
+        let _stroke_offset_min = 0.0;
+        let _stroke_offset_max = 50.0;
 
         if let Err(e) = update_and_trigger_move_value_for_source(
             &obs_client,

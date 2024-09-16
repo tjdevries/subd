@@ -56,13 +56,11 @@ pub async fn set_ai_background_theme(pool: &PgPool, theme: &str) -> Result<()> {
 
 // Should I keep this a UUID
 pub async fn get_current_song_id(pool: &PgPool) -> Result<String> {
-    let res =
-        sqlx::query!("SELECT current_song_id FROM twitch_stream_state")
-            .fetch_one(pool)
-            .await?;
+    let res = sqlx::query!("SELECT current_song_id FROM twitch_stream_state")
+        .fetch_one(pool)
+        .await?;
     Ok(res.current_song_id.unwrap_or_default().to_string())
 }
-
 
 pub async fn get_ai_background_theme(pool: &PgPool) -> Result<String> {
     let res =
@@ -111,15 +109,19 @@ pub async fn turn_off_dalle_mode(pool: &PgPool) -> Result<()> {
 //         .await
 // }
 
-pub async fn update_current_song(pool: &PgPool, current_song_id: Uuid) -> Result<()> {
-    let _res =
-        sqlx::query!("UPDATE twitch_stream_state SET current_song_id = $1", current_song_id)
-            .execute(pool)
-            .await?;
+pub async fn update_current_song(
+    pool: &PgPool,
+    current_song_id: Uuid,
+) -> Result<()> {
+    let _res = sqlx::query!(
+        "UPDATE twitch_stream_state SET current_song_id = $1",
+        current_song_id
+    )
+    .execute(pool)
+    .await?;
 
     Ok(())
 }
-
 
 pub async fn turn_on_dalle_mode(pool: &PgPool) -> Result<()> {
     let _res =

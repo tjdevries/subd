@@ -74,7 +74,7 @@ impl EventHandler for AiScenesHandler {
             };
 
             println!("We have an AI Scenes request!");
-            let (stable_diffusion_enabled, dalle_enabled) =
+            let (_stable_diffusion_enabled, _dalle_enabled) =
                 find_image_modes(self.pool.clone()).await?;
 
             let final_voice = determine_voice_to_use(
@@ -110,9 +110,11 @@ impl EventHandler for AiScenesHandler {
 
             // We have a prompt here
             if let Some(prompt) = ai_scene_req.prompt {
-                
-                twitch_stream_state::set_ai_background_theme(&self.pool, &prompt).await?;
-                
+                twitch_stream_state::set_ai_background_theme(
+                    &self.pool, &prompt,
+                )
+                .await?;
+
                 // This is the old way of generating an image
                 // if let Err(e) = generate_image(
                 //     prompt,
@@ -127,7 +129,6 @@ impl EventHandler for AiScenesHandler {
                 //     eprintln!("Error generating image: {}", e);
                 //     // We should print
                 // }
-                
             };
 
             println!(

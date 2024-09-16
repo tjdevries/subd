@@ -65,18 +65,17 @@ impl EventHandler for VoicesHandler {
     }
 }
 
-#[derive(Serialize)]
-struct CloneVoiceRequest {
-    name: String,
-    description: String,
-    files: Vec<String>,
-}
+// #[derive(Serialize)]
+//struct CloneVoiceRequest {
+//    name: String,
+//    description: String,
+//    files: Vec<String>,
+//}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Voice {
     voice_id: String,
     name: String,
-    // other fields...
 }
 
 #[derive(Serialize, Deserialize, Debug)]

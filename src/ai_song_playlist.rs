@@ -1,8 +1,8 @@
 use anyhow::Result;
+use sqlx::types::time::OffsetDateTime;
 use sqlx::PgPool;
 use subd_macros::database_model;
 use uuid::Uuid;
-use sqlx::types::time::OffsetDateTime;
 
 #[database_model]
 pub mod ai_song_playlist {
@@ -25,8 +25,8 @@ pub mod ai_song_playlist {
 impl ai_song_playlist::Model {
     #[allow(dead_code)]
 
-      pub async fn save(&self, pool: &PgPool) -> Result<Self> {
-            Ok(sqlx::query_as!(
+    pub async fn save(&self, pool: &PgPool) -> Result<Self> {
+        Ok(sqlx::query_as!(
                 Self,
                 r#"
                 INSERT INTO ai_song_playlist
@@ -55,49 +55,48 @@ impl ai_song_playlist::Model {
             )
             .fetch_one(pool)
             .await?)
-        }
+    }
 
-        /// Returns the `song_id` field.
-        pub fn get_song_id(&self) -> Uuid {
-            self.song_id
-        }
+    /// Returns the `song_id` field.
+    pub fn get_song_id(&self) -> Uuid {
+        self.song_id
+    }
 
-        /// Returns a reference to the `title` field.
-        pub fn get_title(&self) -> &str {
-            &self.title
-        }
+    /// Returns a reference to the `title` field.
+    pub fn get_title(&self) -> &str {
+        &self.title
+    }
 
-        /// Returns a reference to the `tags` field.
-        pub fn get_tags(&self) -> &str {
-            &self.tags
-        }
+    /// Returns a reference to the `tags` field.
+    pub fn get_tags(&self) -> &str {
+        &self.tags
+    }
 
-        /// Returns a reference to the `prompt` field.
-        pub fn get_prompt(&self) -> &str {
-            &self.prompt
-        }
+    /// Returns a reference to the `prompt` field.
+    pub fn get_prompt(&self) -> &str {
+        &self.prompt
+    }
 
-        /// Returns a reference to the `username` field.
-        pub fn get_username(&self) -> &str {
-            &self.username
-        }
+    /// Returns a reference to the `username` field.
+    pub fn get_username(&self) -> &str {
+        &self.username
+    }
 
-        /// Returns a reference to the `audio_url` field.
-        pub fn get_audio_url(&self) -> &str {
-            &self.audio_url
-        }
+    /// Returns a reference to the `audio_url` field.
+    pub fn get_audio_url(&self) -> &str {
+        &self.audio_url
+    }
 
-        /// Returns a reference to the `lyric` field.
-        pub fn get_lyric(&self) -> &str {
-            &self.lyric
-        }
+    /// Returns a reference to the `lyric` field.
+    pub fn get_lyric(&self) -> &str {
+        &self.lyric
+    }
 
-        /// Returns a reference to the `gpt_description_prompt` field.
-        pub fn get_gpt_description_prompt(&self) -> &str {
-            &self.gpt_description_prompt
-        }
+    /// Returns a reference to the `gpt_description_prompt` field.
+    pub fn get_gpt_description_prompt(&self) -> &str {
+        &self.gpt_description_prompt
+    }
 }
-
 
 pub async fn find_by_id(
     pool: &sqlx::PgPool,
@@ -105,7 +104,7 @@ pub async fn find_by_id(
 ) -> Result<ai_song_playlist::Model> {
     let res = sqlx::query!(
         "SELECT * FROM ai_song_playlist WHERE song_id = $1",
-        song_id 
+        song_id
     )
     .fetch_one(pool)
     .await?;

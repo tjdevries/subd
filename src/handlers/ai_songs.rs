@@ -1,20 +1,14 @@
-use crate::audio::play_sound;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use reqwest::Client;
 use rodio::Sink;
 use rodio::{Decoder, Source};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::Cursor;
-use std::thread;
-use std::time;
 use std::time::Duration;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
@@ -22,7 +16,6 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use url::Url;
 
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
@@ -174,7 +167,7 @@ async fn get_audio_information(id: &str) -> Result<SunoResponse> {
 
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     sink: &Sink,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     _pool: &sqlx::PgPool,
@@ -253,7 +246,7 @@ pub async fn handle_requests(
 
             let reverb = false;
 
-            let audio_info = get_audio_information(id).await?;
+            let _audio_info = get_audio_information(id).await?;
             // let info = format!(
             //     "Audio for @{}: {} | {}",
             //     msg.user_name, audio_info.title, audio_info.metadata.tags,
@@ -439,6 +432,7 @@ async fn play_sound_with_sink(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[tokio::test]
     async fn test_parsing_json() {
@@ -455,9 +449,10 @@ mod tests {
         let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
         let file_name = format!("ai_songs/{}.mp3", id);
 
-        let response = reqwest::get(cdn_url).await.unwrap();
-        let mut file = tokio::fs::File::create(file_name).await.unwrap();
-        let mut content = Cursor::new(response.bytes().await.unwrap());
+        let _response = reqwest::get(cdn_url).await.unwrap();
+        let mut _file = tokio::fs::File::create(file_name).await.unwrap();
+
+        // let mut content = Cursor::new(response.bytes().await.unwrap());
         // std::io::copy(&mut content, &mut file).unwrap();
 
         // assert!(!suno_responses.is_empty());

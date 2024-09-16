@@ -411,6 +411,7 @@ async fn main() -> Result<()> {
                 );
             }
 
+            // We need to be more specific what this means
             "dynamic_stream_background" => {
                 let obs_client = create_obs_client().await?;
                 event_loop.push(

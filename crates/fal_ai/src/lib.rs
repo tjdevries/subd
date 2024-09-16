@@ -2,36 +2,27 @@ use bytes::Bytes;
 
 use anyhow::anyhow;
 use anyhow::{Context, Result};
-use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use mime_guess::MimeGuess;
 use regex::Regex;
-use reqwest::Client;
 use rodio::*;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::io::Write;
-use std::path::Path;
-use tokio::time::{sleep, Duration};
+use serde::Deserialize;
 
 // Which do I need?
 // use std::fs::File;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
-use tokio::sync::broadcast;
 
-use fal_rust::{
-    client::{ClientCredentials, FalClient},
-    utils::download_image,
-};
+use fal_rust::client::{ClientCredentials, FalClient};
 
+#[warn(dead_code)]
 #[derive(Deserialize)]
 struct FalImage {
     url: String,
-    width: Option<u32>,
-    height: Option<u32>,
-    content_type: Option<String>,
+    _width: Option<u32>,
+    _height: Option<u32>,
+    _content_type: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -299,11 +290,15 @@ async fn fal_submit_sadtalker_request(
                 "driven_audio_url": fal_driven_audio_data_uri,
             }),
         )
-        .await.map_err(|e| anyhow!("Error call sadtalker: {:?}", e))?;
+        .await
+        .map_err(|e| anyhow!("Error call sadtalker: {:?}", e))?;
 
     // Check if the request was successful
     if fal_response.status().is_success() {
-        fal_response.text().await.map_err(|e| anyhow!("Error getting text: {:?}", e))
+        fal_response
+            .text()
+            .await
+            .map_err(|e| anyhow!("Error getting text: {:?}", e))
         // Retrieve the response body as text
         // let fal_result = fal_response.text().await?;
         // Ok(fal_result)

@@ -10,23 +10,13 @@ use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use crate::three_d_filter::CameraMode;
 use anyhow::anyhow;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use async_trait::async_trait;
-use base64::{engine::general_purpose, Engine as _};
 use events::EventHandler;
-use fal_rust::{
-    client::{ClientCredentials, FalClient},
-    utils::download_image,
-};
 use num_traits::ToPrimitive;
 use obws;
 use obws::Client as OBSClient;
-use regex::Regex;
 use rodio::*;
-use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_irc::{
@@ -477,7 +467,7 @@ pub async fn handle_obs_commands(
 mod tests {
     use super::*;
     use crate::obs::obs;
-    use serde_json::{json, Error, Value};
+    use serde_json::Value;
 
     #[tokio::test]
     async fn test_fetching_filter_settings() {

@@ -111,7 +111,7 @@ pub async fn trigger_scene(
     ]);
 
     let skybox_path = if skybox_id == "" {
-        let new_skybox_id = &skybox_id_map[filter_name.clone()];
+        let new_skybox_id = &skybox_id_map[filter_name];
         format!(
             "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
             new_skybox_id

@@ -1,9 +1,4 @@
-use crate::audio;
-
-// Not sure on this
-use bytes::Bytes;
-
-use crate::{constants, twitch_stream_state};
+use crate::twitch_stream_state;
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -13,15 +8,15 @@ use fal_ai;
 use mime_guess::MimeGuess;
 use obws::Client as OBSClient;
 use regex::Regex;
-use reqwest::Client;
 use rodio::*;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::io::Write;
-use std::path::Path;
+use serde::Deserialize;
+// use std::io::Write;
+//use reqwest::Client;
+//use serde_json::json;
+//use std::path::Path;
+// use tracing_subscriber::registry::SpanData;
 use subd_types::{Event, UserMessage};
 use tokio::time::{sleep, Duration};
-use tracing_subscriber::registry::SpanData;
 
 // Which do I need?
 // use std::fs::File;
@@ -30,10 +25,7 @@ use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::broadcast;
 
-use fal_rust::{
-    client::{ClientCredentials, FalClient},
-    utils::download_image,
-};
+use fal_rust::client::{ClientCredentials, FalClient};
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -41,9 +33,9 @@ use twitch_irc::{
 #[derive(Deserialize)]
 struct FalImage {
     url: String,
-    width: Option<u32>,
-    height: Option<u32>,
-    content_type: Option<String>,
+    _width: Option<u32>,
+    _height: Option<u32>,
+    _content_type: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -114,8 +106,8 @@ pub async fn handle_fal_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let default_source = constants::DEFAULT_SOURCE.to_string();
-    let source: &str = splitmsg.get(1).unwrap_or(&default_source);
+    //let default_source = constants::DEFAULT_SOURCE.to_string();
+    // let source: &str = splitmsg.get(1).unwrap_or(&default_source);
 
     let is_mod = msg.roles.is_twitch_mod();
     let _not_beginbot =
@@ -472,8 +464,8 @@ async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::obs::obs;
-    use serde_json::{json, Error, Value};
+    //use crate::obs::obs;
+    //use serde_json::{json, Error, Value};
 
     #[tokio::test]
     async fn test_parsing_fal() {
@@ -492,6 +484,6 @@ mod tests {
     #[tokio::test]
     async fn test_fal() {
         let prompt = "Magical Cat wearing a wizard hat";
-        create_turbo_image(prompt.to_string()).await;
+        let _ = create_turbo_image(prompt.to_string()).await;
     }
 }
