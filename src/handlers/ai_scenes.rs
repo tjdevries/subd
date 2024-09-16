@@ -1,4 +1,6 @@
 use crate::ai_images::image_generation::GenerateImage;
+use fal_ai;
+use tokio::time::{sleep, Duration};
 use crate::ai_scene;
 use crate::audio;
 use crate::openai::dalle;
@@ -58,9 +60,9 @@ impl EventHandler for AiScenesHandler {
         let clone_twitch_client = twitch_client.clone();
         let locked_client = clone_twitch_client.lock().await;
 
-        // let obs_client = Arc::new(Mutex::new(self.obs_client));
-        // let obs_client_clone = obs_client.clone();
-        // let locked_obs_client = obs_client_clone.lock().await;
+        let obs_client = Arc::new(Mutex::new(self.obs_client));
+        let obs_client_clone = obs_client.clone();
+        let locked_obs_client = obs_client_clone.lock().await;
 
         println!("Starting AI Scenes Handler");
         loop {
@@ -123,23 +125,63 @@ impl EventHandler for AiScenesHandler {
                 }
             };
 
-            println!("Image Generated, Playing Audio");
+            println!("Image Generated, Playing Audio: Final Voice {}", final_voice.clone());
 
             // We are supressing a whole bunch of alsa message
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
-            let (_stream, stream_handle) =
-                audio::get_output_stream("pulse").expect("stream handle");
 
-            let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-            let _ = set_volume(final_voice, &sink);
-            let file = BufReader::new(File::open(local_audio_path)?);
-            sink.append(Decoder::new(BufReader::new(file))?);
-            sink.sleep_until_end();
-            redirect::restore_stderr(backup);
+            // This is trying the voice syncing
+            let fal_image_file_path = "green_prime.png";
+            // let fal_audio_file_path = "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
+
+            if final_voice == "prime" {
+                sync_lips_and_update(fal_image_file_path, &local_audio_path, &locked_obs_client).await?;
+            } else {
+                let (_stream, stream_handle) =
+                    audio::get_output_stream("pulse").expect("stream handle");
+
+                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let _ = set_volume(final_voice, &sink);
+                let file = BufReader::new(File::open(local_audio_path)?);
+                // at this point we could just do prime
+                sink.append(Decoder::new(BufReader::new(file))?);
+                sink.sleep_until_end();
+                redirect::restore_stderr(backup);
+            }
         }
     }
+}
+
+async fn sync_lips_and_update(fal_image_file_path: &str, fal_audio_file_path: &str, obs_client: &OBSClient) -> Result<()> {
+    let video_bytes = fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
+    
+    let video_path = "./prime.mp4";
+    match tokio::fs::write(&video_path, &video_bytes).await {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("Error writing video: {:?}", e);
+            return Err(anyhow!("Error writing video: {:?}", e));
+        }
+    }
+    println!("Video saved to {}", video_path);
+
+    let scene = "Primary";
+    let source = "prime-talking-video";
+    let _ = crate::obs::obs_source::set_enabled(
+        scene, source, false, &obs_client,
+    )
+    .await;
+
+    // Not sure if I have to wait ofr how long to wait
+    sleep(Duration::from_millis(100)).await;
+
+    let _ = crate::obs::obs_source::set_enabled(
+        scene, source, true, &obs_client,
+    )
+    .await;
+    return Ok(())
 }
 
 async fn find_image_modes(pool: sqlx::PgPool) -> Result<(bool, bool)> {
