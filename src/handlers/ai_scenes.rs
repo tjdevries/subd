@@ -107,9 +107,6 @@ impl EventHandler for AiScenesHandler {
             };
 
             println!("AI Scene Request {:?}", &ai_scene_req);
-            if let Some(music_bg) = ai_scene_req.music_bg {
-                let _ = send_message(&locked_client, music_bg.clone()).await;
-            }
 
             if let Some(prompt) = ai_scene_req.prompt {
                 if let Err(e) = generate_image(
@@ -153,8 +150,19 @@ impl EventHandler for AiScenesHandler {
                         &locked_obs_client,
                     )
                     .await?;
+                    
+                    // This happens way to early
+                    if let Some(music_bg) = ai_scene_req.music_bg {
+                        let _ = send_message(&locked_client, music_bg.clone()).await;
+                    }
                 }
                 None => {
+                    
+                    // This happens way to early
+                    if let Some(music_bg) = ai_scene_req.music_bg {
+                        let _ = send_message(&locked_client, music_bg.clone()).await;
+                    }
+
                     let (_stream, stream_handle) =
                         audio::get_output_stream("pulse")
                             .expect("stream handle");
