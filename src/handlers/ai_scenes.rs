@@ -145,7 +145,8 @@ impl EventHandler for AiScenesHandler {
                 ("prime".to_string(), "green_prime.png".to_string()),
                 ("ethan".to_string(), "alex_jones.png".to_string()),
                 // ("teej".to_string(), "teej.png".to_string()),
-                ("teej".to_string(), "teej_2.jpg".to_string()),
+                // ("teej".to_string(), "teej_2.jpg".to_string()),
+                ("teej".to_string(), "teej_3.png".to_string()),
                 ("melkey".to_string(), "melkey.png".to_string()),
             ]);
             let face_image = voice_to_face_image.get(&final_voice);

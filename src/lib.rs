@@ -24,4 +24,5 @@ pub mod themesong;
 pub mod three_d_filter;
 pub mod twitch_rewards;
 pub mod twitch_stream_state;
+pub mod ai_song_playlist;
 pub mod users;

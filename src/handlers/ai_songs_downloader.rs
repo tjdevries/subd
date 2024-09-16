@@ -1,4 +1,8 @@
 use crate::audio::play_sound;
+use chrono::Utc;
+use uuid::{uuid, Uuid};
+use crate::ai_song_playlist::ai_song_playlist::Model;
+// use crate::ai_song_playlist::ai_song_playlist::Model;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -142,7 +146,7 @@ pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    _pool: &sqlx::PgPool,
+    pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -192,6 +196,7 @@ pub async fn handle_requests(
                     println!("JSON Response: {:#?}", json_response);
                     let _ = parse_suno_response_download_and_play(
                         twitch_client,
+                        pool,
                         tx,
                         json_response.clone(),
                         0,
@@ -200,6 +205,7 @@ pub async fn handle_requests(
                     .await;
                     parse_suno_response_download_and_play(
                         twitch_client,
+                        pool,
                         tx,
                         json_response,
                         1,
@@ -294,14 +300,39 @@ async fn download_and_play(
 
 async fn parse_suno_response_download_and_play(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &sqlx::PgPool,
     tx: &broadcast::Sender<Event>,
     json_response: serde_json::Value,
     index: usize,
     user_name: String,
 ) -> Result<()> {
-    let id = &json_response[index]["id"].as_str().unwrap();
 
+    let id = json_response[index]["id"].as_str().unwrap();
+    let song_id = Uuid::parse_str(id)
+        .map_err(|e| anyhow!(e.to_string()) )?;
     let lyrics = &json_response[index]["lyric"].as_str().unwrap();
+    let title = &json_response[index]["title"].as_str().unwrap();
+    let prompt = &json_response[index]["prompt"].as_str().unwrap();
+    let tags = &json_response[index]["tags"].as_str().unwrap();
+    let audio_url = &json_response[index]["audio_url"].as_str().unwrap();
+    let gpt_description_prompt = &json_response[index]["gpt_description_prompt"].as_str().unwrap();
+    let created_at =
+        sqlx::types::time::OffsetDateTime::now_utc();
+    let new_song = Model {
+        song_id: song_id,
+        title: title.to_string(),
+        tags: tags.to_string(),
+        prompt: prompt.to_string(),
+        username: user_name.clone(),
+        audio_url: audio_url.to_string(),
+        lyric: lyrics.to_string(),
+        gpt_description_prompt: gpt_description_prompt.to_string(),
+        last_updated: Some(created_at),
+        created_at: Some(created_at),
+    };
+    let saved_song = new_song.save(&pool).await?;
+    println!("{:?}", saved_song);
+    
     let lyric_lines: Vec<&str> = lyrics.split('\n').collect();
 
     let folder_path = format!("tmp/suno_responses/{}", id);
