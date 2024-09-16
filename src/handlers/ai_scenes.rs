@@ -1,5 +1,6 @@
 use crate::ai_images::image_generation::GenerateImage;
 use crate::ai_scene;
+use std::collections::HashMap;
 use crate::audio;
 use crate::openai::dalle;
 use crate::redirect;
@@ -105,6 +106,7 @@ impl EventHandler for AiScenesHandler {
                 }
             };
 
+            println!("AI Scene Request {:?}", &ai_scene_req);
             if let Some(music_bg) = ai_scene_req.music_bg {
                 let _ = send_message(&locked_client, music_bg.clone()).await;
             }
@@ -134,28 +136,34 @@ impl EventHandler for AiScenesHandler {
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
-            // This is trying the voice syncing
-            let fal_image_file_path = "green_prime.png";
-            // let fal_audio_file_path = "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
+            let voice_to_face_image = HashMap::from([
+                ("prime".to_string(), "green_prime.png".to_string()),
+                ("ethan".to_string(), "alex_jones.png".to_string()),
+                ("teej".to_string(), "teej.png".to_string()),
+                ("melkey".to_string(), "melkey.png".to_string()),
+            ]);
+            let face_image = voice_to_face_image.get(&final_voice);
 
-            if final_voice == "prime" {
-                sync_lips_and_update(
-                    fal_image_file_path,
-                    &local_audio_path,
-                    &locked_obs_client,
-                )
-                .await?;
-            } else {
-                let (_stream, stream_handle) =
-                    audio::get_output_stream("pulse").expect("stream handle");
-
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let _ = set_volume(final_voice, &sink);
-                let file = BufReader::new(File::open(local_audio_path)?);
-                // at this point we could just do prime
-                sink.append(Decoder::new(BufReader::new(file))?);
-                sink.sleep_until_end();
-                redirect::restore_stderr(backup);
+            match face_image {
+                Some(image_file_path) => {
+                    sync_lips_and_update(
+                        image_file_path,
+                        &local_audio_path,
+                        &locked_obs_client,
+                    )
+                    .await?;
+                }
+                None => {
+                    let (_stream, stream_handle) =
+                        audio::get_output_stream("pulse")
+                            .expect("stream handle");
+                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                    let _ = set_volume(final_voice, &sink);
+                    let file = BufReader::new(File::open(local_audio_path)?);
+                    sink.append(Decoder::new(BufReader::new(file))?);
+                    sink.sleep_until_end();
+                    redirect::restore_stderr(backup);
+                }
             }
         }
     }
