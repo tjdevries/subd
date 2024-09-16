@@ -96,7 +96,7 @@ async fn recruit_new_bogan_member(
 }
 
 // This needs to go in some other generic OBS filters file
-async fn create_chroma_key_filter(
+async fn _create_chroma_key_filter(
     source: &String,
     obs_client: &OBSClient,
 ) -> Result<()> {

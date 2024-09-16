@@ -6,8 +6,9 @@ use crate::move_transition::move_transition;
 use anyhow::Result;
 use obws::Client as OBSClient;
 
+#[warn(dead_code)]
 struct BoganPosition {
-    rot: f32,
+    _rot: f32,
     x: f32,
     y: f32,
 }
@@ -18,28 +19,28 @@ pub async fn rotate_bogan_order(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let position_1 = BoganPosition {
-        rot: 0.0,
+        _rot: 0.0,
         x: 0.0,
         y: 800.0,
     };
     let position_2 = BoganPosition {
-        rot: 0.0,
+        _rot: 0.0,
         x: 260.0,
         y: 800.0,
     };
     let position_3 = BoganPosition {
-        rot: 0.0,
+        _rot: 0.0,
         x: 500.0,
         y: 800.0,
     };
     let position_4 = BoganPosition {
-        rot: 0.0,
+        _rot: 0.0,
         x: 750.0,
         y: 800.0,
     };
 
     let hidden = BoganPosition {
-        rot: 0.0,
+        _rot: 0.0,
         x: 0.0,
         y: 1800.0,
     };
@@ -83,7 +84,7 @@ async fn move_bogan(
     // This doesn't take rot!
     move_transition::move_source(
         scene,
-        source.clone(),
+        source,
         filter_name.clone(),
         false,
         Some(bogan_position.x),

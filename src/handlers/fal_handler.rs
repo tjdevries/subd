@@ -1,11 +1,10 @@
 use crate::twitch_stream_state;
-use anyhow::anyhow;
+// use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use events::EventHandler;
 use fal_ai;
-use mime_guess::MimeGuess;
 use obws::Client as OBSClient;
 use regex::Regex;
 use rodio::*;
@@ -21,7 +20,7 @@ use tokio::time::{sleep, Duration};
 // Which do I need?
 // use std::fs::File;
 use tokio::fs::File;
-use tokio::io::AsyncReadExt;
+// use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::broadcast;
 
@@ -171,7 +170,7 @@ pub async fn handle_fal_commands(
                 let theme =
                     twitch_stream_state::get_ai_background_theme(pool).await?;
                 let final_prompt = format!("{} {}", theme, prompt);
-                create_turbo_image(final_prompt).await?;
+                fal_ai::create_turbo_image(final_prompt).await?;
 
                 // let theme = "Waifu";
                 // let final_prompt = format!("{} {}", theme, prompt);
@@ -182,69 +181,6 @@ pub async fn handle_fal_commands(
 
     Ok(())
 }
-
-// async fn sync_lips_to_voice(image_file_path: &str, audio_file_path: &str) -> Result<Bytes> {
-//     let fal_source_image_data_uri =
-//         fal_encode_file_as_data_uri(image_file_path).await?;
-//
-//     let fal_driven_audio_data_uri =
-//         fal_encode_file_as_data_uri(audio_file_path).await?;
-//
-//     // Submit the request to fal and handle the result
-//     match fal_submit_sadtalker_request(
-//         &fal_source_image_data_uri,
-//         &fal_driven_audio_data_uri,
-//     )
-//     .await
-//     {
-//         Ok(fal_result) => {
-//             println!("fal Result: {}", fal_result);
-//
-//             // Parse the fal_result JSON
-//             let fal_result_json: serde_json::Value =
-//                 serde_json::from_str(&fal_result)?;
-//             // Extract the video URL
-//             if let Some(video_obj) = fal_result_json.get("video") {
-//                 if let Some(url_value) = video_obj.get("url") {
-//                     if let Some(url) = url_value.as_str() {
-//                         // Download the video
-//                         let client = reqwest::Client::new();
-//                         let resp = client.get(url).send().await?;
-//                         let video_bytes = resp.bytes().await?;
-//
-//                         // Ensure the directory exists
-//                         tokio::fs::create_dir_all("./tmp/fal_videos").await?;
-//
-//                         // Generate a timestamp for the filename
-//                         let timestamp = chrono::Utc::now().timestamp();
-//
-//                         // Save the video to ./tmp/fal_videos
-//                         let video_path =
-//                             format!("./tmp/fal_videos/{}.mp4", timestamp);
-//                         tokio::fs::write(&video_path, &video_bytes).await?;
-//                         println!("Video saved to {}", video_path);
-//
-//                         return Ok(video_bytes);
-//                         // This probably shouldn't happen in here
-//                         // let video_path = "./prime.mp4";
-//                         // tokio::fs::write(&video_path, &video_bytes).await?;
-//                         // println!("Video saved to {}", video_path);
-//                     } else {
-//                         eprintln!("Error: 'url' is not a string");
-//                     }
-//                 } else {
-//                     eprintln!("Error: 'url' field not found in 'video' object");
-//                 }
-//             } else {
-//                 eprintln!("Error: 'video' field not found in fal_result");
-//             }
-//         }
-//         Err(e) => {
-//             eprintln!("fal Error: {}", e);
-//         }
-//     }
-//     return Err(anyhow!("Error: fal request failed"));
-// }
 
 async fn process_images(
     timestamp: &str,
@@ -364,102 +300,35 @@ pub async fn create_turbo_image_in_folder(
     Ok(())
 }
 
-// This is too specific
-pub async fn create_turbo_image(prompt: String) -> Result<()> {
-    // Can I move this into it's own function that takes a prompt?
-    // So here is as silly place I can run fal
-    let client = FalClient::new(ClientCredentials::from_env());
-
-    // let model = "fal-ai/stable-cascade/sote-diffusion";
-    // let model = "fal-ai/stable-cascade";
-    let model = "fal-ai/fast-turbo-diffusion";
-
-    let res = client
-        .run(
-            model,
-            serde_json::json!({
-                "prompt": prompt,
-                "image_size": "landscape_16_9",
-            }),
-        )
-        .await
-        .unwrap();
-
-    let raw_json = res.bytes().await.unwrap();
-    let timestamp = chrono::Utc::now().timestamp();
-    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
-    tokio::fs::write(&json_path, &raw_json).await.unwrap();
-    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
-
-    Ok(())
-}
-
-// Function to submit the request to the fal 'sadtalker' model
-async fn fal_submit_sadtalker_request(
-    fal_source_image_data_uri: &str,
-    fal_driven_audio_data_uri: &str,
-) -> Result<String> {
-    let fal_client = FalClient::new(ClientCredentials::from_env());
-
-    // Prepare the JSON payload specific to fal
-    // let fal_arguments = json!({
-    //     "source_image_url": fal_source_image_data_uri,
-    //     "driven_audio_url": fal_driven_audio_data_uri,
-    // });
-
-    // Send a POST request to the fal 'sadtalker' API endpoint
-    let fal_response = fal_client
-        .run(
-            "fal-ai/sadtalker",
-            serde_json::json!({
-                "source_image_url": fal_source_image_data_uri,
-                "driven_audio_url": fal_driven_audio_data_uri,
-            }),
-        )
-        .await
-        .unwrap();
-
-    // Check if the request was successful
-    if fal_response.status().is_success() {
-        // Retrieve the response body as text
-        let fal_result = fal_response.text().await?;
-        Ok(fal_result)
-    } else {
-        // Return an error with the status code
-        Err(anyhow!(format!(
-            "fal request failed with status: {}",
-            fal_response.status()
-        )))
-    }
-}
-
-async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
-    // Open the file asynchronously
-    let mut fal_file = File::open(file_path).await?;
-    let mut fal_file_data = Vec::new();
-
-    // Read the entire file into the buffer
-    fal_file.read_to_end(&mut fal_file_data).await?;
-
-    // Encode the file data to Base64
-    let fal_encoded_data = general_purpose::STANDARD.encode(&fal_file_data);
-
-    // Convert the encoded data to a String
-    let fal_encoded_data_string =
-        String::from_utf8(fal_encoded_data.into_bytes())?;
-
-    // Guess the MIME type based on the file extension
-    let fal_mime_type = MimeGuess::from_path(file_path)
-        .first_or_octet_stream()
-        .essence_str()
-        .to_string();
-
-    // Create the data URI for fal
-    let fal_data_uri =
-        format!("data:{};base64,{}", fal_mime_type, fal_encoded_data_string);
-
-    Ok(fal_data_uri)
-}
+//// This is too specific
+//pub async fn create_turbo_image(prompt: String) -> Result<()> {
+//    // Can I move this into it's own function that takes a prompt?
+//    // So here is as silly place I can run fal
+//    let client = FalClient::new(ClientCredentials::from_env());
+//
+//    // let model = "fal-ai/stable-cascade/sote-diffusion";
+//    // let model = "fal-ai/stable-cascade";
+//    let model = "fal-ai/fast-turbo-diffusion";
+//
+//    let res = client
+//        .run(
+//            model,
+//            serde_json::json!({
+//                "prompt": prompt,
+//                "image_size": "landscape_16_9",
+//            }),
+//        )
+//        .await
+//        .unwrap();
+//
+//    let raw_json = res.bytes().await.unwrap();
+//    let timestamp = chrono::Utc::now().timestamp();
+//    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+//    tokio::fs::write(&json_path, &raw_json).await.unwrap();
+//    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
+//
+//    Ok(())
+//}
 
 #[cfg(test)]
 mod tests {
@@ -481,9 +350,9 @@ mod tests {
             .unwrap();
     }
 
-    #[tokio::test]
-    async fn test_fal() {
-        let prompt = "Magical Cat wearing a wizard hat";
-        let _ = create_turbo_image(prompt.to_string()).await;
-    }
+    //#[tokio::test]
+    //async fn test_fal() {
+    //    let prompt = "Magical Cat wearing a wizard hat";
+    //    let _ = create_turbo_image(prompt.to_string()).await;
+    //}
 }

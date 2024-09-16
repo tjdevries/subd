@@ -1,17 +1,4 @@
-use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
 use serde::{Deserialize, Serialize};
-
-// {
-//     "fill": Bool(false),
-//     "stroke_fill_color": Number(4294902015),
-//     "stroke_fill_source": String("BeginOutlineColor2"),
-//     "stroke_fill_type": Number(2),
-//     "stroke_offset": Number(7.990518569946289),
-//     "stroke_size": Number(1.0),
-//     "stroke_source": String("Begin")},
-// }
-
-// kind: "obs_stroke_source"
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct GlowStrokeShadowSettings {
@@ -93,6 +80,8 @@ enum FillTypes {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
     use crate::obs::obs;
     use crate::obs::obs_source;
     use serde_json::Value;

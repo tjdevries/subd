@@ -1,7 +1,7 @@
-use crate::ai_images::image_generation::GenerateImage;
+// use crate::ai_images::image_generation::GenerateImage;
 use crate::ai_scene;
 use crate::audio;
-use crate::openai::dalle;
+// use crate::openai::dalle;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
@@ -18,9 +18,9 @@ use fal_ai;
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
-use stable_diffusion::models::GenerateAndArchiveRequest;
-use stable_diffusion::models::RequestType;
-use stable_diffusion::run_from_prompt;
+// use stable_diffusion::models::GenerateAndArchiveRequest;
+// use stable_diffusion::models::RequestType;
+// use stable_diffusion::run_from_prompt;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
@@ -346,44 +346,6 @@ fn add_voice_modifiers(
     }
 
     return Ok(local_audio_path);
-}
-
-async fn generate_image(
-    prompt: String,
-    username: String,
-    stable_diffusion_enabled: bool,
-    dalle_enabled: bool,
-) -> Result<()> {
-    if stable_diffusion_enabled {
-        println!("Attempting to Generate Stable Diffusion");
-
-        // TODO: check is this is the right name for a the file
-        let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-        let unique_identifier = format!("{}-{}.png", username, timestamp);
-        let req = GenerateAndArchiveRequest {
-            prompt: prompt.clone(),
-            unique_identifier,
-            request_type: RequestType::Prompt2Img,
-            set_as_obs_bg: true,
-            additional_archive_dir: None,
-            strength: None,
-        };
-        run_from_prompt(&req).await?;
-        println!("Done Generating Stable Diffusion");
-    };
-
-    if dalle_enabled {
-        println!("Attempting to Generate Dalle");
-
-        let req = dalle::DalleRequest {
-            prompt: prompt.clone(),
-            username: username.clone(),
-            amount: 1,
-        };
-        let _ = req.generate_image(prompt.clone(), None, true).await;
-    };
-
-    Ok(())
 }
 
 // ============= //
