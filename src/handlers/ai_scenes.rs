@@ -112,7 +112,7 @@ impl EventHandler for AiScenesHandler {
             if let Some(prompt) = ai_scene_req.prompt {
                 
                 twitch_stream_state::set_ai_background_theme(&self.pool, &prompt).await?;
-    
+                
                 // This is the old way of generating an image
                 // if let Err(e) = generate_image(
                 //     prompt,
@@ -144,7 +144,8 @@ impl EventHandler for AiScenesHandler {
                 ("god".to_string(), "god.png".to_string()),
                 ("prime".to_string(), "green_prime.png".to_string()),
                 ("ethan".to_string(), "alex_jones.png".to_string()),
-                ("teej".to_string(), "teej.png".to_string()),
+                // ("teej".to_string(), "teej.png".to_string()),
+                ("teej".to_string(), "teej_2.jpg".to_string()),
                 ("melkey".to_string(), "melkey.png".to_string()),
             ]);
             let face_image = voice_to_face_image.get(&final_voice);
