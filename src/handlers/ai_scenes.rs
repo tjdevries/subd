@@ -108,20 +108,26 @@ impl EventHandler for AiScenesHandler {
 
             println!("AI Scene Request {:?}", &ai_scene_req);
 
+            // We have a prompt here
             if let Some(prompt) = ai_scene_req.prompt {
-                if let Err(e) = generate_image(
-                    prompt,
-                    ai_scene_req.username,
-                    stable_diffusion_enabled,
-                    dalle_enabled,
-                )
-                .await
-                {
-                    // If we can't generate an image,
-                    // we still play the elevenlabs sound
-                    eprintln!("Error generating image: {}", e);
-                    // We should print
-                }
+                
+                twitch_stream_state::set_ai_background_theme(&self.pool, &prompt).await?;
+    
+                // This is the old way of generating an image
+                // if let Err(e) = generate_image(
+                //     prompt,
+                //     ai_scene_req.username,
+                //     stable_diffusion_enabled,
+                //     dalle_enabled,
+                // )
+                // .await
+                // {
+                //     // If we can't generate an image,
+                //     // we still play the elevenlabs sound
+                //     eprintln!("Error generating image: {}", e);
+                //     // We should print
+                // }
+                
             };
 
             println!(

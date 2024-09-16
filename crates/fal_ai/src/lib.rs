@@ -71,12 +71,15 @@ pub async fn sync_lips_to_voice(
     image_file_path: &str,
     audio_file_path: &str,
 ) -> Result<Bytes> {
+    println!("\tEncoding Image File Info");
     let fal_source_image_data_uri =
         fal_encode_file_as_data_uri(image_file_path).await?;
 
+    println!("\tEncoding Audio File Info");
     let fal_driven_audio_data_uri =
         fal_encode_file_as_data_uri(audio_file_path).await?;
 
+    println!("\tTalking to Fal");
     // Submit the request to fal and handle the result
     match fal_submit_sadtalker_request(
         &fal_source_image_data_uri,
@@ -276,7 +279,7 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
     let timestamp = chrono::Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
     tokio::fs::write(&json_path, &raw_json).await.unwrap();
-    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
+    process_images(&timestamp.to_string(), &json_path, None).await?;
 
     Ok(())
 }
@@ -288,13 +291,6 @@ async fn fal_submit_sadtalker_request(
 ) -> Result<String> {
     let fal_client = FalClient::new(ClientCredentials::from_env());
 
-    // Prepare the JSON payload specific to fal
-    // let fal_arguments = json!({
-    //     "source_image_url": fal_source_image_data_uri,
-    //     "driven_audio_url": fal_driven_audio_data_uri,
-    // });
-
-    // Send a POST request to the fal 'sadtalker' API endpoint
     let fal_response = fal_client
         .run(
             "fal-ai/sadtalker",
@@ -303,14 +299,14 @@ async fn fal_submit_sadtalker_request(
                 "driven_audio_url": fal_driven_audio_data_uri,
             }),
         )
-        .await
-        .unwrap();
+        .await.map_err(|e| anyhow!("Error call sadtalker: {:?}", e))?;
 
     // Check if the request was successful
     if fal_response.status().is_success() {
+        fal_response.text().await.map_err(|e| anyhow!("Error getting text: {:?}", e))
         // Retrieve the response body as text
-        let fal_result = fal_response.text().await?;
-        Ok(fal_result)
+        // let fal_result = fal_response.text().await?;
+        // Ok(fal_result)
     } else {
         // Return an error with the status code
         Err(anyhow!(format!(

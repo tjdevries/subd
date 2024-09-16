@@ -5,6 +5,25 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
+CREATE TYPE ai_song_status AS ENUM (
+  'STREAMING',
+  'COMPLETED',
+);
+
+  -- TODO: Figure out status
+CREATE TABLE ai_song_playlist(
+  song_id UUID NOT NULL,
+  title TEXT NOT NULL,
+  tags TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  username TEXT NOT NULL,
+  audio_url TEXT NOT NULL,
+  lyric TEXT NOT NULL,
+  gpt_description_prompt TEXT NOT NULL,
+  last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE twitch_stream_state(
   sub_only_tts boolean NOT NULL DEFAULT false,
   explicit_soundeffects boolean NOT NULL DEFAULT false,
