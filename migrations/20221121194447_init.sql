@@ -10,6 +10,8 @@ CREATE TYPE ai_song_status AS ENUM (
   'COMPLETED',
 );
 
+
+
   -- TODO: Figure out status
 CREATE TABLE ai_song_playlist(
   song_id UUID NOT NULL,
@@ -34,6 +36,8 @@ CREATE TABLE twitch_stream_state(
   dalle_mode boolean NOT NULL DEFAULT true,
   enable_stable_diffusion boolean NOT NULL DEFAULT false,
   ai_background_theme TEXT,
+  
+  current_song_id UUID UNIQUE references ai_song_playlist
 );
 
 CREATE TABLE user_stream_character_information(

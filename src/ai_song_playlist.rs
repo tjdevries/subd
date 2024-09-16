@@ -98,6 +98,32 @@ impl ai_song_playlist::Model {
         }
 }
 
+
+pub async fn find_by_id(
+    pool: &sqlx::PgPool,
+    song_id: Uuid,
+) -> Result<ai_song_playlist::Model> {
+    let res = sqlx::query!(
+        "SELECT * FROM ai_song_playlist WHERE song_id = $1",
+        song_id 
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let model = ai_song_playlist::Model {
+        song_id,
+        title: res.title,
+        tags: res.tags,
+        prompt: res.prompt,
+        username: res.username,
+        audio_url: res.audio_url,
+        lyric: res.lyric,
+        gpt_description_prompt: res.gpt_description_prompt,
+        last_updated: res.last_updated,
+        created_at: res.created_at,
+    };
+    Ok(model)
+}
 //
 // pub async fn set_ai_background_theme(pool: &PgPool, theme: &str) -> Result<()> {
 //     let _res = sqlx::query!(
