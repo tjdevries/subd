@@ -137,6 +137,7 @@ impl EventHandler for AiScenesHandler {
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
             let voice_to_face_image = HashMap::from([
+                ("god".to_string(), "god.png".to_string()),
                 ("prime".to_string(), "green_prime.png".to_string()),
                 ("ethan".to_string(), "alex_jones.png".to_string()),
                 ("teej".to_string(), "teej.png".to_string()),
