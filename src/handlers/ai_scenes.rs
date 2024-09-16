@@ -1,6 +1,5 @@
 use crate::ai_images::image_generation::GenerateImage;
 use crate::ai_scene;
-use std::collections::HashMap;
 use crate::audio;
 use crate::openai::dalle;
 use crate::redirect;
@@ -22,6 +21,7 @@ use rodio::*;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::run_from_prompt;
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
@@ -134,6 +134,7 @@ impl EventHandler for AiScenesHandler {
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
             let voice_to_face_image = HashMap::from([
+                ("satan".to_string(), "satan.png".to_string()),
                 ("god".to_string(), "god.png".to_string()),
                 ("prime".to_string(), "green_prime.png".to_string()),
                 ("ethan".to_string(), "alex_jones.png".to_string()),
@@ -141,26 +142,44 @@ impl EventHandler for AiScenesHandler {
                 ("melkey".to_string(), "melkey.png".to_string()),
             ]);
             let face_image = voice_to_face_image.get(&final_voice);
+            println!("Face Image Found for Voice: {:?}", face_image);
 
             match face_image {
                 Some(image_file_path) => {
-                    sync_lips_and_update(
+                    println!(
+                        "Syncing Lips and Voice for Image: {:?}",
+                        image_file_path
+                    );
+
+                    match sync_lips_and_update(
                         image_file_path,
                         &local_audio_path,
                         &locked_obs_client,
                     )
-                    .await?;
-                    
-                    // This happens way to early
-                    if let Some(music_bg) = ai_scene_req.music_bg {
-                        let _ = send_message(&locked_client, music_bg.clone()).await;
+                    .await
+                    {
+                        Ok(_) => {
+                            if let Some(music_bg) = ai_scene_req.music_bg {
+                                let _ = send_message(
+                                    &locked_client,
+                                    music_bg.clone(),
+                                )
+                                .await;
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "Error syncing lips and updating: {:?}",
+                                e
+                            );
+                        }
                     }
                 }
                 None => {
-                    
                     // This happens way to early
                     if let Some(music_bg) = ai_scene_req.music_bg {
-                        let _ = send_message(&locked_client, music_bg.clone()).await;
+                        let _ = send_message(&locked_client, music_bg.clone())
+                            .await;
                     }
 
                     let (_stream, stream_handle) =
