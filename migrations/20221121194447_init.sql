@@ -26,6 +26,8 @@ CREATE TABLE ai_song_playlist(
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ALTER TABLE twitch_stream_state ADD COLUMN current_song_id UUID UNIQUE references ai_song_playlist;
+-- ALTER TABLE twitch_stream_state ADD COLUMN ai_background_theme TEXT;
 CREATE TABLE twitch_stream_state(
   sub_only_tts boolean NOT NULL DEFAULT false,
   explicit_soundeffects boolean NOT NULL DEFAULT false,

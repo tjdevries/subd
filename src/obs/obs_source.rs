@@ -312,11 +312,6 @@ pub async fn find_id(
     obs_client.scene_items().id(id_search).await
 }
 
-// source     | text    |           | not null |
-// position_x | numeric |           | not null |
-// position_y | numeric |           | not null |
-// scale      | numeric |           | not null |
-
 #[derive(Debug)]
 pub struct ObsSource {
     pub source: String,
@@ -344,20 +339,6 @@ pub async fn get_obs_source(
     Ok(model)
 }
 
-// ====================================================
-// // POSTRES
-// ====================================================
-
-// source     | text    |           | not null |
-// position_x | numeric |           | not null |
-// position_y | numeric |           | not null |
-// scale      | numeric |           | not null |
-
-//
-// use sqlx::bigdecimal::BigDecimal;
-// 22:26:07
-
-// Is that the right word?
 pub async fn update_obs_source_defaults(
     pool: &sqlx::PgPool,
     source: String,
@@ -384,7 +365,6 @@ pub async fn update_obs_source_defaults(
     .map_err(|e| anyhow!("Error updating obs_source: {}", e))
 }
 
-// Is that the right word?
 pub async fn update_obs_source_position(
     pool: &sqlx::PgPool,
     source: String,
@@ -406,6 +386,7 @@ pub async fn update_obs_source_position(
     .await
     .map_err(|e| anyhow!("Error updating obs_source: {}", e))
 }
+
 // We need to save:
 //  - prime
 //  - alex
