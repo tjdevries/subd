@@ -17,6 +17,7 @@ twitch_notifications = { path = "crates/twitch_notifications" }
 user_service = { path = "crates/user_service" }
 events = { path = "crates/events" }
 stable_diffusion = { path = "crates/stable_diffusion" }
+fal_ai = { path = "crates/fal_ai" }
 
 # Twitch Deps
 twitch-irc.workspace = true
@@ -90,6 +91,7 @@ serde_with = { features = ["macros"], version = "3.4.0"}
 url = "2.5.2"
 regex = "1.10.6"
 mime_guess = "2.0.5"
+bytes = "1.7.1"
 
 [workspace]
 members = ["crates/*"]

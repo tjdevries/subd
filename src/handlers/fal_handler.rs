@@ -1,4 +1,8 @@
 use crate::audio;
+
+// Not sure on this
+use bytes::Bytes;
+
 use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
@@ -12,6 +16,7 @@ use reqwest::Client;
 use rodio::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing_subscriber::registry::SpanData;
 use std::io::Write;
 use std::path::Path;
 use subd_types::{Event, UserMessage};
@@ -132,15 +137,15 @@ pub async fn handle_fal_commands(
         }
 
         "!talk" => {
-            // Replace with your local file paths specific to fal
             let fal_image_file_path = "green_prime.png";
-            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
-            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110651_zanuss_prime.wav";
-            // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110588_ninja_tron_prime.wav";
             let fal_audio_file_path =
                 "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
 
-            handle_talk_command().await?;
+            let video_bytes = sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
+            
+            let video_path = "./prime.mp4";
+            tokio::fs::write(&video_path, &video_bytes).await?;
+            println!("Video saved to {}", video_path);
 
             let scene = "Primary";
             let source = "prime-talking-video";
@@ -156,23 +161,6 @@ pub async fn handle_fal_commands(
                 scene, source, true, obs_client,
             )
             .await;
-
-            // // Read and encode the image file to a data URI for fal
-            // let fal_source_image_data_uri = fal_encode_file_as_data_uri(fal_image_file_path).await?;
-            //
-            // // Read and encode the audio file to a data URI for fal
-            // let fal_driven_audio_data_uri = fal_encode_file_as_data_uri(fal_audio_file_path).await?;
-            //
-            // // Submit the request to fal and handle the result
-            // match fal_submit_sadtalker_request(&fal_source_image_data_uri, &fal_driven_audio_data_uri).await
-            // {
-            //     Ok(fal_result) => {
-            //         println!("fal Result: {}", fal_result);
-            //     }
-            //     Err(e) => {
-            //         eprintln!("fal Error: {}", e);
-            //     }
-            // }
         }
 
         "!fal" => {}
@@ -198,25 +186,12 @@ pub async fn handle_fal_commands(
     Ok(())
 }
 
-async fn handle_talk_command() -> Result<()> {
-    let fal_image_file_path = "green_prime.png";
-    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
-    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701110651_zanuss_prime.wav";
-
-    let fal_audio_file_path =
-        "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
-    // Replace with your local file paths specific to fal
-    // let fal_image_file_path = "prime.jpg";
-    // // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059381_beginbot_prime.wav";
-    // let fal_audio_file_path = "TwitchChatTTSRecordings/1701059427_carlvandergeest_prime.wav";
-
-    // Read and encode the image file to a data URI for fal
+async fn sync_lips_to_voice(image_file_path: &str, audio_file_path: &str) -> Result<Bytes> {
     let fal_source_image_data_uri =
-        fal_encode_file_as_data_uri(fal_image_file_path).await?;
+        fal_encode_file_as_data_uri(image_file_path).await?;
 
-    // Read and encode the audio file to a data URI for fal
     let fal_driven_audio_data_uri =
-        fal_encode_file_as_data_uri(fal_audio_file_path).await?;
+        fal_encode_file_as_data_uri(audio_file_path).await?;
 
     // Submit the request to fal and handle the result
     match fal_submit_sadtalker_request(
@@ -252,9 +227,11 @@ async fn handle_talk_command() -> Result<()> {
                         tokio::fs::write(&video_path, &video_bytes).await?;
                         println!("Video saved to {}", video_path);
 
-                        let video_path = "./prime.mp4";
-                        tokio::fs::write(&video_path, &video_bytes).await?;
-                        println!("Video saved to {}", video_path);
+                        return Ok(video_bytes);
+                        // This probably shouldn't happen in here
+                        // let video_path = "./prime.mp4";
+                        // tokio::fs::write(&video_path, &video_bytes).await?;
+                        // println!("Video saved to {}", video_path);
                     } else {
                         eprintln!("Error: 'url' is not a string");
                     }
@@ -269,8 +246,7 @@ async fn handle_talk_command() -> Result<()> {
             eprintln!("fal Error: {}", e);
         }
     }
-
-    Ok(())
+    return Err(anyhow!("Error: fal request failed"));
 }
 
 async fn process_images(
