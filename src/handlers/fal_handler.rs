@@ -3,13 +3,13 @@ use crate::audio;
 // Not sure on this
 use bytes::Bytes;
 
-use fal_ai;
 use crate::{constants, twitch_stream_state};
 use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use events::EventHandler;
+use fal_ai;
 use mime_guess::MimeGuess;
 use obws::Client as OBSClient;
 use regex::Regex;
@@ -17,11 +17,11 @@ use reqwest::Client;
 use rodio::*;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing_subscriber::registry::SpanData;
 use std::io::Write;
 use std::path::Path;
 use subd_types::{Event, UserMessage};
 use tokio::time::{sleep, Duration};
+use tracing_subscriber::registry::SpanData;
 
 // Which do I need?
 // use std::fs::File;
@@ -142,8 +142,12 @@ pub async fn handle_fal_commands(
             let fal_audio_file_path =
                 "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
 
-            let video_bytes = fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
-            
+            let video_bytes = fal_ai::sync_lips_to_voice(
+                fal_image_file_path,
+                fal_audio_file_path,
+            )
+            .await?;
+
             let video_path = "./prime.mp4";
             tokio::fs::write(&video_path, &video_bytes).await?;
             println!("Video saved to {}", video_path);

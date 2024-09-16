@@ -47,26 +47,30 @@ pub async fn handle_fal_commands(
     let command = splitmsg[0].as_str();
 
     match command {
-
         "!talk" => {
             let fal_image_file_path = "green_prime.png";
             let fal_audio_file_path =
                 "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
 
-            let video_bytes = sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
-            
+            let video_bytes =
+                sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
+                    .await?;
+
             let video_path = "./prime.mp4";
             tokio::fs::write(&video_path, &video_bytes).await?;
             println!("Video saved to {}", video_path);
         }
 
-        _ => { }
+        _ => {}
     };
 
     Ok(())
 }
 
-pub async fn sync_lips_to_voice(image_file_path: &str, audio_file_path: &str) -> Result<Bytes> {
+pub async fn sync_lips_to_voice(
+    image_file_path: &str,
+    audio_file_path: &str,
+) -> Result<Bytes> {
     let fal_source_image_data_uri =
         fal_encode_file_as_data_uri(image_file_path).await?;
 

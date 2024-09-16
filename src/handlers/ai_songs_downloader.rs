@@ -313,13 +313,14 @@ async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    for (_i, line) in lyric_lines.iter().enumerate() {
-        fal_handler::create_turbo_image_in_folder(
-            line.to_string(),
-            &folder_path,
-        )
-        .await?;
-    }
+    // This needs to happen async and work properly
+    // for (_i, line) in lyric_lines.iter().enumerate() {
+    //     fal_handler::create_turbo_image_in_folder(
+    //         line.to_string(),
+    //         &folder_path,
+    //     )
+    //     .await?;
+    // }
 
     download_and_play(twitch_client, tx, user_name, &id.to_string()).await
 }

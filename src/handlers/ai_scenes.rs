@@ -1,6 +1,4 @@
 use crate::ai_images::image_generation::GenerateImage;
-use fal_ai;
-use tokio::time::{sleep, Duration};
 use crate::ai_scene;
 use crate::audio;
 use crate::openai::dalle;
@@ -16,6 +14,7 @@ use elevenlabs_api::{
     *,
 };
 use events::EventHandler;
+use fal_ai;
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
@@ -31,6 +30,7 @@ use subd_types::AiScenesRequest;
 use subd_types::Event;
 use tokio::sync::broadcast;
 use tokio::sync::Mutex;
+use tokio::time::{sleep, Duration};
 use twitch_chat::client::send_message;
 
 use twitch_irc::{
@@ -125,19 +125,26 @@ impl EventHandler for AiScenesHandler {
                 }
             };
 
-            println!("Image Generated, Playing Audio: Final Voice {}", final_voice.clone());
+            println!(
+                "Image Generated, Playing Audio: Final Voice {}",
+                final_voice.clone()
+            );
 
             // We are supressing a whole bunch of alsa message
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
-
 
             // This is trying the voice syncing
             let fal_image_file_path = "green_prime.png";
             // let fal_audio_file_path = "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
 
             if final_voice == "prime" {
-                sync_lips_and_update(fal_image_file_path, &local_audio_path, &locked_obs_client).await?;
+                sync_lips_and_update(
+                    fal_image_file_path,
+                    &local_audio_path,
+                    &locked_obs_client,
+                )
+                .await?;
             } else {
                 let (_stream, stream_handle) =
                     audio::get_output_stream("pulse").expect("stream handle");
@@ -154,9 +161,15 @@ impl EventHandler for AiScenesHandler {
     }
 }
 
-async fn sync_lips_and_update(fal_image_file_path: &str, fal_audio_file_path: &str, obs_client: &OBSClient) -> Result<()> {
-    let video_bytes = fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
-    
+async fn sync_lips_and_update(
+    fal_image_file_path: &str,
+    fal_audio_file_path: &str,
+    obs_client: &OBSClient,
+) -> Result<()> {
+    let video_bytes =
+        fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
+            .await?;
+
     let video_path = "./prime.mp4";
     match tokio::fs::write(&video_path, &video_bytes).await {
         Ok(_) => {}
@@ -169,19 +182,17 @@ async fn sync_lips_and_update(fal_image_file_path: &str, fal_audio_file_path: &s
 
     let scene = "Primary";
     let source = "prime-talking-video";
-    let _ = crate::obs::obs_source::set_enabled(
-        scene, source, false, &obs_client,
-    )
-    .await;
+    let _ =
+        crate::obs::obs_source::set_enabled(scene, source, false, &obs_client)
+            .await;
 
     // Not sure if I have to wait ofr how long to wait
     sleep(Duration::from_millis(100)).await;
 
-    let _ = crate::obs::obs_source::set_enabled(
-        scene, source, true, &obs_client,
-    )
-    .await;
-    return Ok(())
+    let _ =
+        crate::obs::obs_source::set_enabled(scene, source, true, &obs_client)
+            .await;
+    return Ok(());
 }
 
 async fn find_image_modes(pool: sqlx::PgPool) -> Result<(bool, bool)> {
