@@ -5,7 +5,7 @@ use crate::twitch_stream_state;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use dotenv::dotenv;
+// use dotenv::dotenv;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use reqwest::multipart::{Form, Part};
