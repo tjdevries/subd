@@ -20,7 +20,7 @@ CREATE TABLE ai_song_playlist (
 
   -- TODO: Figure out status
 CREATE TABLE ai_songs(
-  song_id UUID NOT NULL,
+  song_id UUID NOT NULL UNIQUE,
   title TEXT NOT NULL,
   tags TEXT NOT NULL,
   prompt TEXT NOT NULL,
