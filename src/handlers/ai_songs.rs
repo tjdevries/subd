@@ -102,7 +102,18 @@ impl EventHandler for AISongsHandler {
         // we have the sink at this point
         // This is the main loop
         loop {
+            if self.sink.empty() {
+                println!("It's empty!");
+                println!("Marking all Songs as stopped");
+                let _ =
+                    ai_song_playlist::mark_songs_as_stopped(&self.pool).await;
+            } else {
+                println!("It's not empty!");
+            }
+
             let event = rx.recv().await?;
+
+            // I could check the sink right here
             let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
@@ -191,12 +202,13 @@ async fn play_audio(
 
     let uuid_id = uuid::Uuid::parse_str(id)?;
 
+    println!("Adding to Playlist");
     ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     let _ = play_sound_instantly(sink, file).await;
 
-    Ok(ai_song_playlist::mark_song_as_stopped(pool, uuid_id).await?)
+    Ok(())
 }
 
 async fn get_audio_information(id: &str) -> Result<SunoResponse> {

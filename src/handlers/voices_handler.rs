@@ -444,138 +444,131 @@ pub async fn handle_voices_commands(
             Ok(())
         }
 
-        // !clone name URL URL URL
         "!clone" => {
-            dotenv().ok();
             if not_beginbot {
                 return Ok(());
             }
 
+            // we need at least a name and URL
             if splitmsg.len() < 3 {
-                // we need at least a name and URL
                 return Ok(());
             }
 
-            // So we need to iterate over everything 2 on
-            if splitmsg.len() > 2 {
-                let name = &splitmsg[1];
-                let urls = &splitmsg[2..];
+            let name = &splitmsg[1];
+            let urls = &splitmsg[2..];
 
-                // Create the directory for the split sounds
-                let split_mp3_folder =
-                    format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
-                match fs::create_dir(&split_mp3_folder) {
-                    Ok(_) => println!("Directory created successfully"),
-                    Err(e) => println!("Error creating directory: {:?}", e),
-                }
-
-                // // So we need to actually get all the files matching a pattern
-                for (index, url) in urls.iter().enumerate() {
-                    if index > 15 {
-                        continue;
-                    }
-
-                    println!("{index} URL {url}");
-                    let cloned_mp3 = format!(
-                        "/home/begin/code/subd/tmp/cloned/{}-{}.wav",
-                        name, index
-                    );
-                    let _ffmpeg_status = Command::new("yt-dlp")
-                        .args(&[
-                            "-x",
-                            "--audio-format",
-                            "wav",
-                            &url,
-                            "-o",
-                            &cloned_mp3,
-                        ])
-                        .status()
-                        .expect("Failed to execute ffmpeg");
-
-                    // ffmpeg -i kim-1.wav -f segment -segment_time 50 -c copy split_kim/kim-1-%d.wav
-                    let split_file_name = format!(
-                        "{}{}-{}-%d.wav",
-                        split_mp3_folder, name, index
-                    );
-                    let _ffmpeg_status = Command::new("ffmpeg")
-                        .args(&[
-                            "-i",
-                            &cloned_mp3,
-                            "-f",
-                            "segment",
-                            "-segment_time",
-                            "50",
-                            "-c",
-                            "copy",
-                            &split_file_name,
-                        ])
-                        .status()
-                        .expect("Failed to execute ffmpeg");
-                }
-
-                let soundeffect_files = fs::read_dir(split_mp3_folder)?;
-                let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-                for split_file in soundeffect_files {
-                    mp3s.insert(split_file?.path().display().to_string());
-                }
-
-                let vec: Vec<String> = mp3s.into_iter().collect();
-                let voice_clone = VoiceClone {
-                    name: name.to_string(),
-                    description: "a cloned voice".to_string(),
-                    files: vec,
-                    labels: HashMap::new(),
-                };
-
-                let api_base_url_v1 = "https://api.elevenlabs.io/v1";
-                let result = from_clone(voice_clone, api_base_url_v1).await;
-
-                // We want the ID to not be escapae
-                let voice_id = match result {
-                    Ok(id) => id,
-                    Err(err) => {
-                        eprintln!("Error Cloning: {:?}", err);
-                        return Ok(());
-                    }
-                };
-                println!("Result: {:?}", voice_id);
-
-                // We save the JSON
-                let filename = format!("/home/begin/code/subd/voices.json");
-                let mut file = fs::File::open(filename.clone())?;
-                let mut data = String::new();
-                file.read_to_string(&mut data)?;
-
-                let mut root: VoiceRoot = serde_json::from_str(&data)?;
-
-                let new_voice = Voice {
-                    voice_id,
-                    name: name.to_string(),
-                    // Initialize other fields as needed...
-                };
-
-                // Add the new entry to the 'voices' vector
-                root.voices.push(new_voice);
-
-                // Serialize the modified object back to a JSON string
-                let modified_json = serde_json::to_string_pretty(&root)?;
-
-                // Write the modified JSON back to the file
-                let mut file = fs::File::create(filename)?;
-                file.write_all(modified_json.as_bytes())?;
-
-                // let client = Client::new();
-                // If I update the voices.json, it will work
-                // let audio_response = client.post("https://api.elevenlabs.io/generate")
-                //     .bearer_auth(&api_key)
-                //     .json(&json!({
-                //         "text": "Hi! I'm a cloned voice!",
-                //         "voice": cloned_voice  , // Assuming voice contains the necessary identifier
-                //     }))
-                //     .send()
-                //     .await
-                //     .expect("Failed to send request");
+            // Create the directory for the split sounds
+            let split_mp3_folder =
+                format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
+            match fs::create_dir(&split_mp3_folder) {
+                Ok(_) => println!("Directory created successfully"),
+                Err(e) => println!("Error creating directory: {:?}", e),
             }
+
+            // // So we need to actually get all the files matching a pattern
+            for (index, url) in urls.iter().enumerate() {
+                if index > 15 {
+                    continue;
+                }
+
+                println!("{index} URL {url}");
+                let cloned_mp3 = format!(
+                    "/home/begin/code/subd/tmp/cloned/{}-{}.wav",
+                    name, index
+                );
+                let _ffmpeg_status = Command::new("yt-dlp")
+                    .args(&[
+                        "-x",
+                        "--audio-format",
+                        "wav",
+                        &url,
+                        "-o",
+                        &cloned_mp3,
+                    ])
+                    .status()
+                    .expect("Failed to execute ffmpeg");
+
+                // ffmpeg -i kim-1.wav -f segment -segment_time 50 -c copy split_kim/kim-1-%d.wav
+                let split_file_name =
+                    format!("{}{}-{}-%d.wav", split_mp3_folder, name, index);
+                let _ffmpeg_status = Command::new("ffmpeg")
+                    .args(&[
+                        "-i",
+                        &cloned_mp3,
+                        "-f",
+                        "segment",
+                        "-segment_time",
+                        "50",
+                        "-c",
+                        "copy",
+                        &split_file_name,
+                    ])
+                    .status()
+                    .expect("Failed to execute ffmpeg");
+            }
+
+            let soundeffect_files = fs::read_dir(split_mp3_folder)?;
+            let mut mp3s: HashSet<String> = vec![].into_iter().collect();
+            for split_file in soundeffect_files {
+                mp3s.insert(split_file?.path().display().to_string());
+            }
+
+            let vec: Vec<String> = mp3s.into_iter().collect();
+            let voice_clone = VoiceClone {
+                name: name.to_string(),
+                description: "a cloned voice".to_string(),
+                files: vec,
+                labels: HashMap::new(),
+            };
+
+            let api_base_url_v1 = "https://api.elevenlabs.io/v1";
+            let result = from_clone(voice_clone, api_base_url_v1).await;
+
+            // We want the ID to not be escapae
+            let voice_id = match result {
+                Ok(id) => id,
+                Err(err) => {
+                    eprintln!("Error Cloning: {:?}", err);
+                    return Ok(());
+                }
+            };
+            println!("Result: {:?}", voice_id);
+
+            // We save the JSON
+            let filename = format!("/home/begin/code/subd/voices.json");
+            let mut file = fs::File::open(filename.clone())?;
+            let mut data = String::new();
+            file.read_to_string(&mut data)?;
+
+            let mut root: VoiceRoot = serde_json::from_str(&data)?;
+
+            let new_voice = Voice {
+                voice_id,
+                name: name.to_string(),
+                // Initialize other fields as needed...
+            };
+
+            // Add the new entry to the 'voices' vector
+            root.voices.push(new_voice);
+
+            // Serialize the modified object back to a JSON string
+            let modified_json = serde_json::to_string_pretty(&root)?;
+
+            // Write the modified JSON back to the file
+            let mut file = fs::File::create(filename)?;
+            file.write_all(modified_json.as_bytes())?;
+
+            // let client = Client::new();
+            // If I update the voices.json, it will work
+            // let audio_response = client.post("https://api.elevenlabs.io/generate")
+            //     .bearer_auth(&api_key)
+            //     .json(&json!({
+            //         "text": "Hi! I'm a cloned voice!",
+            //         "voice": cloned_voice  , // Assuming voice contains the necessary identifier
+            //     }))
+            //     .send()
+            //     .await
+            //     .expect("Failed to send request");
 
             Ok(())
         }
@@ -659,35 +652,3 @@ async fn from_clone(
         .ok_or(anyhow!("Couldn't convert voice_id to str"))
         .map(|s| s.to_string())
 }
-
-// voice_id='45XeoJwbLhXJHjCXAi7q' name='owen' category='cloned' description='wow a cool guy' labels={} samples=[VoiceSample(sample_id='MtUrilOLqpnJeqxFuSn4', file_name='owen_140136286216160.mp3', mime_type='audio/mpeg', size_bytes=7167501, hash='e8130f475e206a3afb98443880a75aa4')] design=None preview_url=None settings=VoiceSettings(stability=0.5, similarity_boost=0.75, style=0.0, use_speaker_boost=True)
-//
-// #[derive(Debug, Deserialize)]
-// struct VoiceSample {
-//     sample_id: String,
-//     file_name: String,
-//     mime_type: String,
-//     size_bytes: u64,
-//     hash: String,
-// }
-//
-// #[derive(Debug, Deserialize)]
-// struct VoiceSettings {
-//     stability: f32,
-//     similarity_boost: f32,
-//     style: f32,
-//     use_speaker_boost: bool,
-// }
-//
-// #[derive(Debug, Deserialize)]
-// struct VoiceResponse {
-//     voice_id: String,
-//     name: String,
-//     category: String,
-//     description: String,
-//     labels: serde_json::Value, // Using Value to accommodate an unspecified structure
-//     samples: Vec<VoiceSample>,
-//     design: Option<serde_json::Value>, // Assuming this can be null
-//     preview_url: Option<String>,
-//     settings: VoiceSettings,
-// }

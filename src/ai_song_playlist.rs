@@ -136,6 +136,19 @@ pub async fn mark_song_as_played(
     Ok(())
 }
 
+// I should be able to just mark the songs that's stopped as stopped
+pub async fn mark_songs_as_stopped(pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE ai_song_playlist
+        SET stopped_at = NOW()
+        "#,
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 pub async fn mark_song_as_stopped(
     pool: &PgPool,
     song_id: Uuid,
