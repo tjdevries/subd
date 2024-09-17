@@ -142,6 +142,31 @@ impl EventHandler for AISongsHandler {
     }
 }
 
+async fn _add_sound_to_rodio_queue(
+    sink: &Sink,
+    reverb: bool,
+    file: BufReader<File>,
+) -> Result<()> {
+    let _sound = match Decoder::new(BufReader::new(file)) {
+        Ok(v) => {
+            if reverb {
+                let reverb =
+                    v.buffered().reverb(Duration::from_millis(70), 1.0);
+                sink.append(reverb);
+            } else {
+                sink.append(v);
+                return Ok(());
+            };
+        }
+        Err(e) => {
+            eprintln!("Error decoding sound file: {}", e);
+            return Err(anyhow!("Error decoding sound file: {}", e));
+        }
+    };
+
+    return Ok(());
+}
+
 async fn play_audio(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
@@ -201,13 +226,6 @@ pub async fn handle_requests(
 ) -> Result<()> {
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-
-    // let is_mod = msg.roles.is_twitch_mod();
-    // let is_vip = msg.roles.is_twitch_vip();
-    // let is_sub = msg.roles.is_twitch_sub();
-    // if !is_sub && !is_vip && !is_mod && _not_beginbot {
-    //     return Ok(());
-    // }
 
     let command = splitmsg[0].as_str();
 
@@ -308,6 +326,7 @@ pub async fn handle_requests(
                 created_at: Some(created_at),
             };
 
+            // HA WE ARE TRYING
             // If we already have the song, we don't need to crash
             let _saved_song = new_song.save(&pool).await;
 
@@ -453,33 +472,6 @@ pub async fn handle_requests(
             return Ok(());
         }
     }
-}
-
-async fn _add_sound_to_rodio_queue(
-    sink: &Sink,
-    reverb: bool,
-    file: BufReader<File>,
-) -> Result<()> {
-    let _sound = match Decoder::new(BufReader::new(file)) {
-        Ok(v) => {
-            if reverb {
-                let reverb =
-                    v.buffered().reverb(Duration::from_millis(70), 1.0);
-                sink.append(reverb);
-            } else {
-                sink.append(v);
-                return Ok(());
-            };
-        }
-        Err(e) => {
-            eprintln!("Error decoding sound file: {}", e);
-            return Err(anyhow!("Error decoding sound file: {}", e));
-        }
-    };
-
-    // This could
-    // This could be a message
-    return Ok(());
 }
 
 async fn play_sound_instantly(
