@@ -11,9 +11,15 @@ CREATE TYPE ai_song_status AS ENUM (
 );
 
 
+CREATE TABLE ai_song_playlist (
+    playlist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    song_id UUID REFERENCES ai_songs(song_id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    played_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+);
 
   -- TODO: Figure out status
-CREATE TABLE ai_song_playlist(
+CREATE TABLE ai_songs(
   song_id UUID NOT NULL,
   title TEXT NOT NULL,
   tags TEXT NOT NULL,
@@ -39,7 +45,7 @@ CREATE TABLE twitch_stream_state(
   enable_stable_diffusion boolean NOT NULL DEFAULT false,
   ai_background_theme TEXT,
   
-  current_song_id UUID UNIQUE references ai_song_playlist
+  current_song_id UUID UNIQUE references ai_songs
 );
 
 CREATE TABLE user_stream_character_information(
