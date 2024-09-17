@@ -11,11 +11,12 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
-use std::sync::Arc;
-use std::sync::Mutex;
+// use std::sync::Arc;
+// use std::sync::Mutex;
+// use tokio::time::{self, Duration};
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
-use tokio::time::{self, Duration};
+use tokio::time::Duration;
 use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -32,8 +33,8 @@ pub struct AISongsHandler {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
-// Should this be a
-// We need to unify the suno responses
+// This called SunoResponse and is in ai_songs
+// which doesn't seem right
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SunoResponse {
     pub id: String,
@@ -97,6 +98,8 @@ impl EventHandler for AISongsHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        // we have the sink at this point
+        // This is the main loop
         loop {
             let event = rx.recv().await?;
             let msg = match event {
@@ -161,8 +164,13 @@ async fn play_audio(
     println!("\tPlaying Audio {}", id);
 
     let uuid_id = uuid::Uuid::parse_str(id)?;
+
+    // TODO: Thes should be combined
     ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
+
+    // We are expecting this song to end before it marks as ended
+    // But if we marked it inside the play_audio_instantly function it might be at the right time
     let _ = play_sound_instantly(sink, file).await;
     Ok(ai_song_playlist::mark_song_as_stopped(pool, uuid_id).await?)
 }
@@ -481,9 +489,18 @@ async fn play_sound_instantly(
 ) -> Result<()> {
     match Decoder::new(BufReader::new(file)) {
         Ok(v) => {
+            // This clear() seems to cause problems
+            // but it might be because we didn't pause enought before the append
+            // but that also would suck
             // sink.clear();
+
             println!("\tAppending Sound");
             sink.append(v);
+
+            // If we sleep_until_end here,
+            // it blocks other commands in this ai_handler
+            // we might want to consider careful how to divide up these functions
+            // and share the proper handlers
             // sink.sleep_until_end()
         }
         Err(e) => {
