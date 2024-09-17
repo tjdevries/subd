@@ -181,8 +181,6 @@ async fn process_images(
             additional_file.write_all(&image_bytes).await.with_context(
                 || format!("Error writing to file: {}", additional_filename),
             )?;
-            println!("Also saved to {}", additional_filename);
-            // **New Code End**
 
             // Optionally save the image to an additional location
             if let Some(extra_folder) = extra_save_folder {

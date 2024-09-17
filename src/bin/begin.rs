@@ -6,6 +6,8 @@ use server::audio;
 use server::handlers;
 use server::obs::obs::create_obs_client;
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
@@ -449,6 +451,11 @@ async fn main() -> Result<()> {
             "ai_songs" => {
                 let obs_client = create_obs_client().await?;
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+
+                // Can I do something with this sink now???
+
+                // So I think I might want to wrap this sink
+                // with a mutex and Arc
                 let twitch_config = get_chat_config();
                 let (_, twitch_client) = TwitchIRCClient::<
                     SecureTCPTransport,

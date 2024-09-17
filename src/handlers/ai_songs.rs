@@ -98,6 +98,7 @@ impl EventHandler for AISongsHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        // Can I kick off an event here?
         // we have the sink at this point
         // This is the main loop
         loop {
@@ -322,9 +323,9 @@ pub async fn handle_requests(
                 return Ok(());
             }
 
-            println!("\tAttempting to play!");
+            println!("\tAttempting to !pause");
             sink.pause();
-            println!("\tDone Attempting to play!");
+            println!("\tDone !pause");
             return Ok(());
         }
 
@@ -333,9 +334,9 @@ pub async fn handle_requests(
                 return Ok(());
             }
 
-            println!("\tAttempting to play!");
+            println!("\tTrying to Pause!");
             sink.play();
-            println!("\tDone Attempting to play!");
+            println!("\tDone Pausing");
             return Ok(());
         }
 

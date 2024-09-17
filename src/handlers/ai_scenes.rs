@@ -65,8 +65,22 @@ impl EventHandler for AiScenesHandler {
         let obs_client_clone = obs_client.clone();
         let locked_obs_client = obs_client_clone.lock().await;
 
+        //. From AI
+        let mut sink_empty = false;
+
         println!("Starting AI Scenes Handler");
         loop {
+            if self.sink.empty() && !sink_empty {
+                // The song has stopped playing
+                sink_empty = true;
+                // Send a message indicating the song has ended
+                //  let _ = self.song_end_tx.send(()).await;
+                println!("\t\tNo More Song!!!!");
+            } else if !self.sink.empty() {
+                println!("\nsong time...");
+                sink_empty = false;
+            }
+
             let event = rx.recv().await?;
             let ai_scene_req = match event {
                 Event::AiScenesRequest(msg) => msg,
@@ -115,6 +129,7 @@ impl EventHandler for AiScenesHandler {
                 )
                 .await?;
 
+                // We need to evaluate this
                 // This is the old way of generating an image
                 // if let Err(e) = generate_image(
                 //     prompt,
@@ -140,18 +155,23 @@ impl EventHandler for AiScenesHandler {
             let backup =
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
+            // we need to have one for each of these
+            // we can also depend on everything being named one-way
             let voice_to_face_image = HashMap::from([
                 ("satan".to_string(), "satan.png".to_string()),
                 ("god".to_string(), "god.png".to_string()),
-                ("prime".to_string(), "green_prime.png".to_string()),
                 ("ethan".to_string(), "alex_jones.png".to_string()),
+                // We need a systen for multiple photos
                 // ("teej".to_string(), "teej.png".to_string()),
                 // ("teej".to_string(), "teej_2.jpg".to_string()),
+                ("prime".to_string(), "green_prime.png".to_string()),
                 ("teej".to_string(), "teej_3.png".to_string()),
                 ("melkey".to_string(), "melkey.png".to_string()),
             ]);
             let face_image = voice_to_face_image.get(&final_voice);
             println!("Face Image Found for Voice: {:?}", face_image);
+
+            // we def need a seperate function
 
             match face_image {
                 Some(image_file_path) => {
