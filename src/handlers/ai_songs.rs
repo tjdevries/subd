@@ -163,7 +163,7 @@ async fn play_audio(
     let uuid_id = uuid::Uuid::parse_str(id)?;
     ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
-    play_sound_instantly(sink, file).await;
+    let _ = play_sound_instantly(sink, file).await;
     Ok(ai_song_playlist::mark_song_as_stopped(pool, uuid_id).await?)
 }
 
@@ -243,7 +243,7 @@ pub async fn handle_requests(
             // sink.try_seek() and you might need the position before you move it
             // add_source(song, reverb) ->sink.skip_one(); sink.seek(sink.get_pos())
             println!("\tQueuing w/ Reverb {}", id);
-            let reverb = true;
+            // let reverb = true;
             return play_audio(&twitch_client, pool, &sink, id, &msg.user_name)
                 .await;
         }
@@ -260,7 +260,7 @@ pub async fn handle_requests(
                 None => return Ok(()),
             };
 
-            let reverb = false;
+            // let reverb = false;
             // let _audio_info = get_audio_information(id).await?;
 
             let uuid_id = uuid::Uuid::parse_str(id)?;
@@ -448,7 +448,7 @@ pub async fn handle_requests(
     }
 }
 
-async fn add_sound_to_rodio_queue(
+async fn _add_sound_to_rodio_queue(
     sink: &Sink,
     reverb: bool,
     file: BufReader<File>,

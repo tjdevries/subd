@@ -99,7 +99,7 @@ async fn move_bogan(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
     use crate::obs::obs;
 
     #[tokio::test]
