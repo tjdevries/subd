@@ -27,7 +27,7 @@ CREATE TABLE ai_songs(
   prompt TEXT NOT NULL,
   username TEXT NOT NULL,
   audio_url TEXT NOT NULL,
-  lyric TEXT NOT NULL,
+  lyric TEXT,
   gpt_description_prompt TEXT NOT NULL,
   last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

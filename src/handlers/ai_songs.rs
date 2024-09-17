@@ -11,9 +11,11 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
-use std::time::Duration;
+use std::sync::Arc;
+use std::sync::Mutex;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use tokio::time::{self, Duration};
 use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -30,6 +32,7 @@ pub struct AISongsHandler {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
+// Should this be a
 // We need to unify the suno responses
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SunoResponse {
@@ -37,7 +40,7 @@ pub struct SunoResponse {
     pub video_url: String,
     pub audio_url: String,
     pub image_url: String,
-    pub lyric: String,
+    pub lyric: Option<String>,
     pub image_large_url: Option<String>,
     pub is_video_pending: Option<bool>,
 
@@ -106,6 +109,12 @@ impl EventHandler for AISongsHandler {
                 .split(" ")
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
+
+            // let sink = Arc::new(Mutex::new(self.sink));
+            // let _ = start_pooling(&sink).await;
+            // kjp
+            // let sink = Arc::new(Mutex::new(&self.sink));
+            // let _ = start_pooling(&sink.clone()).await;
 
             // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_requests(
@@ -475,7 +484,7 @@ async fn play_sound_instantly(
             // sink.clear();
             println!("\tAppending Sound");
             sink.append(v);
-            sink.sleep_until_end()
+            // sink.sleep_until_end()
         }
         Err(e) => {
             eprintln!("Error decoding sound file: {}", e);
@@ -485,6 +494,66 @@ async fn play_sound_instantly(
 
     Ok(())
 }
+
+// async fn start_pooling(sink: &Arc<Mutex<&Sink>>) {
+//     let (_send, recv) = oneshot::channel::<()>();
+//     let s = Arc::clone(&sink);
+//
+//     tokio::spawn(async move {
+//         tokio::select! {
+//             _ = task_inner(&s) => {},
+//             _ = recv => {
+//                 println!("finished, break the loop, call it a day");
+//             }
+//         }
+//         println!("finished in the walking task");
+//     });
+// }
+//
+// async fn task_inner(sink: &Arc<Mutex<&Sink>>) {
+//     let mut interval = time::interval(Duration::from_millis(10));
+//     loop {
+//         interval.tick().await;
+//         println!("interval, do the work here");
+//         {
+//             let sink_guard = sink.lock().unwrap();
+//             if sink_guard.empty() {
+//                 println!("Vocals sink is empty. Stopping player.");
+//                 return;
+//             }
+//             println!("Still playing...");
+//         } // sink_guard is dropped here
+//     }
+// }
+
+// // Arc<Mutex<Sink>> -> clone() -> Mutex<Sink> -> lock() -> Sink
+// async fn start_pooling(sink: &Arc<Mutex<Sink>>) {
+//     let (send, recv) = oneshot::channel::<()>();
+//     let s = Arc::clone(&sink);
+//
+//     tokio::spawn(async move {
+//         tokio::select! {
+//             _ = task_inner(s.lock().unwrap()) => {},
+//             _ = recv => {
+//                 println!("finished, break the loop, call it a day");
+//             }
+//         }
+//         println!("finished in the walking task");
+//     });
+// }
+//
+// async fn task_inner(sink: Sink) {
+//     let mut interval = time::interval(Duration::from_millis(10));
+//     loop {
+//         interval.tick().await;
+//         println!("interval, do the work here");
+//         if sink.empty() {
+//             println!("Vocals sink is empty. Stopping player.");
+//             return;
+//         }
+//         println!("Still playing...");
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

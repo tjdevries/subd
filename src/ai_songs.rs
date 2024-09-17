@@ -15,8 +15,8 @@ pub mod ai_songs {
         pub prompt: String,
         pub username: String,
         pub audio_url: String,
-        pub lyric: String,
         pub gpt_description_prompt: String,
+        pub lyric: Option<String>,
         pub last_updated: Option<OffsetDateTime>,
         pub created_at: Option<OffsetDateTime>,
     }
@@ -30,7 +30,7 @@ impl ai_songs::Model {
                 Self,
                 r#"
                 INSERT INTO ai_songs
-                (song_id, title, tags, prompt, username, audio_url, lyric, gpt_description_prompt)
+                (song_id, title, tags, prompt, username, audio_url, gpt_description_prompt, lyric)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING 
                     song_id, 
@@ -39,8 +39,8 @@ impl ai_songs::Model {
                     prompt, 
                     username, 
                     audio_url, 
-                    lyric, 
                     gpt_description_prompt, 
+                    lyric, 
                     last_updated, 
                     created_at
                 "#,
@@ -50,8 +50,8 @@ impl ai_songs::Model {
                 self.prompt,
                 self.username,
                 self.audio_url,
+                self.gpt_description_prompt,
                 self.lyric,
-                self.gpt_description_prompt
             )
             .fetch_one(pool)
             .await?)
@@ -88,9 +88,9 @@ impl ai_songs::Model {
     }
 
     /// Returns a reference to the `lyric` field.
-    pub fn get_lyric(&self) -> &str {
-        &self.lyric
-    }
+    // pub fn get_lyric(&self) -> &str {
+    //     &self.lyric
+    // }
 
     /// Returns a reference to the `gpt_description_prompt` field.
     pub fn get_gpt_description_prompt(&self) -> &str {

@@ -92,6 +92,9 @@ url = "2.5.2"
 regex = "1.10.6"
 mime_guess = "2.0.5"
 bytes = "1.7.1"
+log = "0.4.22"
+time = "0.3.36"
+oneshot = "0.1.8"
 
 [workspace]
 members = ["crates/*"]

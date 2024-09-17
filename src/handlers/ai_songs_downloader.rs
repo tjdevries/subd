@@ -325,7 +325,7 @@ async fn parse_suno_response_download_and_play(
         prompt: prompt.to_string(),
         username: user_name.clone(),
         audio_url: audio_url.to_string(),
-        lyric: lyrics.to_string(),
+        lyric: Some(lyrics.to_string()),
         gpt_description_prompt: gpt_description_prompt.to_string(),
         last_updated: Some(created_at),
         created_at: Some(created_at),
