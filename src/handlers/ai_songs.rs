@@ -1,4 +1,5 @@
 use crate::ai_song_playlist;
+use crate::ai_songs::ai_songs;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -17,6 +18,7 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use uuid::Uuid;
 
 // 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
 // 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
@@ -35,6 +37,7 @@ pub struct SunoResponse {
     pub video_url: String,
     pub audio_url: String,
     pub image_url: String,
+    pub lyric: String,
     pub image_large_url: Option<String>,
     pub is_video_pending: Option<bool>,
 
@@ -128,10 +131,10 @@ impl EventHandler for AISongsHandler {
 
 async fn play_audio(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &sqlx::PgPool,
     sink: &Sink,
     id: &str,
     user_name: &str,
-    reverb: bool,
 ) -> Result<()> {
     println!("\tQueuing {}", id);
     let info = format!("@{} added {} to Queue", user_name, id);
@@ -145,9 +148,14 @@ async fn play_audio(
             return Ok(());
         }
     };
-
     let file = BufReader::new(mp3);
-    return play_sound_with_sink(sink, reverb, file).await;
+    println!("\tPlaying Audio {}", id);
+
+    let uuid_id = uuid::Uuid::parse_str(id)?;
+    ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
+    ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
+    play_sound_instantly(sink, file).await;
+    Ok(ai_song_playlist::mark_song_as_stopped(pool, uuid_id).await?)
 }
 
 async fn get_audio_information(id: &str) -> Result<SunoResponse> {
@@ -171,7 +179,7 @@ pub async fn handle_requests(
     _obs_client: &OBSClient,
     sink: &Sink,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    _pool: &sqlx::PgPool,
+    pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -192,9 +200,13 @@ pub async fn handle_requests(
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
                 None => {
-                    // sink.queue_tx
-                    // Get current info
-                    println!("COMING SOON");
+                    let song = ai_song_playlist::get_current_song(pool).await?;
+                    let msg = format!(
+                        "Current Song: {} by {}",
+                        song.title, song.username
+                    );
+                    // If the message doesn't send we don't care...or we do
+                    let _ = send_message(twitch_client, msg).await;
                     return Ok(());
                 }
             };
@@ -223,19 +235,13 @@ pub async fn handle_requests(
             // add_source(song, reverb) ->sink.skip_one(); sink.seek(sink.get_pos())
             println!("\tQueuing w/ Reverb {}", id);
             let reverb = true;
-            return play_audio(
-                &twitch_client,
-                &sink,
-                id,
-                &msg.user_name,
-                reverb,
-            )
-            .await;
+            return play_audio(&twitch_client, pool, &sink, id, &msg.user_name)
+                .await;
         }
         // ================= //
         // Playback Controls //
         // ================= //
-        "!play" => {
+        "!queue" => {
             if _not_beginbot {
                 return Ok(());
             }
@@ -249,17 +255,49 @@ pub async fn handle_requests(
             // let _audio_info = get_audio_information(id).await?;
 
             let uuid_id = uuid::Uuid::parse_str(id)?;
-            ai_song_playlist::add_song_to_playlist(_pool, uuid_id).await?;
-            // Let's save in the ai_playlist
-            // Let's see what play_audio does
-            return play_audio(
-                &twitch_client,
-                &sink,
-                id,
-                &msg.user_name,
-                reverb,
-            )
-            .await;
+            ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
+            return Ok(());
+        }
+
+        "!play" => {
+            if _not_beginbot {
+                return Ok(());
+            }
+
+            let id = match splitmsg.get(1) {
+                Some(id) => id.as_str(),
+                None => return Ok(()),
+            };
+
+            // ============================================
+
+            // The song needs to exist here!!!
+            // let reverb = false;
+            let audio_info = get_audio_information(id).await?;
+            let created_at = sqlx::types::time::OffsetDateTime::now_utc();
+
+            let song_id = Uuid::parse_str(&audio_info.id)?;
+            let new_song = ai_songs::Model {
+                song_id,
+                title: audio_info.title,
+                tags: audio_info.metadata.tags,
+                prompt: audio_info.metadata.prompt,
+                username: msg.user_name.clone(),
+                audio_url: audio_info.audio_url,
+                lyric: audio_info.lyric,
+                gpt_description_prompt: audio_info
+                    .metadata
+                    .gpt_description_prompt,
+                last_updated: Some(created_at),
+                created_at: Some(created_at),
+            };
+
+            // If we already have the song, we don't need to crash
+            let _saved_song = new_song.save(&pool).await;
+
+            let _ = play_audio(&twitch_client, pool, &sink, id, &msg.user_name)
+                .await;
+            return Ok(());
         }
 
         "!pause" => {
@@ -401,7 +439,7 @@ pub async fn handle_requests(
     }
 }
 
-async fn play_sound_with_sink(
+async fn add_sound_to_rodio_queue(
     sink: &Sink,
     reverb: bool,
     file: BufReader<File>,
@@ -426,6 +464,26 @@ async fn play_sound_with_sink(
     // This could
     // This could be a message
     return Ok(());
+}
+
+async fn play_sound_instantly(
+    sink: &Sink,
+    file: BufReader<File>,
+) -> Result<()> {
+    match Decoder::new(BufReader::new(file)) {
+        Ok(v) => {
+            // sink.clear();
+            println!("\tAppending Sound");
+            sink.append(v);
+            sink.sleep_until_end()
+        }
+        Err(e) => {
+            eprintln!("Error decoding sound file: {}", e);
+            return Err(anyhow!("Error decoding sound file: {}", e));
+        }
+    };
+
+    Ok(())
 }
 
 #[cfg(test)]

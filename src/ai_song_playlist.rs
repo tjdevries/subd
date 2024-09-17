@@ -14,6 +14,7 @@ pub mod ai_song_playlist {
         pub song_id: Uuid,
         pub created_at: Option<OffsetDateTime>,
         pub played_at: Option<OffsetDateTime>,
+        pub stopped_at: Option<OffsetDateTime>,
     }
 }
 
@@ -24,18 +25,20 @@ impl ai_song_playlist::Model {
             Self,
             r#"
             INSERT INTO ai_song_playlist
-            (playlist_id, song_id, created_at, played_at)
-            VALUES ($1, $2, $3, $4)
+            (playlist_id, song_id, created_at, played_at, stopped_at)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING
                 playlist_id,
                 song_id,
                 created_at,
-                played_at
+                played_at,
+                stopped_at
             "#,
             self.playlist_id,
             self.song_id,
             self.created_at,
-            self.played_at
+            self.played_at,
+            self.stopped_at
         )
         .fetch_one(pool)
         .await?)
@@ -68,7 +71,7 @@ pub async fn find_by_id(
 
 pub async fn find_oldest_unplayed_song(
     pool: &PgPool,
-) -> Result<Option<ai_songs::Model>, sqlx::Error> {
+) -> Result<ai_songs::Model> {
     let res = sqlx::query!(
         r#"
         SELECT ai_songs.*
@@ -95,9 +98,9 @@ pub async fn find_oldest_unplayed_song(
             last_updated: res.last_updated,
             created_at: res.created_at,
         };
-        Ok(Some(song))
+        Ok(song)
     } else {
-        Ok(None)
+        Err(anyhow::anyhow!("No unplayed songs found"))
     }
 }
 
@@ -110,6 +113,7 @@ pub async fn add_song_to_playlist(
         song_id,
         created_at: Some(OffsetDateTime::now_utc()),
         played_at: None,
+        stopped_at: None,
     };
 
     playlist_entry.save(pool).await
@@ -117,30 +121,46 @@ pub async fn add_song_to_playlist(
 
 pub async fn mark_song_as_played(
     pool: &PgPool,
-    playlist_id: Uuid,
+    song_id: Uuid,
 ) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         UPDATE ai_song_playlist
         SET played_at = NOW()
-        WHERE playlist_id = $1
+        WHERE song_id = $1
         "#,
-        playlist_id
+        song_id
     )
     .execute(pool)
     .await?;
     Ok(())
 }
 
-pub async fn get_current_song(
+pub async fn mark_song_as_stopped(
     pool: &PgPool,
-) -> Result<Option<ai_songs::Model>, sqlx::Error> {
+    song_id: Uuid,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+        UPDATE ai_song_playlist
+        SET stopped_at = NOW()
+        WHERE song_id = $1
+        "#,
+        song_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
+pub async fn get_current_song(pool: &PgPool) -> Result<ai_songs::Model> {
     let res = sqlx::query!(
         r#"
         SELECT ai_songs.*
         FROM ai_song_playlist
         JOIN ai_songs ON ai_song_playlist.song_id = ai_songs.song_id
         WHERE ai_song_playlist.played_at IS NOT NULL
+        AND ai_song_playlist.stopped_at IS NULL
         ORDER BY ai_song_playlist.played_at DESC
         LIMIT 1
         "#
@@ -161,11 +181,11 @@ pub async fn get_current_song(
             last_updated: res.last_updated,
             created_at: res.created_at,
         };
-        Ok(Some(song))
+        Ok(song)
     } else {
         // Not sure what this should be
         // If no song has been played yet, return the oldest unplayed song
-        find_oldest_unplayed_song(pool).await
+        Ok(find_oldest_unplayed_song(pool).await?)
     }
 }
 

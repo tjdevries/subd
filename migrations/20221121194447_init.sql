@@ -16,6 +16,7 @@ CREATE TABLE ai_song_playlist (
     song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     played_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+    stopped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
   -- TODO: Figure out status
