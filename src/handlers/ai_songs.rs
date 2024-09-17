@@ -166,13 +166,11 @@ async fn play_audio(
 
     let uuid_id = uuid::Uuid::parse_str(id)?;
 
-    // TODO: Thes should be combined
     ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
 
-    // We are expecting this song to end before it marks as ended
-    // But if we marked it inside the play_audio_instantly function it might be at the right time
     let _ = play_sound_instantly(sink, file).await;
+
     Ok(ai_song_playlist::mark_song_as_stopped(pool, uuid_id).await?)
 }
 
@@ -512,66 +510,6 @@ async fn play_sound_instantly(
 
     Ok(())
 }
-
-// async fn start_pooling(sink: &Arc<Mutex<&Sink>>) {
-//     let (_send, recv) = oneshot::channel::<()>();
-//     let s = Arc::clone(&sink);
-//
-//     tokio::spawn(async move {
-//         tokio::select! {
-//             _ = task_inner(&s) => {},
-//             _ = recv => {
-//                 println!("finished, break the loop, call it a day");
-//             }
-//         }
-//         println!("finished in the walking task");
-//     });
-// }
-//
-// async fn task_inner(sink: &Arc<Mutex<&Sink>>) {
-//     let mut interval = time::interval(Duration::from_millis(10));
-//     loop {
-//         interval.tick().await;
-//         println!("interval, do the work here");
-//         {
-//             let sink_guard = sink.lock().unwrap();
-//             if sink_guard.empty() {
-//                 println!("Vocals sink is empty. Stopping player.");
-//                 return;
-//             }
-//             println!("Still playing...");
-//         } // sink_guard is dropped here
-//     }
-// }
-
-// // Arc<Mutex<Sink>> -> clone() -> Mutex<Sink> -> lock() -> Sink
-// async fn start_pooling(sink: &Arc<Mutex<Sink>>) {
-//     let (send, recv) = oneshot::channel::<()>();
-//     let s = Arc::clone(&sink);
-//
-//     tokio::spawn(async move {
-//         tokio::select! {
-//             _ = task_inner(s.lock().unwrap()) => {},
-//             _ = recv => {
-//                 println!("finished, break the loop, call it a day");
-//             }
-//         }
-//         println!("finished in the walking task");
-//     });
-// }
-//
-// async fn task_inner(sink: Sink) {
-//     let mut interval = time::interval(Duration::from_millis(10));
-//     loop {
-//         interval.tick().await;
-//         println!("interval, do the work here");
-//         if sink.empty() {
-//             println!("Vocals sink is empty. Stopping player.");
-//             return;
-//         }
-//         println!("Still playing...");
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
