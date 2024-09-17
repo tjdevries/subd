@@ -277,6 +277,8 @@ async fn download_and_play(
                     );
 
                     let _ =
+
+                        // We expect the song to playable at this time
                         tx.send(Event::UserMessage(subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
                             contents: format!("!play {}", id.to_string()),

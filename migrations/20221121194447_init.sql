@@ -13,7 +13,7 @@ CREATE TYPE ai_song_status AS ENUM (
 
 CREATE TABLE ai_song_playlist (
     playlist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    song_id UUID REFERENCES ai_songs(song_id),
+    song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     played_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );

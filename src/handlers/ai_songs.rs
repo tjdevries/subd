@@ -1,3 +1,4 @@
+// use ai_song_playlist::ai_song_playlist;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -245,14 +246,11 @@ pub async fn handle_requests(
             };
 
             let reverb = false;
+            // let _audio_info = get_audio_information(id).await?;
 
-            let _audio_info = get_audio_information(id).await?;
-            // let info = format!(
-            //     "Audio for @{}: {} | {}",
-            //     msg.user_name, audio_info.title, audio_info.metadata.tags,
-            // );
-            // let _ = send_message(&twitch_client, info).await;
-
+            // ai_song_playlist::add_song_to_playlist(_pool, id).await?;
+            // Let's save in the ai_playlist
+            // Let's see what play_audio does
             return play_audio(
                 &twitch_client,
                 &sink,
