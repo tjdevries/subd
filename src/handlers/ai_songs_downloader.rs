@@ -282,8 +282,10 @@ async fn download_and_play(
                         tx.send(Event::UserMessage(subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
                             contents: format!("!play {}", id.to_string()),
-                            ..Default::default() // user_name: msg.user_name,
+                            ..Default::default()
                         }));
+
+                        // Should we try and save the ai_song_playlist
 
                     break;
                 }

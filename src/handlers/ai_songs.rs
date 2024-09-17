@@ -1,4 +1,4 @@
-// use ai_song_playlist::ai_song_playlist;
+use crate::ai_song_playlist;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -248,7 +248,8 @@ pub async fn handle_requests(
             let reverb = false;
             // let _audio_info = get_audio_information(id).await?;
 
-            // ai_song_playlist::add_song_to_playlist(_pool, id).await?;
+            let uuid_id = uuid::Uuid::parse_str(id)?;
+            ai_song_playlist::add_song_to_playlist(_pool, uuid_id).await?;
             // Let's save in the ai_playlist
             // Let's see what play_audio does
             return play_audio(
