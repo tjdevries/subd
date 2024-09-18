@@ -11,6 +11,7 @@ use twitch_irc::{
 };
 
 use fal_ai;
+use obs_service;
 
 async fn trigger_ai_friend(
     obs_client: &OBSClient,
@@ -99,26 +100,26 @@ async fn sync_lips_and_update(
 
     // This code is in the main section
     // so not usable here
-    //let scene = "AIFriends";
-    //// let source = friend_name;
-    //let _ = crate::obs::obs_source::set_enabled(
-    //    scene,
-    //    &friend_name,
-    //    false,
-    //    &obs_client,
-    //)
-    //.await;
-    //
-    //// Not sure if I have to wait ofr how long to wait
-    //sleep(Duration::from_millis(100)).await;
-    //
-    //let _ = crate::obs::obs_source::set_enabled(
-    //    scene,
-    //    &friend_name,
-    //    true,
-    //    &obs_client,
-    //)
-    //.await;
+    let scene = "AIFriends";
+    // let source = friend_name;
+    let _ = obs_service::obs_source::set_enabled(
+        scene,
+        &friend_name,
+        false,
+        &obs_client,
+    )
+    .await;
+
+    // Not sure if I have to wait ofr how long to wait
+    sleep(Duration::from_millis(100)).await;
+
+    let _ = obs_service::obs_source::set_enabled(
+        scene,
+        &friend_name,
+        true,
+        &obs_client,
+    )
+    .await;
 
     return Ok(());
 }

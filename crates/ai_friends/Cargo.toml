@@ -19,6 +19,7 @@ either = "1.6.1"
 fal-rust = { path = "../../../fal-rust" }
 subd-types = { path = "../subd-types/" }
 twitch_chat = { path = "../twitch_chat/" }
+obs_service = { path = "../obs_service/" }
 
 # Fixes skip bug skip_one
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
