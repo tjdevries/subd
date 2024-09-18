@@ -3,6 +3,7 @@ use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
 use crate::twitch_stream_state;
+use ai_friends;
 use anyhow::Result;
 use async_trait::async_trait;
 use axum::routing::post;
@@ -164,7 +165,7 @@ impl EventHandler for TwitchEventSubHandler {
 
 async fn post_request<'a, C: twitch_api::HttpClient>(
     Json(eventsub_body): Json<EventSubRoot>,
-    Extension(_obs_client): Extension<Arc<OBSClient>>,
+    Extension(obs_client): Extension<Arc<OBSClient>>,
     Extension(pool): Extension<Arc<sqlx::PgPool>>,
     Extension(reward_manager): Extension<Arc<RewardManager<'a, C>>>,
     Extension(tx): Extension<broadcast::Sender<Event>>,
@@ -218,6 +219,7 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
                     let _ = handle_ai_scene(
                         tx,
                         pool,
+                        &obs_client,
                         reward_manager,
                         ai_scenes_map,
                         event,
@@ -355,6 +357,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
 async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
+    obs_client: &OBSClient,
     reward_manager: Arc<RewardManager<'a, C>>,
     ai_scenes_map: HashMap<String, &ai_scene::AIScene>,
     event: SubEvent,
@@ -395,12 +398,22 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
         // we need from the othere theme
     }
 
+    // ai_friends::trigger_ai_friend(
+    //     obs_client,
+    //     twitch_client,
+    //     ai_scene_req,
+    //     image_file_path,
+    //     local_audio_path,
+    //     friend_name,
+    // )
+    // .await;
+
+    // We need to check for ai_friend scene here
+
     // I don't understand what this is doing
     // we are just saving and finding above
     //
     // we are looking through the scenes to match here
-    //
-    // if we don't have
     match ai_scenes_map.get(&command) {
         Some(scene) => {
             let user_input = event.user_input.unwrap();

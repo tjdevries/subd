@@ -40,9 +40,7 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-// ============================================================
-//
-// Should this have an OBS Client as well
+// Should this have an OBS Client as well?
 pub struct AiScenesHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,
@@ -50,21 +48,6 @@ pub struct AiScenesHandler {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pub elevenlabs: Elevenlabs,
     pub obs_client: OBSClient,
-}
-
-async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
-    let voice_to_face_image = HashMap::from([
-        ("satan".to_string(), "satan.png".to_string()),
-        ("god".to_string(), "god.png".to_string()),
-        ("ethan".to_string(), "alex_jones.png".to_string()),
-        // We need a systen for multiple photos
-        // ("teej".to_string(), "teej.png".to_string()),
-        // ("teej".to_string(), "teej_2.jpg".to_string()),
-        ("prime".to_string(), "green_prime.png".to_string()),
-        ("teej".to_string(), "teej_3.png".to_string()),
-        ("melkey".to_string(), "melkey.png".to_string()),
-    ]);
-    Ok(voice_to_face_image.get(&voice).cloned())
 }
 
 async fn run_ai_scene(
@@ -121,6 +104,7 @@ async fn run_ai_scene(
     let face_image = build_face_scene_request(final_voice.clone()).await?;
     match face_image {
         Some(image_file_path) => {
+            println!("Triggering AI Friend Scene");
             trigger_ai_friend(
                 &locked_obs_client,
                 &locked_twitch_client,
@@ -132,6 +116,7 @@ async fn run_ai_scene(
             .await?
         }
         None => {
+            println!("Triggering AI Movie");
             trigger_movie_trailer(
                 ai_scene_req,
                 &locked_twitch_client,
@@ -572,4 +557,19 @@ async fn trigger_movie_trailer(
     sink.sleep_until_end();
     redirect::restore_stderr(backup);
     return Ok(());
+}
+
+async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
+    let voice_to_face_image = HashMap::from([
+        ("satan".to_string(), "archive/satan.png".to_string()),
+        ("god".to_string(), "archive/god.png".to_string()),
+        ("ethan".to_string(), "archive/alex_jones.png".to_string()),
+        // We need a systen for multiple photos
+        // ("teej".to_string(), "archive/teej.png".to_string()),
+        // ("teej".to_string(), "archive/teej_2.jpg".to_string()),
+        ("prime".to_string(), "archive/green_prime.png".to_string()),
+        ("teej".to_string(), "archive/teej_3.png".to_string()),
+        ("melkey".to_string(), "archive/melkey.png".to_string()),
+    ]);
+    Ok(voice_to_face_image.get(&voice).cloned())
 }
