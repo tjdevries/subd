@@ -50,6 +50,143 @@ pub struct AiScenesHandler {
     pub obs_client: OBSClient,
 }
 
+async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
+    let voice_to_face_image = HashMap::from([
+        ("satan".to_string(), "satan.png".to_string()),
+        ("god".to_string(), "god.png".to_string()),
+        ("ethan".to_string(), "alex_jones.png".to_string()),
+        // We need a systen for multiple photos
+        // ("teej".to_string(), "teej.png".to_string()),
+        // ("teej".to_string(), "teej_2.jpg".to_string()),
+        ("prime".to_string(), "green_prime.png".to_string()),
+        ("teej".to_string(), "teej_3.png".to_string()),
+        ("melkey".to_string(), "melkey.png".to_string()),
+    ]);
+    Ok(voice_to_face_image.get(&voice).cloned())
+}
+
+async fn run_ai_scene(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    obs_client: &OBSClient,
+    pool: &sqlx::PgPool,
+    elevenlabs: &Elevenlabs,
+    ai_scene_req: &AiScenesRequest,
+) -> Result<()> {
+    let twitch_client = Arc::new(Mutex::new(twitch_client));
+    let clone_twitch_client = twitch_client.clone();
+    let locked_twitch_client = clone_twitch_client.lock().await;
+
+    let obs_client = Arc::new(Mutex::new(obs_client));
+    let obs_client_clone = obs_client.clone();
+    let locked_obs_client = obs_client_clone.lock().await;
+
+    let (_stable_diffusion_enabled, _dalle_enabled) =
+        find_image_modes(pool.clone()).await?;
+
+    let final_voice = determine_voice_to_use(
+        ai_scene_req.username.clone(),
+        ai_scene_req.voice.clone(),
+        pool.clone(),
+    )
+    .await?;
+
+    let filename = twitch_chat_filename(
+        ai_scene_req.username.clone(),
+        final_voice.clone(),
+    );
+    let chat_message = sanitize_chat_message(ai_scene_req.message.clone());
+    let local_audio_path = match generate_and_save_tts_audio(
+        final_voice.clone(),
+        filename,
+        chat_message,
+        &elevenlabs,
+        &ai_scene_req,
+    ) {
+        Ok(path) => path,
+        Err(e) => {
+            println!("Failed to generate audio: {}", e);
+            return Err(e);
+        }
+    };
+
+    println!("AI Scene Request {:?}", &ai_scene_req);
+    if let Some(prompt) = &ai_scene_req.prompt {
+        twitch_stream_state::set_ai_background_theme(&pool, &prompt).await?;
+    };
+
+    let face_image = build_face_scene_request(final_voice).await?;
+
+    match face_image {
+        Some(image_file_path) => {
+            trigger_ai_friend(
+                &locked_obs_client,
+                &locked_twitch_client,
+                ai_scene_req,
+                image_file_path,
+                local_audio_path,
+            )
+            .await?
+        }
+        None => {
+            trigger_movie_trailer(
+                ai_scene_req,
+                &locked_twitch_client,
+                local_audio_path,
+            )
+            .await?
+        }
+    }
+
+    return Ok(());
+}
+
+async fn trigger_ai_friend(
+    obs_client: &OBSClient,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    ai_scene_req: &AiScenesRequest,
+    image_file_path: String,
+    local_audio_path: String,
+) -> Result<()> {
+    println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
+
+    match sync_lips_and_update(&image_file_path, &local_audio_path, &obs_client)
+        .await
+    {
+        Ok(_) => {
+            if let Some(music_bg) = &ai_scene_req.music_bg {
+                let _ = send_message(&twitch_client, music_bg.clone()).await;
+            }
+        }
+        Err(e) => {
+            eprintln!("Error syncing lips and updating: {:?}", e);
+        }
+    }
+    Ok(())
+}
+
+async fn trigger_movie_trailer(
+    ai_scene_req: &AiScenesRequest,
+    locked_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    local_audio_path: String,
+) -> Result<()> {
+    if let Some(music_bg) = &ai_scene_req.music_bg {
+        let _ = send_message(&locked_client, music_bg.clone()).await;
+    }
+
+    // We are supressing a whole bunch of alsa message
+    let backup =
+        redirect::redirect_stderr().expect("Failed to redirect stderr");
+
+    let (_stream, stream_handle) =
+        audio::get_output_stream("pulse").expect("stream handle");
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let file = BufReader::new(File::open(local_audio_path)?);
+    sink.append(Decoder::new(BufReader::new(file))?);
+    sink.sleep_until_end();
+    redirect::restore_stderr(backup);
+    return Ok(());
+}
+
 #[async_trait]
 impl EventHandler for AiScenesHandler {
     async fn handle(
@@ -57,171 +194,24 @@ impl EventHandler for AiScenesHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        let twitch_client = Arc::new(Mutex::new(self.twitch_client));
-        let clone_twitch_client = twitch_client.clone();
-        let locked_client = clone_twitch_client.lock().await;
-
-        let obs_client = Arc::new(Mutex::new(self.obs_client));
-        let obs_client_clone = obs_client.clone();
-        let locked_obs_client = obs_client_clone.lock().await;
-
-        //. From AI
-        let mut sink_empty = false;
-
         println!("Starting AI Scenes Handler");
         loop {
-            if self.sink.empty() && !sink_empty {
-                // The song has stopped playing
-                sink_empty = true;
-                // Send a message indicating the song has ended
-                //  let _ = self.song_end_tx.send(()).await;
-                println!("\t\tNo More Song!!!!");
-            } else if !self.sink.empty() {
-                println!("\nsong time...");
-                sink_empty = false;
-            }
-
             let event = rx.recv().await?;
             let ai_scene_req = match event {
                 Event::AiScenesRequest(msg) => msg,
                 _ => continue,
             };
 
-            println!("We have an AI Scenes request!");
-            let (_stable_diffusion_enabled, _dalle_enabled) =
-                find_image_modes(self.pool.clone()).await?;
-
-            let final_voice = determine_voice_to_use(
-                ai_scene_req.username.clone(),
-                ai_scene_req.voice.clone(),
-                self.pool.clone(),
-            )
-            .await?;
-
-            let filename = twitch_chat_filename(
-                ai_scene_req.username.clone(),
-                final_voice.clone(),
-            );
-
-            let chat_message =
-                sanitize_chat_message(ai_scene_req.message.clone());
-
-            let local_audio_path = match generate_and_save_tts_audio(
-                final_voice.clone(),
-                filename,
-                chat_message,
+            // If this crashes we just want to loop again
+            // and we expect the error to be printing
+            let _ = run_ai_scene(
+                &self.twitch_client,
+                &self.obs_client,
+                &self.pool,
                 &self.elevenlabs,
                 &ai_scene_req,
-            ) {
-                Ok(path) => path,
-                Err(e) => {
-                    println!("Failed to generate audio: {}", e);
-                    continue;
-                }
-            };
-
-            println!("AI Scene Request {:?}", &ai_scene_req);
-
-            // We have a prompt here
-            if let Some(prompt) = ai_scene_req.prompt {
-                twitch_stream_state::set_ai_background_theme(
-                    &self.pool, &prompt,
-                )
-                .await?;
-
-                // We need to evaluate this
-                // This is the old way of generating an image
-                // if let Err(e) = generate_image(
-                //     prompt,
-                //     ai_scene_req.username,
-                //     stable_diffusion_enabled,
-                //     dalle_enabled,
-                // )
-                // .await
-                // {
-                //     // If we can't generate an image,
-                //     // we still play the elevenlabs sound
-                //     eprintln!("Error generating image: {}", e);
-                //     // We should print
-                // }
-            };
-
-            println!(
-                "Image Generated, Playing Audio: Final Voice {}",
-                final_voice.clone()
-            );
-
-            // We are supressing a whole bunch of alsa message
-            let backup =
-                redirect::redirect_stderr().expect("Failed to redirect stderr");
-
-            // we need to have one for each of these
-            // we can also depend on everything being named one-way
-            let voice_to_face_image = HashMap::from([
-                ("satan".to_string(), "satan.png".to_string()),
-                ("god".to_string(), "god.png".to_string()),
-                ("ethan".to_string(), "alex_jones.png".to_string()),
-                // We need a systen for multiple photos
-                // ("teej".to_string(), "teej.png".to_string()),
-                // ("teej".to_string(), "teej_2.jpg".to_string()),
-                ("prime".to_string(), "green_prime.png".to_string()),
-                ("teej".to_string(), "teej_3.png".to_string()),
-                ("melkey".to_string(), "melkey.png".to_string()),
-            ]);
-            let face_image = voice_to_face_image.get(&final_voice);
-            println!("Face Image Found for Voice: {:?}", face_image);
-
-            // we def need a seperate function
-
-            match face_image {
-                Some(image_file_path) => {
-                    println!(
-                        "Syncing Lips and Voice for Image: {:?}",
-                        image_file_path
-                    );
-
-                    match sync_lips_and_update(
-                        image_file_path,
-                        &local_audio_path,
-                        &locked_obs_client,
-                    )
-                    .await
-                    {
-                        Ok(_) => {
-                            if let Some(music_bg) = ai_scene_req.music_bg {
-                                let _ = send_message(
-                                    &locked_client,
-                                    music_bg.clone(),
-                                )
-                                .await;
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "Error syncing lips and updating: {:?}",
-                                e
-                            );
-                        }
-                    }
-                }
-                None => {
-                    // This happens way to early
-                    if let Some(music_bg) = ai_scene_req.music_bg {
-                        let _ = send_message(&locked_client, music_bg.clone())
-                            .await;
-                    }
-
-                    let (_stream, stream_handle) =
-                        audio::get_output_stream("pulse")
-                            .expect("stream handle");
-                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                    let _ = set_volume(final_voice, &sink);
-                    let file = BufReader::new(File::open(local_audio_path)?);
-                    sink.append(Decoder::new(BufReader::new(file))?);
-                    sink.sleep_until_end();
-                    redirect::restore_stderr(backup);
-                }
-            }
+            )
+            .await;
         }
     }
 }
