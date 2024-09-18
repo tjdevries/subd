@@ -1,6 +1,6 @@
-use crate::obs::obs_source;
 use anyhow::Result;
 use chrono::Utc;
+use obs_service::obs_source;
 use obws::Client as OBSClient;
 
 pub async fn take_screenshot(

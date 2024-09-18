@@ -1,3 +1,4 @@
+pub mod constants;
 pub mod obs;
 pub mod obs_hotkeys;
 pub mod obs_scenes;

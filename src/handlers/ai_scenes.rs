@@ -22,6 +22,7 @@ use rodio::*;
 // use stable_diffusion::models::GenerateAndArchiveRequest;
 // use stable_diffusion::models::RequestType;
 // use stable_diffusion::run_from_prompt;
+use obs_service;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
@@ -227,7 +228,7 @@ async fn sync_lips_and_update(
 
     let scene = "AIFriends";
     // let source = friend_name;
-    let _ = crate::obs::obs_source::set_enabled(
+    let _ = obs_service::obs_source::set_enabled(
         scene,
         &friend_name,
         false,
@@ -238,7 +239,7 @@ async fn sync_lips_and_update(
     // Not sure if I have to wait ofr how long to wait
     sleep(Duration::from_millis(100)).await;
 
-    let _ = crate::obs::obs_source::set_enabled(
+    let _ = obs_service::obs_source::set_enabled(
         scene,
         &friend_name,
         true,

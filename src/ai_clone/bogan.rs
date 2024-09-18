@@ -3,8 +3,8 @@ use crate::ai_clone::chat;
 use crate::ai_clone::utils;
 use crate::constants;
 use crate::move_transition::move_source;
-use crate::obs::obs_source;
 use anyhow::Result;
+use obs_service;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::inputs::Create;
 use obws::Client as OBSClient;
@@ -48,7 +48,7 @@ pub async fn create_and_show_bogan(
     let path = stable_diffusion_from_image(&req).await?;
 
     let new_begin_source = constants::NEW_BEGIN_SOURCE.to_string();
-    let res = obs_source::update_image_source(
+    let res = obs_service::obs_source::update_image_source(
         obs_client,
         new_begin_source.clone(),
         path.clone(),
@@ -77,9 +77,12 @@ async fn recruit_new_bogan_member(
     // create_chroma_key_filter(&new_source, &obs_client).await?;
 
     // Do we have to call this???
-    let _ =
-        obs_source::update_image_source(&obs_client, new_source.clone(), path)
-            .await;
+    let _ = obs_service::obs_source::update_image_source(
+        &obs_client,
+        new_source.clone(),
+        path,
+    )
+    .await;
 
     let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
 

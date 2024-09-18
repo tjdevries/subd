@@ -1,12 +1,12 @@
 use crate::ai_images::image_generation;
 use crate::constants;
-use crate::obs::obs_source;
 use crate::openai::dalle;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
 use events::EventHandler;
+use obs_service::obs_source;
 use obws::Client as OBSClient;
 use rodio::*;
 use stable_diffusion;

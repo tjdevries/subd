@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
+use obs_service;
 use obws::Client as OBSClient;
 use subd_types::Event;
 use tokio::sync::broadcast;
@@ -22,7 +23,7 @@ impl EventHandler for SourceVisibilityHandler {
                 Event::SourceVisibilityRequest(msg) => msg,
                 _ => continue,
             };
-            let _ = crate::obs::obs_source::set_enabled(
+            let _ = obs_service::obs_source::set_enabled(
                 &msg.scene,
                 &msg.source,
                 msg.enabled,

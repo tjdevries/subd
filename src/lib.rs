@@ -12,7 +12,7 @@ pub mod constants;
 pub mod elevenlabs;
 pub mod handlers;
 pub mod move_transition;
-pub mod obs;
+// pub mod obs;
 pub mod obs_bootstrap;
 pub mod obs_filters;
 pub mod openai;

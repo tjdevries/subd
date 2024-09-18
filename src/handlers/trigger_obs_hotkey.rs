@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
+use obs_service;
 use obws::Client as OBSClient;
 use subd_types::Event;
 use tokio::sync::broadcast;
@@ -23,7 +24,7 @@ impl EventHandler for TriggerHotkeyHandler {
                 _ => continue,
             };
 
-            crate::obs::obs_hotkeys::trigger_hotkey(
+            obs_service::obs_hotkeys::trigger_hotkey(
                 &msg.hotkey,
                 &self.obs_client,
             )

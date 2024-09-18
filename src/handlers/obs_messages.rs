@@ -3,8 +3,6 @@ use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::move_transition;
 use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
-use crate::obs::obs_scenes;
-use crate::obs::obs_source;
 use crate::obs_bootstrap::bootstrap;
 use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
@@ -14,6 +12,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use num_traits::ToPrimitive;
+use obs_service::obs_scenes;
+use obs_service::obs_source;
 use obws;
 use obws::Client as OBSClient;
 use rodio::*;
@@ -466,7 +466,7 @@ pub async fn handle_obs_commands(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::obs::obs;
+    use obs_service::obs;
     use serde_json::Value;
 
     #[tokio::test]

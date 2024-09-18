@@ -1,11 +1,11 @@
 use crate::constants;
 use crate::elevenlabs;
-use crate::obs::obs_scenes;
-use crate::obs::obs_source;
 use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
+use obs_service::obs_scenes;
+use obs_service::obs_source;
 use obws::Client as OBSClient;
 use rand::seq::SliceRandom;
 use std::fs;

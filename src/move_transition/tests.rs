@@ -5,6 +5,7 @@ mod tests {
     use crate::move_transition::move_source::{MoveSource, MoveSourceSettings};
     use crate::move_transition::move_transition;
     use crate::move_transition::move_value::*;
+    use obs_service;
 
     #[tokio::test]
     async fn test_duration() {
@@ -36,7 +37,7 @@ mod tests {
         let source = "alex";
         let filter_name = "move-value-single";
 
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let filter_details =
             obs_client.filters().get(source, filter_name).await.unwrap();
         let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
@@ -70,7 +71,7 @@ mod tests {
         let source = "alex";
         let filter_name = "move-value-single";
 
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let filter_details =
             obs_client.filters().get(source, filter_name).await.unwrap();
         let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
@@ -98,7 +99,7 @@ mod tests {
         let source = "alex";
         let filter_name = "move-value-single";
 
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let filter_details =
             obs_client.filters().get(source, filter_name).await.unwrap();
         let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
@@ -138,7 +139,7 @@ mod tests {
         let source = "alex";
         let filter_name = "move-value-single";
 
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let filter_details =
             obs_client.filters().get(source, filter_name).await.unwrap();
         let res = ::serde_json::to_string_pretty(&filter_details).unwrap();
@@ -167,7 +168,7 @@ mod tests {
     // Method for moving Bogans away from each other + Cropping Logic
     #[tokio::test]
     async fn test_fun() {
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let duration =
             crate::move_transition::duration::EasingDuration::new(300);
         let ms = MoveSourceSettings::builder()
@@ -198,7 +199,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_scale() {
-        let obs_client = crate::obs::obs::create_obs_client().await.unwrap();
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
         let duration =
             crate::move_transition::duration::EasingDuration::new(300);
         let ms = MoveSourceSettings::builder()

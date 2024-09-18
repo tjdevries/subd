@@ -100,7 +100,7 @@ async fn move_bogan(
 #[cfg(test)]
 mod tests {
     // use super::*;
-    use crate::obs::obs;
+    use obs_service::obs;
 
     #[tokio::test]
     async fn test_bogan_position() {

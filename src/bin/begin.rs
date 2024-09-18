@@ -1,10 +1,10 @@
 use anyhow::Result;
 use clap::Parser;
 use elevenlabs_api::{Auth, Elevenlabs};
+use obs_service::obs::create_obs_client;
 use serde::{Deserialize, Serialize};
 use server::audio;
 use server::handlers;
-use server::obs::obs::create_obs_client;
 use std::collections::HashMap;
 // use std::sync::Arc;
 // use std::sync::Mutex;
