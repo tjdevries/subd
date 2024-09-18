@@ -31,33 +31,6 @@ struct FalData {
     // Other fields can be added here if needed
 }
 
-pub async fn handle_fal_commands(
-    _sink: &Sink,
-    splitmsg: Vec<String>,
-) -> Result<()> {
-    let command = splitmsg[0].as_str();
-
-    match command {
-        "!talk" => {
-            let fal_image_file_path = "green_prime.png";
-            let fal_audio_file_path =
-                "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
-
-            let video_bytes =
-                sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
-                    .await?;
-
-            let video_path = "./prime.mp4";
-            tokio::fs::write(&video_path, &video_bytes).await?;
-            println!("Video saved to {}", video_path);
-        }
-
-        _ => {}
-    };
-
-    Ok(())
-}
-
 pub async fn sync_lips_to_voice(
     image_file_path: &str,
     audio_file_path: &str,
@@ -213,7 +186,16 @@ pub async fn create_turbo_image_in_folder(
     let client = FalClient::new(ClientCredentials::from_env());
 
     // let model = "fal-ai/stable-cascade";
-    let model = "fal-ai/fast-turbo-diffusion";
+    // let model = "fal-ai/fast-turbo-diffusion";
+    //
+    // this is for anime
+    // let model = "fal-ai/stable-cascade/sote-diffusion";
+    // let model = "fal-ai/fast-sdxl";
+
+    // let model = "fal-ai/stable-cascade/sote-diffusion";
+    let model = "fal-ai/stable-cascade";
+    // let model = "fal-ai/fast-turbo-diffusion";
+    println!("\tCreating image with model: {}", model);
 
     let res = client
         .run(
@@ -243,6 +225,39 @@ pub async fn create_turbo_image_in_folder(
     Ok(())
 }
 
+pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
+    let fal_source_image_data_uri =
+        fal_encode_file_as_data_uri(image_file_path).await?;
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    // This unwrap is wrong
+    let response = client
+        .run(
+            "fal-ai/stable-video",
+            serde_json::json!({
+                "image_url": fal_source_image_data_uri
+            }),
+        )
+        .await
+        .unwrap();
+
+    let body = response.text().await?;
+    let json: serde_json::Value = serde_json::from_str(&body)?;
+
+    if let Some(url) = json["video"]["url"].as_str() {
+        let video_bytes = reqwest::get(url).await?.bytes().await?;
+        let timestamp = chrono::Utc::now().timestamp();
+        let filename = format!("tmp/fal_videos/{}.mp4", timestamp);
+        tokio::fs::create_dir_all("tmp/fal_videos").await?;
+        tokio::fs::write(&filename, &video_bytes).await?;
+        println!("Video saved to: {}", filename);
+    } else {
+        return Err(anyhow!("Failed to extract video URL from JSON"));
+    }
+
+    Ok(())
+}
+
 // This is too specific
 pub async fn create_turbo_image(prompt: String) -> Result<()> {
     // Can I move this into it's own function that takes a prompt?
@@ -250,8 +265,28 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
 
     // let model = "fal-ai/stable-cascade/sote-diffusion";
-    // let model = "fal-ai/stable-cascade";
-    let model = "fal-ai/fast-turbo-diffusion";
+    // let model = "fal-ai/fast-turbo-diffusion";
+
+    // // let model = "fal-ai/stable-cascade";
+    // // let model = "fal-ai/fast-turbo-diffusion";
+    // //
+    // // this is for anime
+
+    // this looks terrible
+    // let model = "fal-ai/stable-cascade/sote-diffusion";
+
+    // This works with
+    // save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
+    // let model = "fal-ai/stable-diffusion-v3-medium";
+
+    // This works with
+    // save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
+    let model = "fal-ai/stable-cascade";
+
+    // Works and is decent
+    let model = "fal-ai/fast-sdxl";
+
+    println!("\t\tCreating image with model: {}", model);
 
     let res = client
         .run(
@@ -265,12 +300,48 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
         .unwrap();
 
     let raw_json = res.bytes().await.unwrap();
+
     let timestamp = chrono::Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+
+    println!("Saving JSON to {}", &json_path);
     tokio::fs::write(&json_path, &raw_json).await.unwrap();
-    process_images(&timestamp.to_string(), &json_path, None).await?;
+
+    // This is going to base64 data
+    // we need instead to read in
+    // process_images(&timestamp.to_string(), &json_path, None).await?;
+
+    save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
 
     Ok(())
+}
+
+async fn save_image_from_json(json_data: &str) -> Result<String> {
+    let data: serde_json::Value = serde_json::from_str(json_data)?;
+
+    if let Some(images) = data["images"].as_array() {
+        if let Some(first_image) = images.first() {
+            if let Some(url) = first_image["url"].as_str() {
+                let client = reqwest::Client::new();
+                let response = client.get(url).send().await?;
+                let image_bytes = response.bytes().await?;
+
+                let timestamp = chrono::Utc::now().timestamp();
+                let filename = format!("tmp/fal_images/{}.png", timestamp);
+
+                tokio::fs::create_dir_all("tmp/fal_images").await?;
+                tokio::fs::write(&filename, &image_bytes).await?;
+
+                let dalle_filename = "./tmp/dalle-1.png";
+                tokio::fs::write(dalle_filename, &image_bytes).await?;
+
+                println!("Image saved to: {} and {}", filename, dalle_filename);
+                return Ok(filename);
+            }
+        }
+    }
+
+    Err(anyhow!("Failed to extract image URL from JSON"))
 }
 
 // Function to submit the request to the fal 'sadtalker' model

@@ -55,8 +55,6 @@ impl EventHandler for ElevenLabsHandler {
             let default_global_voice = "ethan".to_string();
             let event = rx.recv().await?;
 
-            // Right here we are skipping all except Elevent Labs messages
-
             let msg = match event {
                 Event::ElevenLabsRequest(msg) => msg,
                 _ => continue,
