@@ -1,22 +1,18 @@
-use bytes::Bytes;
-
-use anyhow::anyhow;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose, Engine as _};
+use bytes::Bytes;
+use chrono::Utc;
 use mime_guess::MimeGuess;
 use regex::Regex;
-use rodio::*;
 use serde::Deserialize;
-
-// Which do I need?
-// use std::fs::File;
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt;
+use tokio::{
+    fs::{create_dir_all, File},
+    io::{AsyncReadExt, AsyncWriteExt},
+};
 
 use fal_rust::client::{ClientCredentials, FalClient};
+use reqwest::Client as ReqwestClient;
 
-#[warn(dead_code)]
 #[derive(Deserialize)]
 struct FalImage {
     url: String,
@@ -28,7 +24,6 @@ struct FalImage {
 #[derive(Deserialize)]
 struct FalData {
     images: Vec<FalImage>,
-    // Other fields can be added here if needed
 }
 
 pub async fn sync_lips_to_voice(
@@ -43,158 +38,34 @@ pub async fn sync_lips_to_voice(
     let fal_driven_audio_data_uri =
         fal_encode_file_as_data_uri(audio_file_path).await?;
 
-    println!("\tTalking to Fal");
-    // Submit the request to fal and handle the result
-    match fal_submit_sadtalker_request(
+    println!("\tTalking to FAL");
+    let fal_result = fal_submit_sadtalker_request(
         &fal_source_image_data_uri,
         &fal_driven_audio_data_uri,
     )
-    .await
-    {
-        Ok(fal_result) => {
-            println!("fal Result: {}", fal_result);
+    .await?;
+    println!("FAL Result: {}", fal_result);
 
-            // Parse the fal_result JSON
-            let fal_result_json: serde_json::Value =
-                serde_json::from_str(&fal_result)?;
-            // Extract the video URL
-            if let Some(video_obj) = fal_result_json.get("video") {
-                if let Some(url_value) = video_obj.get("url") {
-                    if let Some(url) = url_value.as_str() {
-                        // Download the video
-                        let client = reqwest::Client::new();
-                        let resp = client.get(url).send().await?;
-                        let video_bytes = resp.bytes().await?;
+    let video_url = extract_video_url_from_fal_result(&fal_result)?;
+    let video_bytes = download_video(&video_url).await?;
 
-                        // Ensure the directory exists
-                        tokio::fs::create_dir_all("./tmp/fal_videos").await?;
+    let timestamp = Utc::now().timestamp();
+    let video_path = format!("./tmp/fal_videos/{}.mp4", timestamp);
+    create_dir_all("./tmp/fal_videos").await?;
+    tokio::fs::write(&video_path, &video_bytes)
+        .await
+        .with_context(|| format!("Failed to write video to {}", video_path))?;
+    println!("Video saved to {}", video_path);
 
-                        // Generate a timestamp for the filename
-                        let timestamp = chrono::Utc::now().timestamp();
-
-                        // Save the video to ./tmp/fal_videos
-                        let video_path =
-                            format!("./tmp/fal_videos/{}.mp4", timestamp);
-                        tokio::fs::write(&video_path, &video_bytes).await?;
-                        println!("Video saved to {}", video_path);
-
-                        return Ok(video_bytes);
-                        // This probably shouldn't happen in here
-                        // let video_path = "./prime.mp4";
-                        // tokio::fs::write(&video_path, &video_bytes).await?;
-                        // println!("Video saved to {}", video_path);
-                    } else {
-                        eprintln!("Error: 'url' is not a string");
-                    }
-                } else {
-                    eprintln!("Error: 'url' field not found in 'video' object");
-                }
-            } else {
-                eprintln!("Error: 'video' field not found in fal_result");
-            }
-        }
-        Err(e) => {
-            eprintln!("fal Error: {}", e);
-        }
-    }
-    return Err(anyhow!("Error: fal request failed"));
-}
-
-async fn process_images(
-    timestamp: &str,
-    json_path: &str,
-    extra_save_folder: Option<&str>,
-) -> Result<()> {
-    // Read the JSON file asynchronously
-    let json_data = tokio::fs::read_to_string(json_path).await?;
-
-    // Parse the JSON data into the FalData struct
-    let data: FalData = serde_json::from_str(&json_data)?;
-
-    // Regex to match data URLs
-    let data_url_regex =
-        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-
-    for (index, image) in data.images.iter().enumerate() {
-        // Match the data URL and extract MIME type and base64 data
-        if let Some(captures) = data_url_regex.captures(&image.url) {
-            let mime_type = captures.name("mime").unwrap().as_str();
-            let base64_data = captures.name("data").unwrap().as_str();
-
-            // Decode the base64 data
-            let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
-
-            // Determine the file extension based on the MIME type
-            let extension = match mime_type {
-                "image/png" => "png",
-                "image/jpeg" => "jpg",
-                _ => "bin", // Default to binary if unknown type
-            };
-
-            // Construct the filename using the timestamp and extension
-            let filename =
-                format!("tmp/fal_images/{}.{}", timestamp, extension);
-
-            // Save the image bytes to a file asynchronously
-            let mut file =
-                File::create(&filename).await.with_context(|| {
-                    format!("Error creating file: {}", filename)
-                })?;
-            file.write_all(&image_bytes).await.with_context(|| {
-                format!("Error writing to file: {}", filename)
-            })?;
-
-            // **New Code Start**
-            // Also save the image to "./tmp/dalle-1.png"
-            let additional_filename = "./tmp/dalle-1.png";
-            let mut additional_file =
-                File::create(additional_filename).await.with_context(|| {
-                    format!("Error creating file: {}", additional_filename)
-                })?;
-            additional_file.write_all(&image_bytes).await.with_context(
-                || format!("Error writing to file: {}", additional_filename),
-            )?;
-
-            // Optionally save the image to an additional location
-            if let Some(extra_folder) = extra_save_folder {
-                let extra_filename =
-                    format!("{}/{}.{}", extra_folder, timestamp, extension);
-                let mut extra_file =
-                    File::create(&extra_filename).await.with_context(|| {
-                        format!("Error creating file: {}", extra_filename)
-                    })?;
-                extra_file.write_all(&image_bytes).await.with_context(
-                    || format!("Error writing to file: {}", extra_filename),
-                )?;
-            }
-
-            println!("Saved {}", filename);
-        } else {
-            eprintln!("Invalid data URL for image at index {}", index);
-        }
-    }
-
-    Ok(())
+    Ok(video_bytes)
 }
 
 pub async fn create_turbo_image_in_folder(
     prompt: String,
-    suno_save_folder: &String,
+    suno_save_folder: &str,
 ) -> Result<()> {
-    // Can I move this into it's own function that takes a prompt?
-    // So here is as silly place I can run fal
     let client = FalClient::new(ClientCredentials::from_env());
-
-    // let model = "fal-ai/stable-cascade";
-    // let model = "fal-ai/fast-turbo-diffusion";
-    //
-    // this is for anime
-    // let model = "fal-ai/stable-cascade/sote-diffusion";
-    // let model = "fal-ai/fast-sdxl";
-
-    // let model = "fal-ai/stable-cascade/sote-diffusion";
     let model = "fal-ai/stable-cascade";
-    // let model = "fal-ai/fast-turbo-diffusion";
     println!("\tCreating image with model: {}", model);
 
     let res = client
@@ -206,21 +77,26 @@ pub async fn create_turbo_image_in_folder(
             }),
         )
         .await
-        .unwrap();
+        .map_err(|e| anyhow!("Failed to run FAL Client: {:?}", e))?;
 
-    let raw_json = res.bytes().await.unwrap();
-    let timestamp = chrono::Utc::now().timestamp();
+    let raw_json = res
+        .bytes()
+        .await
+        .with_context(|| "Failed to get bytes from FAL response")?;
+
+    let timestamp = Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
-    tokio::fs::write(&json_path, &raw_json).await.unwrap();
+    create_dir_all("tmp/fal_responses").await?;
+    tokio::fs::write(&json_path, &raw_json)
+        .await
+        .with_context(|| format!("Failed to write JSON to {}", json_path))?;
 
-    // This is not the folder
-    // let save_folder = "tmp/fal_images";
-    let _ = process_images(
+    process_fal_images_from_json(
+        &raw_json,
         &timestamp.to_string(),
-        &json_path,
-        Some(&suno_save_folder),
+        Some(suno_save_folder),
     )
-    .await;
+    .await?;
 
     Ok(())
 }
@@ -230,26 +106,27 @@ pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
         fal_encode_file_as_data_uri(image_file_path).await?;
     let client = FalClient::new(ClientCredentials::from_env());
 
-    // This unwrap is wrong
     let response = client
         .run(
             "fal-ai/stable-video",
-            serde_json::json!({
-                "image_url": fal_source_image_data_uri
-            }),
+            serde_json::json!({ "image_url": fal_source_image_data_uri }),
         )
         .await
-        .unwrap();
+        .map_err(|e| anyhow!("Failed to run client: {:?}", e))?;
 
     let body = response.text().await?;
     let json: serde_json::Value = serde_json::from_str(&body)?;
 
     if let Some(url) = json["video"]["url"].as_str() {
-        let video_bytes = reqwest::get(url).await?.bytes().await?;
-        let timestamp = chrono::Utc::now().timestamp();
+        let video_bytes = download_video(url).await?;
+        let timestamp = Utc::now().timestamp();
         let filename = format!("tmp/fal_videos/{}.mp4", timestamp);
-        tokio::fs::create_dir_all("tmp/fal_videos").await?;
-        tokio::fs::write(&filename, &video_bytes).await?;
+        create_dir_all("tmp/fal_videos").await?;
+        tokio::fs::write(&filename, &video_bytes)
+            .await
+            .with_context(|| {
+                format!("Failed to write video to {}", filename)
+            })?;
         println!("Video saved to: {}", filename);
     } else {
         return Err(anyhow!("Failed to extract video URL from JSON"));
@@ -258,34 +135,9 @@ pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
     Ok(())
 }
 
-// This is too specific
 pub async fn create_turbo_image(prompt: String) -> Result<()> {
-    // Can I move this into it's own function that takes a prompt?
-    // So here is as silly place I can run fal
     let client = FalClient::new(ClientCredentials::from_env());
-
-    // let model = "fal-ai/stable-cascade/sote-diffusion";
-    // let model = "fal-ai/fast-turbo-diffusion";
-
-    // // let model = "fal-ai/stable-cascade";
-    // // let model = "fal-ai/fast-turbo-diffusion";
-    // //
-    // // this is for anime
-
-    // this looks terrible
-    // let model = "fal-ai/stable-cascade/sote-diffusion";
-
-    // This works with
-    // save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
-    // let model = "fal-ai/stable-diffusion-v3-medium";
-
-    // This works with
-    // save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
-    let model = "fal-ai/stable-cascade";
-
-    // Works and is decent
     let model = "fal-ai/fast-sdxl";
-
     println!("\t\tCreating image with model: {}", model);
 
     let res = client
@@ -297,61 +149,134 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
             }),
         )
         .await
-        .unwrap();
+        .map_err(|e| anyhow!("Error running Fal Client: {:?}", e))?;
 
-    let raw_json = res.bytes().await.unwrap();
+    let raw_json = res
+        .bytes()
+        .await
+        .with_context(|| "Failed to get bytes from response")?;
 
-    let timestamp = chrono::Utc::now().timestamp();
+    let timestamp = Utc::now().timestamp();
     let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+    create_dir_all("tmp/fal_responses").await?;
+    tokio::fs::write(&json_path, &raw_json)
+        .await
+        .with_context(|| format!("Failed to write JSON to {}", json_path))?;
 
-    println!("Saving JSON to {}", &json_path);
-    tokio::fs::write(&json_path, &raw_json).await.unwrap();
-
-    // This is going to base64 data
-    // we need instead to read in
-    // process_images(&timestamp.to_string(), &json_path, None).await?;
-
-    save_image_from_json(&String::from_utf8_lossy(&raw_json)).await?;
+    process_fal_images_from_json(&raw_json, &timestamp.to_string(), None)
+        .await?;
 
     Ok(())
 }
 
-async fn save_image_from_json(json_data: &str) -> Result<String> {
-    let data: serde_json::Value = serde_json::from_str(json_data)?;
+async fn process_fal_images_from_json(
+    raw_json: &[u8],
+    timestamp: &str,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
+    let data: serde_json::Value = serde_json::from_slice(raw_json)?;
 
     if let Some(images) = data["images"].as_array() {
-        if let Some(first_image) = images.first() {
-            if let Some(url) = first_image["url"].as_str() {
-                let client = reqwest::Client::new();
-                let response = client.get(url).send().await?;
-                let image_bytes = response.bytes().await?;
+        for (index, image) in images.iter().enumerate() {
+            if let Some(url) = image["url"].as_str() {
+                let image_bytes = if url.starts_with("data:") {
+                    if let Some((_mime_type, base64_data)) =
+                        parse_data_url(url)?
+                    {
+                        general_purpose::STANDARD
+                            .decode(base64_data)
+                            .with_context(|| format!("Failed to decode base64 data for image at index {}", index))?
+                    } else {
+                        eprintln!(
+                            "Invalid data URL for image at index {}",
+                            index
+                        );
+                        continue;
+                    }
+                } else {
+                    download_image(url).await?.to_vec()
+                };
 
-                let timestamp = chrono::Utc::now().timestamp();
-                let filename = format!("tmp/fal_images/{}.png", timestamp);
-
-                tokio::fs::create_dir_all("tmp/fal_images").await?;
-                tokio::fs::write(&filename, &image_bytes).await?;
-
-                let dalle_filename = "./tmp/dalle-1.png";
-                tokio::fs::write(dalle_filename, &image_bytes).await?;
-
-                println!("Image saved to: {} and {}", filename, dalle_filename);
-                return Ok(filename);
+                let extension = "png"; // Assuming PNG
+                save_image_bytes(
+                    &image_bytes,
+                    timestamp,
+                    extension,
+                    extra_save_folder,
+                )
+                .await?;
+            } else {
+                eprintln!(
+                    "Failed to find image URL for image at index {}",
+                    index
+                );
             }
         }
+    } else {
+        return Err(anyhow!("Failed to extract images from JSON"));
     }
 
-    Err(anyhow!("Failed to extract image URL from JSON"))
+    Ok(())
 }
 
-// Function to submit the request to the fal 'sadtalker' model
+async fn save_image_bytes(
+    image_bytes: &[u8],
+    timestamp: &str,
+    extension: &str,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
+    let filename = format!("tmp/fal_images/{}.{}", timestamp, extension);
+    create_dir_all("tmp/fal_images").await?;
+    tokio::fs::write(&filename, image_bytes)
+        .await
+        .with_context(|| format!("Error writing to file: {}", filename))?;
+
+    let additional_filename = "./tmp/dalle-1.png";
+    tokio::fs::write(additional_filename, image_bytes)
+        .await
+        .with_context(|| {
+            format!("Error writing to file: {}", additional_filename)
+        })?;
+
+    if let Some(extra_folder) = extra_save_folder {
+        let extra_filename =
+            format!("{}/{}.{}", extra_folder, timestamp, extension);
+        create_dir_all(extra_folder).await?;
+        tokio::fs::write(&extra_filename, image_bytes)
+            .await
+            .with_context(|| {
+                format!("Error writing to file: {}", extra_filename)
+            })?;
+    }
+
+    println!("Saved {}", filename);
+    Ok(())
+}
+
+async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
+    let mut file = File::open(file_path)
+        .await
+        .with_context(|| format!("Failed to open file: {}", file_path))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)
+        .await
+        .with_context(|| format!("Failed to read file: {}", file_path))?;
+
+    let encoded_data = general_purpose::STANDARD.encode(&buffer);
+    let mime_type = MimeGuess::from_path(file_path)
+        .first_or_octet_stream()
+        .essence_str()
+        .to_string();
+
+    Ok(format!("data:{};base64,{}", mime_type, encoded_data))
+}
+
 async fn fal_submit_sadtalker_request(
     fal_source_image_data_uri: &str,
     fal_driven_audio_data_uri: &str,
 ) -> Result<String> {
     let fal_client = FalClient::new(ClientCredentials::from_env());
-
-    let fal_response = fal_client
+    let response = fal_client
         .run(
             "fal-ai/sadtalker",
             serde_json::json!({
@@ -360,50 +285,63 @@ async fn fal_submit_sadtalker_request(
             }),
         )
         .await
-        .map_err(|e| anyhow!("Error call sadtalker: {:?}", e))?;
+        .map_err(|e| anyhow!("Error running sadtalker {:?}", e))?;
 
-    // Check if the request was successful
-    if fal_response.status().is_success() {
-        fal_response
+    if response.status().is_success() {
+        response
             .text()
             .await
             .map_err(|e| anyhow!("Error getting text: {:?}", e))
-        // Retrieve the response body as text
-        // let fal_result = fal_response.text().await?;
-        // Ok(fal_result)
     } else {
-        // Return an error with the status code
-        Err(anyhow!(format!(
-            "fal request failed with status: {}",
-            fal_response.status()
-        )))
+        Err(anyhow!(
+            "FAL request failed with status: {}",
+            response.status()
+        ))
     }
 }
 
-async fn fal_encode_file_as_data_uri(file_path: &str) -> Result<String> {
-    // Open the file asynchronously
-    let mut fal_file = File::open(file_path).await?;
-    let mut fal_file_data = Vec::new();
+fn parse_data_url(data_url: &str) -> Result<Option<(&str, &str)>> {
+    let data_url_regex =
+        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
+    if let Some(captures) = data_url_regex.captures(data_url) {
+        let mime_type = captures.name("mime").unwrap().as_str();
+        let base64_data = captures.name("data").unwrap().as_str();
+        Ok(Some((mime_type, base64_data)))
+    } else {
+        Ok(None)
+    }
+}
 
-    // Read the entire file into the buffer
-    fal_file.read_to_end(&mut fal_file_data).await?;
+fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
+    let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
+    fal_result_json
+        .get("video")
+        .and_then(|video| video.get("url"))
+        .and_then(|url| url.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| anyhow!("Failed to extract video URL from FAL result"))
+}
 
-    // Encode the file data to Base64
-    let fal_encoded_data = general_purpose::STANDARD.encode(&fal_file_data);
+async fn download_video(url: &str) -> Result<Bytes> {
+    let client = ReqwestClient::new();
+    let resp = client.get(url).send().await.with_context(|| {
+        format!("Failed to download video from URL: {}", url)
+    })?;
+    let video_bytes = resp
+        .bytes()
+        .await
+        .with_context(|| "Failed to get bytes from response")?;
+    Ok(video_bytes)
+}
 
-    // Convert the encoded data to a String
-    let fal_encoded_data_string =
-        String::from_utf8(fal_encoded_data.into_bytes())?;
-
-    // Guess the MIME type based on the file extension
-    let fal_mime_type = MimeGuess::from_path(file_path)
-        .first_or_octet_stream()
-        .essence_str()
-        .to_string();
-
-    // Create the data URI for fal
-    let fal_data_uri =
-        format!("data:{};base64,{}", fal_mime_type, fal_encoded_data_string);
-
-    Ok(fal_data_uri)
+async fn download_image(url: &str) -> Result<Bytes> {
+    let client = ReqwestClient::new();
+    let response = client.get(url).send().await.with_context(|| {
+        format!("Failed to download image from URL: {}", url)
+    })?;
+    let image_bytes = response
+        .bytes()
+        .await
+        .with_context(|| "Failed to get bytes from image response")?;
+    Ok(image_bytes)
 }
