@@ -71,6 +71,7 @@ async fn run_ai_scene(
     pool: &sqlx::PgPool,
     elevenlabs: &Elevenlabs,
     ai_scene_req: &AiScenesRequest,
+    config: &fal_ai::config::Config,
 ) -> Result<()> {
     // Figure out the voice for the voice-over
     let final_voice = determine_voice_to_use(
@@ -126,6 +127,7 @@ async fn run_ai_scene(
                 image_file_path,
                 local_audio_path,
                 final_voice,
+                config,
             )
             .await?
         }
@@ -149,6 +151,7 @@ async fn trigger_ai_friend(
     image_file_path: String,
     local_audio_path: String,
     friend_name: String,
+    config: &fal_ai::config::Config,
 ) -> Result<()> {
     println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
 
@@ -157,6 +160,7 @@ async fn trigger_ai_friend(
         &local_audio_path,
         &obs_client,
         friend_name,
+        config,
     )
     .await
     {
@@ -172,29 +176,6 @@ async fn trigger_ai_friend(
     Ok(())
 }
 
-async fn trigger_movie_trailer(
-    ai_scene_req: &AiScenesRequest,
-    locked_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    local_audio_path: String,
-) -> Result<()> {
-    if let Some(music_bg) = &ai_scene_req.music_bg {
-        let _ = send_message(&locked_client, music_bg.clone()).await;
-    }
-
-    // We are supressing a whole bunch of alsa message
-    let backup =
-        redirect::redirect_stderr().expect("Failed to redirect stderr");
-
-    let (_stream, stream_handle) =
-        audio::get_output_stream("pulse").expect("stream handle");
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-    let file = BufReader::new(File::open(local_audio_path)?);
-    sink.append(Decoder::new(BufReader::new(file))?);
-    sink.sleep_until_end();
-    redirect::restore_stderr(backup);
-    return Ok(());
-}
-
 #[async_trait]
 impl EventHandler for AiScenesHandler {
     async fn handle(
@@ -202,6 +183,7 @@ impl EventHandler for AiScenesHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        let config = fal_ai::config::Config::new();
         println!("Starting AI Scenes Handler");
         loop {
             let event = rx.recv().await?;
@@ -218,6 +200,7 @@ impl EventHandler for AiScenesHandler {
                 &self.pool,
                 &self.elevenlabs,
                 &ai_scene_req,
+                &config,
             )
             .await;
         }
@@ -229,10 +212,14 @@ async fn sync_lips_and_update(
     fal_audio_file_path: &str,
     obs_client: &OBSClient,
     friend_name: String,
+    config: &fal_ai::config::Config,
 ) -> Result<()> {
-    let video_bytes =
-        fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
-            .await?;
+    let video_bytes = fal_ai::sync_lips_to_voice(
+        fal_image_file_path,
+        fal_audio_file_path,
+        config,
+    )
+    .await?;
 
     // We are saving he video
     let video_path = format!("./ai_assets/{}.mp4", friend_name);
@@ -568,4 +555,27 @@ fn twitch_chat_filename(username: String, voice: String) -> String {
     let now: DateTime<Utc> = Utc::now();
 
     format!("{}_{}_{}", now.timestamp(), username, voice)
+}
+
+async fn trigger_movie_trailer(
+    ai_scene_req: &AiScenesRequest,
+    locked_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    local_audio_path: String,
+) -> Result<()> {
+    if let Some(music_bg) = &ai_scene_req.music_bg {
+        let _ = send_message(&locked_client, music_bg.clone()).await;
+    }
+
+    // We are supressing a whole bunch of alsa message
+    let backup =
+        redirect::redirect_stderr().expect("Failed to redirect stderr");
+
+    let (_stream, stream_handle) =
+        audio::get_output_stream("pulse").expect("stream handle");
+    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let file = BufReader::new(File::open(local_audio_path)?);
+    sink.append(Decoder::new(BufReader::new(file))?);
+    sink.sleep_until_end();
+    redirect::restore_stderr(backup);
+    return Ok(());
 }
