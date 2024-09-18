@@ -72,17 +72,7 @@ async fn run_ai_scene(
     elevenlabs: &Elevenlabs,
     ai_scene_req: &AiScenesRequest,
 ) -> Result<()> {
-    let twitch_client = Arc::new(Mutex::new(twitch_client));
-    let clone_twitch_client = twitch_client.clone();
-    let locked_twitch_client = clone_twitch_client.lock().await;
-
-    let obs_client = Arc::new(Mutex::new(obs_client));
-    let obs_client_clone = obs_client.clone();
-    let locked_obs_client = obs_client_clone.lock().await;
-
-    let (_stable_diffusion_enabled, _dalle_enabled) =
-        find_image_modes(pool.clone()).await?;
-
+    // Figure out the voice for the voice-over
     let final_voice = determine_voice_to_use(
         ai_scene_req.username.clone(),
         ai_scene_req.voice.clone(),
@@ -90,32 +80,43 @@ async fn run_ai_scene(
     )
     .await?;
 
+    // Generate the Audio to for the Voice Over
     let filename = twitch_chat_filename(
         ai_scene_req.username.clone(),
         final_voice.clone(),
     );
     let chat_message = sanitize_chat_message(ai_scene_req.message.clone());
-    let local_audio_path = match generate_and_save_tts_audio(
+    let local_audio_path = generate_and_save_tts_audio(
         final_voice.clone(),
         filename,
         chat_message,
         &elevenlabs,
         &ai_scene_req,
-    ) {
-        Ok(path) => path,
-        Err(e) => {
-            println!("Failed to generate audio: {}", e);
-            return Err(e);
-        }
-    };
+    )
+    .map_err(|e| {
+        // I could add more info to this error?
+        // anyhow Context???
+        println!("Failed to generate audio: {}", e);
+        e
+    })?;
 
+    // Trigger the background music
     println!("AI Scene Request {:?}", &ai_scene_req);
     if let Some(prompt) = &ai_scene_req.prompt {
         twitch_stream_state::set_ai_background_theme(&pool, &prompt).await?;
     };
 
-    let face_image = build_face_scene_request(final_voice).await?;
+    let twitch_client = Arc::new(Mutex::new(twitch_client));
+    let clone_twitch_client = twitch_client.clone();
+    let locked_twitch_client = clone_twitch_client.lock().await;
+    let obs_client = Arc::new(Mutex::new(obs_client));
+    let obs_client_clone = obs_client.clone();
+    let locked_obs_client = obs_client_clone.lock().await;
 
+    // This is a dumb way to decide if the scene is AI Friend or not
+    // this only works because we are correlating a voice like prime, with asking prime a question
+    // through channel points
+    let face_image = build_face_scene_request(final_voice.clone()).await?;
     match face_image {
         Some(image_file_path) => {
             trigger_ai_friend(
@@ -124,6 +125,7 @@ async fn run_ai_scene(
                 ai_scene_req,
                 image_file_path,
                 local_audio_path,
+                final_voice,
             )
             .await?
         }
@@ -146,11 +148,17 @@ async fn trigger_ai_friend(
     ai_scene_req: &AiScenesRequest,
     image_file_path: String,
     local_audio_path: String,
+    friend_name: String,
 ) -> Result<()> {
     println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
 
-    match sync_lips_and_update(&image_file_path, &local_audio_path, &obs_client)
-        .await
+    match sync_lips_and_update(
+        &image_file_path,
+        &local_audio_path,
+        &obs_client,
+        friend_name,
+    )
+    .await
     {
         Ok(_) => {
             if let Some(music_bg) = &ai_scene_req.music_bg {
@@ -220,12 +228,14 @@ async fn sync_lips_and_update(
     fal_image_file_path: &str,
     fal_audio_file_path: &str,
     obs_client: &OBSClient,
+    friend_name: String,
 ) -> Result<()> {
     let video_bytes =
         fal_ai::sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
             .await?;
 
-    let video_path = "./prime.mp4";
+    // We are saving he video
+    let video_path = format!("./ai_assets/{}.mp4", friend_name);
     match tokio::fs::write(&video_path, &video_bytes).await {
         Ok(_) => {}
         Err(e) => {
@@ -235,18 +245,26 @@ async fn sync_lips_and_update(
     }
     println!("Video saved to {}", video_path);
 
-    let scene = "Primary";
-    let source = "prime-talking-video";
-    let _ =
-        crate::obs::obs_source::set_enabled(scene, source, false, &obs_client)
-            .await;
+    let scene = "AIFriends";
+    // let source = friend_name;
+    let _ = crate::obs::obs_source::set_enabled(
+        scene,
+        &friend_name,
+        false,
+        &obs_client,
+    )
+    .await;
 
     // Not sure if I have to wait ofr how long to wait
     sleep(Duration::from_millis(100)).await;
 
-    let _ =
-        crate::obs::obs_source::set_enabled(scene, source, true, &obs_client)
-            .await;
+    let _ = crate::obs::obs_source::set_enabled(
+        scene,
+        &friend_name,
+        true,
+        &obs_client,
+    )
+    .await;
     return Ok(());
 }
 

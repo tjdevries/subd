@@ -98,9 +98,6 @@ impl EventHandler for AISongsHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        // Can I kick off an event here?
-        // we have the sink at this point
-        // This is the main loop
         loop {
             if self.sink.empty() {
                 println!("It's empty!");
@@ -124,12 +121,6 @@ impl EventHandler for AISongsHandler {
                 .split(" ")
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
-
-            // let sink = Arc::new(Mutex::new(self.sink));
-            // let _ = start_pooling(&sink).await;
-            // kjp
-            // let sink = Arc::new(Mutex::new(&self.sink));
-            // let _ = start_pooling(&sink.clone()).await;
 
             // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_requests(
