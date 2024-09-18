@@ -18,6 +18,7 @@ user_service = { path = "crates/user_service" }
 events = { path = "crates/events" }
 stable_diffusion = { path = "crates/stable_diffusion" }
 fal_ai = { path = "crates/fal_ai" }
+ai_friends = { path = "crates/ai_friends" }
 
 # Twitch Deps
 twitch-irc.workspace = true

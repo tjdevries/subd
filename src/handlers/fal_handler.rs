@@ -114,8 +114,6 @@ pub async fn handle_fal_commands(
     let command = splitmsg[0].as_str();
     let word_count = msg.contents.split_whitespace().count();
 
-    let config = fal_ai::config::Config::new();
-
     match command {
         "!theme" => {
             if _not_beginbot && !is_mod {
@@ -133,7 +131,7 @@ pub async fn handle_fal_commands(
         "!talk" => {
             println!("\n\nTALK TIME!");
             let image_file_path = "teej_2.jpg";
-            fal_ai::create_video_from_image(image_file_path, &config).await;
+            fal_ai::create_video_from_image(image_file_path).await;
             // let fal_image_file_path = "green_prime.png";
             // let fal_audio_file_path =
             //     "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
@@ -184,7 +182,7 @@ pub async fn handle_fal_commands(
                 println!("Final Prompt for BG: {}", final_prompt);
 
                 // Generate an image using the final prompt with the Fal AI service
-                fal_ai::create_turbo_image(final_prompt, &config).await?;
+                fal_ai::create_turbo_image(final_prompt).await?;
 
                 // let theme = "Waifu";
                 // let final_prompt = format!("{} {}", theme, prompt);

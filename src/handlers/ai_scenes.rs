@@ -5,6 +5,7 @@ use crate::audio;
 use crate::redirect;
 use crate::stream_character;
 use crate::twitch_stream_state;
+use ai_friends;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -71,7 +72,6 @@ async fn run_ai_scene(
     pool: &sqlx::PgPool,
     elevenlabs: &Elevenlabs,
     ai_scene_req: &AiScenesRequest,
-    config: &fal_ai::config::Config,
 ) -> Result<()> {
     // Figure out the voice for the voice-over
     let final_voice = determine_voice_to_use(
@@ -127,7 +127,6 @@ async fn run_ai_scene(
                 image_file_path,
                 local_audio_path,
                 final_voice,
-                config,
             )
             .await?
         }
@@ -151,7 +150,6 @@ async fn trigger_ai_friend(
     image_file_path: String,
     local_audio_path: String,
     friend_name: String,
-    config: &fal_ai::config::Config,
 ) -> Result<()> {
     println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
 
@@ -160,7 +158,6 @@ async fn trigger_ai_friend(
         &local_audio_path,
         &obs_client,
         friend_name,
-        config,
     )
     .await
     {
@@ -183,7 +180,6 @@ impl EventHandler for AiScenesHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        let config = fal_ai::config::Config::new();
         println!("Starting AI Scenes Handler");
         loop {
             let event = rx.recv().await?;
@@ -200,7 +196,6 @@ impl EventHandler for AiScenesHandler {
                 &self.pool,
                 &self.elevenlabs,
                 &ai_scene_req,
-                &config,
             )
             .await;
         }
@@ -212,12 +207,10 @@ async fn sync_lips_and_update(
     fal_audio_file_path: &str,
     obs_client: &OBSClient,
     friend_name: String,
-    config: &fal_ai::config::Config,
 ) -> Result<()> {
-    let video_bytes = fal_ai::sync_lips_to_voice(
+    let video_bytes = ai_friends::sync_lips_to_voice(
         fal_image_file_path,
         fal_audio_file_path,
-        config,
     )
     .await?;
 

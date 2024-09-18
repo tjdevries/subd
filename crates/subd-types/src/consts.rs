@@ -118,3 +118,23 @@ pub fn get_obs_test_source() -> String {
 pub fn get_obs_test_filter() -> String {
     dotenv::var("SUBD_OBS_TEST_FILTER").expect("SUBD_OBS_TEST_FILTER to exist")
 }
+
+pub fn get_ai_videos_dir() -> String {
+    dotenv::var("AI_VIDEOS_DIR")
+        .unwrap_or_else(|_| "./tmp/fal_videos".to_string())
+}
+
+pub fn get_get_ai_images_dir() -> String {
+    dotenv::var("AI_IMAGES_DIR")
+        .unwrap_or_else(|_| "./tmp/fal_images".to_string())
+}
+
+pub fn get_fal_responses_dir() -> String {
+    dotenv::var("FAL_RESPONSES_DIR")
+        .unwrap_or_else(|_| "./tmp/fal_responses".to_string())
+}
+
+pub fn get_obs_background_image_path() -> String {
+    dotenv::var("OBS_BACKGROUND_IMAGE_PATH")
+        .unwrap_or_else(|_| "./tmp/dalle-1.png".to_string())
+}
