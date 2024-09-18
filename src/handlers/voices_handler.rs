@@ -458,8 +458,7 @@ pub async fn handle_voices_commands(
             let urls = &splitmsg[2..];
 
             // Create the directory for the split sounds
-            let split_mp3_folder =
-                format!("/home/begin/code/subd/tmp/cloned/split_{}/", name);
+            let split_mp3_folder = format!("./tmp/cloned/split_{}/", name);
             match fs::create_dir(&split_mp3_folder) {
                 Ok(_) => println!("Directory created successfully"),
                 Err(e) => println!("Error creating directory: {:?}", e),
@@ -472,10 +471,7 @@ pub async fn handle_voices_commands(
                 }
 
                 println!("{index} URL {url}");
-                let cloned_mp3 = format!(
-                    "/home/begin/code/subd/tmp/cloned/{}-{}.wav",
-                    name, index
-                );
+                let cloned_mp3 = format!("./tmp/cloned/{}-{}.wav", name, index);
                 let _ffmpeg_status = Command::new("yt-dlp")
                     .args(&[
                         "-x",
@@ -535,7 +531,7 @@ pub async fn handle_voices_commands(
             println!("Result: {:?}", voice_id);
 
             // We save the JSON
-            let filename = format!("/home/begin/code/subd/voices.json");
+            let filename = format!("./data/voices.json");
             let mut file = fs::File::open(filename.clone())?;
             let mut data = String::new();
             file.read_to_string(&mut data)?;
@@ -609,6 +605,47 @@ fn parse_transform_settings(
     }
 
     (pitch, stretch, reverb)
+}
+
+async fn isolate_voice(
+    api_base_url_v1: &str,
+    audio_file_path: &str,
+) -> Result<()> {
+    let api_key = env::var("ELEVENLABS_API_KEY")
+        .expect("Expected ELEVENLABS_API_KEY in .env");
+    let client = Client::new();
+    let url = format!("{}/audio_isolation", api_base_url_v1);
+
+    let file_name = Path::new(audio_file_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| anyhow!("Invalid file name"))?;
+
+    // let part = Part::file(audio_file_path).await?;
+    let file_bytes = fs::read(audio_file_path)?;
+    let part = Part::bytes(file_bytes)
+        .file_name(file_name.to_string())
+        .mime_str("audio/mpeg")?; // Adjust the MIME type if needed
+    let form = Form::new()
+        .part("audio", part)
+        .text("model_id", "eleven_monolingual_v1");
+
+    let response = client
+        .post(&url)
+        .header("xi-api-key", api_key)
+        .multipart(form)
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        let bytes = response.bytes().await?;
+        let output_path = format!("isolated_{}", file_name);
+        let mut output_file = File::create(output_path)?;
+        output_file.write_all(&bytes)?;
+        Ok(())
+    } else {
+        Err(anyhow!("Failed to isolate voice: {:?}", response.status()))
+    }
 }
 
 async fn from_clone(

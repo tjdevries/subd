@@ -233,19 +233,6 @@ impl EventHandler for SoundHandler {
             // If we have a voice assigned, then we fire off an elevenlabs Request
             match character.voice {
                 Some(voice) => {
-                    // Write records to a CSV file
-                    // let records = vec![Record {
-                    //     field_1: voice.clone(),
-                    //     field_2: voice_text.clone(),
-                    // }];
-                    // TODO: What are you doing Begin!
-                    // let csv_path =
-                    //     "/home/begin/code/BeginGPT/tmp/voice_character.csv";
-                    // write_records_to_csv(&csv_path, &records)?;
-                    //
-                    // At this point it's brock-sampson
-
-                    // The voice here isn't be respected
                     let _ = tx.send(Event::ElevenLabsRequest(
                         subd_types::ElevenLabsRequest {
                             voice: Some(voice),
