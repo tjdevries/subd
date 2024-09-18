@@ -1,9 +1,46 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use chrono::Utc;
+use obws::Client as OBSClient;
+use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
+use tokio::time::{sleep, Duration};
+use twitch_chat::client::send_message;
+use twitch_irc::{
+    login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
+};
 
 use fal_ai;
+
+async fn trigger_ai_friend(
+    obs_client: &OBSClient,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    ai_scene_req: &AiScenesRequest,
+    image_file_path: String,
+    local_audio_path: String,
+    friend_name: String,
+) -> Result<()> {
+    println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
+
+    match sync_lips_and_update(
+        &image_file_path,
+        &local_audio_path,
+        &obs_client,
+        friend_name,
+    )
+    .await
+    {
+        Ok(_) => {
+            if let Some(music_bg) = &ai_scene_req.music_bg {
+                let _ = send_message(&twitch_client, music_bg.clone()).await;
+            }
+        }
+        Err(e) => {
+            eprintln!("Error syncing lips and updating: {:?}", e);
+        }
+    }
+    Ok(())
+}
 
 pub async fn sync_lips_to_voice(
     image_file_path: &str,
@@ -38,4 +75,50 @@ pub async fn sync_lips_to_voice(
     println!("Video saved to {}", video_path);
 
     Ok(video_bytes)
+}
+
+async fn sync_lips_and_update(
+    fal_image_file_path: &str,
+    fal_audio_file_path: &str,
+    obs_client: &OBSClient,
+    friend_name: String,
+) -> Result<()> {
+    let video_bytes =
+        sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
+
+    // We are saving he video
+    let video_path = format!("./ai_assets/{}.mp4", friend_name);
+    match tokio::fs::write(&video_path, &video_bytes).await {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("Error writing video: {:?}", e);
+            return Err(anyhow!("Error writing video: {:?}", e));
+        }
+    }
+    println!("Video saved to {}", video_path);
+
+    // This code is in the main section
+    // so not usable here
+    //let scene = "AIFriends";
+    //// let source = friend_name;
+    //let _ = crate::obs::obs_source::set_enabled(
+    //    scene,
+    //    &friend_name,
+    //    false,
+    //    &obs_client,
+    //)
+    //.await;
+    //
+    //// Not sure if I have to wait ofr how long to wait
+    //sleep(Duration::from_millis(100)).await;
+    //
+    //let _ = crate::obs::obs_source::set_enabled(
+    //    scene,
+    //    &friend_name,
+    //    true,
+    //    &obs_client,
+    //)
+    //.await;
+
+    return Ok(());
 }
