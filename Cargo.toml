@@ -132,4 +132,3 @@ twitch_api2 = { version = "0.6.1", features = [ "helix", "twitch_oauth2", "reqwe
 
 [lib]
 path = "src/lib.rs"
-
