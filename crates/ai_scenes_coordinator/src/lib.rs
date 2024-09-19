@@ -1,6 +1,3 @@
-use serde::{Deserialize, Serialize};
-use sqlx::types::Uuid;
-
 use ai_friends;
 use ai_movie_trailers;
 use anyhow::anyhow;
@@ -10,9 +7,11 @@ use elevenlabs_api::{
     tts::{TtsApi, TtsBody},
     *,
 };
-// use obws::Client as OBSClient;
+use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
+// use serde::{Deserialize, Serialize};
+// use sqlx::types::Uuid;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
@@ -25,7 +24,7 @@ use twitch_irc::{
 };
 use twitch_stream_state;
 
-use obws::Client as OBSClient;
+pub mod models;
 
 // time to write some Rust!
 pub async fn run_ai_scene(
@@ -145,8 +144,6 @@ fn generate_and_save_tts_audio(
 // Finding Functions //
 // ================= //
 
-// This is about voices
-// TODO: FIX THIS ASAP
 async fn determine_voice_to_use(
     username: String,
     voice_override: Option<String>,
@@ -185,7 +182,7 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     // or call it every once-in-a-while and "cache"
     let data =
         fs::read_to_string("data/voices.json").expect("Unable to read file");
-    let voice_list: VoiceList =
+    let voice_list: models::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
     let name_lowercase = name.to_lowercase();
@@ -223,7 +220,7 @@ fn sanitize_chat_message(raw_msg: String) -> String {
 fn find_random_voice() -> (String, String) {
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
-    let voice_list: VoiceList =
+    let voice_list: models::VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
     let mut rng = thread_rng();
@@ -255,48 +252,4 @@ async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
         ("melkey".to_string(), "archive/melkey.png".to_string()),
     ]);
     Ok(voice_to_face_image.get(&voice).cloned())
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScenes {
-    pub scenes: Vec<AIScene>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AIScene {
-    pub reward_title: String,
-    pub base_prompt: String,
-    pub base_dalle_prompt: String,
-    pub voice: String,
-    pub music_bg: String,
-    pub cost: usize,
-    pub id: Option<Uuid>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ElevenlabsVoice {
-    pub voice_id: String,
-    pub name: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct VoiceList {
-    pub voices: Vec<ElevenlabsVoice>,
-}
-
-// Should they be optional???
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StreamCharacter {
-    // text_source: String,
-    pub voice: Option<String>,
-    pub source: String,
-    pub username: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Voice {
-    pub category: String,
-    pub display_name: String,
-    pub model_id: String,
-    pub name: String,
 }

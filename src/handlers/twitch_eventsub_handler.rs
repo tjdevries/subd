@@ -1,7 +1,8 @@
 use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
-use ai_friends;
+use ai_scenes_coordinator::models::AIScene;
+// use ai_friends;
 use ai_scenes_coordinator;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -180,15 +181,17 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
     // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes_coordinator::AIScenes =
+    let ai_scenes: ai_scenes_coordinator::models::AIScenes =
         serde_json::from_str(&contents).unwrap();
 
-    let ai_scenes_map: HashMap<String, &ai_scenes_coordinator::AIScene> =
-        ai_scenes
-            .scenes
-            .iter()
-            .map(|scene| (scene.reward_title.clone(), scene))
-            .collect();
+    let ai_scenes_map: HashMap<
+        String,
+        &ai_scenes_coordinator::models::AIScene,
+    > = ai_scenes
+        .scenes
+        .iter()
+        .map(|scene| (scene.reward_title.clone(), scene))
+        .collect();
 
     // This is required for EventSub's to work!
     // If we don't Twitch's challenge, you don't events
@@ -360,7 +363,7 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     pool: Arc<sqlx::PgPool>,
     obs_client: &OBSClient,
     reward_manager: Arc<RewardManager<'a, C>>,
-    ai_scenes_map: HashMap<String, &ai_scenes_coordinator::AIScene>,
+    ai_scenes_map: HashMap<String, &ai_scenes_coordinator::models::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
     // These aren't all AI scenes

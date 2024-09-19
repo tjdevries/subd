@@ -223,7 +223,7 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
 }
 
 fn find_random_ai_scene_title(
-    ai_scenes: ai_scenes_coordinator::AIScenes,
+    ai_scenes: ai_scenes_coordinator::models::AIScenes,
 ) -> Result<String> {
     let random = {
         let mut rng = rand::thread_rng();
@@ -235,10 +235,10 @@ fn find_random_ai_scene_title(
 
 // Don't Hardcode these
 // TODO: Don't hardcode this
-fn current_ai_scenes() -> Result<ai_scenes_coordinator::AIScenes> {
+fn current_ai_scenes() -> Result<ai_scenes_coordinator::models::AIScenes> {
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path)?;
-    let ai_scenes: ai_scenes_coordinator::AIScenes =
+    let ai_scenes: ai_scenes_coordinator::models::AIScenes =
         serde_json::from_str(&contents.clone())?;
     Ok(ai_scenes)
 }
