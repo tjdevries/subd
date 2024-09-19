@@ -69,7 +69,6 @@ pub async fn run_ai_scene(
     // if let Some(prompt) = &ai_scene_req.prompt {
     //     twitch_stream_state::set_ai_background_theme(&pool, &prompt).await?;
     // };
-
     let twitch_client = Arc::new(Mutex::new(twitch_client));
     let clone_twitch_client = twitch_client.clone();
     let locked_twitch_client = clone_twitch_client.lock().await;
