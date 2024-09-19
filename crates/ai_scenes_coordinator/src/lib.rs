@@ -16,12 +16,14 @@ use rodio::*;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
+use stream_character;
 use subd_audio;
 use subd_types::AiScenesRequest;
 use tokio::sync::Mutex;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use twitch_stream_state;
 
 use obws::Client as OBSClient;
 
@@ -150,33 +152,32 @@ async fn determine_voice_to_use(
     voice_override: Option<String>,
     pool: sqlx::PgPool,
 ) -> Result<String> {
-    Ok("ethan".to_string())
-    // let twitch_state = twitch_stream_state::get_twitch_state(&pool);
-    // let global_voice =
-    //     stream_character::get_voice_from_username(&pool.clone(), "beginbot")
-    //         .await?;
-    //
-    // match voice_override {
-    //     Some(voice) => return Ok(voice),
-    //     None => {
-    //         if let Ok(state) = twitch_state.await {
-    //             if state.global_voice {
-    //                 return Ok(global_voice);
-    //             }
-    //         };
-    //
-    //         let user_voice_opt = stream_character::get_voice_from_username(
-    //             &pool.clone(),
-    //             username.clone().as_str(),
-    //         )
-    //         .await;
-    //
-    //         return Ok(match user_voice_opt {
-    //             Ok(voice) => voice,
-    //             Err(_) => global_voice.clone(),
-    //         });
-    //     }
-    // }
+    let twitch_state = twitch_stream_state::get_twitch_state(&pool);
+    let global_voice =
+        stream_character::get_voice_from_username(&pool.clone(), "beginbot")
+            .await?;
+
+    match voice_override {
+        Some(voice) => return Ok(voice),
+        None => {
+            if let Ok(state) = twitch_state.await {
+                if state.global_voice {
+                    return Ok(global_voice);
+                }
+            };
+
+            let user_voice_opt = stream_character::get_voice_from_username(
+                &pool.clone(),
+                username.clone().as_str(),
+            )
+            .await;
+
+            return Ok(match user_voice_opt {
+                Ok(voice) => voice,
+                Err(_) => global_voice.clone(),
+            });
+        }
+    }
 }
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {

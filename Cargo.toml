@@ -27,7 +27,6 @@ obs_service = { path = "crates/obs_service" }
 
 # Twitch Deps
 twitch-irc.workspace = true
-
 anyhow.workspace = true
 once_cell.workspace = true
 reqwest.workspace = true
