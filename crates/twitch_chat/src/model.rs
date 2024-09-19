@@ -59,21 +59,22 @@ pub async fn upsert_twitch_user(
     }
 }
 
-pub async fn get_twitch_sub_count<'a>(
-    client: &HelixClient<'a, ReqwestClient>,
-    token: UserToken,
-) -> usize {
-    let req = GetBroadcasterSubscriptionsRequest::broadcaster_id(
-        token.user_id.clone(),
-    );
-
-    let response = client
-        .req_get(req, &token)
-        .await
-        .expect("Error Fetching Twitch Subs");
-
-    response.total.unwrap() as usize
-}
+// Not sure why this req_get failed
+// pub async fn get_twitch_sub_count<'a>(
+//     client: &HelixClient<'a, ReqwestClient>,
+//     token: UserToken,
+// ) -> usize {
+//     let req = GetBroadcasterSubscriptionsRequest::broadcaster_id(
+//         token.user_id.clone(),
+//     );
+//
+//     let response = client
+//         .req_get(req, &token)
+//         .await
+//         .expect("Error Fetching Twitch Subs");
+//
+//     response.total.unwrap() as usize
+// }
 
 pub async fn create_new_user(conn: &sqlx::PgPool) -> Result<UserID> {
     let x = sqlx::query!("INSERT INTO users DEFAULT VALUES RETURNING user_id")

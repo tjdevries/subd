@@ -1,0 +1,29 @@
+[package]
+name = "ai_scenes_coordinator"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow.workspace = true
+
+fal-rust = { path = "../../../fal-rust" }
+serde_json.workspace = true
+sqlx.workspace = true
+subd-types = { path = "../subd-types/" }
+subd-audio = { path = "../subd-audio/" }
+ai_friends = { path = "../ai_friends/" }
+ai_movie_trailers = { path = "../ai_movie_trailers/" }
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
+
+obws = "0.10.0"
+# obws.workspace = true
+# Twitch Deps
+twitch-irc.workspace = true
+
+elevenlabs-api = { path = "../../../elevenlabs-api" }
+tokio.workspace = true
+rand = "0.8.5"
+chrono.workspace = true
+serde.workspace = true

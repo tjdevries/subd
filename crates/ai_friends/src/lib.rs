@@ -13,7 +13,7 @@ use twitch_irc::{
 use fal_ai;
 use obs_service;
 
-async fn trigger_ai_friend(
+pub async fn trigger_ai_friend(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     ai_scene_req: &AiScenesRequest,

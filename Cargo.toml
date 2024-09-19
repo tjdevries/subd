@@ -11,6 +11,7 @@ subd-gh = { path = "crates/subd-gh" }
 subd-twitch = { path = "crates/subd-twitch" }
 subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
+subd-audio = { path = "crates/subd-audio" }
 twitch_chat = { path = "crates/twitch_chat" }
 twitch_service = { path = "crates/twitch_service" }
 twitch_notifications = { path = "crates/twitch_notifications" }
@@ -19,6 +20,8 @@ events = { path = "crates/events" }
 stable_diffusion = { path = "crates/stable_diffusion" }
 fal_ai = { path = "crates/fal_ai" }
 ai_friends = { path = "crates/ai_friends" }
+ai_scenes_coordinator = { path = "crates/ai_scenes_coordinator" }
+ai_movie_trailers = { path = "crates/ai_movie_trailers" }
 obs_service = { path = "crates/obs_service" }
 
 # Twitch Deps
@@ -34,13 +37,14 @@ tokio.workspace = true
 tungstenite.workspace = true
 tokio-tungstenite.workspace = true
 uuid.workspace = true
+obws = "0.10"
+# obws.workspace = true
 
 csv = "1.1"
 chrono = "*"
 rgb = "0.8"
 axum = "0.5.4"
 futures = "0.3.21"
-obws = "0.10"
 either = "1.6.1"
 # fal-rust = { git = "https://github.com/davidbegin/fal-rust" }
 fal-rust = { path = "../fal-rust" }
