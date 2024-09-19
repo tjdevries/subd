@@ -1,6 +1,5 @@
 use crate::constants;
 use crate::elevenlabs;
-use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use csv::Writer;
@@ -17,6 +16,7 @@ use std::time;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
+use twitch_stream_state;
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Character {

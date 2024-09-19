@@ -15,6 +15,7 @@ subd-audio = { path = "crates/subd-audio" }
 twitch_chat = { path = "crates/twitch_chat" }
 twitch_service = { path = "crates/twitch_service" }
 twitch_notifications = { path = "crates/twitch_notifications" }
+twitch_stream_state = { path = "crates/twitch_stream_state" }
 user_service = { path = "crates/user_service" }
 events = { path = "crates/events" }
 stable_diffusion = { path = "crates/stable_diffusion" }

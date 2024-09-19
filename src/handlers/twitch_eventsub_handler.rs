@@ -1,7 +1,6 @@
 use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
-use crate::twitch_stream_state;
 use ai_friends;
 use ai_scenes_coordinator;
 use anyhow::Result;
@@ -28,6 +27,7 @@ use twitch_api::twitch_oauth2::UserToken;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use twitch_stream_state;
 
 pub struct TwitchEventSubHandler {
     pub obs_client: OBSClient,

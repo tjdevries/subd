@@ -1,6 +1,5 @@
 use crate::constants;
 use crate::elevenlabs;
-use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -14,6 +13,7 @@ use std::thread;
 use std::time;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use twitch_stream_state;
 
 pub struct MusicScenesHandler {
     pub obs_client: OBSClient,

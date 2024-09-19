@@ -1,10 +1,10 @@
 use crate::constants;
 use crate::elevenlabs;
-use crate::twitch_stream_state;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use obs_service::obs_source;
+use twitch_stream_state;
 // use dotenv::dotenv;
 use events::EventHandler;
 use obws::Client as OBSClient;

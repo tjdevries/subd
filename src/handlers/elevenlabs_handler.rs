@@ -3,7 +3,6 @@ use crate::constants;
 use crate::elevenlabs;
 use crate::redirect;
 use crate::stream_character;
-use crate::twitch_stream_state;
 use anyhow::Result;
 use async_trait::async_trait;
 use elevenlabs_api::{
@@ -24,6 +23,7 @@ use tokio::sync::Mutex;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use twitch_stream_state;
 
 // Should this have an OBS Client as well
 pub struct ElevenLabsHandler {
