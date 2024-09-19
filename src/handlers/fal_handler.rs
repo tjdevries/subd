@@ -1,33 +1,21 @@
-use twitch_stream_state;
-// use anyhow::anyhow;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use base64::{engine::general_purpose, Engine as _};
 use events::EventHandler;
 use fal_ai;
+use fal_rust::client::{ClientCredentials, FalClient};
 use obws::Client as OBSClient;
 use regex::Regex;
 use rodio::*;
 use serde::Deserialize;
-// use std::io::Write;
-//use reqwest::Client;
-//use serde_json::json;
-//use std::path::Path;
-// use tracing_subscriber::registry::SpanData;
 use subd_types::{Event, UserMessage};
-use tokio::time::{sleep, Duration};
-
-// Which do I need?
-// use std::fs::File;
 use tokio::fs::File;
-// use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::broadcast;
-
-use fal_rust::client::{ClientCredentials, FalClient};
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use twitch_stream_state;
 
 #[derive(Deserialize)]
 struct FalImage {
@@ -131,35 +119,7 @@ pub async fn handle_fal_commands(
         "!talk" => {
             println!("\n\nTALK TIME!");
             let image_file_path = "teej_2.jpg";
-            fal_ai::create_video_from_image(image_file_path).await;
-            // let fal_image_file_path = "green_prime.png";
-            // let fal_audio_file_path =
-            //     "TwitchChatTTSRecordings/1700109062_siifr_neo.wav";
-            //
-            // let video_bytes = fal_ai::sync_lips_to_voice(
-            //     fal_image_file_path,
-            //     fal_audio_file_path,
-            // )
-            // .await?;
-            //
-            // let video_path = "./prime.mp4";
-            // tokio::fs::write(&video_path, &video_bytes).await?;
-            // println!("Video saved to {}", video_path);
-            //
-            // let scene = "Primary";
-            // let source = "prime-talking-video";
-            // let _ = crate::obs::obs_source::set_enabled(
-            //     scene, source, false, obs_client,
-            // )
-            // .await;
-            //
-            // // Not sure if I have to wait ofr how long to wait
-            // sleep(Duration::from_millis(100)).await;
-            //
-            // let _ = crate::obs::obs_source::set_enabled(
-            //     scene, source, true, obs_client,
-            // )
-            // .await;
+            let _ = fal_ai::create_video_from_image(image_file_path).await;
         }
 
         "!fal" => {}
@@ -183,10 +143,6 @@ pub async fn handle_fal_commands(
 
                 // Generate an image using the final prompt with the Fal AI service
                 fal_ai::create_turbo_image(final_prompt).await?;
-
-                // let theme = "Waifu";
-                // let final_prompt = format!("{} {}", theme, prompt);
-                // create_turbo_image(final_prompt).await?;
             }
         }
     };
@@ -312,48 +268,12 @@ pub async fn create_turbo_image_in_folder(
     Ok(())
 }
 
-//// This is too specific
-//pub async fn create_turbo_image(prompt: String) -> Result<()> {
-//    // Can I move this into it's own function that takes a prompt?
-//    // So here is as silly place I can run fal
-//    let client = FalClient::new(ClientCredentials::from_env());
-//
-//    // let model = "fal-ai/stable-cascade/sote-diffusion";
-//    // let model = "fal-ai/stable-cascade";
-//    let model = "fal-ai/fast-turbo-diffusion";
-//
-//    let res = client
-//        .run(
-//            model,
-//            serde_json::json!({
-//                "prompt": prompt,
-//                "image_size": "landscape_16_9",
-//            }),
-//        )
-//        .await
-//        .unwrap();
-//
-//    let raw_json = res.bytes().await.unwrap();
-//    let timestamp = chrono::Utc::now().timestamp();
-//    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
-//    tokio::fs::write(&json_path, &raw_json).await.unwrap();
-//    let _ = process_images(&timestamp.to_string(), &json_path, None).await;
-//
-//    Ok(())
-//}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    //use crate::obs::obs;
-    //use serde_json::{json, Error, Value};
 
     #[tokio::test]
     async fn test_parsing_fal() {
-        // Saved w/ Text
-        // let tmp_file_path = "tmp/fal_responses/1726345706.json";
-        //
-        // Saved with bytes
         let timestamp = "1726347150";
         let tmp_file_path = format!("tmp/fal_responses/{}.json", timestamp);
 
@@ -361,10 +281,4 @@ mod tests {
             .await
             .unwrap();
     }
-
-    //#[tokio::test]
-    //async fn test_fal() {
-    //    let prompt = "Magical Cat wearing a wizard hat";
-    //    let _ = create_turbo_image(prompt.to_string()).await;
-    //}
 }

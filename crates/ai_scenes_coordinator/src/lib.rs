@@ -247,7 +247,9 @@ async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
         // ("teej".to_string(), "archive/teej_2.jpg".to_string()),
         ("prime".to_string(), "archive/green_prime.png".to_string()),
         // ("teej".to_string(), "archive/teej_3.png".to_string()),
-        ("teej".to_string(), "archive/teej.png".to_string()),
+        // ("teej".to_string(), "archive/teej.png".to_string()),
+        // ("teej".to_string(), "archive/teej_4.png".to_string()),
+        ("teej".to_string(), "archive/teej_5.png".to_string()),
         ("melkey".to_string(), "archive/melkey.png".to_string()),
     ]);
     Ok(voice_to_face_image.get(&voice).cloned())
