@@ -9,9 +9,6 @@ use elevenlabs_api::{
 };
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
-use rodio::*;
-// use serde::{Deserialize, Serialize};
-// use sqlx::types::Uuid;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
