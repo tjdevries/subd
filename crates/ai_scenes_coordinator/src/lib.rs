@@ -44,7 +44,8 @@ pub async fn run_ai_scene(
         ai_scene_req.username.clone(),
         final_voice.clone(),
     );
-    let chat_message = sanitize_chat_message(ai_scene_req.message.clone());
+    // let chat_message = sanitize_chat_message(ai_scene_req.message.clone());
+    let chat_message = ai_scene_req.message.clone();
     let local_audio_path = generate_and_save_tts_audio(
         final_voice.clone(),
         filename,
@@ -245,7 +246,8 @@ async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
         // ("teej".to_string(), "archive/teej.png".to_string()),
         // ("teej".to_string(), "archive/teej_2.jpg".to_string()),
         ("prime".to_string(), "archive/green_prime.png".to_string()),
-        ("teej".to_string(), "archive/teej_3.png".to_string()),
+        // ("teej".to_string(), "archive/teej_3.png".to_string()),
+        ("teej".to_string(), "archive/teej.png".to_string()),
         ("melkey".to_string(), "archive/melkey.png".to_string()),
     ]);
     Ok(voice_to_face_image.get(&voice).cloned())

@@ -138,6 +138,7 @@ pub async fn fal_submit_sadtalker_request(
     fal_source_image_data_uri: &str,
     fal_driven_audio_data_uri: &str,
 ) -> Result<String> {
+    println!("Calling to Sadtalker");
     let fal_client = FalClient::new(ClientCredentials::from_env());
     let response = fal_client
         .run(

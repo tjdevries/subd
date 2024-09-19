@@ -315,25 +315,8 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
 
             let reward_cost_as_float = reward_cost as f32;
 
-            // We are trying to only get the redemptions that didn't happen in the last 60 mins
             let other_ids =
                 twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
-
-            // We need to prevent out economy from collapsing
-            // These should never get below a 100
-            for (_id, _cost) in other_ids {
-                let _float_cost = _cost as f32;
-                // let new_cost = (float_cost * decrease_mult).round() as usize;
-                //
-                // let _ = reward_manager
-                //     .update_reward(id.to_string(), new_cost)
-                //     .await;
-                //
-                // let cost_as_i32 = new_cost as i32;
-                // let _ =
-                //     twitch_rewards::update_cost_by_id(&pool, id, cost_as_i32)
-                //         .await;
-            }
 
             let new_cost =
                 (reward_cost_as_float * increase_mult).round() as usize;
@@ -357,7 +340,6 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     Ok(())
 }
 
-// This should take in a reward manager
 async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
@@ -366,7 +348,6 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     ai_scenes_map: HashMap<String, &ai_scenes_coordinator::models::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
-    // These aren't all AI scenes
     println!("HANDLING AI SCENE!");
 
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
@@ -399,25 +380,8 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
         println!("Setting the Theme: {}", &user_input);
         twitch_stream_state::set_ai_background_theme(&pool, &user_input)
             .await?;
-        // we need from the othere theme
     }
 
-    // ai_friends::trigger_ai_friend(
-    //     obs_client,
-    //     twitch_client,
-    //     ai_scene_req,
-    //     image_file_path,
-    //     local_audio_path,
-    //     friend_name,
-    // )
-    // .await;
-
-    // We need to check for ai_friend scene here
-
-    // I don't understand what this is doing
-    // we are just saving and finding above
-    //
-    // we are looking through the scenes to match here
     match ai_scenes_map.get(&command) {
         Some(scene) => {
             let user_input = event.user_input.unwrap();
@@ -430,7 +394,6 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
             )
             .await;
 
-            // let content = chat_response.unwrap().content.unwrap().to_string();
             let content = match chat_response {
                 Ok(response) => {
                     match response.content {
@@ -468,42 +431,14 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
 
             let dalle_prompt = if enable_dalle || enable_stable_diffusion {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();
-
-                // This is not using Chat-GPT
                 let prompt = format!("{} {}", base_dalle_prompt, user_input);
                 Some(prompt)
-
-                // This is Danvinci
-                // let dalle_response = openai::ask_davinci(
-                //     user_input.clone(),
-                //     base_dalle_prompt.clone(),
-                // )
-                // .await;
-
-                // This is Chat GPT
-                // let dalle_response = openai::ask_chat_gpt(
-                //     user_input.clone(),
-                //     base_dalle_prompt.clone(),
-                // )
-                // .await;
-                // match dalle_response {
-                //     Ok(chat_completion) => {
-                //         Some(chat_completion.content.unwrap())
-                //     },
-                //     Err(e) => {
-                //         eprintln!("Error finding Dalle Content: {:?}", e);
-                //         None
-                //     }
-                // }
             } else {
                 None
             };
 
             println!("Dalle GPT response: {:?}", dalle_prompt.clone());
 
-            // New Theory:
-            //             // Calling this trigger_full_scene, stops it from printing Dalle GPT
-            //                response above
             let _ = trigger_full_scene(
                 tx.clone(),
                 scene.voice.clone(),
