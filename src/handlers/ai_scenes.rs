@@ -35,8 +35,6 @@ impl EventHandler for AiScenesHandler {
                 _ => continue,
             };
 
-            // If this crashes we just want to loop again
-            // and we expect the error to be printing
             let _ = ai_scenes_coordinator::run_ai_scene(
                 &self.twitch_client,
                 &self.obs_client,

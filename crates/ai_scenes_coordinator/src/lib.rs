@@ -1,5 +1,3 @@
-// use crate::stream_character;
-// use crate::twitch_stream_state;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
 
