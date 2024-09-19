@@ -1,15 +1,11 @@
-use anyhow::{anyhow, Context, Result};
-use bytes::Bytes;
-use chrono::Utc;
+use anyhow::Result;
 use rodio::Decoder;
 use std::fs::File;
 use std::io::BufReader;
 use subd_types;
 use subd_types::AiScenesRequest;
-use tokio::fs::create_dir_all;
 use twitch_chat::client::send_message;
 
-use fal_rust::client::{ClientCredentials, FalClient};
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -41,33 +37,4 @@ pub async fn trigger_movie_trailer(
     // redirect::restore_stderr(backup);
 
     return Ok(());
-}
-
-async fn fal_submit_sadtalker_request(
-    fal_source_image_data_uri: &str,
-    fal_driven_audio_data_uri: &str,
-) -> Result<String> {
-    let fal_client = FalClient::new(ClientCredentials::from_env());
-    let response = fal_client
-        .run(
-            "fal-ai/sadtalker",
-            serde_json::json!({
-                "source_image_url": fal_source_image_data_uri,
-                "driven_audio_url": fal_driven_audio_data_uri,
-            }),
-        )
-        .await
-        .map_err(|e| anyhow!("Error running sadtalker {:?}", e))?;
-
-    if response.status().is_success() {
-        response
-            .text()
-            .await
-            .map_err(|e| anyhow!("Error getting text: {:?}", e))
-    } else {
-        Err(anyhow!(
-            "FAL request failed with status: {}",
-            response.status()
-        ))
-    }
 }

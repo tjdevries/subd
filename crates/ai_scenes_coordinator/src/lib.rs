@@ -193,28 +193,6 @@ fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     None
 }
 
-fn sanitize_chat_message(raw_msg: String) -> String {
-    // Let's replace any word longer than 50 characters
-    raw_msg
-        .split_whitespace()
-        .map(|word| {
-            if word.contains("http") {
-                "U.R.L".to_string()
-            } else {
-                word.to_string()
-            }
-        })
-        .map(|word| {
-            if word.len() > 50 {
-                "long word".to_string()
-            } else {
-                word.to_string()
-            }
-        })
-        .collect::<Vec<String>>()
-        .join(" ")
-}
-
 fn find_random_voice() -> (String, String) {
     let data = fs::read_to_string("voices.json").expect("Unable to read file");
 
@@ -253,4 +231,28 @@ async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
         ("melkey".to_string(), "archive/melkey.png".to_string()),
     ]);
     Ok(voice_to_face_image.get(&voice).cloned())
+}
+
+// =============================================================
+
+fn sanitize_chat_message(raw_msg: String) -> String {
+    // Let's replace any word longer than 50 characters
+    raw_msg
+        .split_whitespace()
+        .map(|word| {
+            if word.contains("http") {
+                "U.R.L".to_string()
+            } else {
+                word.to_string()
+            }
+        })
+        .map(|word| {
+            if word.len() > 50 {
+                "long word".to_string()
+            } else {
+                word.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join(" ")
 }
