@@ -1,28 +1,11 @@
-use crate::ai_scene;
-use crate::stream_character;
-use crate::twitch_stream_state;
-use ai_friends;
-use ai_movie_trailers;
-use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use elevenlabs_api::{
-    tts::{TtsApi, TtsBody},
-    *,
-};
+use elevenlabs_api::Elevenlabs;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use rand::{seq::SliceRandom, thread_rng};
 use rodio::*;
-use std::collections::HashMap;
-use std::fs;
-use std::sync::Arc;
-use subd_audio;
-use subd_types::AiScenesRequest;
 use subd_types::Event;
 use tokio::sync::broadcast;
-use tokio::sync::Mutex;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -65,5 +48,3 @@ impl EventHandler for AiScenesHandler {
         }
     }
 }
-
-// =======================================================================================
