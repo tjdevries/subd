@@ -1,5 +1,4 @@
 use crate::constants;
-use crate::stream_character;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rand::Rng;
@@ -7,6 +6,7 @@ use rand::{seq::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
+use stream_character;
 use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;

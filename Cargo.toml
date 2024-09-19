@@ -24,6 +24,7 @@ ai_friends = { path = "crates/ai_friends" }
 ai_scenes_coordinator = { path = "crates/ai_scenes_coordinator" }
 ai_movie_trailers = { path = "crates/ai_movie_trailers" }
 obs_service = { path = "crates/obs_service" }
+stream_character = { path = "crates/stream_character" }
 
 # Twitch Deps
 twitch-irc.workspace = true

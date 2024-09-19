@@ -2,7 +2,6 @@ use crate::audio;
 use crate::constants;
 use crate::elevenlabs;
 use crate::redirect;
-use crate::stream_character;
 use anyhow::Result;
 use async_trait::async_trait;
 use elevenlabs_api::{
@@ -16,6 +15,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::sync::Arc;
 use std::{thread, time};
+use stream_character;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
