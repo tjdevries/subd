@@ -1,7 +1,6 @@
 use crate::ai_clone;
-use crate::ai_images::image_generation::GenerateImage;
 use crate::art_blocks;
-use crate::openai::dalle;
+use ai_images::image_generation::GenerateImage;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -11,6 +10,7 @@ use stable_diffusion;
 use stable_diffusion::models::GenerateAndArchiveRequest;
 use stable_diffusion::models::RequestType;
 use stable_diffusion::run_from_prompt;
+use subd_openai::dalle;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 

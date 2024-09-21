@@ -1,7 +1,5 @@
-use crate::ai_images::image_generation::GenerateImage;
-use crate::ai_images::images;
-use crate::openai::dalle;
-use crate::openai::openai;
+use ai_images;
+use ai_images::image_generation::GenerateImage;
 use anyhow::anyhow;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -14,9 +12,10 @@ use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;
 use subd_audio;
+use subd_openai;
 
 pub enum ImageRequestType {
-    Dalle(dalle::DalleRequest),
+    Dalle(subd_openai::dalle::DalleRequest),
     StableDiffusion(stable_diffusion::models::GenerateAndArchiveRequest),
 }
 
@@ -35,12 +34,15 @@ pub async fn telephone(
 
     // This shouldn't download an image always
     let og_file = format!("./archive/{}/original.png", folder);
-    if let Err(e) = images::download_image(url.clone(), og_file.clone()).await {
+    if let Err(e) =
+        ai_images::download_image(url.clone(), og_file.clone()).await
+    {
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }
 
-    let first_description =
-        openai::ask_gpt_vision2("", Some(&url)).await.map(|m| m)?;
+    let first_description = subd_openai::ask_gpt_vision2("", Some(&url))
+        .await
+        .map(|m| m)?;
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
@@ -62,14 +64,14 @@ pub async fn telephone(
     let mut dalle_path_bufs = vec![];
     for _ in 1..num_connections {
         println!("\n\tAsking GPT VISION: {}", dalle_path.clone());
-        let description = match openai::ask_gpt_vision2(&dalle_path, None).await
-        {
-            Ok(desc) => desc,
-            Err(e) => {
-                eprintln!("Error asking GPT Vision: {}", e);
-                continue;
-            }
-        };
+        let description =
+            match subd_openai::ask_gpt_vision2(&dalle_path, None).await {
+                Ok(desc) => desc,
+                Err(e) => {
+                    eprintln!("Error asking GPT Vision: {}", e);
+                    continue;
+                }
+            };
 
         let prompt = format!("{} {}", description, prompt);
         println!("\n\tSaving Image to: {}", folder.clone());
@@ -155,7 +157,7 @@ pub async fn create_screenshot_variation(
 
     let _ = obs_source::save_screenshot(&obs_client, &source, &filename).await;
 
-    let description = openai::ask_gpt_vision2(&filename, None).await?;
+    let description = subd_openai::ask_gpt_vision2(&filename, None).await?;
 
     let new_description = format!(
         "{} {} . The most important thing to focus on is: {}",

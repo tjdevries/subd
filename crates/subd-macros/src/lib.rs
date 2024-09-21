@@ -11,8 +11,6 @@ use syn::Pat;
 use syn::PatIdent;
 use syn::PatType;
 use syn::Token;
-use syn::VisPublic;
-use syn::Visibility;
 
 // impl Parse for Item {
 //     fn parse(input: ParseStream) -> Result<Self> {
@@ -62,7 +60,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path
+                        a.path()
                             .segments
                             .iter()
                             .any(|s| s.ident.to_string() == "primary_key")
@@ -76,7 +74,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path
+                        a.path()
                             .segments
                             .iter()
                             .any(|s| s.ident.to_string() == "immutable")
@@ -87,10 +85,8 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 }
 
                 let mut new_field = f.clone();
-                new_field.vis = Visibility::Public(VisPublic {
-                    pub_token: syn::token::Pub {
-                        span: Span::call_site().into(),
-                    },
+                new_field.vis = syn::Visibility::Public(syn::token::Pub {
+                    span: Span::call_site().into(),
                 });
                 let ty = f.ty.clone();
                 new_field.ty = syn::Type::Verbatim(

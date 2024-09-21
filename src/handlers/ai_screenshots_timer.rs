@@ -1,4 +1,3 @@
-use crate::openai::dalle;
 use crate::telephone;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -9,6 +8,7 @@ use rand::seq::SliceRandom;
 use rodio::*;
 use std::thread;
 use std::time;
+use subd_openai::dalle;
 use subd_types::Event;
 use tokio;
 use tokio::sync::broadcast;

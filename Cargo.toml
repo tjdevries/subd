@@ -12,6 +12,7 @@ subd-twitch = { path = "crates/subd-twitch" }
 subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
 subd-audio = { path = "crates/subd-audio" }
+subd-openai = { path = "crates/subd-openai" }
 twitch_chat = { path = "crates/twitch_chat" }
 twitch_service = { path = "crates/twitch_service" }
 twitch_notifications = { path = "crates/twitch_notifications" }
@@ -26,6 +27,7 @@ ai_movie_trailers = { path = "crates/ai_movie_trailers" }
 obs_service = { path = "crates/obs_service" }
 stream_character = { path = "crates/stream_character" }
 ai_playlist = { path = "crates/ai_playlist" }
+ai_images = { path = "crates/ai_images" }
 subd-elevenlabs = { path = "crates/subd-elevenlabs" }
 
 # Twitch Deps

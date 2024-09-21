@@ -1,0 +1,19 @@
+[package]
+name = "subd-openai"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+subd-types = { path = "../subd-types/" }
+ai_images = { path = "../ai_images/" }
+
+# openai = "1.0.0-alpha.16"
+openai = { path = "../../../openai" }
+base64 = "0.22.1"
+warp = "0.3.7"

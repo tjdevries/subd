@@ -1,12 +1,12 @@
-use crate::ai_images::image_generation;
-use crate::openai::dalle;
 use crate::telephone;
+use ai_images::image_generation;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::*;
 use stable_diffusion;
+use subd_openai::dalle;
 use subd_types::{Event, UserMessage};
 use tokio;
 use tokio::sync::broadcast;

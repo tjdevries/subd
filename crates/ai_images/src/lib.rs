@@ -1,3 +1,4 @@
+// OK now
 use anyhow::{self, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -7,6 +8,8 @@ use std::fs::File;
 use std::io::Write;
 use std::io::{self, Read};
 use std::process::Command;
+
+pub mod image_generation;
 
 pub async fn download_image(
     url: String,

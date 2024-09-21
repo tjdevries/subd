@@ -1,5 +1,4 @@
 pub mod ai_clone;
-pub mod ai_images;
 pub mod art_blocks;
 pub mod chat_parser;
 pub mod commands;

@@ -1,8 +1,5 @@
-use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
-// use ai_scenes_coordinator::models::AIScene;
-// use ai_friends;
 use ai_scenes_coordinator;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -19,6 +16,7 @@ use std::env;
 use std::fs;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use subd_openai;
 use subd_twitch::rewards;
 use subd_twitch::rewards::RewardManager;
 use subd_types::Event;
@@ -388,7 +386,7 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
             let base_prompt = scene.base_prompt.clone();
             println!("Asking Chat GPT: {} - {}", base_prompt, user_input);
 
-            let chat_response = openai::ask_chat_gpt(
+            let chat_response = subd_openai::ask_chat_gpt(
                 user_input.clone().to_string(),
                 base_prompt,
             )
