@@ -47,7 +47,8 @@ pub async fn create_and_show_bogan(
     .build();
     let path = stable_diffusion_from_image(&req).await?;
 
-    let new_begin_source = constants::NEW_BEGIN_SOURCE.to_string();
+    let new_begin_source =
+        subd_types::consts::get_ai_twin_obs_source().to_string();
     let res = obs_service::obs_source::update_image_source(
         obs_client,
         new_begin_source.clone(),

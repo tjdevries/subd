@@ -62,11 +62,6 @@ pub fn chop_text(starting_text: String) -> String {
     seal_text
 }
 
-fn find_obs_character(_voice: &str) -> &str {
-    let default_character = constants::DEFAULT_STREAM_CHARACTER_SOURCE;
-    return default_character;
-}
-
 pub async fn set_voice(
     voice: String,
     username: String,
@@ -75,7 +70,8 @@ pub async fn set_voice(
     let model = stream_character::user_stream_character_information::Model {
         username: username.clone(),
         voice: voice.to_string().to_lowercase(),
-        obs_character: constants::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+        obs_character: subd_types::consts::get_default_stream_character_source(
+        ),
         random: false,
     };
 
@@ -158,12 +154,13 @@ pub async fn build_stream_character(
             return Ok(StreamCharacter {
                 username: username.to_string(),
                 voice: Some(default_voice.to_string()),
-                source: constants::DEFAULT_STREAM_CHARACTER_SOURCE.to_string(),
+                source: subd_types::consts::get_default_stream_character_source(
+                ),
             });
         }
     };
 
-    let character = find_obs_character(&voice);
+    let character = subd_types::consts::get_default_stream_character_source();
 
     Ok(StreamCharacter {
         username: username.to_string(),

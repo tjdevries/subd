@@ -138,3 +138,145 @@ pub fn get_obs_background_image_path() -> String {
     dotenv::var("OBS_BACKGROUND_IMAGE_PATH")
         .unwrap_or_else(|_| "./tmp/dalle-1.png".to_string())
 }
+
+pub fn get_ai_twin_obs_source() -> String {
+    dotenv::var("AI_TWIN_SOURCE").unwrap_or_else(|_| "bogan".to_string())
+}
+
+pub fn get_sdf_effects_filter_name() -> String {
+    dotenv::var("SDF_FILTER_EFFECTS_NAME")
+        .unwrap_or_else(|_| "Outline".to_string())
+}
+
+// I don't think this name is actually static and NOT configurable
+pub fn get_sdf_effects_internal_filter_name() -> String {
+    dotenv::var("SDF_EFFECTS_INTERNAL_FILTER_NAME")
+        .unwrap_or_else(|_| "streamfx-filter-sdf-effects".to_string())
+}
+
+pub fn get_move_outline_filter_name() -> String {
+    dotenv::var("MOVE_OUTLINE_FILTER_NAME")
+        .unwrap_or_else(|_| "Move_Outline".to_string())
+}
+
+pub fn get_default_obs_source() -> String {
+    dotenv::var("DEFAULT_OBS_SOURCE").unwrap_or_else(|_| "begin".to_string())
+}
+
+pub fn get_move_internal_filter_name() -> String {
+    dotenv::var("MOVE_VALUE_INTERNAL_FILTER_NAME")
+        .unwrap_or_else(|_| "move_filter_name".to_string())
+}
+
+pub fn get_move_blur_filter_name() -> String {
+    dotenv::var("MOVE_BLUR_FILTER_NAME")
+        .unwrap_or_else(|_| "Move_Blur".to_string())
+}
+
+pub fn get_blur_filter_name() -> String {
+    dotenv::var("BLUR_FILTER_NAME").unwrap_or_else(|_| "Blur".to_string())
+}
+
+pub fn get_blur_internal_filter_name() -> String {
+    dotenv::var("BLUR_INTERNAL_FILTER_NAME")
+        .unwrap_or_else(|_| "streamfx-filter-blur".to_string())
+}
+
+pub fn get_move_scroll_filter_name() -> String {
+    dotenv::var("MOVE_SCROLL_FILTER_NAME")
+        .unwrap_or_else(|_| "Move_Scroll".to_string())
+}
+
+pub fn get_scroll_filter_name() -> String {
+    dotenv::var("SCROLL_FILTER_NAME").unwrap_or_else(|_| "Scroll".to_string())
+}
+
+pub fn get_scroll_internal_filter_name() -> String {
+    dotenv::var("SCROLL_INTERNAL_FILTER_NAME")
+        .unwrap_or_else(|_| "scroll_filter".to_string())
+}
+
+pub fn get_stream_fx_internal_filter_name() -> String {
+    dotenv::var("STREAM_FX_INTERNAL_FILTER_NAME")
+        .unwrap_or_else(|_| "streamfx-filter-transform".to_string())
+}
+
+pub fn get_move_stream_fx_filter_name() -> String {
+    dotenv::var("MOVE_STREAM_FX_FILTER_NAME")
+        .unwrap_or_else(|_| "Move_Stream_FX".to_string())
+}
+
+pub fn get_3d_transform_filter_name() -> String {
+    dotenv::var("THE_3D_TRANSFORM_FILTER_NAME")
+        .unwrap_or_else(|_| "3D-Transform".to_string())
+}
+
+pub fn get_meme_scene() -> String {
+    dotenv::var("MEME_SCENE").unwrap_or_else(|_| "memes".to_string())
+}
+
+pub fn get_default_stream_character_source() -> String {
+    dotenv::var("DEFAULT_STREAM_CHARACTER_SOURCE")
+        .unwrap_or_else(|_| "Seal".to_string())
+}
+
+pub fn get_twitch_default_source() -> String {
+    dotenv::var("TWITCH_DEFAULT_SOURCE").unwrap_or_else(|_| "arbys".to_string())
+}
+
+pub fn get_twitch_mod_default_voice() -> String {
+    dotenv::var("TWITCH_MOD_DEFAULT_VOICE")
+        .unwrap_or_else(|_| "brock-samson".to_string())
+}
+
+pub fn get_twitch_staff_obs_source() -> String {
+    dotenv::var("TWITCH_STAFF_OBS_SOURCE")
+        .unwrap_or_else(|_| "randall".to_string())
+}
+
+pub fn get_twitch_staff_voice() -> String {
+    dotenv::var("TWITCH_STAFF_VOICE").unwrap_or_else(|_| "meowth".to_string())
+}
+
+pub fn get_twitch_helper_voice() -> String {
+    dotenv::var("TWITCH_HELPER_VOICE").unwrap_or_else(|_| "e40".to_string())
+}
+
+//pub const TWITCH_STAFF_OBS_SOURCE: &str = "Randall";
+//pub const TWITCH_STAFF_VOICE: &str = "meowth";
+//pub const TWITCH_HELPER_VOICE: &str = "e40";
+
+//pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
+//pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
+
+//pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
+
+//pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D-Transform";
+//pub const MOVE_STREAM_FX_FILTER_NAME: &str = "Move_Stream_FX";
+//pub const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
+
+//pub const SCROLL_INTERNAL_FILTER_NAME: &str = "scroll_filter";
+
+//pub const SCROLL_FILTER_NAME: &str = "Scroll";
+//pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
+
+//pub const BLUR_INTERNAL_FILTER_NAME: &str = "streamfx-filter-blur";
+//pub const BLUR_FILTER_NAME: &str = "Blur";
+
+//pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
+//pub const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
+
+// kind: &constants::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
+//pub const DEFAULT_SOURCE: &str = "begin";
+//pub const MOVE_OUTLINE_FILTER_NAME: &str = "Move_Outline";
+
+//pub const SDF_EFFECTS_INTERNAL_FILTER_NAME: &str =
+//
+//pub fn get_primary_obs_camera_scene() -> String {
+//    dotenv::var("PRIMARY_OBS_CAMERA_SCENE")
+//        .unwrap_or_else(|_| "begin".to_string())
+//}
+
+//pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
+
+//pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";

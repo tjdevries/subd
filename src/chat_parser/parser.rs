@@ -1,4 +1,3 @@
-use crate::constants::{NEW_BEGIN_SOURCE, PRIMARY_CAM_SCENE};
 use crate::move_transition::duration::find_easing_indicies;
 use anyhow::Result;
 
@@ -157,7 +156,8 @@ pub fn build_chat_move_source_request(
     arg_positions: &[ChatArgPosition],
 ) -> ChatMoveSourceRequest {
     let _default_source = "begin".to_string();
-    let default_scene = PRIMARY_CAM_SCENE.to_string();
+    let default_scene =
+        subd_types::consts::get_primary_obs_camera_scene().to_string();
 
     let mut req = ChatMoveSourceRequest::default();
 
@@ -214,7 +214,7 @@ pub fn build_chat_move_source_request(
     req.easing_type_index = easing_type_index;
     req.easing_function_index = easing_function_index;
 
-    let new_begin_source = NEW_BEGIN_SOURCE;
+    let new_begin_source = subd_types::consts::get_ai_twin_obs_source();
     let scene = if req.source == "begin" {
         default_scene
     } else if req.source == new_begin_source {
@@ -233,7 +233,6 @@ pub fn build_wide_request(
     arg_positions: &[WideArgPosition],
 ) -> Result<WideRequest> {
     let _default_source = "begin".to_string();
-    let _default_scene = PRIMARY_CAM_SCENE.to_string();
 
     let mut req = WideRequest {
         ..Default::default()

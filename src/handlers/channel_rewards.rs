@@ -37,7 +37,6 @@ use twitch_irc::{
 use twitch_oauth2::UserToken;
 use uuid::Uuid;
 
-const PRIMARY_CAM_SCENE: &str = "Begin";
 const _DEFAULT_DURATION: u32 = 9001;
 
 pub enum WideArgPosition {
@@ -311,7 +310,8 @@ pub fn build_chat_move_source_request(
     arg_positions: Vec<ChatArgPosition>,
 ) -> ChatMoveSourceRequest {
     let default_source = "begin".to_string();
-    let default_scene = PRIMARY_CAM_SCENE.to_string();
+    let default_scene =
+        subd_types::consts::get_primary_camera_obs_source.to_string();
 
     let mut req = ChatMoveSourceRequest {
         ..Default::default()

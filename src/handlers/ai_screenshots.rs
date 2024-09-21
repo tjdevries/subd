@@ -202,7 +202,7 @@ async fn screenshot_routing(
         stable_diffusion::stable_diffusion_from_image(&req).await?
     };
 
-    let source = constants::NEW_BEGIN_SOURCE.to_string();
+    let source = subd_types::consts::get_ai_twin_obs_source().to_string();
     let res =
         obs_source::update_image_source(obs_client, source.clone(), path).await;
     if let Err(e) = res {

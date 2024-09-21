@@ -231,7 +231,7 @@ pub async fn handle_voices_commands(
         }
 
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
-            let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
+            let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             elevenlabs::set_voice(
                 voice.to_string(),
@@ -242,7 +242,7 @@ pub async fn handle_voices_commands(
         }
 
         "!voice" => {
-            let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
+            let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             elevenlabs::talk_in_voice(
                 msg.contents.clone(),

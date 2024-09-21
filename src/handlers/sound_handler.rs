@@ -189,7 +189,7 @@ impl EventHandler for SoundHandler {
 
             let voice = match stream_character.voice {
                 Some(voice) => voice,
-                None => constants::TWITCH_MOD_DEFAULT_VOICE.to_string(),
+                None => subd_types::consts::get_twitch_mod_default_voice(),
             };
 
             // This is the current state of the stream:
@@ -206,18 +206,18 @@ impl EventHandler for SoundHandler {
             // This is all about how to respond to messages from various types of users
             if msg.roles.is_twitch_staff() {
                 character.voice =
-                    Some(constants::TWITCH_STAFF_OBS_SOURCE.to_string());
+                    Some(subd_types::consts::get_twitch_staff_voice());
                 character.source =
-                    Some(constants::TWITCH_STAFF_VOICE.to_string());
+                    Some(subd_types::consts::get_twitch_broadcaster_raw());
             } else if msg.user_name == "beginbotbot" {
                 character.voice =
-                    Some(constants::TWITCH_HELPER_VOICE.to_string());
+                    Some(subd_types::consts::get_twitch_helper_voice());
             } else if msg.roles.is_twitch_mod() {
                 match character.voice {
                     Some(_) => {}
                     None => {
                         character.voice = Some(
-                            constants::TWITCH_MOD_DEFAULT_VOICE.to_string(),
+                            subd_types::consts::get_twitch_mod_default_voice(),
                         );
                     }
                 }
