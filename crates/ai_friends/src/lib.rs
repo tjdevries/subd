@@ -33,7 +33,7 @@ pub async fn trigger_ai_friend(
     {
         Ok(_) => {
             if let Some(music_bg) = &ai_scene_req.music_bg {
-                let _ = send_message(&twitch_client, music_bg.clone()).await;
+                let _ = send_message(twitch_client, music_bg.clone()).await;
             }
         }
         Err(e) => {
