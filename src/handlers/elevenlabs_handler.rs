@@ -1,4 +1,3 @@
-use crate::audio;
 use crate::redirect;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -14,6 +13,7 @@ use std::io::BufReader;
 use std::sync::Arc;
 use std::{thread, time};
 use stream_character;
+use subd_audio;
 use subd_elevenlabs;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
@@ -261,7 +261,7 @@ impl EventHandler for ElevenLabsHandler {
                 redirect::redirect_stderr().expect("Failed to redirect stderr");
 
             let (_stream, stream_handle) =
-                audio::get_output_stream("pulse").expect("stream handle");
+                subd_audio::get_output_stream("pulse").expect("stream handle");
 
             let onscreen_msg = format!(
                 "{} | g: {} | r: {} | {}",

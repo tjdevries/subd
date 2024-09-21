@@ -1,6 +1,5 @@
 use crate::ai_images::image_generation::GenerateImage;
 use crate::ai_images::images;
-use crate::audio;
 use crate::openai::dalle;
 use crate::openai::openai;
 use anyhow::anyhow;
@@ -14,6 +13,7 @@ use stable_diffusion;
 use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;
+use subd_audio;
 
 pub enum ImageRequestType {
     Dalle(dalle::DalleRequest),
@@ -108,7 +108,7 @@ pub async fn telephone(
     // We take in an ID
     let _ =
         update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
-    let _ = audio::play_sound(&sink, "8bitmackintro".to_string()).await;
+    let _ = subd_audio::play_sound(&sink, "8bitmackintro".to_string()).await;
 
     Ok(dalle_path)
 }
@@ -151,7 +151,7 @@ pub async fn create_screenshot_variation(
     source: String,
     archive_dir: Option<String>,
 ) -> Result<String> {
-    // let _ = audio::play_sound(&sink).await;
+    // let _ = subd_audio::play_sound(&sink).await;
 
     let _ = obs_source::save_screenshot(&obs_client, &source, &filename).await;
 

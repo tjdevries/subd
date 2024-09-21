@@ -3,11 +3,8 @@ use clap::Parser;
 use elevenlabs_api::{Auth, Elevenlabs};
 use obs_service::obs::create_obs_client;
 use serde::{Deserialize, Serialize};
-use server::audio;
 use server::handlers;
 use std::collections::HashMap;
-// use std::sync::Arc;
-// use std::sync::Mutex;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
@@ -119,7 +116,7 @@ async fn main() -> Result<()> {
 
     let pool = get_db_pool().await;
     let (_stream, stream_handle) =
-        audio::get_output_stream("pulse").expect("stream handle");
+        subd_audio::get_output_stream("pulse").expect("stream handle");
 
     for feature in features {
         match feature.as_ref() {
