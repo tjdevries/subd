@@ -1,5 +1,4 @@
 use crate::audio;
-use crate::constants;
 use crate::elevenlabs;
 use crate::redirect;
 use anyhow::Result;
@@ -271,8 +270,8 @@ impl EventHandler for ElevenLabsHandler {
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: onscreen_msg,
-                    text_source: constants::SOUNDBOARD_TEXT_SOURCE_NAME
-                        .to_string(),
+                    text_source:
+                        subd_types::consts::get_soundboard_text_source_name(),
                 },
             ));
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
@@ -309,8 +308,8 @@ impl EventHandler for ElevenLabsHandler {
             let _ = tx.send(Event::TransformOBSTextRequest(
                 TransformOBSTextRequest {
                     message: "".to_string(),
-                    text_source: constants::SOUNDBOARD_TEXT_SOURCE_NAME
-                        .to_string(),
+                    text_source:
+                        subd_types::consts::get_soundboard_text_source_name(),
                 },
             ));
             thread::sleep(ten_millis);

@@ -1,7 +1,6 @@
 use crate::ai_clone::bogan_position;
 use crate::ai_clone::chat;
 use crate::ai_clone::utils;
-use crate::constants;
 use crate::move_transition::move_source;
 use anyhow::Result;
 use obs_service;
@@ -130,7 +129,7 @@ async fn create_move_source_filter(
     > = obws::requests::filters::Create {
         source: &scene,
         filter: &filter_name,
-        kind: constants::MOVE_SOURCE_FILTER_KIND,
+        kind: &subd_types::consts::get_move_source_filter_kind(),
         settings: Some(move_source_settings),
     };
     Ok(obs_client.filters().create(new_filter).await?)

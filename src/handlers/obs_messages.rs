@@ -1,5 +1,4 @@
 use crate::chat_parser::parser;
-use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::move_transition;
 use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
@@ -83,7 +82,7 @@ pub async fn handle_obs_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    let default_source = constants::DEFAULT_SOURCE.to_string();
+    let default_source = subd_types::consts::get_default_obs_source();
     let source: &str = splitmsg.get(1).unwrap_or(&default_source);
 
     let is_mod = msg.roles.is_twitch_mod();
@@ -94,7 +93,7 @@ pub async fn handle_obs_commands(
         .map_or(3000, |x| x.trim().parse().unwrap_or(3000));
     let _scene = obs_scenes::find_scene(source)
         .await
-        .unwrap_or(constants::MEME_SCENE.to_string());
+        .unwrap_or(subd_types::consts::get_meme_scene());
     let command = splitmsg[0].as_str();
 
     let (scene, source) = match source {
@@ -347,7 +346,7 @@ pub async fn handle_obs_commands(
 
         "!begin" => {
             let source = "begin";
-            let scene = constants::PRIMARY_CAM_SCENE;
+            let scene = subd_types::consts::get_primary_camera_scene();
             let arg_positions = &parser::default_move_or_scale_args()[1..];
             let req = parser::build_chat_move_source_request(
                 splitmsg[1..].to_vec(),
@@ -358,7 +357,7 @@ pub async fn handle_obs_commands(
             );
             move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
-                scene,
+                &scene,
                 source,
                 req.x,
                 req.y,

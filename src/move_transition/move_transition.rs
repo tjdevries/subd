@@ -1,4 +1,3 @@
-use crate::constants;
 use crate::move_transition::duration;
 use crate::move_transition::duration::EasingDuration;
 use crate::move_transition::models;
@@ -209,8 +208,7 @@ pub async fn spin_source(
     //     duration,
     // );
 
-    let filter_name =
-        constants::THREE_D_TRANSITION_PERSPECTIVE_FILTER_NAME.to_string();
+    let filter_name = "3D-Transform-Perspective";
 
     let settings = move_value::Add::new(
         filter_name.clone(),

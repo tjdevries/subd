@@ -163,6 +163,10 @@ pub fn get_default_obs_source() -> String {
     dotenv::var("DEFAULT_OBS_SOURCE").unwrap_or_else(|_| "begin".to_string())
 }
 
+pub fn get_primary_camera_scene() -> String {
+    dotenv::var("PRIMARY_CAMERA_SCENE").unwrap_or_else(|_| "Begin".to_string())
+}
+
 pub fn get_move_internal_filter_name() -> String {
     dotenv::var("MOVE_VALUE_INTERNAL_FILTER_NAME")
         .unwrap_or_else(|_| "move_filter_name".to_string())
@@ -229,6 +233,11 @@ pub fn get_twitch_mod_default_voice() -> String {
         .unwrap_or_else(|_| "brock-samson".to_string())
 }
 
+pub fn get_twitch_default_voice() -> String {
+    dotenv::var("TWITCH_MOD_DEFAULT_VOICE")
+        .unwrap_or_else(|_| "ethan".to_string())
+}
+
 pub fn get_twitch_staff_obs_source() -> String {
     dotenv::var("TWITCH_STAFF_OBS_SOURCE")
         .unwrap_or_else(|_| "randall".to_string())
@@ -242,41 +251,12 @@ pub fn get_twitch_helper_voice() -> String {
     dotenv::var("TWITCH_HELPER_VOICE").unwrap_or_else(|_| "e40".to_string())
 }
 
-//pub const TWITCH_STAFF_OBS_SOURCE: &str = "Randall";
-//pub const TWITCH_STAFF_VOICE: &str = "meowth";
-//pub const TWITCH_HELPER_VOICE: &str = "e40";
+pub fn get_soundboard_text_source_name() -> String {
+    dotenv::var("SOUNDBOARD_TEXT_SOURCE_NAME")
+        .unwrap_or_else(|_| "Soundboard-Text".to_string())
+}
 
-//pub const TWITCH_MOD_DEFAULT_VOICE: &str = "brock-samson";
-//pub const TWITCH_DEFAULT_VOICE: &str = "arbys";
-
-//pub const DEFAULT_STREAM_CHARACTER_SOURCE: &str = "Seal";
-
-//pub const THE_3D_TRANSFORM_FILTER_NAME: &str = "3D-Transform";
-//pub const MOVE_STREAM_FX_FILTER_NAME: &str = "Move_Stream_FX";
-//pub const STREAM_FX_INTERNAL_FILTER_NAME: &str = "streamfx-filter-transform";
-
-//pub const SCROLL_INTERNAL_FILTER_NAME: &str = "scroll_filter";
-
-//pub const SCROLL_FILTER_NAME: &str = "Scroll";
-//pub const MOVE_SCROLL_FILTER_NAME: &str = "Move_Scroll";
-
-//pub const BLUR_INTERNAL_FILTER_NAME: &str = "streamfx-filter-blur";
-//pub const BLUR_FILTER_NAME: &str = "Blur";
-
-//pub const MOVE_BLUR_FILTER_NAME: &str = "Move_Blur";
-//pub const MOVE_VALUE_INTERNAL_FILTER_NAME: &str = "move_value_filter";
-
-// kind: &constants::MOVE_VALUE_INTERNAL_FILTER_NAME.to_string(),
-//pub const DEFAULT_SOURCE: &str = "begin";
-//pub const MOVE_OUTLINE_FILTER_NAME: &str = "Move_Outline";
-
-//pub const SDF_EFFECTS_INTERNAL_FILTER_NAME: &str =
-//
-//pub fn get_primary_obs_camera_scene() -> String {
-//    dotenv::var("PRIMARY_OBS_CAMERA_SCENE")
-//        .unwrap_or_else(|_| "begin".to_string())
-//}
-
-//pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
-
-//pub const SDF_EFFECTS_FILTER_NAME: &str = "Outline";
+pub fn get_move_source_filter_kind() -> String {
+    dotenv::var("MOVE_SOURCE_FILTER_KIND")
+        .unwrap_or_else(|_| "move_source_filter".to_string())
+}

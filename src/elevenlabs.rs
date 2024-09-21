@@ -1,4 +1,3 @@
-use crate::constants;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rand::Rng;
@@ -142,7 +141,7 @@ pub async fn build_stream_character(
     pool: &sqlx::PgPool,
     username: &str,
 ) -> Result<StreamCharacter> {
-    let default_voice = constants::TWITCH_DEFAULT_VOICE.to_string();
+    let default_voice = subd_types::consts::get_twitch_default_voice();
 
     let voice = match stream_character::get_voice_from_username(pool, username)
         .await

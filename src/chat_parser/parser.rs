@@ -157,7 +157,7 @@ pub fn build_chat_move_source_request(
 ) -> ChatMoveSourceRequest {
     let _default_source = "begin".to_string();
     let default_scene =
-        subd_types::consts::get_primary_obs_camera_scene().to_string();
+        subd_types::consts::get_primary_camera_scene().to_string();
 
     let mut req = ChatMoveSourceRequest::default();
 

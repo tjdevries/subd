@@ -1,4 +1,3 @@
-use crate::constants;
 use crate::elevenlabs;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -259,7 +258,7 @@ impl EventHandler for SoundHandler {
                 .collect::<Vec<String>>();
 
             let text_source =
-                constants::SOUNDBOARD_TEXT_SOURCE_NAME.to_string();
+                subd_types::consts::get_soundboard_text_source_name();
             for word in splitmsg {
                 let sanitized_word = word.as_str().to_lowercase();
                 let full_name = format!("./MP3s/{}.mp3", sanitized_word);
