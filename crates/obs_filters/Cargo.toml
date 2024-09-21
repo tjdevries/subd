@@ -14,8 +14,8 @@ edition = "2021"
 # obws = "0.10"
 # chrono.workspace = true
 # serde.workspace = true
-serde_json.workspace = true
-anyhow.workspace = true
+# serde_json.workspace = true
+# anyhow.workspace = true
 serde = { workspace = true, features = ["derive"] }
 #
 # # Test
