@@ -1,5 +1,4 @@
 use crate::chat_parser::parser;
-use crate::obs_bootstrap::bootstrap;
 use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
 use crate::three_d_filter::CameraMode;
@@ -456,9 +455,12 @@ pub async fn handle_obs_commands(
             let source: &str = splitmsg.get(1).unwrap_or(&default);
 
             // These aren't implemented properly
-            _ = bootstrap::remove_all_filters(source, &obs_client).await;
-            bootstrap::create_split_3d_transform_filters(source, &obs_client)
-                .await
+            _ = obs_bootstrap::remove_all_filters(source, &obs_client).await;
+            obs_bootstrap::create_split_3d_transform_filters(
+                source,
+                &obs_client,
+            )
+            .await
         }
 
         _ => Ok(()),
