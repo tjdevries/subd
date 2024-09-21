@@ -52,7 +52,7 @@ impl EventHandler for ElevenLabsHandler {
 
         loop {
             // This feels dumb
-            let default_global_voice = "ethan".to_string();
+            let default_global_voice = "troy".to_string();
             let event = rx.recv().await?;
 
             let msg = match event {

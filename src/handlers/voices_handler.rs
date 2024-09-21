@@ -429,7 +429,9 @@ pub async fn handle_voices_commands(
                 if index > 15 {
                     continue;
                 }
-                let cloned_mp3 = download_with_yt_dlp(name, url, index).await?;
+                // let cloned_mp3 = download_with_yt_dlp(name, url, index).await?;
+
+                let cloned_mp3 = "troy.wav";
                 split_song(name, &cloned_mp3, &split_mp3_folder, index).await?;
             }
 

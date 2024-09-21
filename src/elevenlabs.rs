@@ -282,10 +282,14 @@ pub fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     let voice_list: VoiceList =
         serde_json::from_str(&data).expect("JSON was not well-formatted");
 
+    // Why is this not his voice
+    //
+
     let name_lowercase = name.to_lowercase();
 
     for voice in voice_list.voices {
         if voice.name.to_lowercase() == name_lowercase {
+            println!("Using ID {} for Voice: {}", voice.voice_id, name);
             return Some((voice.voice_id, voice.name));
         }
     }
