@@ -8,6 +8,5 @@ pub mod redemptions;
 pub mod redirect;
 pub mod telephone;
 pub mod themesong;
-pub mod three_d_filter;
 pub mod twitch_rewards;
 pub mod users;

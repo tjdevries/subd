@@ -29,6 +29,7 @@ subd-elevenlabs = { path = "crates/subd-elevenlabs" }
 obs_move_transition = { path = "crates/obs_move_transition" }
 obs_bootstrap = { path = "crates/obs_bootstrap" }
 skybox = { path = "crates/skybox" }
+obs_3d_filter = { path = "crates/obs_3d_filter" }
 
 # Twitch Deps
 twitch-irc.workspace = true

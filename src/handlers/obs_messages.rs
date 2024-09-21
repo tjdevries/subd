@@ -1,12 +1,12 @@
 use crate::chat_parser::parser;
-use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
-use crate::three_d_filter::perspective::ThreeDTransformPerspective;
-use crate::three_d_filter::CameraMode;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use num_traits::ToPrimitive;
+use obs_3d_filter::orthographic::ThreeDTransformOrthographic;
+use obs_3d_filter::perspective::ThreeDTransformPerspective;
+use obs_3d_filter::CameraMode;
 use obs_move_transition;
 use obs_move_transition::duration;
 use obs_move_transition::update_and_trigger_move_value_for_source;
