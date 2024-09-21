@@ -7,7 +7,6 @@ pub mod handlers;
 pub mod move_transition;
 pub mod obs_bootstrap;
 pub mod obs_filters;
-pub mod openai;
 pub mod raffle;
 pub mod redemptions;
 pub mod redirect;
