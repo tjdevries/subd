@@ -1,5 +1,3 @@
-use crate::skybox::skybox;
-use crate::skybox::skybox::check_skybox_status_and_save;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -7,6 +5,8 @@ use obws::Client as OBSClient;
 use rodio::*;
 use serde;
 use serde::{Deserialize, Serialize};
+use skybox;
+use skybox::check_skybox_status_and_save;
 use subd_types::Event;
 use subd_types::UserMessage;
 use tokio;

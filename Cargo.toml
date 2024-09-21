@@ -27,6 +27,7 @@ ai_images = { path = "crates/ai_images" }
 ai_clones = { path = "crates/ai_clones" }
 subd-elevenlabs = { path = "crates/subd-elevenlabs" }
 obs_move_transition = { path = "crates/obs_move_transition" }
+skybox = { path = "crates/skybox" }
 
 # Twitch Deps
 twitch-irc.workspace = true

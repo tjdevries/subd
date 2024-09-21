@@ -8,7 +8,6 @@ pub mod obs_filters;
 pub mod raffle;
 pub mod redemptions;
 pub mod redirect;
-pub mod skybox;
 pub mod telephone;
 pub mod themesong;
 pub mod three_d_filter;

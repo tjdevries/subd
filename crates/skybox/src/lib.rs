@@ -1,4 +1,3 @@
-use crate::skybox::skybox_requests;
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
@@ -12,6 +11,7 @@ use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
+pub mod skybox_requests;
 
 static SKYBOX_STATUS_URL: &str =
     "https://backend.blockadelabs.com/api/v1/imagine/requests";

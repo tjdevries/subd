@@ -1,0 +1,24 @@
+[package]
+name = "skybox"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+sqlx.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+reqwest.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+obws = "0.10"
+askama = "0.12.1"
+
+# twitch-irc.workspace = true
+# tokio.workspace = true
+#
+# fal_ai = { path = "../fal_ai/" }
+# obws = "0.10"
+subd-macros = { path = "../subd-macros/" }
