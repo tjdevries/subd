@@ -1,7 +1,5 @@
 pub mod ai_clone;
 pub mod ai_images;
-pub mod ai_song_playlist;
-pub mod ai_songs;
 pub mod art_blocks;
 pub mod audio;
 pub mod chat_parser;

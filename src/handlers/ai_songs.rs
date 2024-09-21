@@ -1,5 +1,4 @@
-use crate::ai_song_playlist;
-use crate::ai_songs::ai_songs;
+use ai_playlist::ai_songs;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -102,8 +101,7 @@ impl EventHandler for AISongsHandler {
             if self.sink.empty() {
                 println!("It's empty!");
                 println!("Marking all Songs as stopped");
-                let _ =
-                    ai_song_playlist::mark_songs_as_stopped(&self.pool).await;
+                let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
             } else {
                 println!("It's not empty!");
             }
@@ -194,8 +192,8 @@ async fn play_audio(
     let uuid_id = uuid::Uuid::parse_str(id)?;
 
     println!("Adding to Playlist");
-    ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
-    ai_song_playlist::mark_song_as_played(pool, uuid_id).await?;
+    ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
+    ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     let _ = play_sound_instantly(sink, file).await;
 
@@ -237,7 +235,7 @@ pub async fn handle_requests(
             let id = match splitmsg.get(1) {
                 Some(id) => id.as_str(),
                 None => {
-                    let song = ai_song_playlist::get_current_song(pool).await?;
+                    let song = ai_playlist::get_current_song(pool).await?;
                     let msg = format!(
                         "Current Song: {} by {}",
                         song.title, song.username
@@ -292,7 +290,7 @@ pub async fn handle_requests(
             // let _audio_info = get_audio_information(id).await?;
 
             let uuid_id = uuid::Uuid::parse_str(id)?;
-            ai_song_playlist::add_song_to_playlist(pool, uuid_id).await?;
+            ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
             return Ok(());
         }
 

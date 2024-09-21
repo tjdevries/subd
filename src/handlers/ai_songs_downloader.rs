@@ -1,4 +1,3 @@
-use crate::ai_songs::ai_songs::Model;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -318,7 +317,7 @@ async fn parse_suno_response_download_and_play(
         .as_str()
         .unwrap();
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
-    let new_song = Model {
+    let new_song = ai_playlist::ai_songs::Model {
         song_id,
         title: title.to_string(),
         tags: tags.to_string(),
