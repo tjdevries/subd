@@ -429,9 +429,10 @@ pub async fn handle_voices_commands(
                 if index > 15 {
                     continue;
                 }
-                // let cloned_mp3 = download_with_yt_dlp(name, url, index).await?;
+                let cloned_mp3 = download_with_yt_dlp(name, url, index).await?;
 
-                let cloned_mp3 = "troy.wav";
+                // This is a hack to just try and clone troy
+                // let cloned_mp3 = "troy.wav";
                 split_song(name, &cloned_mp3, &split_mp3_folder, index).await?;
             }
 
@@ -630,7 +631,7 @@ async fn download_with_yt_dlp(
     Ok(cloned_mp3)
 }
 
-async fn crop_audio(input_file: &str, crop_time: usize) -> Result<String> {
+async fn _crop_audio(input_file: &str, crop_time: usize) -> Result<String> {
     let output_file =
         format!("{}_cropped.wav", input_file.trim_end_matches(".wav"));
     let _ffmpeg_status = Command::new("ffmpeg")

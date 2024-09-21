@@ -299,7 +299,7 @@ async fn update_filter<T: serde::Serialize>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::obs::obs::create_obs_client;
+    use obs_service::obs::create_obs_client;
 
     #[tokio::test]
     async fn test_spin() {

@@ -74,8 +74,8 @@ async-trait.workspace = true
 twitter-v2 = "0.1.8"
 renet = "0.0.12"
 stdio-override = "0.1.3"
-## elevenlabs-api = "0.1.1"
-elevenlabs-api = { path = "../elevenlabs-api" }
+elevenlabs-api = "0.1.1"
+## elevenlabs-api = { path = "../elevenlabs-api" }
 libc = "0.2.150"
 futures-util = "0.3.29"
 actix = "0.13.1"

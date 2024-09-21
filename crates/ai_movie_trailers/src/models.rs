@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct FalImage {
-    url: String,
+    _url: String,
     _width: Option<u32>,
     _height: Option<u32>,
     _content_type: Option<String>,
@@ -13,5 +13,5 @@ struct FalImage {
 
 #[derive(Deserialize)]
 struct FalData {
-    images: Vec<FalImage>,
+    _images: Vec<FalImage>,
 }

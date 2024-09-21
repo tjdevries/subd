@@ -1,7 +1,7 @@
 use crate::openai::openai;
 use crate::redemptions;
 use crate::twitch_rewards;
-use ai_scenes_coordinator::models::AIScene;
+// use ai_scenes_coordinator::models::AIScene;
 // use ai_friends;
 use ai_scenes_coordinator;
 use anyhow::Result;
@@ -315,7 +315,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
 
             let reward_cost_as_float = reward_cost as f32;
 
-            let other_ids =
+            let _other_ids =
                 twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
 
             let new_cost =
@@ -343,7 +343,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
 async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     reward_manager: Arc<RewardManager<'a, C>>,
     ai_scenes_map: HashMap<String, &ai_scenes_coordinator::models::AIScene>,
     event: SubEvent,

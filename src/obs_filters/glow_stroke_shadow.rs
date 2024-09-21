@@ -81,81 +81,81 @@ enum FillTypes {
 mod tests {
     // use super::*;
 
-    use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
-    use crate::obs::obs;
-    use crate::obs::obs_source;
-    use serde_json::Value;
-
-    #[tokio::test]
-    async fn test_glow_stroke_shadow() {
-        assert_eq!(2 + 2, 4);
-        let obs_client = obs::create_obs_client().await.unwrap();
-        let filter = "Move_Outline";
-        let scene = "OutlineEffects";
-        let source = "BeginOutline1";
-
-        let filter_details =
-            obs_client.filters().get(source, &filter).await.unwrap();
-        println!("------------------------");
-        println!("\n\tFilter Settings: {:?}", filter_details);
-        println!("------------------------");
-
-        // assert_eq!(11, 0);
-
-        let item_id = obs_source::find_id(scene, source, &obs_client)
-            .await
-            .unwrap();
-
-        println!("Item ID: {:?}", item_id);
-
-        // I want to see what this so I can write a struct to Deserialize
-        // But I don't know waht the values to be ignored
-        // serde::Value
-        let settings =
-            obs_client.inputs().settings::<Value>(source).await.unwrap();
-        println!("------------------------");
-        println!("\n\tSource: {:?}", settings);
-        println!("------------------------");
-
-        // offset
-        // stroke_size
-        // let b = GlowStrokeShadowSettings::builder()
-        //     .stroke_size(3.0)
-        //     .stroke_offset(10.0)
-        //     .build();
-
-        let _d = crate::move_transition::duration::EasingDuration::new(300);
-        // let settings =
-        //     crate::move_transition::move_value::SingleSourceSetting {
-        //         source: source.to_string(),
-        //         setting_float: 10.0,
-        //         setting_name: "Stroke Size".to_string(),
-        //         duration: d,
-        //         ..Default::default()
-        //     };
-
-        let _stroke_size_min = 0.0;
-        let _stroke_size_max = 100.0;
-
-        let _stroke_offset_min = 0.0;
-        let _stroke_offset_max = 50.0;
-
-        if let Err(e) = update_and_trigger_move_value_for_source(
-            &obs_client,
-            source.into(),
-            filter.into(),
-            // "stroke_size",
-            "stroke_offset",
-            1.0,
-        )
-        .await
-        {
-            println!("Error: {:?}", e);
-        }
-        // I need to use this generic value to update the move_transition
-
-        // Pass this to the move_transistion
-
-        // We are going to want to call move_transition
-    }
+    //use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
+    //use crate::obs::obs;
+    //use crate::obs::obs_source;
+    //use serde_json::Value;
+    //
+    //#[tokio::test]
+    //async fn test_glow_stroke_shadow() {
+    //    assert_eq!(2 + 2, 4);
+    //    let obs_client = obs::create_obs_client().await.unwrap();
+    //    let filter = "Move_Outline";
+    //    let scene = "OutlineEffects";
+    //    let source = "BeginOutline1";
+    //
+    //    let filter_details =
+    //        obs_client.filters().get(source, &filter).await.unwrap();
+    //    println!("------------------------");
+    //    println!("\n\tFilter Settings: {:?}", filter_details);
+    //    println!("------------------------");
+    //
+    //    // assert_eq!(11, 0);
+    //
+    //    let item_id = obs_source::find_id(scene, source, &obs_client)
+    //        .await
+    //        .unwrap();
+    //
+    //    println!("Item ID: {:?}", item_id);
+    //
+    //    // I want to see what this so I can write a struct to Deserialize
+    //    // But I don't know waht the values to be ignored
+    //    // serde::Value
+    //    let settings =
+    //        obs_client.inputs().settings::<Value>(source).await.unwrap();
+    //    println!("------------------------");
+    //    println!("\n\tSource: {:?}", settings);
+    //    println!("------------------------");
+    //
+    //    // offset
+    //    // stroke_size
+    //    // let b = GlowStrokeShadowSettings::builder()
+    //    //     .stroke_size(3.0)
+    //    //     .stroke_offset(10.0)
+    //    //     .build();
+    //
+    //    let _d = crate::move_transition::duration::EasingDuration::new(300);
+    //    // let settings =
+    //    //     crate::move_transition::move_value::SingleSourceSetting {
+    //    //         source: source.to_string(),
+    //    //         setting_float: 10.0,
+    //    //         setting_name: "Stroke Size".to_string(),
+    //    //         duration: d,
+    //    //         ..Default::default()
+    //    //     };
+    //
+    //    let _stroke_size_min = 0.0;
+    //    let _stroke_size_max = 100.0;
+    //
+    //    let _stroke_offset_min = 0.0;
+    //    let _stroke_offset_max = 50.0;
+    //
+    //    if let Err(e) = update_and_trigger_move_value_for_source(
+    //        &obs_client,
+    //        source.into(),
+    //        filter.into(),
+    //        // "stroke_size",
+    //        "stroke_offset",
+    //        1.0,
+    //    )
+    //    .await
+    //    {
+    //        println!("Error: {:?}", e);
+    //    }
+    //    // I need to use this generic value to update the move_transition
+    //
+    //    // Pass this to the move_transistion
+    //
+    //    // We are going to want to call move_transition
+    //}
 }

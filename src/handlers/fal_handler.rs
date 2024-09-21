@@ -83,7 +83,7 @@ impl EventHandler for FalHandler {
 
 pub async fn handle_fal_commands(
     _tx: &broadcast::Sender<Event>,
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     _twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
         StaticLoginCredentials,

@@ -1,9 +1,9 @@
 use anyhow::Result;
-use reqwest::Client as ReqwestClient;
+// use reqwest::Client as ReqwestClient;
 use subd_types::{UserID, UserPlatform};
-use twitch_api::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
-use twitch_api::helix::HelixClient;
-use twitch_oauth2::UserToken;
+//use twitch_api::helix::subscriptions::GetBroadcasterSubscriptionsRequest;
+//use twitch_api::helix::HelixClient;
+//use twitch_oauth2::UserToken;
 
 pub async fn save_twitch_message(
     pool: &sqlx::PgPool,

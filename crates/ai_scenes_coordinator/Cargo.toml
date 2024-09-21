@@ -24,7 +24,8 @@ obws = "0.10.0"
 # Twitch Deps
 twitch-irc.workspace = true
 
-elevenlabs-api = { path = "../../../elevenlabs-api" }
+elevenlabs-api = "0.1.1"
+# elevenlabs-api = { path = "../../../elevenlabs-api" }
 tokio.workspace = true
 rand = "0.8.5"
 chrono.workspace = true

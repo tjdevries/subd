@@ -235,7 +235,7 @@ async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
 
 // =============================================================
 
-fn sanitize_chat_message(raw_msg: String) -> String {
+fn _sanitize_chat_message(raw_msg: String) -> String {
     // Let's replace any word longer than 50 characters
     raw_msg
         .split_whitespace()
