@@ -1,4 +1,3 @@
-use crate::elevenlabs;
 use anyhow::Result;
 use async_trait::async_trait;
 use csv::Writer;
@@ -12,6 +11,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::thread;
 use std::time;
+use subd_elevenlabs;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
@@ -172,7 +172,7 @@ impl EventHandler for SoundHandler {
 
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
-            let speech_bubble_text = elevenlabs::chop_text(spoken_string);
+            let speech_bubble_text = subd_elevenlabs::chop_text(spoken_string);
 
             // Anything less than 2 words we don't use
             let split = voice_text.split(" ");
@@ -182,9 +182,11 @@ impl EventHandler for SoundHandler {
             };
 
             // This is how we determing the voice for the user
-            let stream_character =
-                elevenlabs::build_stream_character(&self.pool, &msg.user_name)
-                    .await?;
+            let stream_character = subd_elevenlabs::build_stream_character(
+                &self.pool,
+                &msg.user_name,
+            )
+            .await?;
 
             let voice = match stream_character.voice {
                 Some(voice) => voice,

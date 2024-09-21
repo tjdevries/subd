@@ -1,5 +1,4 @@
 use crate::audio;
-use crate::elevenlabs;
 use crate::redirect;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -15,6 +14,7 @@ use std::io::BufReader;
 use std::sync::Arc;
 use std::{thread, time};
 use stream_character;
+use subd_elevenlabs;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
@@ -120,24 +120,25 @@ impl EventHandler for ElevenLabsHandler {
                 }
             };
 
-            let filename = elevenlabs::twitch_chat_filename(
+            let filename = subd_elevenlabs::twitch_chat_filename(
                 msg.username.clone(),
                 final_voice.clone(),
             );
 
             let chat_message =
-                elevenlabs::sanitize_chat_message(msg.message.clone());
+                subd_elevenlabs::sanitize_chat_message(msg.message.clone());
 
             // We keep track if we choose a random name for the user,
             // so we can inform them on screen
             let mut is_random = false;
 
-            let voice_data = elevenlabs::find_voice_id_by_name(&final_voice);
+            let voice_data =
+                subd_elevenlabs::find_voice_id_by_name(&final_voice);
             let (voice_id, voice_name) = match voice_data {
                 Some((id, name)) => (id, name),
                 None => {
                     is_random = true;
-                    elevenlabs::find_random_voice()
+                    subd_elevenlabs::find_random_voice()
                 }
             };
 
@@ -173,67 +174,68 @@ impl EventHandler for ElevenLabsHandler {
             }
 
             if msg.reverb {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::add_reverb(audio_path.clone())
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| {
+                    subd_elevenlabs::add_reverb(audio_path.clone())
+                });
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
             }
 
             if let Some(stretch) = msg.stretch {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::stretch_audio(audio_path, stretch)
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| {
+                    subd_elevenlabs::stretch_audio(audio_path, stretch)
+                });
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
             }
 
             if let Some(pitch) = msg.pitch {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::change_pitch(audio_path, pitch)
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| {
+                    subd_elevenlabs::change_pitch(audio_path, pitch)
+                });
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
             };
 
             if final_voice == "evil_pokimane" {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::change_pitch(
-                                audio_path,
-                                "-200".to_string(),
-                            )
-                        })
-                        .and_then(|audio_path| {
-                            elevenlabs::add_reverb(audio_path)
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| {
+                    subd_elevenlabs::change_pitch(
+                        audio_path,
+                        "-200".to_string(),
+                    )
+                })
+                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
             }
 
             if final_voice == "satan" {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::change_pitch(
-                                audio_path,
-                                "-350".to_string(),
-                            )
-                        })
-                        .and_then(|audio_path| {
-                            elevenlabs::add_reverb(audio_path)
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| {
+                    subd_elevenlabs::change_pitch(
+                        audio_path,
+                        "-350".to_string(),
+                    )
+                })
+                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
@@ -241,11 +243,10 @@ impl EventHandler for ElevenLabsHandler {
 
             // What is the difference
             if final_voice == "god" {
-                let res =
-                    elevenlabs::normalize_tts_file(local_audio_path.clone())
-                        .and_then(|audio_path| {
-                            elevenlabs::add_reverb(audio_path)
-                        });
+                let res = subd_elevenlabs::normalize_tts_file(
+                    local_audio_path.clone(),
+                )
+                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };

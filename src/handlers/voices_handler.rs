@@ -1,9 +1,9 @@
 use crate::constants;
-use crate::elevenlabs;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use obs_service::obs_source;
+use subd_elevenlabs;
 use twitch_stream_state;
 // use dotenv::dotenv;
 use events::EventHandler;
@@ -233,7 +233,7 @@ pub async fn handle_voices_commands(
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-            elevenlabs::set_voice(
+            subd_elevenlabs::set_voice(
                 voice.to_string(),
                 msg.user_name.to_string(),
                 pool,
@@ -244,7 +244,7 @@ pub async fn handle_voices_commands(
         "!voice" => {
             let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-            elevenlabs::talk_in_voice(
+            subd_elevenlabs::talk_in_voice(
                 msg.contents.clone(),
                 voice.to_string(),
                 msg.user_name,

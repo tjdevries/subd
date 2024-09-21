@@ -1,5 +1,4 @@
 use crate::constants;
-use crate::elevenlabs;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -11,6 +10,7 @@ use std::fs;
 use std::path::Path;
 use std::thread;
 use std::time;
+use subd_elevenlabs;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_stream_state;
@@ -259,7 +259,7 @@ async fn handle_commands(
             }
 
             // Set the Voice for Begin, which is the source of the global voice
-            let _ = elevenlabs::set_voice(
+            let _ = subd_elevenlabs::set_voice(
                 details.voice.to_string(),
                 "beginbot".to_string(),
                 pool,
