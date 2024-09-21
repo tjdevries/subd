@@ -210,12 +210,8 @@ pub async fn spin_source(
 
     let filter_name = "3D-Transform-Perspective";
 
-    let settings = move_value::Add::new(
-        filter_name.clone(),
-        "Rotation.Z",
-        rotation_z,
-        duration,
-    );
+    let settings =
+        move_value::Add::new(filter_name, "Rotation.Z", rotation_z, duration);
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
 
     let move_transition_filter_name = format!("Move_{}", filter_name);

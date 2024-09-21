@@ -163,6 +163,10 @@ pub fn get_default_obs_source() -> String {
     dotenv::var("DEFAULT_OBS_SOURCE").unwrap_or_else(|_| "begin".to_string())
 }
 
+pub fn get_default_obs_scene() -> String {
+    dotenv::var("DEFAULT_OBS_SCENE").unwrap_or_else(|_| "Begin".to_string())
+}
+
 pub fn get_primary_camera_scene() -> String {
     dotenv::var("PRIMARY_CAMERA_SCENE").unwrap_or_else(|_| "Begin".to_string())
 }
