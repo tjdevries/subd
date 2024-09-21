@@ -28,3 +28,5 @@ tokio.workspace = true
 rand = "0.8.5"
 chrono.workspace = true
 serde.workspace = true
+strum = { version = "0.25.0", features = ["strum_macros", "derive"] }
+serde_repr = "0.1.18"
