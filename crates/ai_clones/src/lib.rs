@@ -16,8 +16,6 @@ pub mod utils;
 
 // TODO move this to somewhere else / pull in from config
 const SCREENSHOT_SOURCE: &str = "begin-base";
-//const SCENE: &str = "AIAssets";
-//const SOURCE: &str = "bogan";
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct ChromaKey {

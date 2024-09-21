@@ -1,8 +1,3 @@
-//use crate::move_transition::duration;
-//use crate::move_transition::duration::EasingDuration;
-//use crate::move_transition::models::Coordinates;
-//use crate::move_transition::move_source::CropSettings;
-//use crate::move_transition::move_transition;
 use anyhow::Result;
 use obs_move_transition;
 use obws::Client as OBSClient;

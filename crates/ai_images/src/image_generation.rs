@@ -5,7 +5,6 @@ use std::path::Path;
 use std::path::PathBuf;
 
 // TODO: We shouldn't be using warp::Future
-// std::future::Future
 pub trait GenerateImage {
     fn generate_image(
         &self,
@@ -26,11 +25,6 @@ pub fn unique_archive_filepath(
     let filepath = Path::new(&filename);
     let pathbuf = PathBuf::from(filepath);
     Ok((pathbuf, unique_identifier))
-    // Only do it for the archive
-    // Umm This requires the file exists...which wasn't the intent of this
-    // fs::canonicalize(pathbuf.clone())
-    //     .map_err(|e| anyhow!("{:?} {}", pathbuf, e.to_string()))
-    //     .map(|v| (v, unique_identifier))
 }
 
 #[cfg(test)]
@@ -40,7 +34,6 @@ mod tests {
 
     #[test]
     fn test_archive() -> Result<()> {
-        // unique_ar().map(|(pathbuf, t)| assert_eq!(t, pathbuf.to_str().unwrap()))
         let (pathbuf, _t) = unique_archive_filepath(1, "beginbot".to_string())?;
         let _p = pathbuf
             .to_str()

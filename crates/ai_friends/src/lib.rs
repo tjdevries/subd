@@ -1,6 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use chrono::Utc;
+use fal_ai;
+use obs_service;
 use obws::Client as OBSClient;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
@@ -9,9 +11,6 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-
-use fal_ai;
-use obs_service;
 
 pub async fn trigger_ai_friend(
     obs_client: &OBSClient,

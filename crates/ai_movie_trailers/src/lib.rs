@@ -5,7 +5,6 @@ use std::io::BufReader;
 use subd_types;
 use subd_types::AiScenesRequest;
 use twitch_chat::client::send_message;
-
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };

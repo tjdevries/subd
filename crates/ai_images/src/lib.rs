@@ -1,4 +1,3 @@
-// OK now
 use anyhow::{self, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
@@ -20,7 +19,11 @@ pub async fn download_image(
         .build()
         .expect("Failed to create client");
 
-    println!("\tCalling Dalle: {}", download_path);
+    println!(
+        "\tCall out to URL {} to download image to: {}",
+        url.clone(),
+        download_path
+    );
     let image_data = client
         .get(url.clone())
         .send()
@@ -29,7 +32,7 @@ pub async fn download_image(
         .await?
         .to_vec();
 
-    println!("\tCreating File: {}", download_path);
+    println!("\tSaving File: {}", download_path);
     File::create(download_path.clone())
         .and_then(|mut f| f.write_all(&image_data))?;
     Ok(image_data)
@@ -49,10 +52,8 @@ pub fn resize_image(
     unique_identifier: String,
     filename: String,
 ) -> Result<(String, Vec<u8>)> {
-    let output_path = format!(
-        "/home/begin/code/subd/tmp/screenshots/resized/{}",
-        unique_identifier
-    );
+    let output_path =
+        format!("./tmp/screenshots/resized/{}", unique_identifier);
     Command::new("convert")
         .args(&[
             filename,
