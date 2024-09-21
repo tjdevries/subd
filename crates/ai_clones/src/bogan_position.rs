@@ -1,9 +1,10 @@
-use crate::move_transition::duration;
-use crate::move_transition::duration::EasingDuration;
-use crate::move_transition::models::Coordinates;
-use crate::move_transition::move_source::CropSettings;
-use crate::move_transition::move_transition;
+//use crate::move_transition::duration;
+//use crate::move_transition::duration::EasingDuration;
+//use crate::move_transition::models::Coordinates;
+//use crate::move_transition::move_source::CropSettings;
+//use crate::move_transition::move_transition;
 use anyhow::Result;
+use obs_move_transition;
 use obws::Client as OBSClient;
 
 #[warn(dead_code)]
@@ -70,19 +71,20 @@ async fn move_bogan(
     obs_client: &OBSClient,
 ) -> Result<()> {
     // This is where we are trying to scale and crop our source
-    let scale = Coordinates::new(Some(0.4), Some(0.4));
-    let c = CropSettings::builder().build();
+    let scale =
+        obs_move_transition::models::Coordinates::new(Some(0.4), Some(0.4));
+    let c = obs_move_transition::move_source::CropSettings::builder().build();
     // let c = CropSettings::builder().left(580.0).build();
     let filter_name = format!("Move_{}", source);
 
-    let d = EasingDuration::builder()
+    let d = obs_move_transition::duration::EasingDuration::builder()
         .duration(1500)
-        .easing_function(duration::EasingFunction::Sine)
-        .easing_type(duration::EasingType::EaseIn)
+        .easing_function(obs_move_transition::duration::EasingFunction::Sine)
+        .easing_type(obs_move_transition::duration::EasingType::EaseIn)
         .build();
 
     // This doesn't take rot!
-    move_transition::move_source(
+    obs_move_transition::move_source(
         scene,
         source,
         filter_name.clone(),
@@ -99,7 +101,7 @@ async fn move_bogan(
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
     use obs_service::obs;
 
     #[tokio::test]
@@ -107,12 +109,9 @@ mod tests {
         let obs_client = obs::create_obs_client().await.unwrap();
 
         let scene = "BoganArmy";
-        let _index = crate::ai_clone::bogan::find_current_bogan_index(
-            scene,
-            &obs_client,
-        )
-        .await
-        .unwrap();
+        let _index = ai_clone::find_current_bogan_index(scene, &obs_client)
+            .await
+            .unwrap();
 
         let _bogan_1 = "bogan_13";
         let _bogan_2 = "bogan_14";

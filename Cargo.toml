@@ -24,7 +24,9 @@ obs_service = { path = "crates/obs_service" }
 stream_character = { path = "crates/stream_character" }
 ai_playlist = { path = "crates/ai_playlist" }
 ai_images = { path = "crates/ai_images" }
+ai_clones = { path = "crates/ai_clones" }
 subd-elevenlabs = { path = "crates/subd-elevenlabs" }
+obs_move_transition = { path = "crates/obs_move_transition" }
 
 # Twitch Deps
 twitch-irc.workspace = true

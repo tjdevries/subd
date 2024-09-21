@@ -1,5 +1,5 @@
-use crate::move_transition::duration::find_easing_indicies;
 use anyhow::Result;
+use obs_move_transition::duration::find_easing_indicies;
 
 pub enum WideArgPosition {
     Source(String),

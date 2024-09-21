@@ -1,12 +1,5 @@
-pub mod bogan_position;
-pub mod chat;
-pub mod utils;
-
-//use crate::ai_clone::bogan_position;
-//use crate::ai_clone::chat;
-//use crate::ai_clone::utils;
-use crate::move_transition::move_source;
 use anyhow::Result;
+use obs_move_transition::move_source;
 use obs_service;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::inputs::Create;
@@ -16,6 +9,10 @@ use stable_diffusion;
 use stable_diffusion::models::RequestType::Img2ImgFile;
 use stable_diffusion::stable_diffusion_from_image;
 use std::path::Path;
+
+pub mod bogan_position;
+pub mod chat;
+pub mod utils;
 
 // TODO move this to somewhere else / pull in from config
 const SCREENSHOT_SOURCE: &str = "begin-base";

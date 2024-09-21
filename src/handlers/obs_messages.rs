@@ -1,7 +1,4 @@
 use crate::chat_parser::parser;
-use crate::move_transition::duration;
-use crate::move_transition::move_transition;
-use crate::move_transition::move_transition::update_and_trigger_move_value_for_source;
 use crate::obs_bootstrap::bootstrap;
 use crate::three_d_filter::orthographic::ThreeDTransformOrthographic;
 use crate::three_d_filter::perspective::ThreeDTransformPerspective;
@@ -11,6 +8,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use num_traits::ToPrimitive;
+use obs_move_transition;
+use obs_move_transition::duration;
+use obs_move_transition::update_and_trigger_move_value_for_source;
 use obs_service::obs_scenes;
 use obs_service::obs_source;
 use obws;
@@ -129,15 +129,20 @@ pub async fn handle_obs_commands(
 
         "!find" => {
             let filter_name = format!("Move_{}", source);
-            move_transition::find_source(scene, source, filter_name, obs_client)
-                .await
+            obs_move_transition::find_source(
+                scene,
+                source,
+                filter_name,
+                obs_client,
+            )
+            .await
         }
 
         "!move" => {
             let filter_name = format!("Move_{}", source);
             let x = splitmsg.get(2).map(|v| v.parse::<f32>().unwrap_or(100.0));
             let y = splitmsg.get(3).map(|v| v.parse::<f32>().unwrap_or(100.0));
-            let res = move_transition::move_source(
+            let res = obs_move_transition::move_source(
                 scene,
                 source,
                 filter_name,
@@ -168,7 +173,7 @@ pub async fn handle_obs_commands(
                 ..Default::default()
             };
             let d = duration::EasingDuration::new(req.duration as i32);
-            let _ = move_transition::update_and_trigger_filter(
+            let _ = obs_move_transition::update_and_trigger_filter(
                 &obs_client,
                 &req.source,
                 "3D-Transform-Orthographic",
@@ -190,7 +195,7 @@ pub async fn handle_obs_commands(
 
             let d = duration::EasingDuration::new(3000);
 
-            let _ = move_transition::update_and_trigger_filter(
+            let _ = obs_move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Perspective",
@@ -260,7 +265,7 @@ pub async fn handle_obs_commands(
             let duration = 3000;
             let d = duration::EasingDuration::new(duration);
 
-            let _ = move_transition::move_source_in_scene_x_and_y(
+            let _ = obs_move_transition::move_source_in_scene_x_and_y(
                 obs_client, &scene, source, position_x, position_y, d,
             )
             .await?;
@@ -277,7 +282,7 @@ pub async fn handle_obs_commands(
                 .field_of_view(Some(108.0))
                 .build();
             let d = duration::EasingDuration::new(3000);
-            let _ = move_transition::update_and_trigger_filter(
+            let _ = obs_move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Perspective",
@@ -308,7 +313,7 @@ pub async fn handle_obs_commands(
                 .get(3)
                 .map(|v| v.parse::<f32>().unwrap_or(x))
                 .unwrap_or(x);
-            let res = move_transition::scale_source(
+            let res = obs_move_transition::scale_source(
                 scene,
                 source,
                 filter_name,
@@ -333,7 +338,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
             let d = duration::EasingDuration::new(req.duration as i32);
-            move_transition::move_source_in_scene_x_and_y(
+            obs_move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
                 scene,
                 source,
@@ -355,7 +360,7 @@ pub async fn handle_obs_commands(
             let d = duration::EasingDuration::new(
                 req.duration.try_into().unwrap_or(3000),
             );
-            move_transition::move_source_in_scene_x_and_y(
+            obs_move_transition::move_source_in_scene_x_and_y(
                 &obs_client,
                 &scene,
                 source,
@@ -390,7 +395,7 @@ pub async fn handle_obs_commands(
                 ..Default::default()
             };
             let d = duration::EasingDuration::new(req.duration as i32);
-            let _ = move_transition::update_and_trigger_filter(
+            let _ = obs_move_transition::update_and_trigger_filter(
                 &obs_client,
                 source,
                 "3D-Transform-Orthographic",
@@ -407,7 +412,7 @@ pub async fn handle_obs_commands(
                 .get(2)
                 .map(|v| v.parse::<f32>().unwrap_or(360.0))
                 .unwrap_or(360.0);
-            let res = move_transition::rot_source(
+            let res = obs_move_transition::rot_source(
                 scene,
                 source,
                 filter_name,
@@ -432,7 +437,7 @@ pub async fn handle_obs_commands(
                 arg_positions,
             );
             let d = duration::EasingDuration::new(req.duration as i32);
-            move_transition::spin_source(
+            obs_move_transition::spin_source(
                 &obs_client,
                 &req.source,
                 req.rotation_z,
