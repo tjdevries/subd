@@ -1,0 +1,22 @@
+
+[package]
+
+name = "obs_filters"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+# subd-types = { path = "../subd-types/" }
+# stable_diffusion = { path = "../stable_diffusion/" }
+# obs_service = { path = "../obs_service/" }
+# obs_move_transition = { path = "../obs_move_transition/" }
+# obws = "0.10"
+# chrono.workspace = true
+# serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+serde = { workspace = true, features = ["derive"] }
+#
+# # Test
+# tokio.workspace = true

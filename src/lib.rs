@@ -3,7 +3,6 @@ pub mod chat_parser;
 pub mod commands;
 pub mod constants;
 pub mod handlers;
-pub mod obs_filters;
 pub mod raffle;
 pub mod redemptions;
 pub mod redirect;
