@@ -7,17 +7,11 @@ edition = "2021"
 
 [dependencies]
 subd-types = { path = "../subd-types" }
-subd-db = { path = "../subd-db" }
 events = { path = "../events" }
 twitch_service = { path = "../twitch_service/" }
 
 anyhow.workspace = true
 async-trait.workspace = true
-reqwest.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
-tracing.workspace = true
 twitch-irc.workspace = true
-# twitch_api = { version="0.7.0-rc.7", features=["helix"] }
-twitch_api = { version="0.7.0-rc.7", features=["all"] }
-twitch_oauth2 = "0.12.7"

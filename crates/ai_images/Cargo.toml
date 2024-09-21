@@ -9,8 +9,4 @@ anyhow.workspace = true
 base64 = "0.22.1"
 chrono.workspace = true
 reqwest.workspace = true
-
-subd-types = { path = "../subd-types/" }
 warp = "0.3.7"
-# openai = "1.0.0-alpha.16"
-# openai = { path = "../openai" }

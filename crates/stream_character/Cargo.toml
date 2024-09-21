@@ -9,5 +9,4 @@ edition = "2021"
 anyhow.workspace = true
 sqlx.workspace = true
 
-subd-types = { path = "../subd-types/" }
 subd-macros = { path = "../subd-macros/" }

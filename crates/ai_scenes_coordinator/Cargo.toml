@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow.workspace = true
 
-fal-rust = { path = "../../../fal-rust" }
 serde_json.workspace = true
 sqlx.workspace = true
 subd-types = { path = "../subd-types/" }
@@ -17,7 +16,6 @@ ai_friends = { path = "../ai_friends/" }
 twitch_stream_state = { path = "../twitch_stream_state/" }
 stream_character = { path = "../stream_character/" }
 ai_movie_trailers = { path = "../ai_movie_trailers/" }
-rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
 
 obws = "0.10.0"
 # obws.workspace = true

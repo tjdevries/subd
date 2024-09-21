@@ -10,7 +10,6 @@ subd-types = { path = "../subd-types/" }
 
 tokio.workspace = true
 reqwest.workspace = true
-serde.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 

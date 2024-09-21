@@ -9,7 +9,6 @@ edition = "2021"
 
 subd-types = { path = "../subd-types" }
 serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
 sqlx.workspace = true
 anyhow.workspace = true
 num-traits = "0.2.17"
