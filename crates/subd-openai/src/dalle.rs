@@ -90,11 +90,7 @@ async fn process_dalle_request(
     {
         Ok(val) => val,
         Err(e) => {
-            let error = format!(
-                "\nError downloading image to {} : {}",
-                f,
-                e
-            );
+            let error = format!("\nError downloading image to {} : {}", f, e);
             return Err(error);
         }
     };
@@ -119,7 +115,6 @@ async fn process_dalle_request(
 
     // Why is this saving to CSV
     let csv_file = OpenOptions::new()
-        
         .append(true)
         .create(true)
         .open("output.csv");

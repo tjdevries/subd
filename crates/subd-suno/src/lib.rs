@@ -1,9 +1,10 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use reqwest::Client;
 use rodio::{Decoder, Sink};
 use sqlx::types::Uuid;
 use std::fs::File;
 use std::io::BufReader;
+// use std::process::id;
 use tokio::fs;
 use tokio::sync::broadcast;
 use twitch_chat::client::send_message;
@@ -174,26 +175,42 @@ pub async fn parse_suno_response_download_and_play(
         .get(index)
         .ok_or_else(|| anyhow!("No song data at index {}", index))?;
 
-    let id = song_data
-        .get("id")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| anyhow!("Missing 'id' in song data"))?;
+    // Deserialize into SunoResponse
+    let mut suno_response: models::SunoResponse =
+        serde_json::from_value(song_data.clone())
+            .context("Failed to deserialize song data")?;
 
-    let song_id = Uuid::parse_str(id)
-        .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
+    // This is dumb
+    // we should deserialize
+    // If you need to modify or set additional fields
+    suno_response = models::SunoResponse::builder()
+        .id(suno_response.id)
+        .audio_url(suno_response.audio_url)
+        .title(suno_response.title)
+        //.metadata
+        //.prompt(suno_response.metadata.prompt)
+        .lyric(suno_response.lyric.unwrap_or("".to_string()))
+        .build();
 
-    let lyrics = song_data
-        .get("lyric")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let song_id = Uuid::parse_str(&suno_response.id)
+        .map_err(|e| anyhow!("Invalid UUID {}: {}", suno_response.id, e))?;
+    //let id = song_data
+    //    .get("id")
+    //    .and_then(|v| v.as_str())
+    //    .ok_or_else(|| anyhow!("Missing 'id' in song data"))?;
+
+    //let lyrics = song_data
+    //    .get("lyric")
+    //    .and_then(|v| v.as_str())
+    //    .unwrap_or("");
     let title = song_data
         .get("title")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    let prompt = song_data
-        .get("prompt")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    //let prompt = song_data
+    //    .get("prompt")
+    //    .and_then(|v| v.as_str())
+    //    .unwrap_or("");
     let tags = song_data.get("tags").and_then(|v| v.as_str()).unwrap_or("");
     let audio_url = song_data
         .get("audio_url")
@@ -209,26 +226,26 @@ pub async fn parse_suno_response_download_and_play(
         song_id,
         title: title.to_string(),
         tags: tags.to_string(),
-        prompt: prompt.to_string(),
+        prompt: suno_response.metadata.prompt,
         username: user_name.clone(),
         audio_url: audio_url.to_string(),
-        lyric: Some(lyrics.to_string()),
+        lyric: suno_response.lyric,
         gpt_description_prompt: gpt_description_prompt.to_string(),
         last_updated: Some(created_at),
         created_at: Some(created_at),
     };
     new_song.save(pool).await?;
 
-    let folder_path = format!("tmp/suno_responses/{}", id);
+    let folder_path = format!("tmp/suno_responses/{}", song_id);
     fs::create_dir_all(&folder_path).await?;
 
     fs::write(
-        format!("tmp/suno_responses/{}.json", id),
+        format!("tmp/suno_responses/{}.json", song_id),
         &json_response.to_string(),
     )
     .await?;
 
-    download_and_play(twitch_client, tx, user_name, &id.to_string()).await
+    download_and_play(twitch_client, tx, user_name, &song_id.to_string()).await
 }
 
 /// Downloads the audio file and saves it locally.

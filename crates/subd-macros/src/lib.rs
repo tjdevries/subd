@@ -36,9 +36,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let mut content = vec![];
     for item in input_content {
         match item {
-            syn::Item::Struct(s) if s.ident == "Model" => {
-                models.push(s)
-            }
+            syn::Item::Struct(s) if s.ident == "Model" => models.push(s),
             _ => content.push(item),
         };
     }
@@ -74,10 +72,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path()
-                            .segments
-                            .iter()
-                            .any(|s| s.ident == "immutable")
+                        a.path().segments.iter().any(|s| s.ident == "immutable")
                     })
                     .is_some()
                 {
@@ -105,18 +100,22 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     };
 
     let mut new_args: Punctuated<FnArg, Token![,]> = Punctuated::new();
-    model.fields.iter().for_each(|f| if let Some(ident) = &f.ident { new_args.push(FnArg::Typed(PatType {
-        attrs: vec![],
-        pat: Box::new(Pat::Ident(PatIdent {
-            attrs: vec![],
-            by_ref: None,
-            mutability: None,
-            ident: ident.clone(),
-            subpat: None,
-        })),
-        colon_token: f.colon_token.unwrap(),
-        ty: Box::new(f.ty.clone()),
-    })) });
+    model.fields.iter().for_each(|f| {
+        if let Some(ident) = &f.ident {
+            new_args.push(FnArg::Typed(PatType {
+                attrs: vec![],
+                pat: Box::new(Pat::Ident(PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident: ident.clone(),
+                    subpat: None,
+                })),
+                colon_token: f.colon_token.unwrap(),
+                ty: Box::new(f.ty.clone()),
+            }))
+        }
+    });
 
     let self_body = model
         .fields

@@ -48,12 +48,12 @@ pub async fn rotate_bogan_order(
     let fifth_bogan = format!("bogan_{}", index - 4);
     let _ =
         move_bogan(scene, new_bogan.as_str(), &position_1, obs_client).await;
-    let _ = move_bogan(scene, second_bogan.as_str(), &position_2, obs_client)
-        .await;
+    let _ =
+        move_bogan(scene, second_bogan.as_str(), &position_2, obs_client).await;
     let _ =
         move_bogan(scene, third_bogan.as_str(), &position_3, obs_client).await;
-    let _ = move_bogan(scene, fourth_bogan.as_str(), &position_4, obs_client)
-        .await;
+    let _ =
+        move_bogan(scene, fourth_bogan.as_str(), &position_4, obs_client).await;
     let _ = move_bogan(scene, fifth_bogan.as_str(), &hidden, obs_client).await;
 
     Ok(())

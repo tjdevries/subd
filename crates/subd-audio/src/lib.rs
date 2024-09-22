@@ -73,14 +73,12 @@ pub fn add_voice_modifiers(
     if let Some(stretch) = &req.stretch {
         local_audio_path =
             normalize_tts_file(local_audio_path.clone()).unwrap();
-        local_audio_path =
-            stretch_audio(local_audio_path, stretch.to_owned())?;
+        local_audio_path = stretch_audio(local_audio_path, stretch.to_owned())?;
     }
 
     if let Some(pitch) = &req.pitch {
         local_audio_path = normalize_tts_file(local_audio_path.clone())?;
-        local_audio_path =
-            change_pitch(local_audio_path, pitch.to_owned())?;
+        local_audio_path = change_pitch(local_audio_path, pitch.to_owned())?;
     }
 
     if voice == "evil_pokimane" {

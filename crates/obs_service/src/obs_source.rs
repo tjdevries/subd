@@ -477,9 +477,8 @@ pub async fn print_source_info(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id =
-        find_id(&subd_types::consts::get_meme_scene(), source, obs_client)
-            .await?;
+    let id = find_id(&subd_types::consts::get_meme_scene(), source, obs_client)
+        .await?;
     let settings = obs_client.scene_items().transform(scene, id).await?;
 
     println!("Source Settings: {:?}", settings);

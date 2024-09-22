@@ -39,8 +39,8 @@ pub async fn telephone(
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }
 
-    let first_description = subd_openai::ask_gpt_vision2("", Some(&url))
-        .await?;
+    let first_description =
+        subd_openai::ask_gpt_vision2("", Some(&url)).await?;
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);

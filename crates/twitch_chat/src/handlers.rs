@@ -69,7 +69,7 @@ impl EventHandler for TwitchMessageHandler {
                 Ok(user_id) => user_id,
                 Err(e) => {
                     eprintln!("Failed to upsert twitch user: {}", e);
-                    
+
                     match UserID::try_from(msg.sender.id)
                         .map_err(|e| anyhow!(e))
                     {

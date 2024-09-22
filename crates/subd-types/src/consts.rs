@@ -51,7 +51,11 @@ pub fn get_twitch_broadcaster_refresh() -> Option<RefreshToken> {
     static TWITCH_BROADCASTER_REFRESH: OnceCell<Option<RefreshToken>> =
         OnceCell::new();
     TWITCH_BROADCASTER_REFRESH
-        .get_or_init(|| dotenv::var("SUBD_TWITCH_BOT_REFRESH").ok().map(RefreshToken::new))
+        .get_or_init(|| {
+            dotenv::var("SUBD_TWITCH_BOT_REFRESH")
+                .ok()
+                .map(RefreshToken::new)
+        })
         .clone()
 }
 

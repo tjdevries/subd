@@ -31,14 +31,9 @@ impl TryFrom<TwitchUserID> for UserID {
     fn try_from(value: TwitchUserID) -> Result<Self, Self::Error> {
         let res = uuid::Uuid::parse_str(&value.0);
         match res {
-            Ok(s) => {
-                Ok(UserID(s))
-            }
+            Ok(s) => Ok(UserID(s)),
             Err(e) => {
-                Err(format!(
-                    "Error converting TwitchUserID to UserID: {}",
-                    e
-                ))
+                Err(format!("Error converting TwitchUserID to UserID: {}", e))
             }
         }
     }
@@ -345,9 +340,7 @@ impl UserRoles {
     }
 
     pub fn is_twitch_sub(&self) -> bool {
-        self.roles
-            .iter()
-            .any(|r| matches!(&r, Role::TwitchSub(_)))
+        self.roles.iter().any(|r| matches!(&r, Role::TwitchSub(_)))
     }
 }
 
