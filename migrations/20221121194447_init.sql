@@ -1,14 +1,14 @@
 -- Ayresia says I don't need this
--- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
-CREATE TYPE ai_song_status AS ENUM (
-  'STREAMING',
-  'COMPLETED',
-);
+-- CREATE TYPE ai_song_status AS ENUM (
+--   'STREAMING',
+--   'COMPLETED',
+-- );
 
 -- Create the ai_song_playlist table
 CREATE TABLE ai_song_playlist (
@@ -17,14 +17,6 @@ CREATE TABLE ai_song_playlist (
     created_at TIMESTAMP WITH TIME ZONE,
     played_at TIMESTAMP WITH TIME ZONE,
     stopped_at TIMESTAMP WITH TIME ZONE
-);
-
-CREATE TABLE ai_playlist(
-    playlist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    played_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-    stopped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
   -- TODO: Figure out status
@@ -41,6 +33,14 @@ CREATE TABLE ai_songs(
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE ai_playlist(
+    playlist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    played_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    stopped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
+);
+
 -- ALTER TABLE twitch_stream_state ADD COLUMN current_song_id UUID UNIQUE references ai_song_playlist;
 -- ALTER TABLE twitch_stream_state ADD COLUMN ai_background_theme TEXT;
 CREATE TABLE twitch_stream_state(
@@ -49,12 +49,13 @@ CREATE TABLE twitch_stream_state(
   implicit_soundeffects boolean NOT NULL DEFAULT false,
   global_voice boolean NOT NULL DEFAULT false,
   
-  dalle_model TEXT NOT NULL DEFAULT "dalle-3",
+  dalle_model TEXT NOT NULL DEFAULT 'dalle-3',
   dalle_mode boolean NOT NULL DEFAULT true,
   enable_stable_diffusion boolean NOT NULL DEFAULT false,
   ai_background_theme TEXT,
   
-  current_song_id UUID UNIQUE references ai_songs
+  -- current_song_id UUID UNIQUE references ai_songs
+  current_song_id UUID REFERENCES ai_songs(song_id)
 );
 
 CREATE TABLE user_stream_character_information(
@@ -83,7 +84,7 @@ CREATE TABLE user_roles (
   -- ...
 );
 
-CREATE TABLE suno_request ()
+CREATE TABLE suno_request (
   user_id UUID UNIQUE NOT NULL references users,
   request TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -128,14 +129,13 @@ CREATE TABLE twitch_users (
 CREATE TABLE redemptions (
 title      TEXT NOT NULL ,
 
-  twitch_id  UUID NOT NULL,
-  
   -- TODO: Add NOT NULL, after we populate/delete redemptions
-  redemptions ADD COLUMN twitch_id UUID;
-  reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
+  twitch_id UUID NOT NULL,
+
+  -- reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
   user_name  TEXT NOT NULL,
   cost       INT NOT NULL,
-  user_input TEXT
+  user_input TEXT,
   
   created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

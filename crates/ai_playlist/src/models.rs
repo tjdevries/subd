@@ -160,4 +160,16 @@ impl ai_playlist::Model {
         .fetch_one(pool)
         .await
     }
+
+    // This creates a new one, but doesn't save it
+    // Creates a new instance of ai_playlist::Model
+    // pub fn new(playlist_id: Uuid, song_id: Uuid) -> Self {
+    //     Self {
+    //         playlist_id,
+    //         song_id,
+    //         created_at: None,
+    //         played_at: None,
+    //         stopped_at: None,
+    //     }
+    // }
 }

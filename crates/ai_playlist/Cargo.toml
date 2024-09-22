@@ -14,3 +14,4 @@ uuid.workspace = true
 [dev-dependencies]
 
 tokio.workspace = true
+test-tag = "0.1.4"

@@ -238,15 +238,41 @@ pub async fn find_songs_by_user(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ai_songs;
+    use test_tag::tag;
 
     #[tokio::test]
+    #[tag(database)]
     async fn test_ai_song_creation() {
-        // let _pool = subd_db::get_test_db_pool().await;
+        // we need to clear the db
+        let pool = subd_db::get_test_db_pool().await;
         // let pool = subd_db::get_db_pool().await;
 
-        // let result = find_last_played_songs(&pool, 0).await.unwrap();
-        //dbg!(result);
+        // I could generate a new one here
+        let ai_song = ai_songs::Model::new(
+            Uuid::parse_str("d7d9d6d5-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap(),
+            "title".to_string(),
+            "tags".to_string(),
+            "prompt".to_string(),
+            "username".to_string(),
+            "audio_url".to_string(),
+            "gpt_description_prompt".to_string(),
+            None,
+            None,
+            None,
+        );
 
+        ai_song.save(&pool).await.unwrap();
+        let res = find_songs_by_user(&pool, "username").await.unwrap();
+        assert_eq!(res[0].title, "titles");
+        // Find newest_song
+        let result = find_last_played_songs(&pool, 1).await.unwrap();
+        println!("OK This does work");
+        result.iter().for_each(|song| {
+            println!("{:?}", song);
+        });
+
+        //dbg!(result);
         // assert_eq!(result, vec![]);
         // OK
     }
