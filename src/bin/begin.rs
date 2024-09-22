@@ -2,14 +2,13 @@ use anyhow::Result;
 use clap::Parser;
 use elevenlabs_api::{Auth, Elevenlabs};
 use obs_service::obs::create_obs_client;
+use obws::Client;
 use serde::{Deserialize, Serialize};
 use server::handlers;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::ClientConfig;
-use twitch_irc::SecureTCPTransport;
-use twitch_irc::TwitchIRCClient;
+use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
 
 fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     let twitch_username = subd_types::consts::get_twitch_bot_username();
@@ -65,9 +64,49 @@ struct Args {
     #[arg(long)]
     enable_all: bool,
 
-    /// Whether to Enable the AI Scenes
+    /// Whether to Enable Specific Features
     #[arg(long, value_delimiter = ' ', num_args = 1..)]
     enable: Vec<String>,
+}
+
+// Define a struct to hold app resources
+struct AppResources {
+    obs_client: Client,
+    sink: rodio::Sink,
+    twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    elevenlabs: Elevenlabs,
+}
+
+impl AppResources {
+    /// Creates a new instance of `AppResources` with fresh resources.
+    async fn new() -> Result<Self> {
+        // Initialize OBS client
+        let obs_client = create_obs_client().await?;
+
+        // Initialize audio sink
+        let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+            .expect("Failed to get audio output stream");
+        let sink = rodio::Sink::try_new(&stream_handle)?;
+
+        // Initialize Twitch client
+        let twitch_config = get_chat_config();
+        let (_, twitch_client) = TwitchIRCClient::<
+            SecureTCPTransport,
+            StaticLoginCredentials,
+        >::new(twitch_config);
+
+        // Initialize ElevenLabs client
+        let elevenlabs_auth = Auth::from_env().unwrap();
+        let elevenlabs =
+            Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
+
+        Ok(Self {
+            obs_client,
+            sink,
+            twitch_client,
+            elevenlabs,
+        })
+    }
 }
 
 #[tokio::main]
@@ -83,14 +122,12 @@ async fn main() -> Result<()> {
         }
     }
 
-    // Create 1 Event Loop
-    // Push handles onto the loop
-    // those handlers are things like twitch-chat, twitch-sub, github-sponsor etc.
+    // Create the event loop
     let mut event_loop = events::EventLoop::new();
 
     let args = Args::parse();
 
-    // You can choose a set of features to enable
+    // Determine which features to enable
     let features = if args.enable_all {
         vec![
             "implict_soundeffects".to_string(),
@@ -115,12 +152,11 @@ async fn main() -> Result<()> {
         args.enable
     };
 
+    // Shared resource
     let pool = get_db_pool().await;
-    let (_stream, stream_handle) =
-        subd_audio::get_output_stream("pulse").expect("stream handle");
 
     for feature in features {
-        match feature.as_ref() {
+        match feature.as_str() {
             "twitch_chat_saving" => {
                 println!("Enabling Twitch Chat Saving");
                 event_loop.push(twitch_chat::client::TwitchChat::new(
@@ -128,9 +164,7 @@ async fn main() -> Result<()> {
                     "beginbot".to_string(),
                 )?);
 
-                // TODO: Update this description to be more exact
                 // Saves the message and extracts out some information
-                // for easier routing
                 event_loop.push(
                     twitch_chat::handlers::TwitchMessageHandler::new(
                         pool.clone(),
@@ -142,31 +176,27 @@ async fn main() -> Result<()> {
                     ),
                 );
 
-                // TODO: We want to reconsider our feature boundaries
-                let obs_client = create_obs_client().await?;
+                // Create new resources for this feature
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::voices_handler::VoicesHandler {
                     pool: pool.clone(),
-                    obs_client,
+                    obs_client: resources.obs_client,
                 });
-                continue;
             }
-            // This might be named Wrong
+
             "implict_soundeffects" => {
-                // TODO: This should be abstracted, Works for Arch Linux
-                // Works for Mac
-                // let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::sound_handler::SoundHandler {
-                    sink,
+                    sink: resources.sink,
                     pool: pool.clone(),
                 });
             }
 
             "explicit_soundeffects" => {
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
-                        sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                     },
                 );
@@ -174,324 +204,212 @@ async fn main() -> Result<()> {
 
             "tts" => {
                 println!("Enabling TTS");
-                // Elevenlabs/elevenlabs handles voice messages
-                let elevenlabs_auth = Auth::from_env().unwrap();
-                let elevenlabs = Elevenlabs::new(
-                    elevenlabs_auth,
-                    "https://api.elevenlabs.io/v1/",
-                );
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::elevenlabs_handler::ElevenLabsHandler {
                         pool: pool.clone(),
-                        twitch_client,
-                        sink,
-                        obs_client,
-                        elevenlabs,
+                        twitch_client: resources.twitch_client,
+                        sink: resources.sink,
+                        obs_client: resources.obs_client,
+                        elevenlabs: resources.elevenlabs,
                     },
                 );
             }
 
             "ai_screenshots" => {
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_screenshots_handler::AiScreenshotsHandler {
-                        obs_client,
-                        sink,
+                        obs_client: resources.obs_client,
+                        sink: resources.sink,
                         pool: pool.clone(),
-                        twitch_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
             "ai_screenshots_timer" => {
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_screenshots_timer_handler::AiScreenshotsTimerHandler {
-                        obs_client,
-                        sink,
+                        obs_client: resources.obs_client,
+                        sink: resources.sink,
                         pool: pool.clone(),
-                        twitch_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
             "ai_telephone" => {
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_telephone_handler::AiTelephoneHandler {
-                        obs_client,
-                        sink,
+                        obs_client: resources.obs_client,
+                        sink: resources.sink,
                         pool: pool.clone(),
-                        twitch_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
             "ai_scenes" => {
-                let elevenlabs_auth = Auth::from_env().unwrap();
-                let elevenlabs = Elevenlabs::new(
-                    elevenlabs_auth,
-                    "https://api.elevenlabs.io/v1/",
-                );
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::ai_scenes_handler::AiScenesHandler {
                     pool: pool.clone(),
-                    twitch_client,
-                    sink,
-                    obs_client,
-                    elevenlabs,
+                    twitch_client: resources.twitch_client,
+                    sink: resources.sink,
+                    obs_client: resources.obs_client,
+                    elevenlabs: resources.elevenlabs,
                 });
 
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::music_scenes_handler::MusicScenesHandler {
                         pool: pool.clone(),
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
             }
 
             "channel_rewards" => {
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::reward_handler::RewardHandler {
-                    obs_client,
+                    obs_client: resources.obs_client,
                     pool: pool.clone(),
-                    twitch_client,
+                    twitch_client: resources.twitch_client,
                 });
             }
 
             "skybox" => {
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::skybox_handler::SkyboxHandler {
-                    obs_client,
+                    obs_client: resources.obs_client,
                     pool: pool.clone(),
                 });
 
-                // This checks if Skyboxes are done, every 60 seconds
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::skybox_status_handler::SkyboxStatusHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                         pool: pool.clone(),
                     },
                 );
 
-                // This checks if Skyboxes are done, every 60 seconds
-                let obs_client = create_obs_client().await?;
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::skybox_handler::SkyboxRoutingHandler {
-                        sink,
-                        twitch_client,
-                        obs_client,
+                        sink: resources.sink,
+                        twitch_client: resources.twitch_client,
+                        obs_client: resources.obs_client,
                         pool: pool.clone(),
                     },
                 );
             }
 
             "obs" => {
-                // This really is named wrong
-                // this handles more than OBS
-                // and it's also earlier in the program
-                // but it takes an obs_client and pool none-the-less
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-                let obs_client = create_obs_client().await?;
-                // Do we need to duplicate this?
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::obs_messages_handler::OBSMessageHandler {
-                        obs_client,
-                        twitch_client,
+                        obs_client: resources.obs_client,
+                        twitch_client: resources.twitch_client,
                         pool: pool.clone(),
-                        sink,
+                        sink: resources.sink,
                     },
                 );
 
-                // OBS Hotkeys are controlled here
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::trigger_obs_hotkey_handler::TriggerHotkeyHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
 
-                // OBS Text is controlled here
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::transform_obs_test_handler::TransformOBSTextHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
 
-                // OBS Sources are controlled here
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::source_visibility_handler::SourceVisibilityHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
-                continue;
             }
 
             "stream_character" => {
-                // OBS Stream Characters are controlled here
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::stream_character_handler::StreamCharacterHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
             }
 
             "chat_gpt_response" => {
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::chatgpt_response_handler::ChatGPTResponse {
-                        twitch_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
             "twitch_eventsub" => {
                 println!("Attempting to run Twitch Event Sub");
-                // Twitch EventSub Events
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::twitch_eventsub_handler::TwitchEventSubHandler {
                         pool: pool.clone(),
-                        obs_client,
-                        twitch_client,
+                        obs_client: resources.obs_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
-            // We need to be more specific what this means
             "dynamic_stream_background" => {
-                let obs_client = create_obs_client().await?;
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::stream_background_handler::StreamBackgroundHandler {
-                        obs_client,
+                        obs_client: resources.obs_client,
                     },
                 );
             }
 
             "turbo_bg" => {
                 println!("Turbo BG time");
-
-                let obs_client = create_obs_client().await?;
-
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
-
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                // let (sink, mut queue_rx) = rodio::Sink::new_idle();
-                // println!("{:?}", queue_rx.next());
-                // stream_handle.play_raw(queue_rx)?;
-
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::fal_handler::FalHandler {
-                    // queue_rx: queue_rx,
                     pool: pool.clone(),
-                    sink,
-                    obs_client,
-                    twitch_client,
+                    sink: resources.sink,
+                    obs_client: resources.obs_client,
+                    twitch_client: resources.twitch_client,
                 });
             }
 
             "ai_songs" => {
-                let obs_client = create_obs_client().await?;
-                let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-
-                // Can I do something with this sink now???
-
-                // So I think I might want to wrap this sink
-                // with a mutex and Arc
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
-                    sink,
-                    obs_client,
-                    twitch_client,
+                    sink: resources.sink,
+                    obs_client: resources.obs_client,
+                    twitch_client: resources.twitch_client,
                 });
 
-                let obs_client = create_obs_client().await?;
-                let twitch_config = get_chat_config();
-                let (_, twitch_client) = TwitchIRCClient::<
-                    SecureTCPTransport,
-                    StaticLoginCredentials,
-                >::new(twitch_config);
+                let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_songs_downloader_handler::AISongsDownloader {
                         pool: pool.clone(),
-                        obs_client,
-                        twitch_client,
+                        obs_client: resources.obs_client,
+                        twitch_client: resources.twitch_client,
                     },
                 );
             }
 
             _ => {
                 println!("Unknown Feature: {}", feature);
-                continue;
             }
         }
     }
