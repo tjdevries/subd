@@ -94,6 +94,7 @@ pub async fn generate_audio_by_prompt(
         .header("Content-Type", "application/json")
         .send()
         .await?;
+
     let raw_json = response.text().await?;
     let tmp_file_path =
         format!("tmp/suno_responses/{}.json", chrono::Utc::now().timestamp());
@@ -236,8 +237,16 @@ mod tests {
     use super::*;
     use std::fs;
 
+    // pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
     #[tokio::test]
+    async fn test_get_audio_information() {
+        let id = "f12dda07-2588-4326-b15b-63dece759c5f";
+        let result = get_audio_information(id).await.unwrap();
+        assert_eq!(result.status, "complete");
+        assert_eq!(result.title, "Street Pyro");
+    }
 
+    #[tokio::test]
     async fn test_parsing_suno_json() {
         let f = fs::read_to_string("./test_data/suno_response.json")
             .expect("Failed to open file");
@@ -250,6 +259,7 @@ mod tests {
             suno_responses[0].id,
             "f12dda07-2588-4326-b15b-63dece759c5f"
         );
+        assert_eq!(suno_responses[0].title, "Street Pyro");
         assert_eq!(suno_responses[0].user_id, "");
         assert_eq!(suno_responses[0].play_count, 0);
         assert_eq!(suno_responses[0].image_url,

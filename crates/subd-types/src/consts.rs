@@ -78,6 +78,10 @@ pub fn get_database_url() -> String {
     dotenv::var("DATABASE_URL").expect("DATABASE_URL to exist")
 }
 
+pub fn get_test_database_url() -> String {
+    dotenv::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL to exist")
+}
+
 pub fn get_twitch_broadcaster_username() -> String {
     dotenv::var("SUBD_TWITCH_BROADCASTER_USERNAME")
         .expect("SUBD_TWITCH_BROADCASTER_USERNAME to exist")
