@@ -97,7 +97,7 @@ pub async fn handle_telephone_requests(
                 id.to_string(),
             )
             .await;
-            return Ok(());
+            Ok(())
         }
         "!carlphone" => {
             let (_, unique_identifier) =
@@ -111,7 +111,7 @@ pub async fn handle_telephone_requests(
                 strength: None,
             };
             match ai_telephone::telephone(
-                &obs_client,
+                obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
@@ -121,11 +121,11 @@ pub async fn handle_telephone_requests(
             .await
             {
                 Ok(_) => {
-                    return Ok(());
+                    Ok(())
                 }
                 Err(e) => {
                     eprintln!("Error Carlphone Prompt: {}", e);
-                    return Ok(());
+                    Ok(())
                 }
             }
         }
@@ -138,7 +138,7 @@ pub async fn handle_telephone_requests(
             };
 
             match ai_telephone::telephone(
-                &obs_client,
+                obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
@@ -148,17 +148,17 @@ pub async fn handle_telephone_requests(
             .await
             {
                 Ok(_) => {
-                    return Ok(());
+                    Ok(())
                 }
                 Err(e) => {
                     eprintln!("Error Telephone Prompt: {}", e);
-                    return Ok(());
+                    Ok(())
                 }
             }
         }
 
         _ => {
-            return Ok(());
+            Ok(())
         }
-    };
+    }
 }

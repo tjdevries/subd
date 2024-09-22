@@ -193,12 +193,9 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
 
     // This is required for EventSub's to work!
     // If we don't Twitch's challenge, you don't events
-    match eventsub_body.challenge {
-        Some(challenge) => {
-            println!("We got a challenge!");
-            return (StatusCode::OK, challenge);
-        }
-        _ => {}
+    if let Some(challenge) = eventsub_body.challenge {
+        println!("We got a challenge!");
+        return (StatusCode::OK, challenge);
     }
 
     match eventsub_body.subscription.type_field.as_str() {
@@ -250,7 +247,7 @@ async fn trigger_full_scene(
 ) -> Result<()> {
     match dalle_prompt {
         Some(prompt) => {
-            println!("\n\tDalle Prompt: {}", prompt.clone().to_string());
+            println!("\n\tDalle Prompt: {}", prompt.clone());
             let _ =
                 tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                     voice: Some(voice),
@@ -300,7 +297,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
             let _ = redemptions::save_redemptions(
                 &pool,
                 command,
-                reward_cost.clone(),
+                reward_cost,
                 user_name,
                 id,
                 reward_id,
@@ -320,7 +317,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
                 (reward_cost_as_float * increase_mult).round() as usize;
             println!(
                 "Updating Reward: {}- {}",
-                reward_id.to_string(),
+                reward_id,
                 new_cost
             );
             let _ = reward_manager
@@ -365,10 +362,10 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     let _ = find_or_save_redemption(
         pool.clone(),
         reward_manager,
-        event.id.clone(),
+        event.id,
         command.clone(),
-        reward.id.clone(),
-        reward.cost.clone(),
+        reward.id,
+        reward.cost,
         event.user_name.clone(),
         user_input.clone(),
     )

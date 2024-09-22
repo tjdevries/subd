@@ -232,20 +232,17 @@ impl EventHandler for SoundHandler {
 
             // If the character
             // If we have a voice assigned, then we fire off an elevenlabs Request
-            match character.voice {
-                Some(voice) => {
-                    let _ = tx.send(Event::ElevenLabsRequest(
-                        subd_types::ElevenLabsRequest {
-                            voice: Some(voice),
-                            message: speech_bubble_text,
-                            voice_text,
-                            username: msg.user_name,
-                            source: character.source,
-                            ..Default::default()
-                        },
-                    ));
-                }
-                None => {}
+            if let Some(voice) = character.voice {
+                let _ = tx.send(Event::ElevenLabsRequest(
+                    subd_types::ElevenLabsRequest {
+                        voice: Some(voice),
+                        message: speech_bubble_text,
+                        voice_text,
+                        username: msg.user_name,
+                        source: character.source,
+                        ..Default::default()
+                    },
+                ));
             }
 
             // Only continue if we have the implicit_soundeffects enabled

@@ -95,7 +95,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 1000;
             let contract = "0x77d4b54e91822e9799ab0900876d6b1cda752706";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -109,7 +109,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 480000399;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -123,7 +123,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 233000986;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -137,7 +137,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 59000599;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -151,7 +151,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 129001023;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -165,7 +165,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 138000999;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -179,7 +179,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 225000999;
             let contract = "0xa7d8d9ef8d8ce8992df33d8b8cf4aebabd5bd270";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -193,7 +193,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 428000449;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,
@@ -207,7 +207,7 @@ pub async fn handle_stream_background_commands(
             let upper_bound = 457000776;
             let contract = "0x99a9b7c1116f9ceeb1652de04d5969cce509b069";
             let _ = art_blocks::updates_ab_browser(
-                &obs_client,
+                obs_client,
                 contract.to_string(),
                 lower_bound,
                 upper_bound,

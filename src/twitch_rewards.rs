@@ -100,7 +100,7 @@ pub async fn find_by_title(
         twitch_id: res.twitch_id,
         enabled: res.enabled,
     };
-    return Ok(model);
+    Ok(model)
 }
 
 pub async fn find_all_ids_except(
@@ -136,7 +136,7 @@ pub async fn find_all_ids_for_twitch_id(
     let res = sqlx::query!( "SELECT twitch_id, cost FROM twitch_rewards WHERE twitch_id::text != $1", id).fetch_all(pool).await?;
 
     let uuids = res.iter().map(|r| (r.twitch_id, r.cost)).collect();
-    return Ok(uuids);
+    Ok(uuids)
 }
 
 pub async fn find_by_id(

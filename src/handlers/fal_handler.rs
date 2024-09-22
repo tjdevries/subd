@@ -94,7 +94,7 @@ pub async fn handle_fal_commands(
                 .map(AsRef::as_ref)
                 .collect::<Vec<&str>>()
                 .join(" ");
-            twitch_stream_state::set_ai_background_theme(pool, &theme).await?;
+            twitch_stream_state::set_ai_background_theme(pool, theme).await?;
         }
 
         "!talk" => {

@@ -142,12 +142,12 @@ pub async fn handle_skybox_commands(
             let skybox_id: &str = splitmsg.get(1).unwrap_or(&default_skybox_id);
             let file_path =
                 "/home/begin/code/BeginGPT/tmp/current/previous.txt";
-            if let Err(e) = skybox::write_to_file(file_path, &skybox_id) {
+            if let Err(e) = skybox::write_to_file(file_path, skybox_id) {
                 eprintln!("Error writing to file: {}", e);
             }
 
             println!("Attempting to Return to previous Skybox! {}", skybox_id);
-            return Ok(());
+            Ok(())
         }
 
         // This needs to take an ID
@@ -163,7 +163,7 @@ pub async fn handle_skybox_commands(
                     .await
                     .map_err(|e| e.to_string())?;
             }
-            return Ok(());
+            Ok(())
         }
 
         "!check_skybox" => {
@@ -173,7 +173,7 @@ pub async fn handle_skybox_commands(
 
             // obs_client
             let _ = check_skybox_status_and_save(9612607).await;
-            return Ok(());
+            Ok(())
         }
 
         // We need to eventually take in style IDs
@@ -208,7 +208,7 @@ pub async fn handle_skybox_commands(
                     }));
             }
 
-            return Ok(());
+            Ok(())
         }
 
         "!remix" => {
@@ -224,13 +224,13 @@ pub async fn handle_skybox_commands(
             }
 
             println!("Attempting to  Remix! {}", remix_info);
-            return Ok(());
+            Ok(())
         }
 
         _ => {
-            return Ok(());
+            Ok(())
         }
-    };
+    }
 }
 
 // People need to supply their own default if none is returned
@@ -238,7 +238,8 @@ pub async fn handle_skybox_commands(
 pub fn find_style_id(splitmsg: Vec<String>) -> Result<i32, String> {
     let range = 1..=47;
     // we need to check the range
-    let res = splitmsg
+    
+    splitmsg
         .get(1)
         .ok_or("No Style ID Arg found".to_string())
         .map(|m| m.parse::<i32>())?
@@ -248,8 +249,7 @@ pub fn find_style_id(splitmsg: Vec<String>) -> Result<i32, String> {
                 .contains(&m)
                 .then_some(m)
                 .ok_or("Error finding Style ID".to_string())
-        });
-    res
+        })
 }
 
 // Where does this belong
@@ -262,13 +262,11 @@ pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     for (idx, ch) in s.char_indices() {
         current_count += 1;
 
-        if ch.to_string() == "," || idx == s.len() - 1 {
-            if current_count >= chunk_size {
-                chunks.push(s[last_split..=idx].to_string());
+        if (ch.to_string() == "," || idx == s.len() - 1) && current_count >= chunk_size {
+            chunks.push(s[last_split..=idx].to_string());
 
-                last_split = idx + 1;
-                current_count = 0;
-            }
+            last_split = idx + 1;
+            current_count = 0;
         }
     }
 

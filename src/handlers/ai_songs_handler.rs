@@ -79,7 +79,7 @@ async fn handle_requests(
     msg: &UserMessage,
 ) -> Result<()> {
     // Extract the command from the split message
-    let command = splitmsg.get(0).map(|s| s.as_str()).unwrap_or("");
+    let command = splitmsg.first().map(|s| s.as_str()).unwrap_or("");
 
     match command {
         // Commands accessible to all users

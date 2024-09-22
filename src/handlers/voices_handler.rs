@@ -282,7 +282,7 @@ pub async fn handle_voices_commands(
             }
 
             // Disable Global Voice Mode
-            twitch_stream_state::turn_off_global_voice(&pool).await
+            twitch_stream_state::turn_off_global_voice(pool).await
         }
 
         "!random" => {
@@ -303,7 +303,7 @@ pub async fn handle_voices_commands(
             if not_beginbot {
                 return Ok(());
             }
-            twitch_stream_state::disable_stable_diffusion(&pool).await?;
+            twitch_stream_state::disable_stable_diffusion(pool).await?;
             Ok(())
         }
 
@@ -312,7 +312,7 @@ pub async fn handle_voices_commands(
                 return Ok(());
             }
             println!("Turning on Dalle Mode");
-            twitch_stream_state::enable_stable_diffusion(&pool).await?;
+            twitch_stream_state::enable_stable_diffusion(pool).await?;
             Ok(())
         }
 
@@ -321,7 +321,7 @@ pub async fn handle_voices_commands(
             if not_beginbot {
                 return Ok(());
             }
-            twitch_stream_state::turn_off_dalle_mode(&pool).await?;
+            twitch_stream_state::turn_off_dalle_mode(pool).await?;
             Ok(())
         }
 
@@ -330,7 +330,7 @@ pub async fn handle_voices_commands(
                 return Ok(());
             }
             println!("Turning on Dalle Mode");
-            twitch_stream_state::turn_on_dalle_mode(&pool).await?;
+            twitch_stream_state::turn_on_dalle_mode(pool).await?;
             Ok(())
         }
 
@@ -339,7 +339,7 @@ pub async fn handle_voices_commands(
                 return Ok(());
             }
 
-            twitch_stream_state::turn_off_global_voice(&pool).await?;
+            twitch_stream_state::turn_off_global_voice(pool).await?;
             Ok(())
         }
 
@@ -349,7 +349,7 @@ pub async fn handle_voices_commands(
             }
 
             println!("Turning on Global Voice");
-            twitch_stream_state::turn_on_global_voice(&pool).await?;
+            twitch_stream_state::turn_on_global_voice(pool).await?;
 
             Ok(())
         }
@@ -459,9 +459,9 @@ fn parse_transform_settings(
 
     let settings: Vec<&str> = transform_settings.split('/').collect();
 
-    if settings.len() > 0 {
+    if !settings.is_empty() {
         if let Ok(parsed_pitch) = settings[0].parse::<i32>() {
-            if parsed_pitch >= -1000 && parsed_pitch <= 1000 {
+            if (-1000..=1000).contains(&parsed_pitch) {
                 pitch = parsed_pitch;
             }
         }
@@ -574,7 +574,7 @@ async fn save_voice_id_to_voices_json(
     name: &str,
     voice_id: String,
 ) -> Result<()> {
-    let filename = format!("./data/voices.json");
+    let filename = "./data/voices.json".to_string();
     let mut file = fs::File::open(filename.clone())?;
     let mut data = String::new();
     file.read_to_string(&mut data)?;
@@ -600,9 +600,9 @@ async fn split_song(
     let split_file_name =
         format!("{}{}-{}-%d.wav", split_mp3_folder, name, index);
     let _ffmpeg_status = Command::new("ffmpeg")
-        .args(&[
+        .args([
             "-i",
-            &cloned_mp3,
+            cloned_mp3,
             "-f",
             "segment",
             "-segment_time",
@@ -625,7 +625,7 @@ async fn download_with_yt_dlp(
     println!("{index} URL {url}");
     let cloned_mp3 = format!("./tmp/cloned/{}-{}.wav", name, index);
     let _ffmpeg_status = Command::new("yt-dlp")
-        .args(&["-x", "--audio-format", "wav", &url, "-o", &cloned_mp3])
+        .args(["-x", "--audio-format", "wav", url, "-o", &cloned_mp3])
         .status()
         .expect("Failed to execute ffmpeg");
     Ok(cloned_mp3)
@@ -635,7 +635,7 @@ async fn _crop_audio(input_file: &str, crop_time: usize) -> Result<String> {
     let output_file =
         format!("{}_cropped.wav", input_file.trim_end_matches(".wav"));
     let _ffmpeg_status = Command::new("ffmpeg")
-        .args(&[
+        .args([
             "-i",
             input_file,
             "-t",
@@ -665,7 +665,7 @@ async fn clone_voice_with_elevenlabs(
     name: &str,
     split_mp3_folder: &str,
 ) -> Result<String> {
-    let vec_of_mp3s = load_folder_into_vec_of_mp3s(&split_mp3_folder).await?;
+    let vec_of_mp3s = load_folder_into_vec_of_mp3s(split_mp3_folder).await?;
 
     let voice_clone = VoiceClone {
         name: name.to_string(),

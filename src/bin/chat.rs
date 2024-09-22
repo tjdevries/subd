@@ -33,7 +33,6 @@ use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tracing::info;
-use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
 // use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
@@ -352,7 +351,7 @@ async fn handle_yew(
                 Err(err) => println!("SOME YEW FAILED WITH: {:?}", err),
             };
 
-            ()
+            
         });
     }
 

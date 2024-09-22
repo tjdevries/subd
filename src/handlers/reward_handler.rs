@@ -90,7 +90,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
             let flash_sale_msg =
                 flash_sale(title, reward_manager, pool).await?;
             println!("{}", flash_sale_msg);
-            let _ = send_message(&twitch_client, flash_sale_msg).await;
+            let _ = send_message(twitch_client, flash_sale_msg).await;
         }
         "!blowout_sale" => {
             if not_beginbot {
@@ -115,7 +115,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
                 }
             }
 
-            let _ = send_message(&twitch_client, "BLOWOUT SALE!!! ALL SOUNDS ARE GOING FOR CHEAP. CHEAP. CHEAP! ").await;
+            let _ = send_message(twitch_client, "BLOWOUT SALE!!! ALL SOUNDS ARE GOING FOR CHEAP. CHEAP. CHEAP! ").await;
         }
 
         "!bootstrap_rewards" => {
@@ -154,7 +154,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
             let new_cost = 10000;
             for scene in ai_scenes.scenes {
                 let reward_res = match twitch_rewards::find_by_title(
-                    &pool,
+                    pool,
                     scene.reward_title.to_string(),
                 )
                 .await
@@ -171,7 +171,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
                 }
 
                 let update_cost_result = twitch_rewards::update_cost(
-                    &pool,
+                    pool,
                     scene.reward_title,
                     new_cost as i32,
                 )
@@ -182,7 +182,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
             }
 
             let _ = send_message(
-                &twitch_client,
+                twitch_client,
                 "INFLATION HIT! ALL PRICES RAISED TO 10000!",
             )
             .await;
@@ -200,20 +200,20 @@ pub async fn flash_sale<C: twitch_api::HttpClient>(
     // This goes in subd-twitch
     // If we don't have a reward for that Thang
     let reward_res =
-        twitch_rewards::find_by_title(&pool, title.to_string()).await?;
+        twitch_rewards::find_by_title(pool, title.to_string()).await?;
     let flash_cost = 100;
     let _ = reward_manager
         .update_reward(reward_res.twitch_id.to_string(), flash_cost)
         .await;
 
-    let update = twitch_rewards::update_cost(
-        &pool,
+    twitch_rewards::update_cost(
+        pool,
         reward_res.title.to_string(),
         flash_cost as i32,
     )
     .await?;
 
-    println!("Update: {:?}", update);
+    println!("Update: {:?}", ());
     let msg = format!(
         "Flash Sale! {} - New Low Price! {}",
         reward_res.title, flash_cost

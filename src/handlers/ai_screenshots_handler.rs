@@ -93,7 +93,7 @@ pub async fn handle_ai_screenshots(
     );
 
     // I need a list of all models
-    let models = vec!["dalle".to_string(), "sd".to_string()];
+    let models = ["dalle".to_string(), "sd".to_string()];
     // let default_model = "dalle".to_string();
     let default_model = "sd".to_string();
     let model = splitmsg.get(1).unwrap_or(&default_model);
@@ -122,7 +122,7 @@ pub async fn handle_ai_screenshots(
                 screenshot_source,
             )
             .await;
-            return Ok(());
+            Ok(())
         }
 
         "!new_scene" | "edit_scene" | "!ai_scene" => {
@@ -136,7 +136,7 @@ pub async fn handle_ai_screenshots(
                 screenshot_source,
             )
             .await;
-            return Ok(());
+            Ok(())
         }
 
         "!new_begin" | "edit_begin" | "!ai_begin" => {
@@ -150,13 +150,13 @@ pub async fn handle_ai_screenshots(
                 screenshot_source,
             )
             .await;
-            return Ok(());
+            Ok(())
         }
 
         _ => {
-            return Ok(());
+            Ok(())
         }
-    };
+    }
 }
 
 async fn screenshot_routing(

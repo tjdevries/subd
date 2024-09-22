@@ -218,7 +218,7 @@ impl EventHandler for ElevenLabsHandler {
                         "-200".to_string(),
                     )
                 })
-                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
+                .and_then(subd_elevenlabs::add_reverb);
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
@@ -234,7 +234,7 @@ impl EventHandler for ElevenLabsHandler {
                         "-350".to_string(),
                     )
                 })
-                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
+                .and_then(subd_elevenlabs::add_reverb);
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };
@@ -245,7 +245,7 @@ impl EventHandler for ElevenLabsHandler {
                 let res = subd_elevenlabs::normalize_tts_file(
                     local_audio_path.clone(),
                 )
-                .and_then(|audio_path| subd_elevenlabs::add_reverb(audio_path));
+                .and_then(subd_elevenlabs::add_reverb);
                 if let Ok(audio_path) = res {
                     local_audio_path = audio_path
                 };

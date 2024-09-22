@@ -146,7 +146,7 @@ pub fn build_chat_twirl_request(
     req.easing_type_index = easing_type_index;
     req.easing_function_index = easing_function_index;
 
-    return req;
+    req
 }
 
 // Parsing Chat
@@ -225,7 +225,7 @@ pub fn build_chat_move_source_request(
 
     req.scene = scene;
 
-    return req;
+    req
 }
 
 pub fn build_wide_request(
@@ -245,16 +245,14 @@ pub fn build_wide_request(
             }
             WideArgPosition::X(_x) => {
                 if let Some(x) = splitmsg
-                    .get(index)
-                    .and_then(|m| Some(m.parse::<f32>().unwrap_or(100.0)))
+                    .get(index).map(|m| m.parse::<f32>().unwrap_or(100.0))
                 {
                     req.x = x
                 }
             }
             WideArgPosition::Duration(_duration) => {
                 if let Some(duration) = splitmsg
-                    .get(index)
-                    .and_then(|m| Some(m.parse::<u64>().unwrap_or(3000)))
+                    .get(index).map(|m| m.parse::<u64>().unwrap_or(3000))
                 {
                     req.duration = duration
                 }
@@ -262,7 +260,7 @@ pub fn build_wide_request(
         }
     }
 
-    return Ok(req);
+    Ok(req)
 }
 
 #[cfg(test)]

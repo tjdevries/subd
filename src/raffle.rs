@@ -38,7 +38,7 @@ impl RaffleState {
             return Ok(false);
         }
 
-        if self.users.contains_key(&user_id) {
+        if self.users.contains_key(user_id) {
             return Ok(false);
         }
 
@@ -105,10 +105,10 @@ impl RaffleState {
                 .or_insert(1);
         }
 
-        return Some(RaffleStatus::Ongoing {
+        Some(RaffleStatus::Ongoing {
             title: self.title.clone(),
             entries,
-        });
+        })
     }
 }
 

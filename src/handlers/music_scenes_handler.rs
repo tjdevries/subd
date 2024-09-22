@@ -120,77 +120,74 @@ async fn handle_commands(
         let mut set_global_voice = true;
 
         if let Some(details) = scene_details {
-            match details.playlist_folder {
-                Some(playlist_folder) => {
-                    match get_random_mp3_file_name(playlist_folder) {
-                        Some(music_filename) => {
-                            let items = obs_client
+            if let Some(playlist_folder) = details.playlist_folder {
+                match get_random_mp3_file_name(playlist_folder) {
+                    Some(music_filename) => {
+                        let items = obs_client
+                            .scene_items()
+                            .list(background_scene)
+                            .await?;
+                        for item in items {
+                            let enabled = obs_client
                                 .scene_items()
-                                .list(background_scene)
-                                .await?;
-                            for item in items {
-                                let enabled = obs_client
-                                    .scene_items()
-                                    .enabled(background_scene, item.id)
-                                    .await
-                                    .unwrap();
+                                .enabled(background_scene, item.id)
+                                .await
+                                .unwrap();
 
-                                if enabled && item.source_name == details.music
-                                {
-                                    println!("We are just changing the music!");
+                            if enabled && item.source_name == details.music
+                            {
+                                println!("We are just changing the music!");
 
-                                    let _ = obs_source::hide_source(
-                                        background_scene,
-                                        details.music,
-                                        obs_client,
-                                    )
-                                    .await;
-                                    set_global_voice = false;
-                                }
-                            }
-
-                            // BackgroundMusic scene
-                            // Now we just need to update the Ffmpeg Source
-                            // Now I have to use this model
-                            let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
-
-                            let path = Path::new(&music_filename);
-
-                            let media_source = obws::requests::custom::source_settings::FfmpegSource{
-                                is_local_file: true,
-                                local_file: path,
-                                looping: true,
-                                restart_on_activate: true,
-                                close_when_inactive: true,
-                                clear_on_media_end: false,
-                                speed_percent: 100,
-                                color_range,
-
-                                // Non-Local settings
-                                buffering_mb: 1,
-                                seekable: false,
-                                input: "",
-                                input_format: "",
-                                reconnect_delay_sec: 1,
-                                // ..Default::default()
-                            };
-                            let set_settings =
-                                obws::requests::inputs::SetSettings {
-                                    settings: &media_source,
-                                    input: details.music,
-                                    overlay: Some(true),
-                                };
-                            let _ = obs_client
-                                .inputs()
-                                .set_settings(set_settings)
+                                let _ = obs_source::hide_source(
+                                    background_scene,
+                                    details.music,
+                                    obs_client,
+                                )
                                 .await;
+                                set_global_voice = false;
+                            }
                         }
-                        None => {
-                            println!("Could not find a random mp3 file in the playlist folder");
-                        }
+
+                        // BackgroundMusic scene
+                        // Now we just need to update the Ffmpeg Source
+                        // Now I have to use this model
+                        let color_range = obws::requests::custom::source_settings::ColorRange::Auto;
+
+                        let path = Path::new(&music_filename);
+
+                        let media_source = obws::requests::custom::source_settings::FfmpegSource{
+                            is_local_file: true,
+                            local_file: path,
+                            looping: true,
+                            restart_on_activate: true,
+                            close_when_inactive: true,
+                            clear_on_media_end: false,
+                            speed_percent: 100,
+                            color_range,
+
+                            // Non-Local settings
+                            buffering_mb: 1,
+                            seekable: false,
+                            input: "",
+                            input_format: "",
+                            reconnect_delay_sec: 1,
+                            // ..Default::default()
+                        };
+                        let set_settings =
+                            obws::requests::inputs::SetSettings {
+                                settings: &media_source,
+                                input: details.music,
+                                overlay: Some(true),
+                            };
+                        let _ = obs_client
+                            .inputs()
+                            .set_settings(set_settings)
+                            .await;
+                    }
+                    None => {
+                        println!("Could not find a random mp3 file in the playlist folder");
                     }
                 }
-                None => {}
             };
 
             // Hide all Background Music Sources
@@ -268,7 +265,7 @@ async fn handle_commands(
 
             // Enable Global Voice Mode
             if set_global_voice {
-                twitch_stream_state::turn_on_global_voice(&pool).await?;
+                twitch_stream_state::turn_on_global_voice(pool).await?;
             }
         } else {
             println!("Could not find voice info for command.");

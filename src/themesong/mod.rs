@@ -179,7 +179,7 @@ pub async fn should_play_themesong(
         return Ok(false);
     }
 
-    if !can_user_access_themesong(&user_roles) {
+    if !can_user_access_themesong(user_roles) {
         return Ok(false);
     }
 
@@ -388,6 +388,12 @@ impl events::EventHandler for ThemesongPlayer {
 }
 
 pub struct ThemesongListener {}
+
+impl Default for ThemesongListener {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ThemesongListener {
     pub fn new() -> Self {

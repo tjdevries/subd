@@ -55,7 +55,7 @@ impl EventHandler for SkyboxStatusHandler {
 
                         println!("\tFind a skybox_status: {:?}", file_url);
 
-                        if file_url != "" {
+                        if !file_url.is_empty() {
                             let completed_at =
                                 sqlx::types::time::OffsetDateTime::now_utc();
 

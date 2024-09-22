@@ -89,13 +89,13 @@ pub async fn handle_requests(
                 None => return Ok(()),
             };
 
-            return subd_suno::download_and_play(
+            subd_suno::download_and_play(
                 twitch_client,
                 tx,
                 msg.user_name,
                 &id.to_string(),
             )
-            .await;
+            .await
         }
 
         "!create_song" | "!song" => {
@@ -131,13 +131,13 @@ pub async fn handle_requests(
                 }
                 Err(e) => {
                     eprintln!("Error generating audio: {}", e);
-                    return Ok(());
+                    Ok(())
                 }
             }
         }
 
         _ => {
-            return Ok(());
+            Ok(())
         }
     }
 }
