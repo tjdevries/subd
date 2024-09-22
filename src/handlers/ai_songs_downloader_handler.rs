@@ -6,84 +6,23 @@ use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use subd_types::Event;
-use subd_types::UserMessage;
-use uuid::Uuid;
-// use rodio::Decoder;
-// use rodio::Sink;
 use std::fs::File;
 use std::io::BufReader;
 use std::thread;
+use subd_types::Event;
+use subd_types::UserMessage;
 use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-//use url::Url;
-//use super::fal_handler;
+use uuid::Uuid;
 
-// 3. We create a `reqwest::Client` outside the loop to reuse it for better performance.
-// 4. We use the `client.get(&cdn_url).send().await?` pattern instead of `reqwest::get` for consistency with the client usage.
 pub struct AISongsDownloader {
     pub obs_client: OBSClient,
     pub pool: PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct SunoResponse {
-    pub id: String,
-    pub video_url: String,
-    pub audio_url: String,
-    pub image_url: String,
-    pub image_large_url: Option<String>,
-    pub is_video_pending: Option<bool>,
-
-    #[serde(default)]
-    pub major_model_version: String,
-    pub model_name: String,
-
-    #[serde(default)]
-    pub metadata: Metadata,
-
-    #[serde(default)]
-    pub display_name: String,
-
-    #[serde(default)]
-    pub handle: String,
-    #[serde(default)]
-    pub is_handle_updated: bool,
-    #[serde(default)]
-    pub avatar_image_url: String,
-    #[serde(default)]
-    pub is_following_creator: bool,
-    #[serde(default)]
-    pub user_id: String,
-    #[serde(default)]
-    pub created_at: String,
-    #[serde(default)]
-    pub status: String,
-    #[serde(default)]
-    pub title: String,
-    #[serde(default)]
-    pub play_count: i32,
-    #[serde(default)]
-    pub upvote_count: i32,
-    #[serde(default)]
-    pub is_public: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Metadata {
-    pub tags: String,
-    pub prompt: String,
-    pub gpt_description_prompt: String,
-    #[serde(rename = "type")]
-    pub type_field: String,
-    pub duration: f64,
-    pub refund_credits: bool,
-    pub stream: bool,
 }
 
 #[async_trait]
