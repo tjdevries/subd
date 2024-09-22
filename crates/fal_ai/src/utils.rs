@@ -118,18 +118,6 @@ fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
     Ok((mime_type, base64_data))
 }
 
-//async fn download_image(url: &str) -> Result<Bytes> {
-//    let client = ReqwestClient::new();
-//    let response = client.get(url).send().await.with_context(|| {
-//        format!("Failed to download image from URL: {}", url)
-//    })?;
-//    let image_bytes = response
-//        .bytes()
-//        .await
-//        .with_context(|| "Failed to get bytes from image response")?;
-//    Ok(image_bytes)
-//}
-
 async fn save_image_bytes(
     image_bytes: &[u8],
     main_filename: &str,
