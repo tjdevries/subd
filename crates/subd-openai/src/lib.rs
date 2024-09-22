@@ -1,6 +1,3 @@
-// Code here
-// use anyhow::Error;
-use ai_images;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use reqwest;
@@ -105,7 +102,7 @@ pub async fn ask_gpt_vision2(
     let full_path = match image_url {
         Some(url) => url.to_string(),
         None => {
-            let base64_image = ai_images::encode_image(image_path)?;
+            let base64_image = subd_image_utils::encode_image(image_path)?;
             format!("data:image/jpeg;base64,{}", base64_image)
         }
     };

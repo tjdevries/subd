@@ -12,6 +12,7 @@ subd-types = { path = "crates/subd-types" }
 subd-macros = { path = "crates/subd-macros" }
 subd-audio = { path = "crates/subd-audio" }
 subd-openai = { path = "crates/subd-openai" }
+subd-image-utils = { path = "crates/subd-image-utils" }
 twitch_chat = { path = "crates/twitch_chat" }
 twitch_service = { path = "crates/twitch_service" }
 twitch_stream_state = { path = "crates/twitch_stream_state" }
