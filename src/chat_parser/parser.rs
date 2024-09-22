@@ -274,7 +274,7 @@ mod tests {
     async fn test_filters() {
         // let default_filter_name = "3D-Transform-Perspective".to_string();
         // klet default_filter_name = "3D-Transform-Orthographic".to_string();
-        let default_filter_name = "3D-Transform-Orthographic".to_string();
+        let _default_filter_name = "3D-Transform-Orthographic".to_string();
 
         // This is used to find inf about filters
         // not an actual test

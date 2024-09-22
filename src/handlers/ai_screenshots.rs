@@ -1,5 +1,5 @@
-use crate::telephone;
 use ai_images::image_generation;
+use ai_telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
@@ -173,11 +173,11 @@ async fn screenshot_routing(
             username: "beginbot".to_string(),
             amount: 1,
         };
-        telephone::create_screenshot_variation(
+        ai_telephone::create_screenshot_variation(
             sink,
             obs_client,
             filename,
-            telephone::ImageRequestType::Dalle(req),
+            ai_telephone::ImageRequestType::Dalle(req),
             prompt,
             source,
             None,

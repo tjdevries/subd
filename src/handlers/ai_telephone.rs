@@ -1,5 +1,5 @@
-use crate::telephone;
 use ai_images::image_generation;
+use ai_telephone;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
@@ -92,9 +92,11 @@ pub async fn handle_telephone_requests(
         "!old_telephone" => {
             // we need to take an ID
             let id = splitmsg.get(1).unwrap();
-            let _ =
-                telephone::old_obs_telephone_scene(obs_client, id.to_string())
-                    .await;
+            let _ = ai_telephone::old_obs_telephone_scene(
+                obs_client,
+                id.to_string(),
+            )
+            .await;
             return Ok(());
         }
         "!carlphone" => {
@@ -108,13 +110,13 @@ pub async fn handle_telephone_requests(
                 additional_archive_dir: None,
                 strength: None,
             };
-            match telephone::telephone(
+            match ai_telephone::telephone(
                 &obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
                 5,
-                &telephone::ImageRequestType::StableDiffusion(req),
+                &ai_telephone::ImageRequestType::StableDiffusion(req),
             )
             .await
             {
@@ -135,13 +137,13 @@ pub async fn handle_telephone_requests(
                 amount: 1,
             };
 
-            match telephone::telephone(
+            match ai_telephone::telephone(
                 &obs_client,
                 sink,
                 image_url.to_string(),
                 prompt.clone(),
                 5,
-                &telephone::ImageRequestType::Dalle(req),
+                &ai_telephone::ImageRequestType::Dalle(req),
             )
             .await
             {

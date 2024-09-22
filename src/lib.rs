@@ -6,7 +6,6 @@ pub mod handlers;
 pub mod raffle;
 pub mod redemptions;
 pub mod redirect;
-pub mod telephone;
 pub mod themesong;
 pub mod twitch_rewards;
 pub mod users;
