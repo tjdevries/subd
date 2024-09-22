@@ -41,7 +41,6 @@ pub struct SunoResponse {
 }
 
 impl SunoResponse {
-    /// Creates a new builder for `SunoResponse`.
     pub fn builder() -> SunoResponseBuilder {
         SunoResponseBuilder::default()
     }
