@@ -103,8 +103,6 @@ impl SunoResponseBuilder {
         self
     }
 
-    // Add builder methods for other fields similarly...
-
     pub fn metadata(mut self, metadata: Metadata) -> Self {
         self.metadata = Some(metadata);
         self

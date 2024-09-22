@@ -1,10 +1,9 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use reqwest::Client;
 use rodio::{Decoder, Sink};
 use sqlx::types::Uuid;
 use std::fs::File;
 use std::io::BufReader;
-// use std::process::id;
 use tokio::fs;
 use tokio::sync::broadcast;
 use twitch_chat::client::send_message;
@@ -175,62 +174,26 @@ pub async fn parse_suno_response_download_and_play(
         .get(index)
         .ok_or_else(|| anyhow!("No song data at index {}", index))?;
 
-    // Deserialize into SunoResponse
-    let mut suno_response: models::SunoResponse =
+    let suno_response: models::SunoResponse =
         serde_json::from_value(song_data.clone())
-            .context("Failed to deserialize song data")?;
-
-    // This is dumb
-    // we should deserialize
-    // If you need to modify or set additional fields
-    suno_response = models::SunoResponse::builder()
-        .id(suno_response.id)
-        .audio_url(suno_response.audio_url)
-        .title(suno_response.title)
-        //.metadata
-        //.prompt(suno_response.metadata.prompt)
-        .lyric(suno_response.lyric.unwrap_or("".to_string()))
-        .build();
-
-    let song_id = Uuid::parse_str(&suno_response.id)
-        .map_err(|e| anyhow!("Invalid UUID {}: {}", suno_response.id, e))?;
-    //let id = song_data
-    //    .get("id")
-    //    .and_then(|v| v.as_str())
-    //    .ok_or_else(|| anyhow!("Missing 'id' in song data"))?;
-
-    //let lyrics = song_data
-    //    .get("lyric")
-    //    .and_then(|v| v.as_str())
-    //    .unwrap_or("");
-    let title = song_data
-        .get("title")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    //let prompt = song_data
-    //    .get("prompt")
-    //    .and_then(|v| v.as_str())
-    //    .unwrap_or("");
-    let tags = song_data.get("tags").and_then(|v| v.as_str()).unwrap_or("");
-    let audio_url = song_data
-        .get("audio_url")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let gpt_description_prompt = song_data
-        .get("gpt_description_prompt")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+            .expect("Failed to parse JSON");
 
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
+    let song_id = Uuid::parse_str(&suno_response.id)?;
+
+    // This should be the builder
     let new_song = ai_playlist::models::ai_songs::Model {
         song_id,
-        title: title.to_string(),
-        tags: tags.to_string(),
+        title: suno_response.title.to_string(),
+        tags: suno_response.metadata.tags.to_string(),
         prompt: suno_response.metadata.prompt,
         username: user_name.clone(),
-        audio_url: audio_url.to_string(),
+        audio_url: suno_response.audio_url.to_string(),
         lyric: suno_response.lyric,
-        gpt_description_prompt: gpt_description_prompt.to_string(),
+        gpt_description_prompt: suno_response
+            .metadata
+            .gpt_description_prompt
+            .to_string(),
         last_updated: Some(created_at),
         created_at: Some(created_at),
     };
@@ -274,14 +237,26 @@ mod tests {
     use std::fs;
 
     #[tokio::test]
-    #[ignore]
-    async fn test_parsing_json() {
-        let f = fs::read_to_string("tmp/raw_response.json")
+
+    // I should have a raw response
+    async fn test_parsing_suno_json() {
+        let f = fs::read_to_string("./test_data/suno_response.json")
             .expect("Failed to open file");
         let suno_responses: Vec<models::SunoResponse> =
             serde_json::from_str(&f).expect("Failed to parse JSON");
 
         assert!(!suno_responses.is_empty());
-        assert_eq!(suno_responses[0].status, "completed");
+        assert_eq!(suno_responses[0].status, "streaming");
+        assert_eq!(
+            suno_responses[0].id,
+            "f12dda07-2588-4326-b15b-63dece759c5f"
+        );
+        assert_eq!(suno_responses[0].user_id, "");
+        assert_eq!(suno_responses[0].play_count, 0);
+        assert_eq!(suno_responses[0].image_url,
+            "https://cdn2.suno.ai/image_f12dda07-2588-4326-b15b-63dece759c5f.jpeg");
+        assert_eq!(suno_responses[0].audio_url,
+            "https://audiopipe.suno.ai/?item_id=f12dda07-2588-4326-b15b-63dece759c5f",
+        );
     }
 }
