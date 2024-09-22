@@ -175,7 +175,7 @@ impl EventHandler for SoundHandler {
             let speech_bubble_text = subd_elevenlabs::chop_text(spoken_string);
 
             // Anything less than 2 words we don't use
-            let split = voice_text.split(" ");
+            let split = voice_text.split(' ');
             let vec = split.collect::<Vec<&str>>();
             if vec.len() < 2 {
                 continue;
@@ -252,7 +252,7 @@ impl EventHandler for SoundHandler {
 
             let splitmsg = msg
                 .contents
-                .split(" ")
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 

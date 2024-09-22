@@ -30,7 +30,7 @@ pub async fn play_themesong_for_today(
 }
 
 pub async fn delete_themesong(pool: &PgPool, display_name: &str) -> Result<()> {
-    let _display_name = display_name.replace("@", "").to_lowercase();
+    let _display_name = display_name.replace('@', "").to_lowercase();
     // let user_id =
     //     subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
     //         .await?;
@@ -303,11 +303,11 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
     // 01:10, 01:23
 
     let (start_minutes, start_seconds) = start
-        .split_once(":")
+        .split_once(':')
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
     let (end_minutes, end_seconds) = end
-        .split_once(":")
+        .split_once(':')
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
     // TODO: Support ms for ppl
@@ -460,7 +460,7 @@ impl events::EventHandler for ThemesongDownloader {
 
             let splitmsg = msg
                 .contents
-                .split(" ")
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 

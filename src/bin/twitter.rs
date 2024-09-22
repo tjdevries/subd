@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
 
     let _auth =
         BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
-    return Ok(());
+    Ok(())
 
     // let tweet = TwitterApi::new(auth)
     //     .get_tweet(phil_tweet)

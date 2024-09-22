@@ -36,7 +36,7 @@ impl EventHandler for FalHandler {
 
             let splitmsg = msg
                 .contents
-                .split(" ")
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 

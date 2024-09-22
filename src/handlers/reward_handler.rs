@@ -43,7 +43,7 @@ impl EventHandler for RewardHandler {
 
             let splitmsg = request
                 .contents
-                .split(" ")
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
             let command = splitmsg[0].as_str();
