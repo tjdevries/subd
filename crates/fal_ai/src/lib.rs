@@ -42,10 +42,15 @@ pub async fn create_turbo_image_in_folder(
         .await
         .with_context(|| format!("Failed to write JSON to {}", json_path))?;
 
-    utils::process_fal_images_from_json(
+    let main_filename_pattern = format!("tmp/fal_images/{}", timestamp);
+    let additional_filename_pattern = "./tmp/dalle-1";
+    let extra_save_folder = Some(suno_save_folder);
+
+    utils::parse_and_process_images_from_json(
         &raw_json,
-        &timestamp.to_string(),
-        Some(suno_save_folder),
+        &main_filename_pattern,
+        additional_filename_pattern,
+        extra_save_folder,
     )
     .await?;
 
@@ -123,9 +128,13 @@ pub async fn create_turbo_image(prompt: String) -> Result<()> {
         .await
         .with_context(|| format!("Failed to write JSON to {}", json_path))?;
 
-    utils::process_fal_images_from_json(
+    let main_filename_pattern = format!("tmp/fal_images/{}", timestamp);
+    let additional_filename_pattern = "./tmp/dalle-1";
+
+    utils::parse_and_process_images_from_json(
         &raw_json,
-        &timestamp.to_string(),
+        &main_filename_pattern,
+        additional_filename_pattern,
         None,
     )
     .await?;
