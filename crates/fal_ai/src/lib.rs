@@ -7,45 +7,101 @@ use tokio::fs::create_dir_all;
 pub mod models;
 pub mod utils;
 
+/// Creates an image using the "fal-ai/stable-cascade" model and saves it to the specified folder.
 pub async fn create_turbo_image_in_folder(
     prompt: String,
     suno_save_folder: &str,
 ) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
     let model = "fal-ai/stable-cascade";
+
+    // Create the image
+    create_image(&client, model, prompt, Some(suno_save_folder)).await
+}
+
+/// Creates a video from the given image file path.
+pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
+    // Encode the image file as a data URI
+    let fal_source_image_data_uri =
+        subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
+
+    let client = FalClient::new(ClientCredentials::from_env());
+    let model = "fal-ai/stable-video";
+
+    // Run the model and get the JSON response
+    let parameters =
+        serde_json::json!({ "image_url": fal_source_image_data_uri });
+    let json = run_model_and_get_json(&client, model, parameters).await?;
+
+    // Extract the video URL from the response
+    let url = json["video"]["url"]
+        .as_str()
+        .ok_or_else(|| anyhow!("Failed to extract video URL from JSON"))?;
+
+    // Download and save the video
+    let video_bytes = subd_image_utils::download_video(url).await?;
+    let timestamp = Utc::now().timestamp();
+    save_video_bytes(&video_bytes, timestamp).await?;
+
+    Ok(())
+}
+
+/// Creates an image using the "fal-ai/fast-sdxl" model.
+pub async fn create_turbo_image(prompt: String) -> Result<()> {
+    let client = FalClient::new(ClientCredentials::from_env());
+    let model = "fal-ai/fast-sdxl";
+
+    // Create the image
+    create_image(&client, model, prompt, None).await
+}
+
+/// Submits a request to the Sadtalker model.
+pub async fn fal_submit_sadtalker_request(
+    fal_source_image_data_uri: &str,
+    fal_driven_audio_data_uri: &str,
+) -> Result<String> {
+    println!("Calling to Sadtalker");
+    let fal_client = FalClient::new(ClientCredentials::from_env());
+    let model = "fal-ai/sadtalker";
+
+    // Prepare the parameters
+    let parameters = serde_json::json!({
+        "source_image_url": fal_source_image_data_uri,
+        "driven_audio_url": fal_driven_audio_data_uri,
+    });
+
+    // Run the model and get the text response
+    run_model_and_get_text(&fal_client, model, parameters).await
+}
+
+/// Helper function to create an image using the specified model.
+async fn create_image(
+    client: &FalClient,
+    model: &str,
+    prompt: String,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
     println!("\tCreating image with model: {}", model);
 
-    let res = client
-        .run(
-            model,
-            serde_json::json!({
-                "prompt": prompt,
-                "image_size": "landscape_16_9",
-            }),
-        )
-        .await
-        .map_err(|e| anyhow!("Failed to run FAL Client: {:?}", e))?;
+    // Prepare the parameters
+    let parameters = serde_json::json!({
+        "prompt": prompt,
+        "image_size": "landscape_16_9",
+    });
 
-    let raw_json = res
-        .bytes()
-        .await
-        .with_context(|| "Failed to get bytes from FAL response")?;
+    // Run the model and get the raw JSON response
+    let raw_json =
+        run_model_and_get_raw_json(client, model, parameters).await?;
 
+    // Save the raw JSON response to a file
     let timestamp = Utc::now().timestamp();
-    let json_path = format!(
-        "{}/{}.json",
-        subd_types::consts::get_fal_responses_dir(),
-        timestamp
-    );
-    create_dir_all(subd_types::consts::get_fal_responses_dir()).await?;
-    tokio::fs::write(&json_path, &raw_json)
-        .await
-        .with_context(|| format!("Failed to write JSON to {}", json_path))?;
+    save_raw_json_response(&raw_json, timestamp).await?;
 
+    // Define filename patterns for saving images
     let main_filename_pattern = format!("tmp/fal_images/{}", timestamp);
     let additional_filename_pattern = "./tmp/dalle-1";
-    let extra_save_folder = Some(suno_save_folder);
 
+    // Parse and process images from the JSON response
     utils::parse_and_process_images_from_json(
         &raw_json,
         &main_filename_pattern,
@@ -57,107 +113,51 @@ pub async fn create_turbo_image_in_folder(
     Ok(())
 }
 
-pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
-    let fal_source_image_data_uri =
-        subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
-    let client = FalClient::new(ClientCredentials::from_env());
-
-    let response = client
-        .run(
-            "fal-ai/stable-video",
-            serde_json::json!({ "image_url": fal_source_image_data_uri }),
-        )
-        .await
-        .map_err(|e| anyhow!("Failed to run client: {:?}", e))?;
-
-    let body = response.text().await?;
-    let json: serde_json::Value = serde_json::from_str(&body)?;
-
-    if let Some(url) = json["video"]["url"].as_str() {
-        let video_bytes = subd_image_utils::download_video(url).await?;
-        let timestamp = Utc::now().timestamp();
-        let filename = format!(
-            "{}/{}.mp4",
-            subd_types::consts::get_ai_videos_dir(),
-            timestamp
-        );
-        create_dir_all(subd_types::consts::get_ai_videos_dir()).await?;
-        tokio::fs::write(&filename, &video_bytes)
-            .await
-            .with_context(|| {
-                format!("Failed to write video to {}", filename)
-            })?;
-        println!("Video saved to: {}", filename);
-    } else {
-        return Err(anyhow!("Failed to extract video URL from JSON"));
-    }
-
-    Ok(())
-}
-
-pub async fn create_turbo_image(prompt: String) -> Result<()> {
-    let client = FalClient::new(ClientCredentials::from_env());
-    let model = "fal-ai/fast-sdxl";
-    println!("\t\tCreating image with model: {}", model);
-
+/// Runs the specified model with the given parameters and returns the raw JSON response.
+async fn run_model_and_get_raw_json(
+    client: &FalClient,
+    model: &str,
+    parameters: serde_json::Value,
+) -> Result<bytes::Bytes> {
     let res = client
-        .run(
-            model,
-            serde_json::json!({
-                "prompt": prompt,
-                "image_size": "landscape_16_9",
-            }),
-        )
+        .run(model, parameters)
         .await
-        .map_err(|e| anyhow!("Error running Fal Client: {:?}", e))?;
+        .map_err(|e| anyhow!("Failed to run FAL Client: {:?}", e))?;
 
     let raw_json = res
         .bytes()
         .await
-        .with_context(|| "Failed to get bytes from response")?;
+        .with_context(|| "Failed to get bytes from FAL response")?;
 
-    let timestamp = Utc::now().timestamp();
-    let json_path = format!(
-        "{}/{}.json",
-        subd_types::consts::get_fal_responses_dir(),
-        timestamp
-    );
-
-    create_dir_all(subd_types::consts::get_fal_responses_dir()).await?;
-    tokio::fs::write(&json_path, &raw_json)
-        .await
-        .with_context(|| format!("Failed to write JSON to {}", json_path))?;
-
-    let main_filename_pattern = format!("tmp/fal_images/{}", timestamp);
-    let additional_filename_pattern = "./tmp/dalle-1";
-
-    utils::parse_and_process_images_from_json(
-        &raw_json,
-        &main_filename_pattern,
-        additional_filename_pattern,
-        None,
-    )
-    .await?;
-
-    Ok(())
+    Ok(raw_json)
 }
 
-pub async fn fal_submit_sadtalker_request(
-    fal_source_image_data_uri: &str,
-    fal_driven_audio_data_uri: &str,
-) -> Result<String> {
-    println!("Calling to Sadtalker");
-    let fal_client = FalClient::new(ClientCredentials::from_env());
-    let response = fal_client
-        .run(
-            "fal-ai/sadtalker",
-            serde_json::json!({
-                "source_image_url": fal_source_image_data_uri,
-                "driven_audio_url": fal_driven_audio_data_uri,
-            }),
-        )
+/// Runs the specified model with the given parameters and returns the JSON response.
+async fn run_model_and_get_json(
+    client: &FalClient,
+    model: &str,
+    parameters: serde_json::Value,
+) -> Result<serde_json::Value> {
+    let res = client
+        .run(model, parameters)
         .await
-        .map_err(|e| anyhow!("Error running sadtalker {:?}", e))?;
+        .map_err(|e| anyhow!("Failed to run FAL Client: {:?}", e))?;
+
+    let body = res.text().await?;
+    let json: serde_json::Value = serde_json::from_str(&body)?;
+    Ok(json)
+}
+
+/// Runs the specified model with the given parameters and returns the text response.
+async fn run_model_and_get_text(
+    client: &FalClient,
+    model: &str,
+    parameters: serde_json::Value,
+) -> Result<String> {
+    let response = client
+        .run(model, parameters)
+        .await
+        .map_err(|e| anyhow!("Failed to run client: {:?}", e))?;
 
     if response.status().is_success() {
         response
@@ -170,4 +170,40 @@ pub async fn fal_submit_sadtalker_request(
             response.status()
         ))
     }
+}
+
+/// Saves the raw JSON response to a file.
+async fn save_raw_json_response(raw_json: &[u8], timestamp: i64) -> Result<()> {
+    let json_dir = subd_types::consts::get_fal_responses_dir();
+    let json_path = format!("{}/{}.json", json_dir, timestamp);
+
+    // Ensure the directory exists
+    create_dir_all(json_dir).await?;
+
+    // Write the JSON data to the file
+    tokio::fs::write(&json_path, raw_json)
+        .await
+        .with_context(|| format!("Failed to write JSON to {}", json_path))?;
+
+    Ok(())
+}
+
+/// Saves the video bytes to a file and returns the file path.
+async fn save_video_bytes(
+    video_bytes: &[u8],
+    timestamp: i64,
+) -> Result<String> {
+    let video_dir = subd_types::consts::get_ai_videos_dir();
+    let filename = format!("{}/{}.mp4", video_dir, timestamp);
+
+    // Ensure the directory exists
+    create_dir_all(video_dir).await?;
+
+    // Write the video data to the file
+    tokio::fs::write(&filename, video_bytes)
+        .await
+        .with_context(|| format!("Failed to write video to {}", filename))?;
+
+    println!("Video saved to: {}", filename);
+    Ok(filename)
 }
