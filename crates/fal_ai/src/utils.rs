@@ -1,28 +1,6 @@
 use anyhow::{anyhow, Context, Result};
-use base64::{engine::general_purpose, Engine as _};
-use regex::Regex;
 use std::path::Path;
 use tokio::fs::create_dir_all;
-
-pub fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
-    let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
-    fal_result_json
-        .get("video")
-        .and_then(|video| video.get("url"))
-        .and_then(|url| url.as_str())
-        .map(|s| s.to_string())
-        .ok_or_else(|| anyhow!("Failed to extract video URL from FAL result"))
-}
-
-fn parse_images_from_json(raw_json: &[u8]) -> Result<Vec<serde_json::Value>> {
-    let data: serde_json::Value = serde_json::from_slice(raw_json)?;
-    data["images"]
-        .as_array()
-        .cloned()
-        .ok_or_else(|| anyhow!("Failed to extract images from JSON"))
-}
-
-// ==============
 
 pub async fn parse_and_process_images_from_json(
     raw_json: &[u8],
@@ -72,7 +50,7 @@ async fn process_image(
         }
     };
 
-    let image_bytes = get_image_bytes(url, index).await?;
+    let image_bytes = subd_image_utils::get_image_bytes(url, index).await?;
 
     save_image_bytes(
         &image_bytes,
@@ -82,40 +60,6 @@ async fn process_image(
     )
     .await?;
     Ok(())
-}
-
-async fn get_image_bytes(url: &str, index: usize) -> Result<Vec<u8>> {
-    if url.starts_with("data:") {
-        let (_mime_type, base64_data) =
-            parse_data_url(url).with_context(|| {
-                format!("Invalid data URL for image at index {}", index)
-            })?;
-        let image_bytes = general_purpose::STANDARD
-            .decode(base64_data)
-            .with_context(|| {
-                format!(
-                    "Failed to decode base64 data for image at index {}",
-                    index
-                )
-            })?;
-        Ok(image_bytes)
-    } else {
-        let image_bytes =
-            subd_image_utils::download_image_to_vec(url.to_string(), None)
-                .await?;
-        Ok(image_bytes)
-    }
-}
-
-fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
-    let data_url_regex =
-        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-    let captures = data_url_regex
-        .captures(data_url)
-        .ok_or_else(|| anyhow!("Invalid data URL"))?;
-    let mime_type = captures.name("mime").unwrap().as_str();
-    let base64_data = captures.name("data").unwrap().as_str();
-    Ok((mime_type, base64_data))
 }
 
 async fn save_image_bytes(
@@ -156,4 +100,22 @@ async fn save_image_bytes(
 
     println!("Saved {}", main_filename);
     Ok(())
+}
+
+pub fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
+    let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
+    fal_result_json
+        .get("video")
+        .and_then(|video| video.get("url"))
+        .and_then(|url| url.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| anyhow!("Failed to extract video URL from FAL result"))
+}
+
+fn parse_images_from_json(raw_json: &[u8]) -> Result<Vec<serde_json::Value>> {
+    let data: serde_json::Value = serde_json::from_slice(raw_json)?;
+    data["images"]
+        .as_array()
+        .cloned()
+        .ok_or_else(|| anyhow!("Failed to extract images from JSON"))
 }

@@ -13,3 +13,4 @@ bytes = "1.7.1"
 mime_guess = "2.0.5"
 reqwest.workspace = true
 tokio.workspace = true
+regex = "1.10.6"

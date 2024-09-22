@@ -1,8 +1,9 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
 use bytes::Bytes;
 use mime_guess::MimeGuess;
+use regex::Regex;
 use reqwest;
 use reqwest::redirect::Policy;
 use reqwest::Client as ReqwestClient;
@@ -73,4 +74,36 @@ pub async fn encode_file_as_data_uri(file_path: &str) -> Result<String> {
         .to_string();
 
     Ok(format!("data:{};base64,{}", mime_type, encoded_data))
+}
+
+pub fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
+    let data_url_regex =
+        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
+    let captures = data_url_regex
+        .captures(data_url)
+        .ok_or_else(|| anyhow!("Invalid data URL"))?;
+    let mime_type = captures.name("mime").unwrap().as_str();
+    let base64_data = captures.name("data").unwrap().as_str();
+    Ok((mime_type, base64_data))
+}
+
+pub async fn get_image_bytes(url: &str, index: usize) -> Result<Vec<u8>> {
+    if url.starts_with("data:") {
+        let (_mime_type, base64_data) =
+            parse_data_url(url).with_context(|| {
+                format!("Invalid data URL for image at index {}", index)
+            })?;
+        let image_bytes = general_purpose::STANDARD
+            .decode(base64_data)
+            .with_context(|| {
+                format!(
+                    "Failed to decode base64 data for image at index {}",
+                    index
+                )
+            })?;
+        Ok(image_bytes)
+    } else {
+        let image_bytes = download_image_to_vec(url.to_string(), None).await?;
+        Ok(image_bytes)
+    }
 }
