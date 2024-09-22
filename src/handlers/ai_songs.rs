@@ -1,4 +1,4 @@
-use ai_playlist::ai_songs;
+use ai_playlist::models::ai_songs;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -10,9 +10,6 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
-// use std::sync::Arc;
-// use std::sync::Mutex;
-// use tokio::time::{self, Duration};
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use tokio::time::Duration;
