@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    // You can choose a set of features to enable
     let features = if args.enable_all {
         vec![
             "implict_soundeffects".to_string(),
@@ -206,7 +207,7 @@ async fn main() -> Result<()> {
                 >::new(twitch_config);
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(
-                    handlers::ai_screenshots::AiScreenshotsHandler {
+                    handlers::ai_screenshots_handler::AiScreenshotsHandler {
                         obs_client,
                         sink,
                         pool: pool.clone(),
@@ -224,7 +225,7 @@ async fn main() -> Result<()> {
                 >::new(twitch_config);
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
                 event_loop.push(
-                    handlers::ai_screenshots_timer::AiScreenshotsTimerHandler {
+                    handlers::ai_screenshots_timer_handler::AiScreenshotsTimerHandler {
                         obs_client,
                         sink,
                         pool: pool.clone(),
@@ -241,12 +242,14 @@ async fn main() -> Result<()> {
                     StaticLoginCredentials,
                 >::new(twitch_config);
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                event_loop.push(handlers::ai_telephone::AiTelephoneHandler {
-                    obs_client,
-                    sink,
-                    pool: pool.clone(),
-                    twitch_client,
-                });
+                event_loop.push(
+                    handlers::ai_telephone_handler::AiTelephoneHandler {
+                        obs_client,
+                        sink,
+                        pool: pool.clone(),
+                        twitch_client,
+                    },
+                );
             }
 
             "ai_scenes" => {
@@ -262,7 +265,7 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                event_loop.push(handlers::ai_scenes::AiScenesHandler {
+                event_loop.push(handlers::ai_scenes_handler::AiScenesHandler {
                     pool: pool.clone(),
                     twitch_client,
                     sink,
@@ -295,17 +298,19 @@ async fn main() -> Result<()> {
 
             "skybox" => {
                 let obs_client = create_obs_client().await?;
-                event_loop.push(handlers::skybox::SkyboxHandler {
+                event_loop.push(handlers::skybox_handler::SkyboxHandler {
                     obs_client,
                     pool: pool.clone(),
                 });
 
                 // This checks if Skyboxes are done, every 60 seconds
                 let obs_client = create_obs_client().await?;
-                event_loop.push(handlers::skybox_status::SkyboxStatusHandler {
-                    obs_client,
-                    pool: pool.clone(),
-                });
+                event_loop.push(
+                    handlers::skybox_status_handler::SkyboxStatusHandler {
+                        obs_client,
+                        pool: pool.clone(),
+                    },
+                );
 
                 // This checks if Skyboxes are done, every 60 seconds
                 let obs_client = create_obs_client().await?;
@@ -315,12 +320,14 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                event_loop.push(handlers::skybox::SkyboxRoutingHandler {
-                    sink,
-                    twitch_client,
-                    obs_client,
-                    pool: pool.clone(),
-                });
+                event_loop.push(
+                    handlers::skybox_handler::SkyboxRoutingHandler {
+                        sink,
+                        twitch_client,
+                        obs_client,
+                        pool: pool.clone(),
+                    },
+                );
             }
 
             "obs" => {
@@ -336,17 +343,19 @@ async fn main() -> Result<()> {
                 let obs_client = create_obs_client().await?;
                 // Do we need to duplicate this?
                 let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-                event_loop.push(handlers::obs_messages::OBSMessageHandler {
-                    obs_client,
-                    twitch_client,
-                    pool: pool.clone(),
-                    sink,
-                });
+                event_loop.push(
+                    handlers::obs_messages_handler::OBSMessageHandler {
+                        obs_client,
+                        twitch_client,
+                        pool: pool.clone(),
+                        sink,
+                    },
+                );
 
                 // OBS Hotkeys are controlled here
                 let obs_client = create_obs_client().await?;
                 event_loop.push(
-                    handlers::trigger_obs_hotkey::TriggerHotkeyHandler {
+                    handlers::trigger_obs_hotkey_handler::TriggerHotkeyHandler {
                         obs_client,
                     },
                 );
@@ -354,7 +363,7 @@ async fn main() -> Result<()> {
                 // OBS Text is controlled here
                 let obs_client = create_obs_client().await?;
                 event_loop.push(
-                    handlers::transform_obs_test::TransformOBSTextHandler {
+                    handlers::transform_obs_test_handler::TransformOBSTextHandler {
                         obs_client,
                     },
                 );
@@ -362,7 +371,7 @@ async fn main() -> Result<()> {
                 // OBS Sources are controlled here
                 let obs_client = create_obs_client().await?;
                 event_loop.push(
-                    handlers::source_visibility::SourceVisibilityHandler {
+                    handlers::source_visibility_handler::SourceVisibilityHandler {
                         obs_client,
                     },
                 );
@@ -414,7 +423,7 @@ async fn main() -> Result<()> {
             "dynamic_stream_background" => {
                 let obs_client = create_obs_client().await?;
                 event_loop.push(
-                    handlers::stream_background::StreamBackgroundHandler {
+                    handlers::stream_background_handler::StreamBackgroundHandler {
                         obs_client,
                     },
                 );
@@ -458,7 +467,7 @@ async fn main() -> Result<()> {
                     SecureTCPTransport,
                     StaticLoginCredentials,
                 >::new(twitch_config);
-                event_loop.push(handlers::ai_songs::AISongsHandler {
+                event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
                     sink,
                     obs_client,
@@ -472,7 +481,7 @@ async fn main() -> Result<()> {
                     StaticLoginCredentials,
                 >::new(twitch_config);
                 event_loop.push(
-                    handlers::ai_songs_downloader::AISongsDownloader {
+                    handlers::ai_songs_downloader_handler::AISongsDownloader {
                         pool: pool.clone(),
                         obs_client,
                         twitch_client,
@@ -486,8 +495,6 @@ async fn main() -> Result<()> {
             }
         }
     }
-
-    // =======================================================================
 
     event_loop.run().await?;
     Ok(())
