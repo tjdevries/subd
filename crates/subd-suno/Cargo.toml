@@ -24,3 +24,4 @@ twitch_service = { path = "../twitch_service" }
 twitch_stream_state = { path = "../twitch_stream_state" }
 reqwest.workspace = true
 tokio.workspace = true
+chrono.workspace = true

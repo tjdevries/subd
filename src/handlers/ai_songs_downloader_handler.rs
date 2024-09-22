@@ -1,22 +1,14 @@
-use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::fs::File;
-use std::io::BufReader;
-use std::thread;
 use subd_types::Event;
 use subd_types::UserMessage;
-use tokio::runtime::Runtime;
 use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use uuid::Uuid;
 
 pub struct AISongsDownloader {
     pub obs_client: OBSClient,
@@ -45,7 +37,6 @@ impl EventHandler for AISongsDownloader {
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 
-            // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_requests(
                 &tx,
                 &self.obs_client,
@@ -64,13 +55,6 @@ impl EventHandler for AISongsDownloader {
             }
         }
     }
-}
-
-#[derive(Default, Debug)]
-struct AudioGenerationData {
-    prompt: String,
-    make_instrumental: bool,
-    wait_audio: bool,
 }
 
 pub async fn handle_requests(
@@ -104,7 +88,8 @@ pub async fn handle_requests(
                 Some(id) => id.as_str(),
                 None => return Ok(()),
             };
-            return download_and_play(
+
+            return subd_suno::download_and_play(
                 twitch_client,
                 tx,
                 msg.user_name,
@@ -115,17 +100,17 @@ pub async fn handle_requests(
 
         "!create_song" | "!song" => {
             println!("\tIt's Song time!");
-            let data = AudioGenerationData {
+            let data = subd_suno::AudioGenerationData {
                 prompt,
                 make_instrumental: false,
                 wait_audio: true,
             };
-            let res = generate_audio_by_prompt(data).await;
+            let res = subd_suno::generate_audio_by_prompt(data).await;
             match res {
                 Ok(json_response) => {
                     // There is a better way of doing this
                     println!("JSON Response: {:#?}", json_response);
-                    let _ = parse_suno_response_download_and_play(
+                    let _ = subd_suno::parse_suno_response_download_and_play(
                         twitch_client,
                         pool,
                         tx,
@@ -134,7 +119,7 @@ pub async fn handle_requests(
                         msg.user_name.clone(),
                     )
                     .await;
-                    parse_suno_response_download_and_play(
+                    subd_suno::parse_suno_response_download_and_play(
                         twitch_client,
                         pool,
                         tx,
@@ -155,164 +140,4 @@ pub async fn handle_requests(
             return Ok(());
         }
     }
-}
-
-async fn generate_audio_by_prompt(
-    data: AudioGenerationData,
-) -> Result<serde_json::Value> {
-    let base_url = "http://localhost:3000";
-    let client = Client::new();
-    let url = format!("{}/api/generate", base_url);
-
-    // There must be a simpler way
-    let payload = serde_json::json!({
-        "prompt": data.prompt,
-        "make_instrumental": data.make_instrumental,
-        "wait_audio": data.wait_audio,
-    });
-    let response = client
-        .post(&url)
-        .json(&payload)
-        .header("Content-Type", "application/json")
-        .send()
-        .await?;
-    let raw_json = response.text().await?;
-    let tmp_file_path =
-        format!("tmp/suno_responses/{}.json", chrono::Utc::now().timestamp());
-    tokio::fs::write(&tmp_file_path, &raw_json).await?;
-    println!("Raw JSON saved to: {}", tmp_file_path);
-    Ok(serde_json::from_str::<serde_json::Value>(&raw_json)?)
-}
-
-async fn download_and_play(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    tx: &broadcast::Sender<Event>,
-    user_name: String,
-    id: &String,
-) -> Result<()> {
-    let id = id.clone();
-    let tx = tx.clone();
-    let _twitch_client = twitch_client.clone();
-
-    thread::spawn(|| {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async move {
-            let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id.as_str());
-            loop {
-                println!(
-                    "{} | Attempting to Download song at: {}",
-                    chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
-                    cdn_url
-                );
-                let response = reqwest::get(&cdn_url).await.unwrap();
-
-                if response.status().is_success() {
-                    let _file = just_download(response, id.to_string()).await;
-
-                    let _info = format!(
-                        "@{}'s song {} added to the Queue. Begin needs to !skip to get to your position faster",
-                        user_name, id.to_string()
-                    );
-
-                    let _ =
-
-                        // We expect the song to playable at this time
-                        tx.send(Event::UserMessage(subd_types::UserMessage {
-                            user_name: "beginbot".to_string(),
-                            contents: format!("!play {}", id.to_string()),
-                            ..Default::default()
-                        }));
-
-                        // Should we try and save the ai_song_playlist
-
-                    break;
-                }
-
-                // Sleep for 5 seconds before trying again
-                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-            }
-        })
-    });
-    return Ok(());
-}
-
-async fn parse_suno_response_download_and_play(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    pool: &sqlx::PgPool,
-    tx: &broadcast::Sender<Event>,
-    json_response: serde_json::Value,
-    index: usize,
-    user_name: String,
-) -> Result<()> {
-    let id = json_response[index]["id"].as_str().unwrap();
-    let song_id = Uuid::parse_str(id).map_err(|e| anyhow!(e.to_string()))?;
-    let lyrics = &json_response[index]["lyric"].as_str().unwrap();
-    let title = &json_response[index]["title"].as_str().unwrap();
-    let prompt = &json_response[index]["prompt"].as_str().unwrap();
-    let tags = &json_response[index]["tags"].as_str().unwrap();
-    let audio_url = &json_response[index]["audio_url"].as_str().unwrap();
-    let gpt_description_prompt = &json_response[index]
-        ["gpt_description_prompt"]
-        .as_str()
-        .unwrap();
-    let created_at = sqlx::types::time::OffsetDateTime::now_utc();
-    let new_song = ai_playlist::models::ai_songs::Model {
-        song_id,
-        title: title.to_string(),
-        tags: tags.to_string(),
-        prompt: prompt.to_string(),
-        username: user_name.clone(),
-        audio_url: audio_url.to_string(),
-        lyric: Some(lyrics.to_string()),
-        gpt_description_prompt: gpt_description_prompt.to_string(),
-        last_updated: Some(created_at),
-        created_at: Some(created_at),
-    };
-    let saved_song = new_song.save(&pool).await?;
-    println!("{:?}", saved_song);
-
-    let _lyric_lines: Vec<&str> = lyrics.split('\n').collect();
-
-    let folder_path = format!("tmp/suno_responses/{}", id);
-    tokio::fs::create_dir_all(&folder_path).await?;
-
-    tokio::fs::write(
-        format!("tmp/suno_responses/{}.json", id),
-        &json_response.to_string(),
-    )
-    .await?;
-
-    // This needs to happen async and work properly
-    // for (_i, line) in lyric_lines.iter().enumerate() {
-    //     fal_handler::create_turbo_image_in_folder(
-    //         line.to_string(),
-    //         &folder_path,
-    //     )
-    //     .await?;
-    // }
-
-    download_and_play(twitch_client, tx, user_name, &id.to_string()).await
-}
-
-// We should return the file and have it played somewhere else
-async fn just_download(
-    response: reqwest::Response,
-    id: String,
-) -> Result<BufReader<File>> {
-    let file_name = format!("ai_songs/{}.mp3", id);
-    let mut file = tokio::fs::File::create(&file_name).await?;
-
-    let content = response.bytes().await?;
-    tokio::io::copy(&mut content.as_ref(), &mut file).await?;
-    println!("Downloaded audio to: {}", file_name);
-    let mp3 = match File::open(format!("{}", file_name)) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Error opening sound file: {}", e);
-            return Err(anyhow!("Error opening sound file: {}", e));
-        }
-    };
-    let file = BufReader::new(mp3);
-
-    return Ok(file);
 }
