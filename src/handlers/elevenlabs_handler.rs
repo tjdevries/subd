@@ -1,4 +1,3 @@
-use crate::redirect;
 use anyhow::Result;
 use async_trait::async_trait;
 use elevenlabs_api::{
@@ -257,8 +256,8 @@ impl EventHandler for ElevenLabsHandler {
             // and it's optional
 
             // We are supressing a whole bunch of alsa message
-            let backup =
-                redirect::redirect_stderr().expect("Failed to redirect stderr");
+            let backup = subd_utils::redirect_stderr()
+                .expect("Failed to redirect stderr");
 
             let (_stream, stream_handle) =
                 subd_audio::get_output_stream("pulse").expect("stream handle");
@@ -301,7 +300,7 @@ impl EventHandler for ElevenLabsHandler {
 
             sink.sleep_until_end();
 
-            redirect::restore_stderr(backup);
+            subd_utils::restore_stderr(backup);
 
             // This playsthe text
             let ten_millis = time::Duration::from_millis(1000);

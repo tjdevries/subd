@@ -268,7 +268,7 @@ pub fn build_wide_request(
 #[cfg(test)]
 mod tests {
     // use super::*;
-    use obs_service::obs;
+    // use obs_service::obs;
 
     #[tokio::test]
     async fn test_filters() {

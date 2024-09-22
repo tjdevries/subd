@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 
+subd-utils = { path = "../subd-utils/" }
 subd-types = { path = "../subd-types/" }
 subd-audio = { path = "../subd-audio/" }
 twitch_chat = { path = "../twitch_chat/" }

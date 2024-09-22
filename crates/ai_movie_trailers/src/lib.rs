@@ -20,8 +20,8 @@ pub async fn trigger_movie_trailer(
     }
 
     // We are supressing a whole bunch of alsa message
-    // let backup =
-    //     redirect::redirect_stderr().expect("Failed to redirect stderr");
+    let backup =
+        subd_utils::redirect_stderr().expect("Failed to redirect stderr");
 
     let (_stream, stream_handle) =
         subd_audio::get_output_stream("pulse").expect("stream handle");
@@ -30,7 +30,7 @@ pub async fn trigger_movie_trailer(
     sink.append(Decoder::new(BufReader::new(file))?);
     sink.sleep_until_end();
 
-    // redirect::restore_stderr(backup);
+    subd_utils::restore_stderr(backup);
 
     return Ok(());
 }
