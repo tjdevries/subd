@@ -10,7 +10,6 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-// Should this have an OBS Client as well?
 pub struct AiScenesHandler {
     pub sink: Sink,
     pub pool: sqlx::PgPool,

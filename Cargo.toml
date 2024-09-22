@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 subd-db = { path = "crates/subd-db" }
+subd-suno = { path = "crates/subd-suno" }
 subd-utils= { path = "crates/subd-utils" }
 ai_telephone = { path = "crates/ai_telephone" }
 subd-twitch = { path = "crates/subd-twitch" }

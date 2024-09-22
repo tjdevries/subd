@@ -1,0 +1,13 @@
+[package]
+
+name = "subd-suno"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+subd-types = { path = "../subd-types/" }
+stable_diffusion = { path = "../stable_diffusion/" }
+obs_service = { path = "../obs_service/" }
+
+serde.workspace = true
