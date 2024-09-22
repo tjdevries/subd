@@ -315,11 +315,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
 
             let new_cost =
                 (reward_cost_as_float * increase_mult).round() as usize;
-            println!(
-                "Updating Reward: {}- {}",
-                reward_id,
-                new_cost
-            );
+            println!("Updating Reward: {}- {}", reward_id, new_cost);
             let _ = reward_manager
                 .update_reward(reward_id.to_string(), new_cost)
                 .await;

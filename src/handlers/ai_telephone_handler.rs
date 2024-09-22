@@ -120,9 +120,7 @@ pub async fn handle_telephone_requests(
             )
             .await
             {
-                Ok(_) => {
-                    Ok(())
-                }
+                Ok(_) => Ok(()),
                 Err(e) => {
                     eprintln!("Error Carlphone Prompt: {}", e);
                     Ok(())
@@ -147,9 +145,7 @@ pub async fn handle_telephone_requests(
             )
             .await
             {
-                Ok(_) => {
-                    Ok(())
-                }
+                Ok(_) => Ok(()),
                 Err(e) => {
                     eprintln!("Error Telephone Prompt: {}", e);
                     Ok(())
@@ -157,8 +153,6 @@ pub async fn handle_telephone_requests(
             }
         }
 
-        _ => {
-            Ok(())
-        }
+        _ => Ok(()),
     }
 }

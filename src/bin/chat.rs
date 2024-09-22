@@ -350,8 +350,6 @@ async fn handle_yew(
                 Ok(_) => {}
                 Err(err) => println!("SOME YEW FAILED WITH: {:?}", err),
             };
-
-            
         });
     }
 

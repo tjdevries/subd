@@ -134,8 +134,7 @@ async fn handle_commands(
                                 .await
                                 .unwrap();
 
-                            if enabled && item.source_name == details.music
-                            {
+                            if enabled && item.source_name == details.music {
                                 println!("We are just changing the music!");
 
                                 let _ = obs_source::hide_source(

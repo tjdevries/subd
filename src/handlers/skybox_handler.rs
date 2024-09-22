@@ -227,9 +227,7 @@ pub async fn handle_skybox_commands(
             Ok(())
         }
 
-        _ => {
-            Ok(())
-        }
+        _ => Ok(()),
     }
 }
 
@@ -238,7 +236,7 @@ pub async fn handle_skybox_commands(
 pub fn find_style_id(splitmsg: Vec<String>) -> Result<i32, String> {
     let range = 1..=47;
     // we need to check the range
-    
+
     splitmsg
         .get(1)
         .ok_or("No Style ID Arg found".to_string())
@@ -262,7 +260,9 @@ pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
     for (idx, ch) in s.char_indices() {
         current_count += 1;
 
-        if (ch.to_string() == "," || idx == s.len() - 1) && current_count >= chunk_size {
+        if (ch.to_string() == "," || idx == s.len() - 1)
+            && current_count >= chunk_size
+        {
             chunks.push(s[last_split..=idx].to_string());
 
             last_split = idx + 1;

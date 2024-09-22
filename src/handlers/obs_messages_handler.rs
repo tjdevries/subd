@@ -338,12 +338,7 @@ pub async fn handle_obs_commands(
             );
             let d = duration::EasingDuration::new(req.duration as i32);
             obs_move_transition::move_source_in_scene_x_and_y(
-                obs_client,
-                scene,
-                source,
-                req.x,
-                req.y,
-                d,
+                obs_client, scene, source, req.x, req.y, d,
             )
             .await
         }
@@ -360,12 +355,7 @@ pub async fn handle_obs_commands(
                 req.duration.try_into().unwrap_or(3000),
             );
             obs_move_transition::move_source_in_scene_x_and_y(
-                obs_client,
-                &scene,
-                source,
-                req.x,
-                req.y,
-                d,
+                obs_client, &scene, source, req.x, req.y, d,
             )
             .await
         }
@@ -456,11 +446,8 @@ pub async fn handle_obs_commands(
 
             // These aren't implemented properly
             _ = obs_bootstrap::remove_all_filters(source, obs_client).await;
-            obs_bootstrap::create_split_3d_transform_filters(
-                source,
-                obs_client,
-            )
-            .await
+            obs_bootstrap::create_split_3d_transform_filters(source, obs_client)
+                .await
         }
 
         _ => Ok(()),

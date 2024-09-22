@@ -136,8 +136,6 @@ pub async fn handle_requests(
             }
         }
 
-        _ => {
-            Ok(())
-        }
+        _ => Ok(()),
     }
 }

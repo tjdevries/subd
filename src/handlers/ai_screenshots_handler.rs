@@ -153,9 +153,7 @@ pub async fn handle_ai_screenshots(
             Ok(())
         }
 
-        _ => {
-            Ok(())
-        }
+        _ => Ok(()),
     }
 }
 

@@ -245,14 +245,16 @@ pub fn build_wide_request(
             }
             WideArgPosition::X(_x) => {
                 if let Some(x) = splitmsg
-                    .get(index).map(|m| m.parse::<f32>().unwrap_or(100.0))
+                    .get(index)
+                    .map(|m| m.parse::<f32>().unwrap_or(100.0))
                 {
                     req.x = x
                 }
             }
             WideArgPosition::Duration(_duration) => {
                 if let Some(duration) = splitmsg
-                    .get(index).map(|m| m.parse::<u64>().unwrap_or(3000))
+                    .get(index)
+                    .map(|m| m.parse::<u64>().unwrap_or(3000))
                 {
                     req.duration = duration
                 }
