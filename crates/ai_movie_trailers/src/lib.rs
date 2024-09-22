@@ -9,9 +9,6 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-pub mod models;
-pub mod utils;
-
 // This should be in the move_trailer command
 pub async fn trigger_movie_trailer(
     ai_scene_req: &AiScenesRequest,
