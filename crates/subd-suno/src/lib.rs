@@ -2,7 +2,6 @@ use anyhow::anyhow;
 use anyhow::Result;
 use rodio::Decoder;
 use rodio::Sink;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use twitch_chat::client::send_message;
@@ -10,61 +9,7 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct SunoResponse {
-    pub id: String,
-    pub video_url: String,
-    pub audio_url: String,
-    pub image_url: String,
-    pub lyric: Option<String>,
-    pub image_large_url: Option<String>,
-    pub is_video_pending: Option<bool>,
-
-    #[serde(default)]
-    pub major_model_version: String,
-    pub model_name: String,
-
-    #[serde(default)]
-    pub metadata: Metadata,
-
-    #[serde(default)]
-    pub display_name: String,
-
-    #[serde(default)]
-    pub handle: String,
-    #[serde(default)]
-    pub is_handle_updated: bool,
-    #[serde(default)]
-    pub avatar_image_url: String,
-    #[serde(default)]
-    pub is_following_creator: bool,
-    #[serde(default)]
-    pub user_id: String,
-    #[serde(default)]
-    pub created_at: String,
-    #[serde(default)]
-    pub status: String,
-    #[serde(default)]
-    pub title: String,
-    #[serde(default)]
-    pub play_count: i32,
-    #[serde(default)]
-    pub upvote_count: i32,
-    #[serde(default)]
-    pub is_public: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct Metadata {
-    pub tags: String,
-    pub prompt: String,
-    pub gpt_description_prompt: String,
-    #[serde(rename = "type")]
-    pub type_field: String,
-    pub duration: f64,
-    pub refund_credits: bool,
-    pub stream: bool,
-}
+pub mod models;
 
 pub async fn play_audio(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -99,15 +44,13 @@ pub async fn play_audio(
     Ok(())
 }
 
-pub async fn get_audio_information(id: &str) -> Result<SunoResponse> {
+pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
     let base_url = "http://localhost:3000";
-    // This actually works
-    // let base_url = "https://api.suno.ai";
     let url = format!("{}/api/get?ids={}", base_url, id);
 
     let client = reqwest::Client::new();
     let response = client.get(&url).send().await?;
-    let suno_response: Vec<SunoResponse> = response.json().await?;
+    let suno_response: Vec<models::SunoResponse> = response.json().await?;
 
     suno_response
         .into_iter()
@@ -154,7 +97,7 @@ mod tests {
     async fn test_parsing_json() {
         let f = fs::read_to_string("tmp/raw_response_1725750380.json")
             .expect("Failed to open file");
-        let suno_responses: Vec<SunoResponse> =
+        let suno_responses: Vec<models::SunoResponse> =
             serde_json::from_str(&f).expect("Failed to parse JSON");
 
         // let url = suno_responses[0].audio_url.as_str();
