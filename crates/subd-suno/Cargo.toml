@@ -8,8 +8,6 @@ edition = "2021"
 
 subd-types = { path = "../subd-types/" }
 ai_playlist = { path = "../ai_playlist/" }
-stable_diffusion = { path = "../stable_diffusion/" }
-obs_service = { path = "../obs_service/" }
 
 twitch-irc.workspace = true
 uuid.workspace = true
@@ -17,11 +15,8 @@ sqlx.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
-obws = "0.10"
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
 twitch_chat = { path = "../twitch_chat" }
-twitch_service = { path = "../twitch_service" }
-twitch_stream_state = { path = "../twitch_stream_state" }
 reqwest.workspace = true
 tokio.workspace = true
 chrono.workspace = true

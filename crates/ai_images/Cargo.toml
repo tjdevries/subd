@@ -6,7 +6,5 @@ edition = "2021"
 
 [dependencies]
 anyhow.workspace = true
-base64 = "0.22.1"
 chrono.workspace = true
-reqwest.workspace = true
 warp = "0.3.7"

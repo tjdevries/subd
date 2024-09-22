@@ -6,7 +6,6 @@ edition = "2021"
 
 [dependencies]
 
-subd-types = { path = "../subd-types/" }
 subd-image-utils= { path = "../subd-image-utils/" }
 ai_images = { path = "../ai_images/" }
 subd-audio = { path = "../subd-audio/" }

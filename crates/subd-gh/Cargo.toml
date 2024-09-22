@@ -8,11 +8,13 @@ edition = "2021"
 [dependencies]
 subd-types = { path = "../subd-types/" }
 
-tokio.workspace = true
-serde.workspace = true
-reqwest.workspace = true
 anyhow.workspace = true
+graphql_client = { version = "0.10.0", features = [ "reqwest" ] }
+hyper = "0.14.18"
+reqwest.workspace = true
+serde.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 
-hyper = "0.14.18"
-graphql_client = { version = "0.10.0", features = [ "reqwest" ] }
+[package.metadata.cargo-machete]
+ignored = ["serde"]
