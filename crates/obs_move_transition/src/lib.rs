@@ -279,6 +279,7 @@ mod tests {
     use obs_service::obs::create_obs_client;
 
     #[tokio::test]
+    #[ignore]
     async fn test_spin() {
         let obs_client = create_obs_client().await.unwrap();
         let source = "alex";
@@ -287,6 +288,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_move_source() {
         let obs_client = create_obs_client().await.unwrap();
 
@@ -312,6 +314,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_find_source() {
         let obs_client = create_obs_client().await.unwrap();
         let scene = "Memes";

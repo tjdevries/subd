@@ -93,24 +93,3 @@ async fn move_bogan(
     )
     .await
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use obs_service::obs;
-
-    #[tokio::test]
-    async fn test_bogan_position() {
-        let obs_client = obs::create_obs_client().await.unwrap();
-
-        let scene = "BoganArmy";
-        let _index = ai_clone::find_current_bogan_index(scene, &obs_client)
-            .await
-            .unwrap();
-
-        let _bogan_1 = "bogan_13";
-        let _bogan_2 = "bogan_14";
-        let _bogan_3 = "bogan_15";
-        let _bogan_4 = "bogan_16";
-    }
-}

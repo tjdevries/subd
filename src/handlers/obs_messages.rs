@@ -475,7 +475,9 @@ mod tests {
     use obs_service::obs;
     use serde_json::Value;
 
+    //This is just for printing settings
     #[tokio::test]
+    #[ignore]
     async fn test_fetching_filter_settings() {
         let obs_client = obs::create_obs_client().await.unwrap();
         // let filter = "Move0".to_string();

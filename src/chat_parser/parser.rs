@@ -276,16 +276,18 @@ mod tests {
         // klet default_filter_name = "3D-Transform-Orthographic".to_string();
         let default_filter_name = "3D-Transform-Orthographic".to_string();
 
+        // This is used to find inf about filters
+        // not an actual test
         println!("Am I losing it?");
-        let obs_client = obs::create_obs_client().await.unwrap();
-        let filter_details = obs_client
-            .filters()
-            .get("begin", &default_filter_name)
-            .await
-            .unwrap();
-        println!("------------------------");
-        println!("\n\tFilter Settings: {:?}", filter_details);
-        println!("------------------------");
+        //let obs_client = obs::create_obs_client().await.unwrap();
+        //let filter_details = obs_client
+        //    .filters()
+        //    .get("begin", &default_filter_name)
+        //    .await
+        //    .unwrap();
+        //println!("------------------------");
+        //println!("\n\tFilter Settings: {:?}", filter_details);
+        //println!("------------------------");
 
         // let settings = ThreeDTransformPerspective {
         //     field_of_view: Some(122.6),

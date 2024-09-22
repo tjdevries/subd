@@ -15,10 +15,8 @@ anyhow.workspace = true
 chrono.workspace = true
 obws = "0.10"
 askama = "0.12.1"
-
-# twitch-irc.workspace = true
-# tokio.workspace = true
-#
-# fal_ai = { path = "../fal_ai/" }
-# obws = "0.10"
 subd-macros = { path = "../subd-macros/" }
+
+[dev-dependencies]
+
+tokio.workspace = true

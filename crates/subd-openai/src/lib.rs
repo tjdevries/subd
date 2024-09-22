@@ -270,6 +270,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_parsing_vision_responses() {
         // let vision_data = File::read(, buf)
         let filepath =

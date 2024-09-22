@@ -507,6 +507,7 @@ mod tests {
     use std::fs;
 
     #[tokio::test]
+    #[ignore]
     async fn test_parsing_json() {
         let f = fs::read_to_string("tmp/raw_response_1725750380.json")
             .expect("Failed to open file");

@@ -175,3 +175,24 @@ fn parse_scene_item_index(scene_item: &str) -> i32 {
     let index = v.get(1).unwrap_or(&"0");
     index.parse().unwrap_or(0)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use obs_service::obs;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_bogan_position() {
+        let obs_client = obs::create_obs_client().await.unwrap();
+
+        let scene = "BoganArmy";
+        let _index =
+            find_current_bogan_index(scene, &obs_client).await.unwrap();
+
+        let _bogan_1 = "bogan_13";
+        let _bogan_2 = "bogan_14";
+        let _bogan_3 = "bogan_15";
+        let _bogan_4 = "bogan_16";
+    }
+}

@@ -5,7 +5,7 @@ async fn main() -> anyhow::Result<()> {
     let _db = get_db_pool().await;
 
     let _user_id = 4;
-    let _url = "https://www.youtube.com/watch?v=jOpzP33_USs";
+    let _url = "https://www.youtube.com/watch?v=jopzp33_uss";
 
     if true {
         // download_themesong(&mut db, &user_id, url, "00:01:03", "00:01:10").await?;
