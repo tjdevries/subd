@@ -34,9 +34,11 @@ pub async fn telephone(
 
     // This shouldn't download an image always
     let og_file = format!("./archive/{}/original.png", folder);
-    if let Err(e) =
-        subd_image_utils::download_image_to_vec(url.clone(), og_file.clone())
-            .await
+    if let Err(e) = subd_image_utils::download_image_to_vec(
+        url.clone(),
+        Some(og_file.clone()),
+    )
+    .await
     {
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }

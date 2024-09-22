@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose, Engine as _};
-use bytes::Bytes;
 use regex::Regex;
-use reqwest::Client as ReqwestClient;
 use std::path::Path;
 use tokio::fs::create_dir_all;
 
@@ -102,7 +100,9 @@ async fn get_image_bytes(url: &str, index: usize) -> Result<Vec<u8>> {
             })?;
         Ok(image_bytes)
     } else {
-        let image_bytes = download_image(url).await?.to_vec();
+        let image_bytes =
+            subd_image_utils::download_image_to_vec(url.to_string(), None)
+                .await?;
         Ok(image_bytes)
     }
 }
@@ -118,17 +118,17 @@ fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
     Ok((mime_type, base64_data))
 }
 
-async fn download_image(url: &str) -> Result<Bytes> {
-    let client = ReqwestClient::new();
-    let response = client.get(url).send().await.with_context(|| {
-        format!("Failed to download image from URL: {}", url)
-    })?;
-    let image_bytes = response
-        .bytes()
-        .await
-        .with_context(|| "Failed to get bytes from image response")?;
-    Ok(image_bytes)
-}
+//async fn download_image(url: &str) -> Result<Bytes> {
+//    let client = ReqwestClient::new();
+//    let response = client.get(url).send().await.with_context(|| {
+//        format!("Failed to download image from URL: {}", url)
+//    })?;
+//    let image_bytes = response
+//        .bytes()
+//        .await
+//        .with_context(|| "Failed to get bytes from image response")?;
+//    Ok(image_bytes)
+//}
 
 async fn save_image_bytes(
     image_bytes: &[u8],
@@ -169,4 +169,3 @@ async fn save_image_bytes(
     println!("Saved {}", main_filename);
     Ok(())
 }
-

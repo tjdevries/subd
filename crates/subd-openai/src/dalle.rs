@@ -84,7 +84,7 @@ async fn process_dalle_request(
 
     let mut image_data = match subd_image_utils::download_image_to_vec(
         download_resp.url.clone(),
-        f.to_string(),
+        Some(f.to_string()),
     )
     .await
     {

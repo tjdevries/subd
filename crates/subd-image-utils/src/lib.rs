@@ -25,18 +25,14 @@ pub async fn download_video(url: &str) -> Result<Bytes> {
 
 pub async fn download_image_to_vec(
     url: String,
-    download_path: String,
+    download_path: Option<String>,
 ) -> Result<Vec<u8>> {
     let client = reqwest::Client::builder()
         .redirect(Policy::default())
         .build()
         .expect("Failed to create client");
 
-    println!(
-        "\tCall out to URL {} to download image to: {}",
-        url.clone(),
-        download_path
-    );
+    println!("\tCall out to URL {} to download image to", url.clone());
     let image_data = client
         .get(url.clone())
         .send()
@@ -45,9 +41,11 @@ pub async fn download_image_to_vec(
         .await?
         .to_vec();
 
-    println!("\tSaving File: {}", download_path);
-    File::create(download_path.clone())
-        .and_then(|mut f| f.write_all(&image_data))?;
+    if let Some(path) = download_path {
+        println!("\tSaving File: {}", path);
+        File::create(path.clone())
+            .and_then(|mut f| f.write_all(&image_data))?;
+    }
     Ok(image_data)
 }
 
