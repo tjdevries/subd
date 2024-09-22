@@ -25,352 +25,292 @@ pub struct AISongsHandler {
 impl EventHandler for AISongsHandler {
     async fn handle(
         self: Box<Self>,
-        tx: broadcast::Sender<Event>,
+        _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         loop {
+            // Check if the sink is empty and update song statuses accordingly
             if self.sink.empty() {
-                println!("It's empty!");
-                println!("Marking all Songs as stopped");
+                println!("Sink is empty! Marking all songs as stopped.");
                 let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
-            } else {
-                println!("It's not empty!");
             }
 
+            // Receive the next event
             let event = rx.recv().await?;
 
-            // I could check the sink right here
+            // Process only UserMessage events
             let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,
             };
 
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
+            // Split the message into words
+            let splitmsg: Vec<String> =
+                msg.contents.split_whitespace().map(String::from).collect();
 
-            // THEORY: We don't know if this is an explicit OBS message at this stage
-            match handle_requests(
-                &tx,
-                &self.obs_client,
+            // Handle the command
+            if let Err(err) = handle_requests(
                 &self.sink,
                 &self.twitch_client,
                 &self.pool,
-                splitmsg,
-                msg,
+                &splitmsg,
+                &msg,
             )
             .await
             {
-                Ok(_) => {}
-                Err(err) => {
-                    eprintln!("Error: {err}");
-                    continue;
-                }
+                eprintln!("Error in AISongsHandler: {err}");
+                continue;
             }
         }
     }
 }
 
-pub async fn handle_requests(
-    _tx: &broadcast::Sender<Event>,
-    _obs_client: &OBSClient,
+/// Determines if the user is an admin (beginbot or beginbotbot)
+fn is_admin(msg: &UserMessage) -> bool {
+    msg.user_name == "beginbot" || msg.user_name == "beginbotbot"
+}
+
+/// Handles incoming requests based on commands
+async fn handle_requests(
     sink: &Sink,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    pool: &sqlx::PgPool,
-    splitmsg: Vec<String>,
-    msg: UserMessage,
+    pool: &PgPool,
+    splitmsg: &[String],
+    msg: &UserMessage,
 ) -> Result<()> {
-    let _not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
-
-    let command = splitmsg[0].as_str();
+    // Extract the command from the split message
+    let command = splitmsg.get(0).map(|s| s.as_str()).unwrap_or("");
 
     match command {
+        // Commands accessible to all users
         "!info" => {
-            let id = match splitmsg.get(1) {
-                Some(id) => id.as_str(),
-                None => {
-                    let song = ai_playlist::get_current_song(pool).await?;
-                    let msg = format!(
-                        "Current Song: {} by {}",
-                        song.title, song.username
-                    );
-                    // If the message doesn't send we don't care...or we do
-                    let _ = send_message(twitch_client, msg).await;
-                    return Ok(());
+            handle_info_command(twitch_client, pool, splitmsg, msg).await?;
+        }
+
+        // Commands requiring admin privileges
+        "!reverb" | "!queue" | "!play" | "!pause" | "!unpause" | "!skip"
+        | "!stop" | "!nightcore" | "!doom" | "!normal" | "!speedup"
+        | "!slowdown" | "!up" | "!down" | "!coding_volume" | "!quiet"
+        | "!party_volume" => {
+            if !is_admin(msg) {
+                return Ok(());
+            }
+
+            match command {
+                "!reverb" => {
+                    handle_reverb_command(
+                        twitch_client,
+                        pool,
+                        sink,
+                        splitmsg,
+                        msg,
+                    )
+                    .await?;
                 }
-            };
-
-            let res = subd_suno::get_audio_information(id).await?;
-            println!("Suno Response: {:?}", res);
-            // We query for info
-            return Ok(());
-        }
-
-        "!reverb" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            let id = match splitmsg.get(1) {
-                Some(id) => id.as_str(),
-                None => {
-                    println!("No ID Found to reverb to add reverb");
-                    return Ok(());
+                "!queue" => {
+                    handle_queue_command(pool, splitmsg).await?;
                 }
-            };
-
-            // TODO: relook at reverb
-            // sink.try_seek() and you might need the position before you move it
-            // add_source(song, reverb) ->sink.skip_one(); sink.seek(sink.get_pos())
-            println!("\tQueuing w/ Reverb {}", id);
-            // let reverb = true;
-            return subd_suno::play_audio(
-                &twitch_client,
-                pool,
-                &sink,
-                id,
-                &msg.user_name,
-            )
-            .await;
-        }
-        // ================= //
-        // Playback Controls //
-        // ================= //
-        "!queue" => {
-            if _not_beginbot {
-                return Ok(());
+                "!play" => {
+                    handle_play_command(
+                        twitch_client,
+                        pool,
+                        sink,
+                        splitmsg,
+                        msg,
+                    )
+                    .await?;
+                }
+                "!pause" | "!unpause" | "!skip" | "!stop" => {
+                    handle_playback_control(command, sink).await?;
+                }
+                "!nightcore" | "!doom" | "!normal" | "!speedup"
+                | "!slowdown" => {
+                    handle_speed_control(command, sink).await?;
+                }
+                "!up" | "!down" | "!coding_volume" | "!quiet"
+                | "!party_volume" => {
+                    handle_volume_control(command, sink).await?;
+                }
+                _ => {}
             }
-
-            let id = match splitmsg.get(1) {
-                Some(id) => id.as_str(),
-                None => return Ok(()),
-            };
-
-            // let reverb = false;
-            // let _audio_info = get_audio_information(id).await?;
-
-            let uuid_id = uuid::Uuid::parse_str(id)?;
-            ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
-            return Ok(());
         }
 
-        "!play" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            let id = match splitmsg.get(1) {
-                Some(id) => id.as_str(),
-                None => return Ok(()),
-            };
-
-            // ============================================
-
-            // The song needs to exist here!!!
-            // let reverb = false;
-            let audio_info = subd_suno::get_audio_information(id).await?;
-            let created_at = sqlx::types::time::OffsetDateTime::now_utc();
-
-            let song_id = Uuid::parse_str(&audio_info.id)?;
-            let new_song = ai_songs::Model {
-                song_id,
-                title: audio_info.title,
-                tags: audio_info.metadata.tags,
-                prompt: audio_info.metadata.prompt,
-                username: msg.user_name.clone(),
-                audio_url: audio_info.audio_url,
-                lyric: audio_info.lyric,
-                gpt_description_prompt: audio_info
-                    .metadata
-                    .gpt_description_prompt,
-                last_updated: Some(created_at),
-                created_at: Some(created_at),
-            };
-
-            // HA WE ARE TRYING
-            // If we already have the song, we don't need to crash
-            let _saved_song = new_song.save(&pool).await;
-
-            let _ = subd_suno::play_audio(
-                &twitch_client,
-                pool,
-                &sink,
-                id,
-                &msg.user_name,
-            )
-            .await;
-            return Ok(());
-        }
-
-        "!pause" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            println!("\tAttempting to !pause");
-            sink.pause();
-            println!("\tDone !pause");
-            return Ok(());
-        }
-
-        "!unpause" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            println!("\tTrying to Pause!");
-            sink.play();
-            println!("\tDone Pausing");
-            return Ok(());
-        }
-
-        "!skip" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            println!("\tAttempting to Skip!");
-            sink.skip_one();
-            sink.play();
-            println!("\tDone Attempting to Skip!");
-            return Ok(());
-        }
-
-        "!stop" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            println!("\tAttempting to Stop!");
-            sink.stop();
-            println!("\tDone Attempting to Stop!");
-            return Ok(());
-        }
-
-        // =============== //
-        // Speed Controls //
-        // =============== //
-        "!nightcore" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\nNightcore Time");
-            sink.set_speed(1.5);
-            return Ok(());
-        }
-
-        "!doom" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\nDoom Time");
-            sink.set_speed(0.5);
-            return Ok(());
-        }
-
-        "!normal" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tNormal Time");
-            sink.set_speed(1.0);
-            return Ok(());
-        }
-
-        "!speedup" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tSpeeding up!");
-            sink.set_speed(sink.speed() * 1.25);
-            return Ok(());
-        }
-
-        "!slowdown" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tSlowin down!");
-            sink.set_speed(sink.speed() * 0.75);
-            return Ok(());
-        }
-
-        // =============== //
-        // Volume Controls //
-        // =============== //
-        "!up" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tTurning it Up!");
-            sink.set_volume(sink.volume() * 1.20);
-            return Ok(());
-        }
-
-        "!down" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tTurning it Down!");
-            sink.set_volume(sink.volume() * 0.80);
-            return Ok(());
-        }
-
-        "!coding_volume" | "!quiet" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tTurning it down so we can code!");
-            sink.set_volume(0.1);
-            return Ok(());
-        }
-
-        "!party_volume" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-            println!("\tParty Volume");
-            sink.set_volume(1.0);
-            return Ok(());
-        }
-
-        // Reverb
-        _ => {
-            return Ok(());
-        }
+        // Unknown or unhandled commands
+        _ => {}
     }
+
+    Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_parsing_json() {
-        let f = fs::read_to_string("tmp/raw_response_1725750380.json")
-            .expect("Failed to open file");
-        let suno_responses: Vec<subd_suno::SunoResponse> =
-            serde_json::from_str(&f).expect("Failed to parse JSON");
-
-        // let url = suno_responses[0].audio_url.as_str();
-        // tokio::io::copy(&mut content.as_ref(), &mut file).await.unwrap();
-        let id = &suno_responses[0].id;
-        println!("Suno URL: {}", suno_responses[0].audio_url.as_str());
-
-        let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
-        let file_name = format!("ai_songs/{}.mp3", id);
-
-        let _response = reqwest::get(cdn_url).await.unwrap();
-        let mut _file = tokio::fs::File::create(file_name).await.unwrap();
-
-        // let mut content = Cursor::new(response.bytes().await.unwrap());
-        // std::io::copy(&mut content, &mut file).unwrap();
-
-        // assert!(!suno_responses.is_empty());
-        // assert_eq!(suno_responses[0].status, "completed");
+/// Handles the "!info" command to display current song info
+async fn handle_info_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+    splitmsg: &[String],
+    _msg: &UserMessage,
+) -> Result<()> {
+    if let Some(id) = splitmsg.get(1) {
+        let res = subd_suno::get_audio_information(id).await?;
+        println!("Suno Response: {:?}", res);
+    } else {
+        let song = ai_playlist::get_current_song(pool).await?;
+        let message =
+            format!("Current Song: {} by {}", song.title, song.username);
+        let _ = send_message(twitch_client, message).await;
     }
+    Ok(())
+}
+
+/// Handles the "!reverb" command to play audio with reverb
+async fn handle_reverb_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+    sink: &Sink,
+    splitmsg: &[String],
+    msg: &UserMessage,
+) -> Result<()> {
+    let id = match splitmsg.get(1) {
+        Some(id) => id,
+        None => {
+            println!("No ID provided for reverb.");
+            return Ok(());
+        }
+    };
+
+    println!("Queuing with Reverb: {}", id);
+    subd_suno::play_audio(twitch_client, pool, sink, id, &msg.user_name)
+        .await?;
+    Ok(())
+}
+
+/// Handles the "!queue" command to add a song to the playlist
+async fn handle_queue_command(
+    pool: &PgPool,
+    splitmsg: &[String],
+) -> Result<()> {
+    let id = match splitmsg.get(1) {
+        Some(id) => id,
+        None => return Ok(()),
+    };
+
+    let uuid_id = Uuid::parse_str(id)?;
+    ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
+    Ok(())
+}
+
+/// Handles the "!play" command to play a song immediately
+async fn handle_play_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+    sink: &Sink,
+    splitmsg: &[String],
+    msg: &UserMessage,
+) -> Result<()> {
+    let id = match splitmsg.get(1) {
+        Some(id) => id,
+        None => return Ok(()),
+    };
+
+    // Fetch audio information
+    let audio_info = subd_suno::get_audio_information(id).await?;
+    let created_at = sqlx::types::time::OffsetDateTime::now_utc();
+
+    let song_id = Uuid::parse_str(&audio_info.id)?;
+    let new_song = ai_songs::Model {
+        song_id,
+        title: audio_info.title,
+        tags: audio_info.metadata.tags,
+        prompt: audio_info.metadata.prompt,
+        username: msg.user_name.clone(),
+        audio_url: audio_info.audio_url,
+        lyric: audio_info.lyric,
+        gpt_description_prompt: audio_info.metadata.gpt_description_prompt,
+        last_updated: Some(created_at),
+        created_at: Some(created_at),
+    };
+
+    // Save the song if it doesn't already exist
+    let _ = new_song.save(pool).await;
+
+    // Play the audio
+    subd_suno::play_audio(twitch_client, pool, sink, id, &msg.user_name)
+        .await?;
+    Ok(())
+}
+
+/// Handles playback control commands like pause, unpause, skip, and stop
+async fn handle_playback_control(command: &str, sink: &Sink) -> Result<()> {
+    match command {
+        "!pause" => {
+            println!("Pausing playback.");
+            sink.pause();
+        }
+        "!unpause" => {
+            println!("Resuming playback.");
+            sink.play();
+        }
+        "!skip" => {
+            println!("Skipping current track.");
+            sink.skip_one();
+            sink.play();
+        }
+        "!stop" => {
+            println!("Stopping playback.");
+            sink.stop();
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Handles speed control commands like nightcore, doom, speedup, and slowdown
+async fn handle_speed_control(command: &str, sink: &Sink) -> Result<()> {
+    match command {
+        "!nightcore" => {
+            println!("Setting speed to Nightcore (1.5x).");
+            sink.set_speed(1.5);
+        }
+        "!doom" => {
+            println!("Setting speed to Doom (0.5x).");
+            sink.set_speed(0.5);
+        }
+        "!normal" => {
+            println!("Resetting speed to normal (1.0x).");
+            sink.set_speed(1.0);
+        }
+        "!speedup" => {
+            println!("Increasing playback speed.");
+            sink.set_speed(sink.speed() * 1.25);
+        }
+        "!slowdown" => {
+            println!("Decreasing playback speed.");
+            sink.set_speed(sink.speed() * 0.75);
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Handles volume control commands like up, down, quiet, and party volume
+async fn handle_volume_control(command: &str, sink: &Sink) -> Result<()> {
+    match command {
+        "!up" => {
+            println!("Increasing volume.");
+            sink.set_volume(sink.volume() * 1.20);
+        }
+        "!down" => {
+            println!("Decreasing volume.");
+            sink.set_volume(sink.volume() * 0.80);
+        }
+        "!coding_volume" | "!quiet" => {
+            println!("Setting volume for coding (0.1).");
+            sink.set_volume(0.1);
+        }
+        "!party_volume" => {
+            println!("Setting volume to party level (1.0).");
+            sink.set_volume(1.0);
+        }
+        _ => {}
+    }
+    Ok(())
 }

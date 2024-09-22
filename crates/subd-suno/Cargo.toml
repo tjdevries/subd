@@ -15,6 +15,7 @@ twitch-irc.workspace = true
 uuid.workspace = true
 sqlx.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 anyhow.workspace = true
 obws = "0.10"
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }

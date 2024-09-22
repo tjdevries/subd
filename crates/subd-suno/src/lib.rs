@@ -143,3 +143,35 @@ async fn play_sound_instantly(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_parsing_json() {
+        let f = fs::read_to_string("tmp/raw_response_1725750380.json")
+            .expect("Failed to open file");
+        let suno_responses: Vec<SunoResponse> =
+            serde_json::from_str(&f).expect("Failed to parse JSON");
+
+        // let url = suno_responses[0].audio_url.as_str();
+        // tokio::io::copy(&mut content.as_ref(), &mut file).await.unwrap();
+        let id = &suno_responses[0].id;
+        println!("Suno URL: {}", suno_responses[0].audio_url.as_str());
+
+        let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
+        let file_name = format!("ai_songs/{}.mp3", id);
+
+        let _response = reqwest::get(cdn_url).await.unwrap();
+        let mut _file = tokio::fs::File::create(file_name).await.unwrap();
+
+        // let mut content = Cursor::new(response.bytes().await.unwrap());
+        // std::io::copy(&mut content, &mut file).unwrap();
+
+        // assert!(!suno_responses.is_empty());
+        // assert_eq!(suno_responses[0].status, "completed");
+    }
+}
