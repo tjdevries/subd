@@ -3,8 +3,7 @@ use async_trait::async_trait;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
-use subd_types::Event;
-use subd_types::UserMessage;
+use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -17,6 +16,12 @@ pub struct AISongsDownloader {
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
 }
 
+enum Command {
+    Download { id: String },
+    CreateSong { prompt: String },
+    Unknown,
+}
+
 #[async_trait]
 impl EventHandler for AISongsDownloader {
     async fn handle(
@@ -24,118 +29,123 @@ impl EventHandler for AISongsDownloader {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        loop {
-            let event = rx.recv().await?;
-            let msg = match event {
-                Event::UserMessage(msg) => msg,
-                _ => continue,
-            };
-
-            let splitmsg = msg
-                .contents
-                .split(" ")
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-
-            match handle_requests(
-                &tx,
-                &self.obs_client,
-                &self.twitch_client,
-                &self.pool,
-                splitmsg,
-                msg,
-            )
-            .await
-            {
-                Ok(_) => {}
-                Err(err) => {
-                    eprintln!("Error: {err}");
-                    continue;
+        while let Ok(event) = rx.recv().await {
+            if let Event::UserMessage(msg) = event {
+                if let Err(err) = handle_requests(
+                    &tx,
+                    &self.obs_client,
+                    &self.twitch_client,
+                    &self.pool,
+                    msg,
+                )
+                .await
+                {
+                    eprintln!("Error handling request: {}", err);
                 }
             }
         }
+        Ok(())
     }
 }
 
+/// Handles incoming requests based on the parsed command.
 pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
     _obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    pool: &sqlx::PgPool,
-    splitmsg: Vec<String>,
+    pool: &PgPool,
     msg: UserMessage,
 ) -> Result<()> {
-    let _not_beginbot =
-        msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
+    // Ignore messages from the bot itself
+    if ["beginbot", "beginbotbot"].contains(&msg.user_name.as_str()) {
+        return Ok(());
+    }
 
-    // let is_mod = msg.roles.is_twitch_mod();
-    // let is_vip = msg.roles.is_twitch_vip();
-    // let is_sub = msg.roles.is_twitch_sub();
-    // if !is_sub && !is_vip && !is_mod && _not_beginbot {
-    //     return Ok(());
-    // }
-
-    let command = splitmsg[0].as_str();
-    let prompt = splitmsg[1..].to_vec().join(" ");
-
-    match command {
-        "!download" => {
-            if _not_beginbot {
-                return Ok(());
-            }
-
-            let id = match splitmsg.get(1) {
-                Some(id) => id.as_str(),
-                None => return Ok(()),
-            };
-
-            subd_suno::download_and_play(
+    match parse_command(&msg) {
+        Command::Download { id } => {
+            handle_download_command(twitch_client, tx, msg.user_name, id).await
+        }
+        Command::CreateSong { prompt } => {
+            handle_create_song_command(
                 twitch_client,
+                pool,
                 tx,
                 msg.user_name,
-                &id.to_string(),
+                prompt,
             )
             .await
         }
+        Command::Unknown => Ok(()),
+    }
+}
 
-        "!create_song" | "!song" => {
-            println!("\tIt's Song time!");
-            let data = subd_suno::AudioGenerationData {
-                prompt,
-                make_instrumental: false,
-                wait_audio: true,
-            };
-            let res = subd_suno::generate_audio_by_prompt(data).await;
-            match res {
-                Ok(json_response) => {
-                    // There is a better way of doing this
-                    println!("JSON Response: {:#?}", json_response);
-                    let _ = subd_suno::parse_suno_response_download_and_play(
-                        twitch_client,
-                        pool,
-                        tx,
-                        json_response.clone(),
-                        0,
-                        msg.user_name.clone(),
-                    )
-                    .await;
-                    subd_suno::parse_suno_response_download_and_play(
-                        twitch_client,
-                        pool,
-                        tx,
-                        json_response,
-                        1,
-                        msg.user_name.clone(),
-                    )
-                    .await
-                }
-                Err(e) => {
-                    eprintln!("Error generating audio: {}", e);
-                    Ok(())
-                }
+/// Parses a user's message into a `Command`.
+fn parse_command(msg: &UserMessage) -> Command {
+    let mut words = msg.contents.split_whitespace();
+    match words.next() {
+        Some("!download") => {
+            if let Some(id) = words.next() {
+                Command::Download { id: id.to_string() }
+            } else {
+                Command::Unknown
             }
         }
+        Some("!create_song") | Some("!song") => {
+            let prompt = words.collect::<Vec<_>>().join(" ");
+            Command::CreateSong { prompt }
+        }
+        _ => Command::Unknown,
+    }
+}
+/// Handles the `!download` command.
+async fn handle_download_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    tx: &broadcast::Sender<Event>,
+    user_name: String,
+    id: String,
+) -> Result<()> {
+    subd_suno::download_and_play(twitch_client, tx, user_name, &id).await
+}
 
-        _ => Ok(()),
+/// Handles the `!create_song` and `!song` commands.
+async fn handle_create_song_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+    tx: &broadcast::Sender<Event>,
+    user_name: String,
+    prompt: String,
+) -> Result<()> {
+    println!("\tIt's Song time!");
+    let data = subd_suno::AudioGenerationData {
+        prompt,
+        make_instrumental: false,
+        wait_audio: true,
+    };
+    match subd_suno::generate_audio_by_prompt(data).await {
+        Ok(json_response) => {
+            println!("JSON Response: {:#?}", json_response);
+            subd_suno::parse_suno_response_download_and_play(
+                twitch_client,
+                pool,
+                tx,
+                json_response.clone(),
+                0,
+                user_name.clone(),
+            )
+            .await?;
+            subd_suno::parse_suno_response_download_and_play(
+                twitch_client,
+                pool,
+                tx,
+                json_response,
+                1,
+                user_name,
+            )
+            .await
+        }
+        Err(e) => {
+            eprintln!("Error generating audio: {}", e);
+            Ok(())
+        }
     }
 }
