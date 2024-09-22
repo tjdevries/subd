@@ -3,24 +3,23 @@ use base64::{engine::general_purpose, Engine as _};
 use bytes::Bytes;
 use mime_guess::MimeGuess;
 use regex::Regex;
+use reqwest::Client as ReqwestClient;
 use tokio::{
     fs::{create_dir_all, File},
     io::AsyncReadExt,
 };
 
-use reqwest::Client as ReqwestClient;
-
-pub async fn download_video(url: &str) -> Result<Bytes> {
-    let client = ReqwestClient::new();
-    let resp = client.get(url).send().await.with_context(|| {
-        format!("Failed to download video from URL: {}", url)
-    })?;
-    let video_bytes = resp
-        .bytes()
-        .await
-        .with_context(|| "Failed to get bytes from response")?;
-    Ok(video_bytes)
-}
+//pub async fn download_video(url: &str) -> Result<Bytes> {
+//    let client = ReqwestClient::new();
+//    let resp = client.get(url).send().await.with_context(|| {
+//        format!("Failed to download video from URL: {}", url)
+//    })?;
+//    let video_bytes = resp
+//        .bytes()
+//        .await
+//        .with_context(|| "Failed to get bytes from response")?;
+//    Ok(video_bytes)
+//}
 
 pub async fn encode_file_as_data_uri(file_path: &str) -> Result<String> {
     let mut file = File::open(file_path)

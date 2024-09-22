@@ -1,11 +1,25 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
+use bytes::Bytes;
 use reqwest;
 use reqwest::redirect::Policy;
+use reqwest::Client as ReqwestClient;
 use std::fs::File;
 use std::io::Write;
 use std::io::{self, Read};
+
+pub async fn download_video(url: &str) -> Result<Bytes> {
+    let client = ReqwestClient::new();
+    let resp = client.get(url).send().await.with_context(|| {
+        format!("Failed to download video from URL: {}", url)
+    })?;
+    let video_bytes = resp
+        .bytes()
+        .await
+        .with_context(|| "Failed to get bytes from response")?;
+    Ok(video_bytes)
+}
 
 pub async fn download_image(
     url: String,

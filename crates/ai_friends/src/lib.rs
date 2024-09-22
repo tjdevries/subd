@@ -60,7 +60,7 @@ pub async fn sync_lips_to_voice(
 
     let video_url =
         fal_ai::utils::extract_video_url_from_fal_result(&fal_result)?;
-    let video_bytes = fal_ai::utils::download_video(&video_url).await?;
+    let video_bytes = subd_image_utils::download_video(&video_url).await?;
 
     let timestamp = Utc::now().timestamp();
     let video_path = format!(

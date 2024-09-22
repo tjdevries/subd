@@ -70,7 +70,7 @@ pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
     let json: serde_json::Value = serde_json::from_str(&body)?;
 
     if let Some(url) = json["video"]["url"].as_str() {
-        let video_bytes = utils::download_video(url).await?;
+        let video_bytes = subd_image_utils::download_video(url).await?;
         let timestamp = Utc::now().timestamp();
         let filename = format!(
             "{}/{}.mp4",

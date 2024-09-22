@@ -9,3 +9,4 @@ edition = "2021"
 anyhow.workspace = true
 base64 = "0.22.1"
 reqwest.workspace = true
+bytes = "1.7.1"

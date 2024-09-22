@@ -15,6 +15,7 @@ obws = "0.10"
 subd-types = { path = "../subd-types/" }
 twitch_chat = { path = "../twitch_chat/" }
 obs_service = { path = "../obs_service/" }
+subd-image-utils = { path = "../subd-image-utils/" }
 chrono.workspace = true
 anyhow.workspace = true
 bytes = "1.7.1"

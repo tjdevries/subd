@@ -9,6 +9,7 @@ edition = "2021"
 
 fal-rust = { path = "../../../fal-rust" }
 subd-types = { path = "../subd-types/" }
+subd-image-utils= { path = "../subd-image-utils/" }
 base64 = "0.21.5"
 regex = "1.10.6"
 mime_guess = "2.0.5"

@@ -9,18 +9,6 @@ use tokio::{
     io::AsyncReadExt,
 };
 
-pub async fn download_video(url: &str) -> Result<Bytes> {
-    let client = ReqwestClient::new();
-    let resp = client.get(url).send().await.with_context(|| {
-        format!("Failed to download video from URL: {}", url)
-    })?;
-    let video_bytes = resp
-        .bytes()
-        .await
-        .with_context(|| "Failed to get bytes from response")?;
-    Ok(video_bytes)
-}
-
 pub async fn encode_file_as_data_uri(file_path: &str) -> Result<String> {
     let mut file = File::open(file_path)
         .await
