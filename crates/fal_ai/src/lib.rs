@@ -1,9 +1,8 @@
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
-use tokio::fs::create_dir_all;
-
 use fal_rust::client::{ClientCredentials, FalClient};
 use subd_types;
+use tokio::fs::create_dir_all;
 
 pub mod models;
 pub mod utils;
@@ -55,7 +54,7 @@ pub async fn create_turbo_image_in_folder(
 
 pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
     let fal_source_image_data_uri =
-        utils::encode_file_as_data_uri(image_file_path).await?;
+        subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
     let client = FalClient::new(ClientCredentials::from_env());
 
     let response = client

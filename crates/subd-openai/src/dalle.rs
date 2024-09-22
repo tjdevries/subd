@@ -4,8 +4,6 @@ use anyhow::{anyhow, Result};
 use core::pin::Pin;
 use reqwest;
 use serde::{Deserialize, Serialize};
-// use serde_json::json;
-// use std::io::Read;
 use std::env;
 use std::fs;
 use std::fs::File;
@@ -84,7 +82,7 @@ async fn process_dalle_request(
         .to_str()
         .ok_or("error converting archive path to str")?;
 
-    let mut image_data = match subd_image_utils::download_image(
+    let mut image_data = match subd_image_utils::download_image_to_vec(
         download_resp.url.clone(),
         f.to_string(),
     )

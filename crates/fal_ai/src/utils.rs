@@ -1,31 +1,9 @@
 use anyhow::{anyhow, Context, Result};
 use base64::{engine::general_purpose, Engine as _};
 use bytes::Bytes;
-use mime_guess::MimeGuess;
 use regex::Regex;
 use reqwest::Client as ReqwestClient;
-use tokio::{
-    fs::{create_dir_all, File},
-    io::AsyncReadExt,
-};
-
-pub async fn encode_file_as_data_uri(file_path: &str) -> Result<String> {
-    let mut file = File::open(file_path)
-        .await
-        .with_context(|| format!("Failed to open file: {}", file_path))?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)
-        .await
-        .with_context(|| format!("Failed to read file: {}", file_path))?;
-
-    let encoded_data = general_purpose::STANDARD.encode(&buffer);
-    let mime_type = MimeGuess::from_path(file_path)
-        .first_or_octet_stream()
-        .essence_str()
-        .to_string();
-
-    Ok(format!("data:{};base64,{}", mime_type, encoded_data))
-}
+use tokio::fs::create_dir_all;
 
 pub async fn process_fal_images_from_json(
     raw_json: &[u8],
@@ -100,6 +78,7 @@ fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
     Ok((mime_type, base64_data))
 }
 
+// I think we can move this out
 async fn download_image(url: &str) -> Result<Bytes> {
     let client = ReqwestClient::new();
     let response = client.get(url).send().await.with_context(|| {

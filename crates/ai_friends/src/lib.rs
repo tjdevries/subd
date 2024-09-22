@@ -47,9 +47,9 @@ pub async fn sync_lips_to_voice(
     audio_file_path: &str,
 ) -> Result<Bytes> {
     let fal_source_image_data_uri =
-        fal_ai::utils::encode_file_as_data_uri(image_file_path).await?;
+        subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
     let fal_driven_audio_data_uri =
-        fal_ai::utils::encode_file_as_data_uri(audio_file_path).await?;
+        subd_image_utils::encode_file_as_data_uri(audio_file_path).await?;
 
     let fal_result = fal_ai::fal_submit_sadtalker_request(
         &fal_source_image_data_uri,
