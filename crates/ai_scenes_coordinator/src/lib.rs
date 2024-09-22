@@ -1,7 +1,6 @@
 use ai_friends;
 use ai_movie_trailers;
-use anyhow::anyhow;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use elevenlabs_api::{
     tts::{TtsApi, TtsBody},
@@ -9,13 +8,10 @@ use elevenlabs_api::{
 };
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
-use std::collections::HashMap;
-use std::fs;
-use std::sync::Arc;
+use std::{collections::HashMap, fs};
 use stream_character;
 use subd_audio;
 use subd_types::AiScenesRequest;
-use tokio::sync::Mutex;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -23,7 +19,6 @@ use twitch_stream_state;
 
 pub mod models;
 
-// time to write some Rust!
 pub async fn run_ai_scene(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     obs_client: &OBSClient,
@@ -31,223 +26,174 @@ pub async fn run_ai_scene(
     elevenlabs: &Elevenlabs,
     ai_scene_req: &AiScenesRequest,
 ) -> Result<()> {
-    // Figure out the voice for the voice-over
+    // Determine the voice to use for the voice-over
     let final_voice = determine_voice_to_use(
-        ai_scene_req.username.clone(),
+        &ai_scene_req.username,
         ai_scene_req.voice.clone(),
-        pool.clone(),
+        pool,
     )
     .await?;
 
-    // Generate the Audio to for the Voice Over
-    let filename = twitch_chat_filename(
-        ai_scene_req.username.clone(),
-        final_voice.clone(),
-    );
-    // let chat_message = sanitize_chat_message(ai_scene_req.message.clone());
-    let chat_message = ai_scene_req.message.clone();
+    // Generate and save the TTS audio
     let local_audio_path = generate_and_save_tts_audio(
-        final_voice.clone(),
-        filename,
-        chat_message,
-        &elevenlabs,
-        &ai_scene_req,
-    )
-    .map_err(|e| {
-        // I could add more info to this error?
-        // anyhow Context???
-        println!("Failed to generate audio: {}", e);
-        e
-    })?;
+        &final_voice,
+        &ai_scene_req.username,
+        &ai_scene_req.message,
+        elevenlabs,
+        ai_scene_req,
+    )?;
 
-    // Trigger the background music
-    println!("AI Scene Request {:?}", &ai_scene_req);
-    // we are going to turn this off for now
-    // if let Some(prompt) = &ai_scene_req.prompt {
-    //     twitch_stream_state::set_ai_background_theme(&pool, &prompt).await?;
-    // };
-    let twitch_client = Arc::new(Mutex::new(twitch_client));
-    let clone_twitch_client = twitch_client.clone();
-    let locked_twitch_client = clone_twitch_client.lock().await;
-    // let obs_client = Arc::new(Mutex::new(obs_client));
-    // let obs_client_clone = obs_client.clone();
-    // let locked_obs_client = obs_client_clone.lock().await;
-
-    // This is a dumb way to decide if the scene is AI Friend or not
-    // this only works because we are correlating a voice like prime, with asking prime a question
-    // through channel points
-    let face_image = build_face_scene_request(final_voice.clone()).await?;
-    match face_image {
-        Some(image_file_path) => {
-            println!("Triggering AI Friend Scene");
-            ai_friends::trigger_ai_friend(
-                obs_client,
-                &locked_twitch_client,
-                ai_scene_req,
-                image_file_path,
-                local_audio_path,
-                final_voice,
-            )
-            .await?
-        }
-        None => {
-            println!("Triggering AI Movie");
-            ai_movie_trailers::trigger_movie_trailer(
-                ai_scene_req,
-                &locked_twitch_client,
-                local_audio_path,
-            )
-            .await?
-        }
+    // Decide which scene to trigger based on the voice
+    if let Some(image_file_path) =
+        build_face_scene_request(&final_voice).await?
+    {
+        println!("Triggering AI Friend Scene");
+        ai_friends::trigger_ai_friend(
+            obs_client,
+            twitch_client,
+            ai_scene_req,
+            image_file_path,
+            local_audio_path,
+            final_voice,
+        )
+        .await?;
+    } else {
+        println!("Triggering AI Movie Trailer Scene");
+        ai_movie_trailers::trigger_movie_trailer(
+            ai_scene_req,
+            twitch_client,
+            local_audio_path,
+        )
+        .await?;
     }
 
-    return Ok(());
+    Ok(())
 }
 
 fn generate_and_save_tts_audio(
-    voice: String,
-    filename: String,
-    chat_message: String,
+    voice: &str,
+    username: &str,
+    chat_message: &str,
     elevenlabs: &Elevenlabs,
     ai_scenes_request: &AiScenesRequest,
 ) -> Result<String> {
-    let voice_data = find_voice_id_by_name(&voice.clone());
-    let (voice_id, _voice_name) = match voice_data {
-        Some((id, name)) => (id, name),
-        None => find_random_voice(),
-    };
+    // Find the voice ID based on the voice name
+    let (voice_id, _) =
+        find_voice_id_by_name(voice).unwrap_or_else(find_random_voice);
 
-    // The voice here in the TTS body is final
+    // Create the TTS request body
     let tts_body = TtsBody {
         model_id: None,
-        text: chat_message,
+        text: chat_message.to_string(),
         voice_settings: None,
     };
-    let tts_result = elevenlabs.tts(&tts_body, voice_id);
-    let bytes =
-        tts_result.map_err(|e| anyhow!("Error calling ElevenLabs: {}", e))?;
 
-    // w/ Extension
+    // Call the ElevenLabs TTS API
+    let bytes = elevenlabs
+        .tts(&tts_body, &voice_id)
+        .map_err(|e| anyhow!("Error calling ElevenLabs: {}", e))?;
+
+    // Generate the filename and save path
+    let filename = twitch_chat_filename(username, voice);
     let full_filename = format!("{}.wav", filename);
-
-    // TODO: remove begin references
     let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
     let local_audio_path = format!("{}/{}", tts_folder, full_filename);
-    std::fs::write(local_audio_path.clone(), bytes)?;
 
-    subd_audio::add_voice_modifiers(ai_scenes_request, voice, local_audio_path)
+    // Save the audio file locally
+    fs::write(&local_audio_path, bytes)?;
+
+    // Apply any voice modifiers
+    subd_audio::add_voice_modifiers(
+        ai_scenes_request,
+        voice.to_string(),
+        local_audio_path,
+    )
 }
 
-// ================= //
-// Finding Functions //
-// ================= //
-
 async fn determine_voice_to_use(
-    username: String,
+    username: &str,
     voice_override: Option<String>,
-    pool: sqlx::PgPool,
+    pool: &sqlx::PgPool,
 ) -> Result<String> {
-    let twitch_state = twitch_stream_state::get_twitch_state(&pool);
-    let global_voice =
-        stream_character::get_voice_from_username(&pool.clone(), "beginbot")
-            .await?;
+    // If a voice override is provided, use it
+    if let Some(voice) = voice_override {
+        return Ok(voice);
+    }
 
-    match voice_override {
-        Some(voice) => return Ok(voice),
-        None => {
-            if let Ok(state) = twitch_state.await {
-                if state.global_voice {
-                    return Ok(global_voice);
-                }
-            };
-
-            let user_voice_opt = stream_character::get_voice_from_username(
-                &pool.clone(),
-                username.clone().as_str(),
-            )
-            .await;
-
-            return Ok(match user_voice_opt {
-                Ok(voice) => voice,
-                Err(_) => global_voice.clone(),
-            });
+    // Check if the global voice setting is enabled
+    if let Ok(state) = twitch_stream_state::get_twitch_state(pool).await {
+        if state.global_voice {
+            let global_voice =
+                stream_character::get_voice_from_username(pool, "beginbot")
+                    .await?;
+            return Ok(global_voice);
         }
     }
+
+    // Get the voice associated with the username
+    let user_voice =
+        stream_character::get_voice_from_username(pool, username).await?;
+    Ok(user_voice)
 }
 
 fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
-    // We should replace this with an API call
-    // or call it every once-in-a-while and "cache"
-    let data =
-        fs::read_to_string("data/voices.json").expect("Unable to read file");
+    // Read the list of voices from a JSON file
+    let data = fs::read_to_string("data/voices.json")
+        .expect("Unable to read voices.json");
     let voice_list: models::VoiceList =
-        serde_json::from_str(&data).expect("JSON was not well-formatted");
+        serde_json::from_str(&data).expect("Failed to parse voices.json");
 
+    // Search for the voice by name (case-insensitive)
     let name_lowercase = name.to_lowercase();
-
-    for voice in voice_list.voices {
-        if voice.name.to_lowercase() == name_lowercase {
-            return Some((voice.voice_id, voice.name));
-        }
-    }
-    None
+    voice_list
+        .voices
+        .into_iter()
+        .find(|voice| voice.name.to_lowercase() == name_lowercase)
+        .map(|voice| (voice.voice_id, voice.name))
 }
 
 fn find_random_voice() -> (String, String) {
-    let data = fs::read_to_string("voices.json").expect("Unable to read file");
-
+    // Read the list of voices from a JSON file
+    let data = fs::read_to_string("data/voices.json")
+        .expect("Unable to read voices.json");
     let voice_list: models::VoiceList =
-        serde_json::from_str(&data).expect("JSON was not well-formatted");
+        serde_json::from_str(&data).expect("Failed to parse voices.json");
 
+    // Select a random voice
     let mut rng = thread_rng();
     let random_voice = voice_list
         .voices
         .choose(&mut rng)
         .expect("List of voices is empty");
 
-    // Return both the voice ID and name
     (random_voice.voice_id.clone(), random_voice.name.clone())
 }
 
-fn twitch_chat_filename(username: String, voice: String) -> String {
+fn twitch_chat_filename(username: &str, voice: &str) -> String {
     let now: DateTime<Utc> = Utc::now();
-
     format!("{}_{}_{}", now.timestamp(), username, voice)
 }
 
-async fn build_face_scene_request(voice: String) -> Result<Option<String>> {
-    let voice_to_face_image = HashMap::from([
-        ("satan".to_string(), "archive/satan.png".to_string()),
-        ("god".to_string(), "archive/god.png".to_string()),
-        ("ethan".to_string(), "archive/alex_jones.png".to_string()),
-        // We need a systen for multiple photos
-        // ("teej".to_string(), "archive/teej.png".to_string()),
-        // ("teej".to_string(), "archive/teej_2.jpg".to_string()),
-        ("prime".to_string(), "archive/green_prime.png".to_string()),
-        // ("teej".to_string(), "archive/teej_3.png".to_string()),
-        // ("teej".to_string(), "archive/teej.png".to_string()),
-        // ("teej".to_string(), "archive/teej_4.png".to_string()),
-        ("teej".to_string(), "archive/teej_5.png".to_string()),
-        ("melkey".to_string(), "archive/melkey.png".to_string()),
+async fn build_face_scene_request(voice: &str) -> Result<Option<String>> {
+    let voice_to_face_image: HashMap<&str, &str> = HashMap::from([
+        ("satan", "archive/satan.png"),
+        ("god", "archive/god.png"),
+        ("ethan", "archive/alex_jones.png"),
+        ("prime", "archive/green_prime.png"),
+        ("teej", "archive/teej_5.png"),
+        ("melkey", "archive/melkey.png"),
     ]);
-    Ok(voice_to_face_image.get(&voice).cloned())
+
+    Ok(voice_to_face_image.get(voice).map(|&path| path.to_string()))
 }
 
-// =============================================================
-
-fn _sanitize_chat_message(raw_msg: String) -> String {
-    // Let's replace any word longer than 50 characters
+fn _sanitize_chat_message(raw_msg: &str) -> String {
     raw_msg
         .split_whitespace()
         .map(|word| {
             if word.contains("http") {
                 "U.R.L".to_string()
-            } else {
-                word.to_string()
-            }
-        })
-        .map(|word| {
-            if word.len() > 50 {
+            } else if word.len() > 50 {
                 "long word".to_string()
             } else {
                 word.to_string()

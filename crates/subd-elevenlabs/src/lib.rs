@@ -1,5 +1,3 @@
-// Elevenlabs
-
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rand::Rng;
