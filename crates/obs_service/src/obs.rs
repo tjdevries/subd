@@ -32,5 +32,5 @@ pub async fn print_filter_info(
     };
 
     println!("Filter Details {:?}", filter_details);
-    Ok(String::from(format!("{:?}", filter_details)))
+    Ok(format!("{:?}", filter_details))
 }

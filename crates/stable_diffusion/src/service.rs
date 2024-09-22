@@ -19,7 +19,7 @@ pub async fn run_stable_diffusion_from_prompt(
     request: &models::GenerateAndArchiveRequest,
 ) -> Result<Vec<u8>> {
     let request = RequestDataType::Prompt(request.prompt.clone());
-    Ok(call_prompt_api(request).await?)
+    call_prompt_api(request).await
 }
 
 pub async fn run_stable_diffusion(
@@ -27,7 +27,7 @@ pub async fn run_stable_diffusion(
 ) -> Result<Vec<u8>> {
     let form = form_builder(request)?;
     let request = RequestDataType::Img(form);
-    Ok(call_prompt_api(request).await?)
+    call_prompt_api(request).await
 }
 
 fn form_builder(request: &models::GenerateAndArchiveRequest) -> Result<Form> {
@@ -88,5 +88,4 @@ async fn call_prompt_api(request_type: RequestDataType) -> Result<Vec<u8>> {
     general_purpose::STANDARD
         .decode(base64)
         .map_err(|e| anyhow!(e.to_string()))
-        .and_then(|v| Ok(v))
 }

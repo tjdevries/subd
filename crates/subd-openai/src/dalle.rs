@@ -57,10 +57,10 @@ impl image_generation::GenerateImage for DalleRequest {
                 eprintln!("Error: Dalle request failed");
             }
 
-            return "".to_string();
+            "".to_string()
         };
 
-        return Box::pin(res);
+        Box::pin(res)
     }
 }
 
@@ -92,7 +92,7 @@ async fn process_dalle_request(
         Err(e) => {
             let error = format!(
                 "\nError downloading image to {} : {}",
-                f.to_string(),
+                f,
                 e
             );
             return Err(error);
@@ -119,7 +119,7 @@ async fn process_dalle_request(
 
     // Why is this saving to CSV
     let csv_file = OpenOptions::new()
-        .write(true)
+        
         .append(true)
         .create(true)
         .open("output.csv");

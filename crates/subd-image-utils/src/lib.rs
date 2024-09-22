@@ -4,7 +4,6 @@ use base64::Engine;
 use bytes::Bytes;
 use mime_guess::MimeGuess;
 use regex::Regex;
-use reqwest;
 use reqwest::redirect::Policy;
 use reqwest::Client as ReqwestClient;
 use std::fs::File;

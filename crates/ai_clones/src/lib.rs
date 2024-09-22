@@ -1,11 +1,9 @@
 use anyhow::Result;
 use obs_move_transition::move_source;
-use obs_service;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::inputs::Create;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
-use stable_diffusion;
 use stable_diffusion::models::RequestType::Img2ImgFile;
 use stable_diffusion::stable_diffusion_from_image;
 use std::path::Path;
@@ -32,7 +30,7 @@ pub async fn create_and_show_bogan(
 
     println!("Taking Screenshot");
     let (filename, unique_identifier) =
-        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), &obs_client)
+        utils::take_screenshot(SCREENSHOT_SOURCE.to_string(), obs_client)
             .await?;
 
     println!("Generating Screenshot Variation w/ {}", prompt.clone());
@@ -60,7 +58,7 @@ pub async fn create_and_show_bogan(
         );
     };
 
-    recruit_new_bogan_member(path, &obs_client).await
+    recruit_new_bogan_member(path, obs_client).await
 }
 
 async fn recruit_new_bogan_member(
@@ -77,15 +75,15 @@ async fn recruit_new_bogan_member(
 
     // Do we have to call this???
     let _ = obs_service::obs_source::update_image_source(
-        &obs_client,
+        obs_client,
         new_source.clone(),
         path,
     )
     .await;
 
-    let _ = create_move_source_filter(&scene, &new_source, obs_client).await;
+    let _ = create_move_source_filter(scene, &new_source, obs_client).await;
 
-    let _ = bogan_position::rotate_bogan_order(scene, index, &obs_client).await;
+    let _ = bogan_position::rotate_bogan_order(scene, index, obs_client).await;
 
     // Use the index to move!
     // index - 3 = hide
@@ -126,7 +124,7 @@ async fn create_move_source_filter(
     let new_filter: obws::requests::filters::Create<
         move_source::MoveSourceSettings,
     > = obws::requests::filters::Create {
-        source: &scene,
+        source: scene,
         filter: &filter_name,
         kind: &subd_types::consts::get_move_source_filter_kind(),
         settings: Some(move_source_settings),
@@ -156,7 +154,7 @@ async fn create_new_bogan_source(
     println!("Creating Scene Item: {}", new_source);
 
     let settings = ImageSource {
-        file: &Path::new(&path),
+        file: Path::new(&path),
         unload: true,
     };
     let c = Create {

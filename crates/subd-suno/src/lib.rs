@@ -30,7 +30,7 @@ pub async fn play_audio(
 ) -> Result<()> {
     println!("\tQueuing {}", id);
     let info = format!("@{} added {} to Queue", user_name, id);
-    send_message(&twitch_client, info).await?;
+    send_message(twitch_client, info).await?;
 
     let file_name = format!("ai_songs/{}.mp3", id);
     let mp3 = File::open(&file_name).map_err(|e| {
@@ -217,7 +217,7 @@ pub async fn parse_suno_response_download_and_play(
         last_updated: Some(created_at),
         created_at: Some(created_at),
     };
-    new_song.save(&pool).await?;
+    new_song.save(pool).await?;
 
     let folder_path = format!("tmp/suno_responses/{}", id);
     fs::create_dir_all(&folder_path).await?;

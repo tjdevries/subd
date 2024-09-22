@@ -16,6 +16,12 @@ pub struct EventLoop {
     handlers: Vec<Box<dyn EventHandler>>,
 }
 
+impl Default for EventLoop {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventLoop {
     pub fn new() -> Self {
         Self { handlers: vec![] }

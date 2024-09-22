@@ -37,7 +37,7 @@ async fn process_stable_diffusion(
     request: &models::GenerateAndArchiveRequest,
 ) -> Result<String> {
     let archive_file = format!("./archive/{}.png", request.unique_identifier);
-    let _ = File::create(&Path::new(&archive_file))
+    let _ = File::create(Path::new(&archive_file))
         .map(|mut f| f.write_all(&image_data))
         .with_context(|| format!("Error creating: {}", archive_file))?;
 
@@ -47,7 +47,7 @@ async fn process_stable_diffusion(
             fld.clone(),
             request.unique_identifier
         );
-        let _ = File::create(&Path::new(&extra_archive_file))
+        let _ = File::create(Path::new(&extra_archive_file))
             .map(|mut f| f.write_all(&image_data))
             .with_context(|| {
                 format!("Error creating: {}", extra_archive_file)
@@ -55,8 +55,8 @@ async fn process_stable_diffusion(
     }
 
     if request.set_as_obs_bg {
-        let filename = format!("./tmp/dalle-1.png");
-        let _ = File::create(&Path::new(&filename))
+        let filename = "./tmp/dalle-1.png".to_string();
+        let _ = File::create(Path::new(&filename))
             .map(|mut f| f.write_all(&image_data))
             .with_context(|| format!("Error creating: {}", filename))?;
     }

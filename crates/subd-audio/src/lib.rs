@@ -37,7 +37,7 @@ pub fn get_output_stream(
 
     let devices = host.output_devices().unwrap();
     for device in devices {
-        let dev: rodio::Device = device.into();
+        let dev: rodio::Device = device;
         let dev_name: String = dev.name().unwrap();
         if dev_name == device_name {
             println!("Device found: {}", dev_name);
@@ -45,7 +45,7 @@ pub fn get_output_stream(
         }
     }
 
-    return Err(anyhow::anyhow!("Device not found"));
+    Err(anyhow::anyhow!("Device not found"))
 }
 
 // ============== //
@@ -70,23 +70,17 @@ pub fn add_voice_modifiers(
         local_audio_path = add_reverb(local_audio_path.clone())?;
     }
 
-    match &req.stretch {
-        Some(stretch) => {
-            local_audio_path =
-                normalize_tts_file(local_audio_path.clone()).unwrap();
-            local_audio_path =
-                stretch_audio(local_audio_path, stretch.to_owned())?;
-        }
-        None => {}
+    if let Some(stretch) = &req.stretch {
+        local_audio_path =
+            normalize_tts_file(local_audio_path.clone()).unwrap();
+        local_audio_path =
+            stretch_audio(local_audio_path, stretch.to_owned())?;
     }
 
-    match &req.pitch {
-        Some(pitch) => {
-            local_audio_path = normalize_tts_file(local_audio_path.clone())?;
-            local_audio_path =
-                change_pitch(local_audio_path, pitch.to_owned())?;
-        }
-        None => {}
+    if let Some(pitch) = &req.pitch {
+        local_audio_path = normalize_tts_file(local_audio_path.clone())?;
+        local_audio_path =
+            change_pitch(local_audio_path, pitch.to_owned())?;
     }
 
     if voice == "evil_pokimane" {
@@ -106,14 +100,14 @@ pub fn add_voice_modifiers(
         local_audio_path = add_reverb(local_audio_path)?;
     }
 
-    return Ok(local_audio_path);
+    Ok(local_audio_path)
 }
 
 fn normalize_tts_file(local_audio_path: String) -> Result<String> {
     let audio_dest_path =
         add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(&["-i", &local_audio_path, &audio_dest_path])
+        .args(["-i", &local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 
@@ -131,7 +125,7 @@ fn stretch_audio(local_audio_path: String, stretch: String) -> Result<String> {
         "_stretch".to_string(),
     );
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,
@@ -145,11 +139,11 @@ fn stretch_audio(local_audio_path: String, stretch: String) -> Result<String> {
 }
 
 fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
-    let postfix = format!("{}_{}", "_pitch".to_string(), pitch);
+    let postfix = format!("{}_{}", "_pitch", pitch);
     let audio_dest_path =
         add_postfix_to_filepath(local_audio_path.clone(), postfix);
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,
@@ -169,7 +163,7 @@ fn add_reverb(local_audio_path: String) -> Result<String> {
         "_reverb".to_string(),
     );
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,

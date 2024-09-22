@@ -36,7 +36,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let mut content = vec![];
     for item in input_content {
         match item {
-            syn::Item::Struct(s) if s.ident.to_string() == "Model" => {
+            syn::Item::Struct(s) if s.ident == "Model" => {
                 models.push(s)
             }
             _ => content.push(item),
@@ -63,7 +63,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                         a.path()
                             .segments
                             .iter()
-                            .any(|s| s.ident.to_string() == "primary_key")
+                            .any(|s| s.ident == "primary_key")
                     })
                     .is_some()
                 {
@@ -77,7 +77,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                         a.path()
                             .segments
                             .iter()
-                            .any(|s| s.ident.to_string() == "immutable")
+                            .any(|s| s.ident == "immutable")
                     })
                     .is_some()
                 {
@@ -105,29 +105,23 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     };
 
     let mut new_args: Punctuated<FnArg, Token![,]> = Punctuated::new();
-    model.fields.iter().for_each(|f| match &f.ident {
-        Some(ident) => new_args.push(FnArg::Typed(PatType {
+    model.fields.iter().for_each(|f| if let Some(ident) = &f.ident { new_args.push(FnArg::Typed(PatType {
+        attrs: vec![],
+        pat: Box::new(Pat::Ident(PatIdent {
             attrs: vec![],
-            pat: Box::new(Pat::Ident(PatIdent {
-                attrs: vec![],
-                by_ref: None,
-                mutability: None,
-                ident: ident.clone(),
-                subpat: None,
-            })),
-            colon_token: f.colon_token.unwrap(),
-            ty: Box::new(f.ty.clone()),
+            by_ref: None,
+            mutability: None,
+            ident: ident.clone(),
+            subpat: None,
         })),
-        None => (),
-    });
+        colon_token: f.colon_token.unwrap(),
+        ty: Box::new(f.ty.clone()),
+    })) });
 
     let self_body = model
         .fields
         .iter()
-        .filter_map(|f| match &f.ident {
-            Some(ident) => Some(ident.clone()),
-            None => None,
-        })
+        .filter_map(|f| f.ident.clone())
         .collect::<Punctuated<Ident, Token![,]>>();
 
     // Remove attrs (todo, only immutable attrs)
@@ -149,10 +143,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let field_list = model
         .fields
         .iter()
-        .filter_map(|f| match &f.ident {
-            Some(ident) => Some(ident.to_string()),
-            None => None,
-        })
+        .filter_map(|f| f.ident.as_ref().map(|ident| ident.to_string()))
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -162,7 +153,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 "SELECT {} FROM {} WHERE {} = $1",
                 field_list,
                 name,
-                primary_key.ident.unwrap().to_string(),
+                primary_key.ident.unwrap(),
             );
 
             quote! {

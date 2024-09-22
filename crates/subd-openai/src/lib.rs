@@ -1,6 +1,5 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use reqwest;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::env;
@@ -153,9 +152,8 @@ pub async fn ask_gpt_vision2(
     let filename = format!("{}.json", now.timestamp());
     let filepath =
         format!("/home/begin/code/subd/tmp/Archive/vision/{}", filename);
-    let mut file = File::create(filepath).map(|m| m)?;
-    file.write_all(response_json.to_string().as_bytes())
-        .map(|m| m)?;
+    let mut file = File::create(filepath)?;
+    file.write_all(response_json.to_string().as_bytes())?;
 
     let vision_res: VisionResponse =
         match serde_json::from_str(&response_json.to_string()) {

@@ -60,10 +60,10 @@ impl EasingDurationBuilder {
 
 impl EasingDuration {
     pub fn new(duration: i32) -> EasingDuration {
-        return EasingDuration {
+        EasingDuration {
             duration: Some(duration),
             ..Default::default()
-        };
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-use ai_friends;
-use ai_movie_trailers;
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use elevenlabs_api::{
@@ -9,13 +7,10 @@ use elevenlabs_api::{
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
 use std::{collections::HashMap, fs};
-use stream_character;
-use subd_audio;
 use subd_types::AiScenesRequest;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use twitch_stream_state;
 
 pub mod models;
 

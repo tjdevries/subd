@@ -100,7 +100,7 @@ fn render_message(message: &TwitchMessage) -> Html {
 }
 
 fn default_messages() -> Vec<TwitchMessage> {
-    return vec![];
+    vec![]
 
     // let channel_username = subd_types::consts::get_twitch_broadcaster_username();
     // let channel_username = "teej_dv".to_string();

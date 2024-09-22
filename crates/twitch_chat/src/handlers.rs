@@ -32,13 +32,10 @@ impl EventHandler for TwitchChat {
         // we send an TwitchChatMessage event
         // which loop handles somewhere
         while let Some(message) = self.incoming.recv().await {
-            match message {
-                ServerMessage::Privmsg(private) => {
-                    tx.send(Event::TwitchChatMessage(
-                        subd_types::twitch::TwitchMessage::from_msg(private),
-                    ))?;
-                }
-                _ => {}
+            if let ServerMessage::Privmsg(private) = message {
+                tx.send(Event::TwitchChatMessage(
+                    subd_types::twitch::TwitchMessage::from_msg(private),
+                ))?;
             }
         }
         Ok(())
@@ -72,7 +69,8 @@ impl EventHandler for TwitchMessageHandler {
                 Ok(user_id) => user_id,
                 Err(e) => {
                     eprintln!("Failed to upsert twitch user: {}", e);
-                    let var_name = match UserID::try_from(msg.sender.id)
+                    
+                    match UserID::try_from(msg.sender.id)
                         .map_err(|e| anyhow!(e))
                     {
                         Ok(u) => u,
@@ -81,8 +79,7 @@ impl EventHandler for TwitchMessageHandler {
                             eprintln!("Failed to convert to UserID: {}", e);
                             continue;
                         }
-                    };
-                    var_name
+                    }
                 }
             };
 

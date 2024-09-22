@@ -138,7 +138,7 @@ pub mod ai_song_playlist {
 impl ai_song_playlist::Model {
     #[allow(dead_code)]
     pub async fn save(&self, pool: &PgPool) -> Result<Self, sqlx::Error> {
-        Ok(sqlx::query_as!(
+        sqlx::query_as!(
             Self,
             r#"
             INSERT INTO ai_song_playlist
@@ -158,6 +158,6 @@ impl ai_song_playlist::Model {
             self.stopped_at
         )
         .fetch_one(pool)
-        .await?)
+        .await
     }
 }

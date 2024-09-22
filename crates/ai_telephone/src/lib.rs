@@ -1,4 +1,3 @@
-use ai_images;
 use ai_images::image_generation::GenerateImage;
 use anyhow::anyhow;
 use anyhow::Result;
@@ -7,12 +6,9 @@ use obs_service::obs_source;
 use obws::requests::custom::source_settings::SlideshowFile;
 use obws::Client as OBSClient;
 use rodio::*;
-use stable_diffusion;
 use std::fs;
 use std::fs::create_dir;
 use std::path::PathBuf;
-use subd_audio;
-use subd_openai;
 
 pub enum ImageRequestType {
     Dalle(subd_openai::dalle::DalleRequest),
@@ -44,8 +40,7 @@ pub async fn telephone(
     }
 
     let first_description = subd_openai::ask_gpt_vision2("", Some(&url))
-        .await
-        .map(|m| m)?;
+        .await?;
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
@@ -60,7 +55,7 @@ pub async fn telephone(
             stable_diffusion::stable_diffusion_from_image(ai_image_req).await?
         }
     };
-    if dalle_path == "".to_string() {
+    if dalle_path == *"" {
         return Err(anyhow!("Dalle Path is empty"));
     }
 
@@ -84,7 +79,7 @@ pub async fn telephone(
                 dalle_path = ai_image_req
                     .generate_image(prompt, Some(folder.clone()), false)
                     .await;
-                if dalle_path != "".to_string() {
+                if dalle_path != *"" {
                     let dp = dalle_path.clone();
                     dalle_path_bufs.push(PathBuf::from(dp))
                 }
@@ -113,7 +108,7 @@ pub async fn telephone(
     // We take in an ID
     let _ =
         update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
-    let _ = subd_audio::play_sound(&sink, "8bitmackintro".to_string()).await;
+    let _ = subd_audio::play_sound(sink, "8bitmackintro".to_string()).await;
 
     Ok(dalle_path)
 }
@@ -127,17 +122,16 @@ pub async fn create_screenshot_img2img(
     source: String,
     archive_dir: Option<String>,
 ) -> Result<String> {
-    let _ =
-        obs_source::save_screenshot(&obs_client, &source, &filename).await?;
+    obs_source::save_screenshot(obs_client, &source, &filename).await?;
 
     // Do we want to add more???
-    let new_description = format!("{}", prompt);
+    let new_description = prompt.to_string();
 
     let image_path = ai_image_req
         .generate_image(new_description, archive_dir, false)
         .await;
 
-    if image_path == "".to_string() {
+    if image_path == *"" {
         return Err(anyhow!("Image Path is empty"));
     }
 
@@ -158,7 +152,7 @@ pub async fn create_screenshot_variation(
 ) -> Result<String> {
     // let _ = subd_audio::play_sound(&sink).await;
 
-    let _ = obs_source::save_screenshot(&obs_client, &source, &filename).await;
+    let _ = obs_source::save_screenshot(obs_client, &source, &filename).await;
 
     let description = subd_openai::ask_gpt_vision2(&filename, None).await?;
 
@@ -177,7 +171,7 @@ pub async fn create_screenshot_variation(
         }
     };
 
-    if image_path == "".to_string() {
+    if image_path == *"" {
         return Err(anyhow!("Image Path is empty"));
     }
 
@@ -197,7 +191,7 @@ pub async fn update_obs_telephone_scene(
     let mut slideshow_files: Vec<SlideshowFile> = image_variations
         .iter()
         .map(|path_string| SlideshowFile {
-            value: &path_string,
+            value: path_string,
             hidden: false,
             selected: false,
         })
@@ -209,13 +203,13 @@ pub async fn update_obs_telephone_scene(
     let _ =
         obs_source::update_slideshow_source(obs_client, source.clone(), files)
             .await;
-    let _ = obs_source::set_enabled(&scene, &source, true, &obs_client).await;
+    let _ = obs_source::set_enabled(&scene, &source, true, obs_client).await;
 
     let source = "OGTelephoneImage".to_string();
     let _ =
         obs_source::update_image_source(obs_client, source.clone(), og_image)
             .await;
-    let _ = obs_source::set_enabled(&scene, &source, true, &obs_client).await;
+    let _ = obs_source::set_enabled(&scene, &source, true, obs_client).await;
 
     Ok(())
 }
@@ -240,7 +234,7 @@ pub async fn old_obs_telephone_scene(
     let slideshow_files: Vec<SlideshowFile> = files
         .iter()
         .map(|path_string| SlideshowFile {
-            value: &path_string.as_path(),
+            value: path_string.as_path(),
             hidden: false,
             selected: false,
         })
@@ -260,7 +254,7 @@ pub async fn old_obs_telephone_scene(
     // TODO: Show the Telephoe-Image!
     // let scene = "TelephoneScene";
     // let _ = obs_scenes::change_scene(&obs_client, scene).await;
-    return Ok(());
+    Ok(())
 }
 
 #[cfg(test)]

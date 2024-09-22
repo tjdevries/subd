@@ -2,7 +2,6 @@ use anyhow::Result;
 use rodio::Decoder;
 use std::fs::File;
 use std::io::BufReader;
-use subd_types;
 use subd_types::AiScenesRequest;
 use twitch_chat::client::send_message;
 use twitch_irc::{
@@ -16,7 +15,7 @@ pub async fn trigger_movie_trailer(
     local_audio_path: String,
 ) -> Result<()> {
     if let Some(music_bg) = &ai_scene_req.music_bg {
-        let _ = send_message(&locked_client, music_bg.clone()).await;
+        let _ = send_message(locked_client, music_bg.clone()).await;
     }
 
     // We are supressing a whole bunch of alsa message
@@ -32,5 +31,5 @@ pub async fn trigger_movie_trailer(
 
     subd_utils::restore_stderr(backup);
 
-    return Ok(());
+    Ok(())
 }

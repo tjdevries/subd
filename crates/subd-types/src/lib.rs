@@ -32,13 +32,13 @@ impl TryFrom<TwitchUserID> for UserID {
         let res = uuid::Uuid::parse_str(&value.0);
         match res {
             Ok(s) => {
-                return Ok(UserID(s));
+                Ok(UserID(s))
             }
             Err(e) => {
-                return Err(format!(
+                Err(format!(
                     "Error converting TwitchUserID to UserID: {}",
                     e
-                ));
+                ))
             }
         }
     }
@@ -318,15 +318,14 @@ pub struct UserRoles {
 }
 
 impl UserRoles {
-    pub fn add_role(&mut self, role: Role) -> () {
+    pub fn add_role(&mut self, role: Role) {
         self.roles.insert(role);
     }
 
     pub fn is_github_sponsor(&self) -> bool {
         self.roles
             .iter()
-            .find(|r| matches!(r, Role::GithubSponsor { tier: _ }))
-            .is_some()
+            .any(|r| matches!(&r, Role::GithubSponsor { tier: _ }))
     }
 
     pub fn is_twitch_mod(&self) -> bool {
@@ -348,8 +347,7 @@ impl UserRoles {
     pub fn is_twitch_sub(&self) -> bool {
         self.roles
             .iter()
-            .find(|r| matches!(r, Role::TwitchSub(_)))
-            .is_some()
+            .any(|r| matches!(&r, Role::TwitchSub(_)))
     }
 }
 

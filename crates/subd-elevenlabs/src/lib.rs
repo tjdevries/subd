@@ -5,7 +5,6 @@ use rand::{seq::SliceRandom, thread_rng};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::process::Command;
-use stream_character;
 use subd_types::ElevenLabsRequest;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
@@ -54,7 +53,7 @@ pub fn chop_text(starting_text: String) -> String {
     for val in spaces.iter() {
         if val.0 > line_length_limit {
             seal_text.replace_range(val.0..=val.0, "\n");
-            line_length_limit = line_length_limit + line_length_modifier;
+            line_length_limit += line_length_modifier;
         }
     }
 
@@ -88,7 +87,7 @@ pub async fn talk_in_voice(
     let spoken_string =
         contents.clone().replace(&format!("!voice {}", &voice), "");
 
-    if spoken_string == "" {
+    if spoken_string.is_empty() {
         return Ok(());
     }
 
@@ -187,7 +186,7 @@ pub fn normalize_tts_file(local_audio_path: String) -> Result<String> {
     let audio_dest_path =
         add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(&["-i", &local_audio_path, &audio_dest_path])
+        .args(["-i", &local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 
@@ -208,7 +207,7 @@ pub fn stretch_audio(
         "_stretch".to_string(),
     );
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,
@@ -222,11 +221,11 @@ pub fn stretch_audio(
 }
 
 pub fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
-    let postfix = format!("{}_{}", "_pitch".to_string(), pitch);
+    let postfix = format!("{}_{}", "_pitch", pitch);
     let audio_dest_path =
         add_postfix_to_filepath(local_audio_path.clone(), postfix);
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,
@@ -246,7 +245,7 @@ pub fn add_reverb(local_audio_path: String) -> Result<String> {
         "_reverb".to_string(),
     );
     Command::new("sox")
-        .args(&[
+        .args([
             "-t",
             "wav",
             &local_audio_path,

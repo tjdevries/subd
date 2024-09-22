@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
-use subd_types;
 use tokio::fs::create_dir_all;
 
 pub mod models;

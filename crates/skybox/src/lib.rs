@@ -1,7 +1,6 @@
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
-use obws;
 use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -97,7 +96,7 @@ pub async fn trigger_scene(
 
     let filter_enabled = obws::requests::filters::SetEnabled {
         source: scene,
-        filter: &filter_name,
+        filter: filter_name,
         enabled: true,
     };
     obs_client.filters().set_enabled(filter_enabled).await?;
@@ -110,7 +109,7 @@ pub async fn trigger_scene(
         ("bar".to_string(), "2449796".to_string()),
     ]);
 
-    let skybox_path = if skybox_id == "" {
+    let skybox_path = if skybox_id.is_empty() {
         let new_skybox_id = &skybox_id_map[filter_name];
         format!(
             "/home/begin/code/BeginGPT/GoBeginGPT/skybox_archive/{}.txt",
@@ -134,13 +133,11 @@ pub async fn trigger_scene(
         if let Err(e) = write_to_file(file_path, &new_skybox_command) {
             eprintln!("Error writing to file: {}", e);
         }
-    } else {
-        if let Err(e) = write_to_file(file_path, &filter_name) {
-            eprintln!("Error writing to file: {}", e);
-        }
+    } else if let Err(e) = write_to_file(file_path, filter_name) {
+        eprintln!("Error writing to file: {}", e);
     }
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn write_to_file(file_path: &str, content: &str) -> std::io::Result<()> {
@@ -215,7 +212,7 @@ pub async fn check_skybox_status_and_save(id: i32) -> Result<()> {
     };
     let file_url = request.file_url;
 
-    if file_url != "" {
+    if !file_url.is_empty() {
         println!("File URL: {}", file_url);
 
         let image_data = reqwest::get(file_url.clone())
@@ -293,5 +290,5 @@ pub async fn request_skybox(
         return Ok(response_filepath);
     };
 
-    return Err("Invalid skybox response".to_string());
+    Err("Invalid skybox response".to_string())
 }

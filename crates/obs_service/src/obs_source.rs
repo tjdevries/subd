@@ -230,7 +230,7 @@ pub async fn update_image_source(
     filename: String,
 ) -> Result<()> {
     let image_settings = ImageSource {
-        file: &Path::new(&filename),
+        file: Path::new(&filename),
         unload: true,
     };
     let set_settings = SetSettings {
@@ -256,7 +256,7 @@ pub async fn save_screenshot(
     Ok(client
         .sources()
         .save_screenshot(SaveScreenshot {
-            source: &source.to_string(),
+            source,
             format: "png",
             file_path: p,
             width: None,
@@ -281,7 +281,7 @@ pub async fn scale_source(
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<(), anyhow::Error> {
-    let id = find_id(scene, source, &obs_client).await?;
+    let id = find_id(scene, source, obs_client).await?;
 
     let new_scale = Scale {
         x: Some(x),
@@ -342,7 +342,7 @@ pub async fn old_trigger_grow(
             let id = match find_id(
                 &subd_types::consts::get_meme_scene(),
                 &source.source_name,
-                &obs_client,
+                obs_client,
             )
             .await
             {
@@ -354,14 +354,14 @@ pub async fn old_trigger_grow(
                 &subd_types::consts::get_meme_scene(),
                 id,
                 new_scale,
-                &obs_client,
+                obs_client,
             )
             .await?;
         }
         Ok(())
     } else {
         println!("ABOUT TO SCALE SOURCE: {} {}", scene, source);
-        scale_source(&scene, &source, x, y, &obs_client).await
+        scale_source(scene, source, x, y, obs_client).await
     }
 }
 // ====================================================
@@ -376,7 +376,7 @@ pub async fn move_source(
     y: f32,
     obs_client: &OBSClient,
 ) -> Result<(), anyhow::Error> {
-    let id = find_id(scene, source, &obs_client).await?;
+    let id = find_id(scene, source, obs_client).await?;
 
     let new_position = Position {
         x: Some(x),
@@ -420,7 +420,7 @@ pub async fn hide_sources(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<(), anyhow::Error> {
-    set_enabled_on_all_sources(scene, false, &obs_client).await
+    set_enabled_on_all_sources(scene, false, obs_client).await
 }
 
 pub async fn set_enabled(
@@ -429,7 +429,7 @@ pub async fn set_enabled(
     enabled: bool,
     obs_client: &OBSClient,
 ) -> Result<(), anyhow::Error> {
-    let id = find_id(scene, source, &obs_client).await?;
+    let id = find_id(scene, source, obs_client).await?;
 
     let set_enabled: obws::requests::scene_items::SetEnabled =
         obws::requests::scene_items::SetEnabled {
@@ -451,7 +451,7 @@ async fn set_enabled_on_all_sources(
     for item in items {
         // If we can't set an item as enabled we just move on with our lives
         let _ =
-            set_enabled(scene, &item.source_name, enabled, &obs_client).await;
+            set_enabled(scene, &item.source_name, enabled, obs_client).await;
     }
     Ok(())
 }
@@ -465,7 +465,7 @@ pub async fn print_source_info_true(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let id = find_id(scene, source, &obs_client).await?;
+    let id = find_id(scene, source, obs_client).await?;
     let settings = obs_client.scene_items().transform(scene, id).await?;
 
     println!("Source Settings: {:?}", settings);
@@ -478,7 +478,7 @@ pub async fn print_source_info(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let id =
-        find_id(&subd_types::consts::get_meme_scene(), source, &obs_client)
+        find_id(&subd_types::consts::get_meme_scene(), source, obs_client)
             .await?;
     let settings = obs_client.scene_items().transform(scene, id).await?;
 

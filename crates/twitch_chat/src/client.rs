@@ -59,7 +59,7 @@ pub async fn send_message<
     // }
     //
 
-    let _ = client
+    client
         .say(twitch_username.to_string(), str_msg.clone())
         .await?;
     println!("Twitch Send Message: {:?}", str_msg);

@@ -13,7 +13,7 @@ pub async fn take_screenshot(
         "/home/begin/code/subd/tmp/screenshots/{}",
         unique_identifier
     );
-    obs_source::save_screenshot(&obs_client, &screenshot_source, &filename)
+    obs_source::save_screenshot(obs_client, &screenshot_source, &filename)
         .await
         .map(|_| (filename, unique_identifier))
 }

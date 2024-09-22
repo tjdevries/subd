@@ -1,5 +1,4 @@
 use anyhow::Result;
-use obws;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 
@@ -221,7 +220,7 @@ pub async fn create_outline_filter(
     // Create Move-Value for 3D Transform Filter
     let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_SINGLE),
-        filter: String::from(subd_types::consts::get_sdf_effects_filter_name()),
+        filter: subd_types::consts::get_sdf_effects_filter_name(),
         duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
@@ -256,7 +255,7 @@ pub async fn create_blur_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-        filter: String::from(subd_types::consts::get_blur_filter_name()),
+        filter: subd_types::consts::get_blur_filter_name(),
         duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
@@ -311,7 +310,7 @@ pub async fn create_split_3d_transform_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let camera_types = vec!["Orthographic", "Perspective", "CornerPin"];
+    let camera_types = ["Orthographic", "Perspective", "CornerPin"];
     // let camera_types = vec![ "Perspective", "CornerPin"];
 
     for (i, camera_type) in camera_types.iter().enumerate() {
@@ -333,7 +332,7 @@ pub async fn create_split_3d_transform_filters(
         // This is wrong
         let new_settings = MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-            filter: String::from(filter_name.clone()),
+            filter: filter_name.clone(),
             duration: Some(DEFAULT_DURATION),
             ..Default::default()
         };
@@ -351,7 +350,7 @@ pub async fn create_split_3d_transform_filters(
         let filter_name = format!("3D_{}", camera_type);
         let new_settings = MoveSingleValueSetting {
             move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-            filter: String::from(filter_name.clone()),
+            filter: filter_name.clone(),
             duration: Some(3000),
             ..Default::default()
         };
@@ -388,7 +387,7 @@ pub async fn create_3d_transform_filters(
     // Create Move-Value for 3D Transform Filter
     let new_settings = MoveSingleValueSetting {
         move_value_type: Some(MOVE_VALUE_TYPE_ZERO),
-        filter: String::from(subd_types::consts::get_3d_transform_filter_name()),
+        filter: subd_types::consts::get_3d_transform_filter_name(),
         duration: Some(DEFAULT_DURATION),
         ..Default::default()
     };
@@ -419,7 +418,7 @@ pub async fn remove_all_filters(
     for filter in filters {
         obs_client
             .filters()
-            .remove(&source, &filter.name)
+            .remove(source, &filter.name)
             .await
             .expect("Error Deleting Filter");
     }

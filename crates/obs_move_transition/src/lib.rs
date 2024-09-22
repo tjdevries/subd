@@ -30,7 +30,7 @@ pub async fn find_source(
         ms,
         duration::EasingDuration::new(300),
     );
-    update_filter_and_enable(&scene.into(), &filter_name, settings, &obs_client)
+    update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
 }
 
@@ -60,7 +60,7 @@ pub async fn scale_source(
 
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
 
-    update_filter_and_enable(&scene.into(), &filter_name, settings, &obs_client)
+    update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
 }
 
@@ -89,7 +89,7 @@ pub async fn rot_source(
 
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
 
-    update_filter_and_enable(&scene.into(), &filter_name, settings, &obs_client)
+    update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
 }
 
@@ -131,7 +131,7 @@ pub async fn move_source(
     println!("{}", serde_json::to_string_pretty(&settings).unwrap());
     println!("=== Move Source Settings");
 
-    update_filter_and_enable(&scene.into(), &filter_name, settings, &obs_client)
+    update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
 }
 
@@ -150,7 +150,7 @@ pub async fn update_and_trigger_move_value_for_source(
     );
 
     dbg!(&settings);
-    update_filter_and_enable(source, &filter_name, settings, obs_client).await
+    update_filter_and_enable(source, filter_name, settings, obs_client).await
 }
 
 pub async fn update_and_trigger_filter<
@@ -214,11 +214,11 @@ async fn update_filter<T: serde::Serialize>(
         settings: Some(new_settings),
         overlay: Some(false),
     };
-    Ok(obs_client
+    obs_client
         .filters()
         .set_settings(settings)
         .await
-        .context(format!("Error updating filter: {}", filter_name))?)
+        .context(format!("Error updating filter: {}", filter_name))
 }
 
 pub async fn spin_source(
@@ -258,7 +258,7 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
     new_settings: T,
     obs_client: &obws::Client,
 ) -> Result<()> {
-    update_filter(source, filter_name, new_settings, &obs_client)
+    update_filter(source, filter_name, new_settings, obs_client)
         .await
         .context(format!(
             "Failed to update Filter: {} on Source: {}",
@@ -267,7 +267,7 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
 
     let filter_enabled = obws::requests::filters::SetEnabled {
         source,
-        filter: &filter_name,
+        filter: filter_name,
         enabled: true,
     };
     Ok(obs_client.filters().set_enabled(filter_enabled).await?)

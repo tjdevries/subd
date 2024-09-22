@@ -56,8 +56,8 @@ pub async fn update_and_trigger_text_move_filter(
     new_settings.setting_decimals = Some(1);
 
     let new_settings = obws::requests::filters::SetSettings {
-        source: &source,
-        filter: &filter_name,
+        source,
+        filter: filter_name,
         settings: new_settings,
         overlay: None,
     };
@@ -73,7 +73,7 @@ pub async fn update_and_trigger_text_move_filter(
 
     // println!("Filter Name: {}", filter_name);
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: &source,
+        source,
         filter: filter_name,
         enabled: true,
     };

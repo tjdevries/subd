@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use chrono::Utc;
-use fal_ai;
-use obs_service;
 use obws::Client as OBSClient;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
@@ -25,7 +23,7 @@ pub async fn trigger_ai_friend(
     match sync_lips_and_update(
         &image_file_path,
         &local_audio_path,
-        &obs_client,
+        obs_client,
         friend_name,
     )
     .await
@@ -105,7 +103,7 @@ async fn sync_lips_and_update(
         scene,
         &friend_name,
         false,
-        &obs_client,
+        obs_client,
     )
     .await;
 
@@ -116,9 +114,9 @@ async fn sync_lips_and_update(
         scene,
         &friend_name,
         true,
-        &obs_client,
+        obs_client,
     )
     .await;
 
-    return Ok(());
+    Ok(())
 }

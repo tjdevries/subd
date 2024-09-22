@@ -33,6 +33,12 @@ pub struct GlowStrokeShadowSettingsBuilder {
     _stroke_source: Option<String>,
 }
 
+impl Default for GlowStrokeShadowSettingsBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GlowStrokeShadowSettingsBuilder {
     pub fn new() -> Self {
         Self {

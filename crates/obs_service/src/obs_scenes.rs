@@ -2,7 +2,7 @@ use anyhow::Result;
 use obws;
 
 pub async fn change_scene(obs_client: &obws::Client, name: &str) -> Result<()> {
-    let result = obs_client.scenes().set_current_program_scene(&name).await;
+    let result = obs_client.scenes().set_current_program_scene(name).await;
     let _ = match result {
         Ok(_) => Ok(()),
         Err(e) => Err(anyhow::anyhow!("Failed to change scene: {}", e)),
