@@ -43,8 +43,8 @@ pub async fn find_oldest_unplayed_song(
 pub async fn add_song_to_playlist(
     pool: &PgPool,
     song_id: Uuid,
-) -> Result<models::ai_song_playlist::Model, sqlx::Error> {
-    let playlist_entry = models::ai_song_playlist::Model {
+) -> Result<models::ai_playlist::Model, sqlx::Error> {
+    let playlist_entry = models::ai_playlist::Model {
         playlist_id: Uuid::new_v4(),
         song_id,
         created_at: Some(OffsetDateTime::now_utc()),
@@ -85,22 +85,22 @@ pub async fn mark_songs_as_stopped(pool: &PgPool) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-pub async fn mark_song_as_stopped(
-    pool: &PgPool,
-    song_id: Uuid,
-) -> Result<(), sqlx::Error> {
-    sqlx::query!(
-        r#"
-        UPDATE ai_song_playlist
-        SET stopped_at = NOW()
-        WHERE song_id = $1
-        "#,
-        song_id
-    )
-    .execute(pool)
-    .await?;
-    Ok(())
-}
+//pub async fn mark_song_as_stopped(
+//    pool: &PgPool,
+//    song_id: Uuid,
+//) -> Result<(), sqlx::Error> {
+//    sqlx::query!(
+//        r#"
+//        UPDATE ai_playlist
+//        SET stopped_at = NOW()
+//        WHERE song_id = $1
+//        "#,
+//        song_id
+//    )
+//    .execute(pool)
+//    .await?;
+//    Ok(())
+//}
 
 pub async fn get_current_song(
     pool: &PgPool,
@@ -234,3 +234,20 @@ pub async fn find_songs_by_user(
 //    };
 //    Ok(model)
 //}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_ai_song_creation() {
+        // let _pool = subd_db::get_test_db_pool().await;
+        // let pool = subd_db::get_db_pool().await;
+
+        // let result = find_last_played_songs(&pool, 0).await.unwrap();
+        //dbg!(result);
+
+        // assert_eq!(result, vec![]);
+        // OK
+    }
+}

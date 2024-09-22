@@ -10,8 +10,16 @@ CREATE TYPE ai_song_status AS ENUM (
   'COMPLETED',
 );
 
-
+-- Create the ai_song_playlist table
 CREATE TABLE ai_song_playlist (
+    playlist_id UUID PRIMARY KEY,
+    song_id UUID NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE,
+    played_at TIMESTAMP WITH TIME ZONE,
+    stopped_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE ai_playlist(
     playlist_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

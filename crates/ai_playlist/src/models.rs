@@ -123,7 +123,7 @@ pub async fn find_by_id(
 }
 
 #[database_model]
-pub mod ai_song_playlist {
+pub mod ai_playlist {
     use super::*;
 
     pub struct Model {
@@ -135,7 +135,7 @@ pub mod ai_song_playlist {
     }
 }
 
-impl ai_song_playlist::Model {
+impl ai_playlist::Model {
     #[allow(dead_code)]
     pub async fn save(&self, pool: &PgPool) -> Result<Self, sqlx::Error> {
         sqlx::query_as!(
