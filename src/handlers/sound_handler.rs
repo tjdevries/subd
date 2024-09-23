@@ -1,7 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
-
 use events::EventHandler;
 use rodio::Decoder;
 use rodio::*;
@@ -110,33 +109,13 @@ impl EventHandler for ExplicitSoundHandler {
                 }
             };
 
-            // This is annoying
-            // When I put this in code it fails
-            // let (_stream, stream_handle) =
-            //     subd_audio::get_output_stream("pulse").expect("stream handle");
-            // let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-
-            // So we can use the newly created sinks here
-            // but the old one doesn't work for some reason
             self.sink.set_volume(0.5);
             self.sink.append(sound);
+            // We don't need to sleep until the end necessarily
             self.sink.sleep_until_end();
         }
     }
 }
-
-// async fn play_sound(file: File, sink: &Sink) -> Result<()> {
-//     let file = BufReader::new(file);
-//     let (_stream, stream_handle) =
-//         subd_audio::get_output_stream("pulse").expect("stream handle");
-//     let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-//
-//     // sink.set_volume(0.5);
-//     let sound = Decoder::new(BufReader::new(file))?;
-//
-//     sink.append(sound);
-//     return Ok(());
-// }
 
 // Looks through raw-text to either play TTS or play soundeffects
 #[async_trait]
@@ -290,29 +269,6 @@ impl EventHandler for ImplicitSoundHandler {
                     thread::sleep(sleep_time);
                 }
             }
-
-            // This clears the OBS Text
-            let _ = tx.send(Event::TransformOBSTextRequest(
-                TransformOBSTextRequest {
-                    message: "".to_string(),
-                    text_source: text_source.to_string(),
-                },
-            ));
         }
     }
 }
-
-// // Maybe you don't borrow???
-// fn create_sink() -> Result<rodio::Sink> {
-//     let fe = subd_utils::redirect_stderr()?;
-//     let fo = subd_utils::redirect_stdout()?;
-//
-//     // Initialize audio sink
-//     let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-//         .expect("Failed to get audio output stream");
-//     let sink = rodio::Sink::try_new(&stream_handle)?;
-//
-//     let _ = subd_utils::restore_stderr(fe);
-//     let _ = subd_utils::restore_stdout(fo);
-//     return Ok(sink);
-// }
