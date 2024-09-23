@@ -7,6 +7,7 @@ use axum::routing::post;
 use axum::{
     http::StatusCode, response::IntoResponse, Extension, Json, Router, Server,
 };
+use colored::Colorize;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
@@ -123,19 +124,16 @@ impl EventHandler for TwitchEventSubHandler {
         )
         .await?;
 
-        println!("about to Box Token!");
         let _box_token: &'static UserToken = Box::leak(Box::new(token));
         let _box_twitch_client: &'static HelixClient<reqwest::Client> =
             Box::leak(Box::new(twitch_reward_client));
 
-        println!("about to build reward manager!");
         let _broadcaster_id = "424038378";
         // RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
         let reward_manager = rewards::build_reward_manager().await?;
-        println!("we have 1 reward manager!!");
         let cloneable_reward_manager = Arc::new(reward_manager);
 
-        println!("Kicking off a new reward router!");
+        println!("{}", "Kicking off a new reward router!".yellow());
 
         // How do you specify Generic arguments to a function that is being passed to another
         // function?
@@ -246,7 +244,7 @@ async fn trigger_full_scene(
 ) -> Result<()> {
     match dalle_prompt {
         Some(prompt) => {
-            println!("\n\tDalle Prompt: {}", prompt.clone());
+            println!("\n{} {}", "Dalle Prompt: ".green(), prompt.clone());
             let _ =
                 tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                     voice: Some(voice),
@@ -338,14 +336,13 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     ai_scenes_map: HashMap<String, &ai_scenes_coordinator::models::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
-    println!("HANDLING AI SCENE!");
-
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
     let enable_dalle = state.dalle_mode;
     let enable_stable_diffusion = state.enable_stable_diffusion;
 
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
+    println!("{} {}", "Kicking off AI Scene: ".cyan(), command.green());
 
     // So if we have the reward title here we can filter
 
@@ -376,7 +373,9 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
         Some(scene) => {
             let user_input = event.user_input.unwrap();
             let base_prompt = scene.base_prompt.clone();
-            println!("Asking Chat GPT: {} - {}", base_prompt, user_input);
+
+            // We need to color this better
+            println!("{} {}", "Asking Chat GPT:".green(), user_input);
 
             let chat_response = subd_openai::ask_chat_gpt(
                 user_input.clone().to_string(),
@@ -417,7 +416,8 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
                     "Error response".to_string() // Example default value
                 }
             };
-            println!("Chat GPT response: {:?}", content.clone());
+
+            println!("\n{} {}", "Chat GPT response: ".green(), content.clone());
 
             let dalle_prompt = if enable_dalle || enable_stable_diffusion {
                 let base_dalle_prompt = scene.base_dalle_prompt.clone();

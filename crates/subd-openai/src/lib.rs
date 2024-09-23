@@ -70,7 +70,6 @@ pub async fn ask_chat_gpt(
         function_call: None,
     });
 
-    println!("pre ask_chat_gpt completion");
     // let model = "gpt-4";
     let model = "gpt-3.5-turbo";
 

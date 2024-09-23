@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use bytes::Bytes;
 use chrono::Utc;
+use colored::Colorize;
 use obws::Client as OBSClient;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
@@ -54,11 +55,11 @@ pub async fn sync_lips_to_voice(
         &fal_driven_audio_data_uri,
     )
     .await?;
-    println!("Sadtalker Result: {}", fal_result);
 
     let video_url =
         fal_ai::utils::extract_video_url_from_fal_result(&fal_result)?;
     let video_bytes = subd_image_utils::download_video(&video_url).await?;
+    println!("{} {}", "Sadtalker Video: ".green(), video_url.cyan());
 
     let timestamp = Utc::now().timestamp();
     let video_path = format!(

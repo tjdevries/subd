@@ -128,7 +128,22 @@ pub async fn download_and_play(
                         eprintln!("Error downloading file: {}", e);
                     }
 
-                    // We downloaded, so ew can update the ai_song_playlist
+                    let info = format!(
+                        "@{}'s song {} added to the Queue.",
+                        user_name, id
+                    );
+
+                    if let Err(e) = send_message(&twitch_client, info).await {
+                        eprintln!("Error sending message: {}", e);
+                    }
+
+                    let _ = tx.send(subd_types::Event::UserMessage(
+                        subd_types::UserMessage {
+                            user_name: "beginbot".to_string(),
+                            contents: format!("!play {}", id),
+                            ..Default::default()
+                        },
+                    ));
 
                     let info = format!(
                         "@{}'s song {} added to the Queue.",
@@ -211,7 +226,11 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    download_and_play(twitch_client, tx, user_name, &song_id.to_string()).await
+    let _ =
+        download_and_play(twitch_client, tx, user_name, &song_id.to_string())
+            .await;
+
+    Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
 }
 
 /// Downloads the audio file and saves it locally.
