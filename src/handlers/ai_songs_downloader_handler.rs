@@ -57,7 +57,7 @@ pub async fn handle_requests(
     msg: UserMessage,
 ) -> Result<()> {
     // Ignore messages from the bot itself
-    if ["beginbot", "beginbotbot"].contains(&msg.user_name.as_str()) {
+    if ["nightbot"].contains(&msg.user_name.as_str()) {
         return Ok(());
     }
 

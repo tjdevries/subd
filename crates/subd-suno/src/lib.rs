@@ -192,7 +192,8 @@ pub async fn download_and_play(
                     break;
                 }
                 Ok(_) => {
-                    println!("Song not ready yet, retrying in 5 seconds...");
+                    // We don't really want to print here
+                    // println!("Song not ready yet, retrying in 5 seconds...");
                 }
                 Err(e) => {
                     eprintln!("Error fetching song: {}", e);
