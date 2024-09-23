@@ -7,8 +7,10 @@ use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Sink;
 use sqlx::PgPool;
+use std::time::Duration;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use tokio::time::interval;
 use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
@@ -30,43 +32,92 @@ impl EventHandler for AISongsHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        let mut interval = interval(Duration::from_millis(100));
         loop {
-            // Check if the sink is empty and update song statuses accordingly
-            if self.sink.empty() {
-                println!(
-                    "{}",
-                    "Sink is empty. Marking all songs as stopped.".red()
-                );
-                let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
-            }
+            tokio::select! {
+                _ = interval.tick() => {
+                    // This runs every 50ms
+                    if self.sink.empty() {
+                        // println!("{}", "Sink is empty. Marking all songs as stopped.".red());
+                        // This is too many calls to the DB as well
+                        // we need to know if there is any songs to actually stop first
+                        let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
+                    }
+                }
+                result = rx.recv() => {
+                    let event = result?;
+                    let msg = match event {
+                        Event::UserMessage(msg) => msg,
+                        _ => continue,
+                    };
 
-            let event = rx.recv().await?;
+                    // Split the message into words
+                    let splitmsg: Vec<String> =
+                        msg.contents.split_whitespace().map(String::from).collect();
 
-            let msg = match event {
-                Event::UserMessage(msg) => msg,
-                _ => continue,
-            };
-
-            // Split the message into words
-            let splitmsg: Vec<String> =
-                msg.contents.split_whitespace().map(String::from).collect();
-
-            // Handle the command
-            if let Err(err) = handle_requests(
-                &self.sink,
-                &self.twitch_client,
-                &self.pool,
-                &splitmsg,
-                &msg,
-            )
-            .await
-            {
-                eprintln!("Error in AISongsHandler: {err}");
-                continue;
+                    // Handle the command
+                    if let Err(err) = handle_requests(
+                        &self.sink,
+                        &self.twitch_client,
+                        &self.pool,
+                        &splitmsg,
+                        &msg,
+                    )
+                    .await
+                    {
+                        eprintln!("Error in AISongsHandler: {err}");
+                        continue;
+                    }
+                }
             }
         }
     }
 }
+
+// #[async_trait]
+// impl EventHandler for AISongsHandler {
+//     async fn handle(
+//         self: Box<Self>,
+//         _tx: broadcast::Sender<Event>,
+//         mut rx: broadcast::Receiver<Event>,
+//     ) -> Result<()> {
+//         loop {
+//             // I want this to be run, and not blocked waiting for event
+//             if self.sink.empty() {
+//                 println!(
+//                     "{}",
+//                     "Sink is empty. Marking all songs as stopped.".red()
+//                 );
+//                 let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
+//             }
+//             // This event blocks
+//             let event = rx.recv().await?;
+//
+//             let msg = match event {
+//                 Event::UserMessage(msg) => msg,
+//                 _ => continue,
+//             };
+//
+//             // Split the message into words
+//             let splitmsg: Vec<String> =
+//                 msg.contents.split_whitespace().map(String::from).collect();
+//
+//             // Handle the command
+//             if let Err(err) = handle_requests(
+//                 &self.sink,
+//                 &self.twitch_client,
+//                 &self.pool,
+//                 &splitmsg,
+//                 &msg,
+//             )
+//             .await
+//             {
+//                 eprintln!("Error in AISongsHandler: {err}");
+//                 continue;
+//             }
+//         }
+//     }
+// }
 
 /// Determines if the user is an admin (beginbot or beginbotbot)
 fn is_admin(msg: &UserMessage) -> bool {
@@ -221,7 +272,7 @@ async fn handle_random_song_command(
     // We could also make sure we don't pull duplicates
     for _ in 0..amount {
         let song = ai_playlist::find_random_song(pool).await?;
-        let message = format!("!queue {}", song.song_id);
+        let message = format!("!play {}", song.song_id);
         let _ = send_message(twitch_client, message).await;
         let message =
             format!("@{} Added Song to Queue - {}", song.username, song.title,);
