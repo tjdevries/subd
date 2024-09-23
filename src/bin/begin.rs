@@ -150,6 +150,9 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+        .expect("Failed to get audio output stream");
+
     // Determine which features to enable
     let features = if args.enable_all {
         vec![
@@ -211,9 +214,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -232,9 +232,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -253,9 +250,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -276,9 +270,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -298,9 +289,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -320,9 +308,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -342,9 +327,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -394,9 +376,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -416,9 +395,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -498,9 +474,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
@@ -519,9 +492,6 @@ async fn main() -> Result<()> {
                 let fe = subd_utils::redirect_stderr()?;
                 let fo = subd_utils::redirect_stdout()?;
 
-                let (_stream, stream_handle) =
-                    subd_audio::get_output_stream("pulse")
-                        .expect("Failed to get audio output stream");
                 let sink = rodio::Sink::try_new(&stream_handle)?;
 
                 let _ = subd_utils::restore_stderr(fe);
