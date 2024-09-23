@@ -120,6 +120,8 @@ pub async fn download_and_play(
                 chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
                 cdn_url
             );
+
+            // This response here is where we download
             match reqwest::get(&cdn_url).await {
                 Ok(response) if response.status().is_success() => {
                     if let Err(e) = just_download(response, id.clone()).await {
