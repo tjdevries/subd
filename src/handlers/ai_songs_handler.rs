@@ -1,5 +1,6 @@
+// use ai_playlist::models::ai_songs;
+// use ai_playlist::{self, models::ai_playlist};
 use ai_playlist;
-use ai_playlist::models::ai_songs;
 use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
@@ -36,12 +37,23 @@ impl EventHandler for AISongsHandler {
         loop {
             tokio::select! {
                 _ = interval.tick() => {
+                    // We could be also checking
                     // This runs every 50ms
                     if self.sink.empty() {
                         // println!("{}", "Sink is empty. Marking all songs as stopped.".red());
                         // This is too many calls to the DB as well
                         // we need to know if there is any songs to actually stop first
                         let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
+                        let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
+                        if let Ok(song) = next_song {
+
+                            // is there a better way?
+                            let id = format!("{}", song.song_id);
+                            subd_suno::play_audio(&self.pool, &self.sink, &id).await?;
+                        }
+
+
+                        // this needs to play the next song!!!!
                     }
                 }
                 result = rx.recv() => {
@@ -259,8 +271,14 @@ async fn handle_reverb_command(
     };
 
     println!("Queuing with Reverb: {}", id);
-    subd_suno::play_audio(twitch_client, pool, sink, id, &msg.user_name)
-        .await?;
+    subd_suno::add_to_playlist_and_play_audio(
+        twitch_client,
+        pool,
+        sink,
+        id,
+        &msg.user_name,
+    )
+    .await?;
     Ok(())
 }
 
@@ -326,7 +344,7 @@ async fn handle_play_command(
 
     // At this point it should be downloaded I think???
     let song_id = Uuid::parse_str(&audio_info.id)?;
-    let new_song = ai_songs::Model {
+    let new_song = ai_playlist::models::ai_songs::Model {
         song_id,
         title: audio_info.title,
         tags: audio_info.metadata.tags,
@@ -344,8 +362,14 @@ async fn handle_play_command(
     let _ = new_song.save(pool).await;
 
     // Play the audio
-    subd_suno::play_audio(twitch_client, pool, sink, id, &msg.user_name)
-        .await?;
+    subd_suno::add_to_playlist_and_play_audio(
+        twitch_client,
+        pool,
+        sink,
+        id,
+        &msg.user_name,
+    )
+    .await?;
     Ok(())
 }
 

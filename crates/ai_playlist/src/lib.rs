@@ -3,6 +3,7 @@ use sqlx::{types::time::OffsetDateTime, Error, PgPool};
 use uuid::Uuid;
 
 pub mod models;
+
 // Fetches a random song from the database.
 pub async fn find_random_song(
     pool: &PgPool,
