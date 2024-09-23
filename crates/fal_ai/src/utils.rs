@@ -2,10 +2,45 @@ use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use tokio::fs::create_dir_all;
 
+pub async fn parse_and_process_images_from_json_for_music_video(
+    raw_json: &[u8],
+    main_filename_pattern: &str,
+    outer_index: usize,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
+    // Parse images from the raw JSON data
+    let images = parse_images_from_json(raw_json)?;
+    let extension = "png"; // Assuming PNG as the image extension
+
+    for (index, image) in images.into_iter().enumerate() {
+        let main_filename =
+            format!("{}-{}.{}", main_filename_pattern, index, extension);
+        let extra_filename = extra_save_folder.map(|folder| {
+            format!(
+                "{}/{}-{}.{}",
+                folder,
+                main_filename_pattern,
+                (index + 1) * (outer_index),
+                extension
+            )
+        });
+
+        parse_json_save_image(
+            index,
+            &image,
+            &main_filename,
+            None,
+            extra_filename.as_deref(),
+        )
+        .await?;
+    }
+    Ok(())
+}
+
 pub async fn parse_and_process_images_from_json(
     raw_json: &[u8],
     main_filename_pattern: &str,
-    additional_filename_pattern: &str,
+    stream_background_path: Option<&str>,
     extra_save_folder: Option<&str>,
 ) -> Result<()> {
     // Parse images from the raw JSON data
@@ -17,8 +52,6 @@ pub async fn parse_and_process_images_from_json(
         // Construct filenames for saving the image
         let main_filename =
             format!("{}-{}.{}", main_filename_pattern, index, extension);
-        let additional_filename =
-            format!("{}.{}", additional_filename_pattern, extension);
         let extra_filename = extra_save_folder.map(|folder| {
             format!(
                 "{}/{}-{}.{}",
@@ -27,11 +60,11 @@ pub async fn parse_and_process_images_from_json(
         });
 
         // Process and save the image
-        process_image(
+        parse_json_save_image(
             index,
             &image,
             &main_filename,
-            &additional_filename,
+            stream_background_path,
             extra_filename.as_deref(),
         )
         .await?;
@@ -39,11 +72,11 @@ pub async fn parse_and_process_images_from_json(
     Ok(())
 }
 
-async fn process_image(
+async fn parse_json_save_image(
     index: usize,
     image: &serde_json::Value,
     main_filename: &str,
-    additional_filename: &str,
+    stream_background_path: Option<&str>,
     extra_filename: Option<&str>,
 ) -> Result<()> {
     // Extract the URL of the image from the JSON data
@@ -55,7 +88,7 @@ async fn process_image(
         save_image_bytes(
             &image_bytes,
             main_filename,
-            additional_filename,
+            stream_background_path,
             extra_filename,
         )
         .await?;
@@ -68,14 +101,16 @@ async fn process_image(
 async fn save_image_bytes(
     image_bytes: &[u8],
     main_filename: &str,
-    additional_filename: &str,
+    additional_filename: Option<&str>,
     extra_filename: Option<&str>,
 ) -> Result<()> {
     // Save the image to the main filename
     save_image(image_bytes, main_filename).await?;
 
     // Save the image to the additional filename
-    save_image(image_bytes, additional_filename).await?;
+    if let Some(filename) = additional_filename {
+        save_image(image_bytes, filename).await?;
+    }
 
     // If an extra filename is provided, save the image there as well
     if let Some(extra_filename) = extra_filename {

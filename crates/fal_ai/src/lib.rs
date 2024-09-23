@@ -6,16 +6,62 @@ use tokio::fs::create_dir_all;
 pub mod models;
 pub mod utils;
 
+pub async fn create_image_for_music_video(
+    id: String,
+    prompt: String,
+    index: usize,
+) -> Result<()> {
+    let client = FalClient::new(ClientCredentials::from_env());
+    let model = "fal-ai/fast-sdxl";
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+
+    run_model_create_and_save_image_with_index(
+        &client,
+        model,
+        prompt,
+        index,
+        Some(&music_video_folder),
+    )
+    .await
+}
+
+/// Creates an image using the "fal-ai/fast-sdxl" model.
+pub async fn create_turbo_image(prompt: String) -> Result<()> {
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    // is this the wrong model?
+    let model = "fal-ai/fast-sdxl";
+
+    let stream_background_path = "./tmp/dalle-1.png";
+    // Create the image
+    run_model_create_and_save_image(
+        &client,
+        model,
+        prompt,
+        Some(stream_background_path),
+        None,
+    )
+    .await
+}
+
 /// Creates an image using the "fal-ai/stable-cascade" model and saves it to the specified folder.
-pub async fn create_turbo_image_in_folder(
+pub async fn create_image_from_prompt_in_folder(
     prompt: String,
     suno_save_folder: &str,
 ) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
     let model = "fal-ai/stable-cascade";
 
+    let stream_background_path = "./tmp/dalle-1.png";
     // Create the image
-    create_image(&client, model, prompt, Some(suno_save_folder)).await
+    run_model_create_and_save_image(
+        &client,
+        model,
+        prompt,
+        Some(stream_background_path),
+        Some(suno_save_folder),
+    )
+    .await
 }
 
 /// Creates a video from the given image file path.
@@ -45,17 +91,6 @@ pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
     Ok(())
 }
 
-/// Creates an image using the "fal-ai/fast-sdxl" model.
-pub async fn create_turbo_image(prompt: String) -> Result<()> {
-    let client = FalClient::new(ClientCredentials::from_env());
-
-    // is this the wrong model?
-    let model = "fal-ai/fast-sdxl";
-
-    // Create the image
-    create_image(&client, model, prompt, None).await
-}
-
 /// Submits a request to the Sadtalker model.
 pub async fn fal_submit_sadtalker_request(
     fal_source_image_data_uri: &str,
@@ -76,10 +111,45 @@ pub async fn fal_submit_sadtalker_request(
 }
 
 /// Helper function to create an image using the specified model.
-async fn create_image(
+async fn run_model_create_and_save_image_with_index(
     client: &FalClient,
     model: &str,
     prompt: String,
+    index: usize,
+    extra_save_folder: Option<&str>,
+) -> Result<()> {
+    println!("\tCreating image with model: {}", model);
+
+    let parameters = serde_json::json!({
+        "prompt": prompt,
+        "image_size": "landscape_16_9",
+    });
+    let raw_json =
+        run_model_and_get_raw_json(client, model, parameters).await?;
+
+    // Save the raw JSON response to a file
+    let timestamp = Utc::now().timestamp();
+    save_raw_json_response(&raw_json, timestamp).await?;
+    let primary_save_path = format!("tmp/fal_images/{}", timestamp);
+
+    // Parse and process images from the JSON response
+    utils::parse_and_process_images_from_json_for_music_video(
+        &raw_json,
+        &primary_save_path,
+        index,
+        extra_save_folder,
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Helper function to create an image using the specified model.
+async fn run_model_create_and_save_image(
+    client: &FalClient,
+    model: &str,
+    prompt: String,
+    stream_background_path: Option<&str>,
     extra_save_folder: Option<&str>,
 ) -> Result<()> {
     println!("\tCreating image with model: {}", model);
@@ -97,16 +167,16 @@ async fn create_image(
     // Save the raw JSON response to a file
     let timestamp = Utc::now().timestamp();
     save_raw_json_response(&raw_json, timestamp).await?;
+    let primary_save_path = format!("tmp/fal_images/{}", timestamp);
 
     // Define filename patterns for saving images
-    let main_filename_pattern = format!("tmp/fal_images/{}", timestamp);
-    let additional_filename_pattern = "./tmp/dalle-1";
+    // let stream_background_path = "./tmp/dalle-1.png";
 
     // Parse and process images from the JSON response
     utils::parse_and_process_images_from_json(
         &raw_json,
-        &main_filename_pattern,
-        additional_filename_pattern,
+        &primary_save_path,
+        stream_background_path,
         extra_save_folder,
     )
     .await?;

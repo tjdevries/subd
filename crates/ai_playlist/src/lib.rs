@@ -1,8 +1,29 @@
+use anyhow::anyhow;
 use anyhow::Result;
 use sqlx::{types::time::OffsetDateTime, Error, PgPool};
 use uuid::Uuid;
 
 pub mod models;
+
+pub async fn find_song_by_id(
+    pool: &PgPool,
+    song_id: &str,
+) -> Result<models::ai_songs::Model> {
+    let uuid = Uuid::parse_str(song_id)
+        .map_err(|_| anyhow!("Couldn't parse song_id"))?;
+    sqlx::query_as!(
+        models::ai_songs::Model,
+        r#"
+        SELECT *
+        FROM ai_songs
+        WHERE song_id = $1
+        "#,
+        uuid
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or(anyhow!("Couldn't find song"))
+}
 
 // Fetches a random song from the database.
 pub async fn find_random_song(

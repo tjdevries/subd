@@ -1,5 +1,7 @@
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
+use colored::Colorize;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
@@ -17,6 +19,7 @@ pub struct AISongsDownloader {
 }
 
 enum Command {
+    CreateMusicVideo { id: String },
     Download { id: String },
     CreateSong { prompt: String },
     Unknown,
@@ -76,6 +79,16 @@ pub async fn handle_requests(
             .await
         }
         Command::Unknown => Ok(()),
+        Command::CreateMusicVideo { id } => {
+            handle_create_music_video_command(
+                twitch_client,
+                pool,
+                tx,
+                msg.user_name,
+                id,
+            )
+            .await
+        }
     }
 }
 
@@ -107,7 +120,47 @@ async fn handle_download_command(
     subd_suno::download_and_play(twitch_client, tx, user_name, &id).await
 }
 
-/// Handles the `!create_song` and `!song` commands.
+/// Handles the `!create_music_video` and `!music_video` commands.
+async fn handle_create_music_video_command(
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
+    pool: &PgPool,
+    _tx: &broadcast::Sender<Event>,
+    _user_name: String,
+    id: String,
+) -> Result<()> {
+    println!("\tIt's Music Video time!");
+    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
+
+    // let chunk_count = ai_song.lyric.split_whitespace().count() / 10;
+    let lyric_chunks = ai_song
+        .lyric
+        .ok_or(anyhow!("No Lyrics to parse"))?
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .chunks(10)
+        .map(|chunk| chunk.join(" "))
+        .collect::<Vec<String>>();
+
+    for (index, lyric) in lyric_chunks.into_iter().enumerate() {
+        println!(
+            "{} - {}",
+            "Creating Image for Lyric Chunk: {}".cyan(),
+            lyric.green()
+        );
+        // I should return and do something
+        let _ = fal_ai::create_image_for_music_video(
+            format!("{}", ai_song.song_id),
+            lyric,
+            index + 1,
+        )
+        .await;
+    }
+    return Ok(());
+}
+
 async fn handle_create_song_command(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
