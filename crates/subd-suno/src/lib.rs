@@ -28,7 +28,6 @@ pub async fn play_audio(
     id: &str,
     user_name: &str,
 ) -> Result<()> {
-    println!("\tQueuing {}", id);
     let info = format!("@{} added {} to Queue", user_name, id);
     send_message(twitch_client, info).await?;
 
@@ -37,12 +36,10 @@ pub async fn play_audio(
         anyhow!("Error opening sound file {}: {}", file_name, e)
     })?;
     let file = BufReader::new(mp3);
-    println!("\tPlaying Audio {}", id);
 
     let uuid_id = Uuid::parse_str(id)
         .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
 
-    println!("Adding to Playlist");
     ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
@@ -73,9 +70,6 @@ pub async fn play_sound_instantly(
 ) -> Result<()> {
     match Decoder::new(file) {
         Ok(decoder) => {
-            println!("\tAppending Sound");
-
-            // It should be playing here, if the queue is empty
             sink.append(decoder);
             Ok(())
         }

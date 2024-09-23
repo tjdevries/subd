@@ -105,6 +105,8 @@ pub async fn handle_fal_commands(
         }
 
         _ => {
+            return Ok(());
+            // We can ignore us here
             if !command.starts_with('!')
                 && !command.starts_with('@')
                 && word_count > 1

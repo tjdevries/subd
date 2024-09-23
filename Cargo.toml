@@ -85,6 +85,7 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 
+colored = "2.1.0"
 anyhow = "1.0.57"
 async-trait = "0.1.57"
 chrono = { version = "0.4.19", features = [ "serde" ] }

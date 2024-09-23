@@ -40,8 +40,6 @@ impl EventHandler for ExplicitSoundHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        println!("{}", "ExplicitSoundHandler is running".green());
-
         // Get all soundeffects loaded up once
         // so we can search through them all
         let soundeffect_files = fs::read_dir("./MP3s").unwrap();
@@ -51,10 +49,7 @@ impl EventHandler for ExplicitSoundHandler {
         }
 
         loop {
-            println!("{}", "Starting Loop in ExplicitSoundHandler".yellow());
             let event = rx.recv().await?;
-
-            println!("We got an event in ExplicitSoundHandler!");
 
             // This is meant to filter out messages
             // Right now it only filters Nightbot

@@ -26,7 +26,6 @@ impl EventHandler for AiScenesHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        println!("Starting AI Scenes Handler");
         loop {
             let event = rx.recv().await?;
             let ai_scene_req = match event {

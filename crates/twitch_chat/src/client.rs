@@ -1,4 +1,5 @@
 use anyhow::Result;
+use colored::Colorize;
 use tokio::sync::mpsc::UnboundedReceiver;
 use twitch_irc::{
     login::StaticLoginCredentials, message::ServerMessage, ClientConfig,
@@ -62,6 +63,6 @@ pub async fn send_message<
     client
         .say(twitch_username.to_string(), str_msg.clone())
         .await?;
-    println!("Twitch Send Message: {:?}", str_msg);
+    println!("{} {}", "Twitch Send Message: ".cyan(), str_msg);
     Ok(())
 }

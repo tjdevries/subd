@@ -29,21 +29,18 @@ impl EventHandler for AISongsHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        println!("{}", "Starting AISongs Handler".green());
-
         loop {
             // Check if the sink is empty and update song statuses accordingly
             if self.sink.empty() {
-                println!("Sink is empty! Marking all songs as stopped.");
+                println!(
+                    "{}",
+                    "Sink is empty. Marking all songs as stopped.".red()
+                );
                 let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
             }
 
-            // Receive the next event
             let event = rx.recv().await?;
 
-            println!("Received event in AISongsHandler: {:?}", event);
-
-            // Process only UserMessage events
             let msg = match event {
                 Event::UserMessage(msg) => msg,
                 _ => continue,

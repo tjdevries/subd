@@ -103,7 +103,6 @@ impl EventHandler for TwitchEventSubHandler {
         let clonable_obs_client = Arc::new(self.obs_client);
         let clonable_pool = Arc::new(self.pool);
 
-        println!("In TwitchEventSub Handler!");
         // This is need to create Reward Manager
         //
         // This should be expect

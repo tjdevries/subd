@@ -83,7 +83,6 @@ impl AppResources {
         // Initialize OBS client
         let obs_client = create_obs_client().await?;
 
-        // Initialize audio sink
         let sink = rodio::Sink::try_new(stream_handle)?;
 
         // Initialize Twitch client
@@ -127,8 +126,13 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
+    // Redirect the stdout to cleanup bootup logs
+    let fe = subd_utils::redirect_stderr()?;
+    let fo = subd_utils::redirect_stdout()?;
     let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
         .expect("Failed to get audio output stream");
+    subd_utils::restore_stderr(fe);
+    subd_utils::restore_stdout(fo);
 
     // Determine which features to enable
     let features = if args.enable_all {
@@ -149,7 +153,7 @@ async fn main() -> Result<()> {
             "dynamic_stream_background".to_string(),
             "channel_rewards".to_string(),
             "ai_songs".to_string(),
-            "turbo_bg".to_string(),
+            "fal".to_string(),
         ]
     } else {
         args.enable
@@ -161,7 +165,7 @@ async fn main() -> Result<()> {
     for feature in features {
         match feature.as_str() {
             "twitch_chat_saving" => {
-                println!("Enabling Twitch Chat Saving");
+                println!("{}", "Enabling Twitch Chat Saving".green());
                 event_loop.push(twitch_chat::client::TwitchChat::new(
                     pool.clone(),
                     "beginbot".to_string(),
@@ -198,7 +202,7 @@ async fn main() -> Result<()> {
             }
 
             "explicit_soundeffects" => {
-                println!("{}", "Enabling Explicit Sound Effects\n".yellow());
+                println!("{}", "Enabling Explicit Sound Effects".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
@@ -209,7 +213,7 @@ async fn main() -> Result<()> {
             }
 
             "tts" => {
-                println!("Enabling TTS");
+                println!("{}", "Enabling TTS".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::elevenlabs_handler::ElevenLabsHandler {
@@ -363,7 +367,7 @@ async fn main() -> Result<()> {
             }
 
             "twitch_eventsub" => {
-                println!("Attempting to run Twitch Event Sub");
+                println!("{}", "Enabling Twitch Event Sub".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::twitch_eventsub_handler::TwitchEventSubHandler {
@@ -383,8 +387,8 @@ async fn main() -> Result<()> {
                 );
             }
 
-            "turbo_bg" => {
-                println!("Turbo BG time");
+            "fal" => {
+                println!("{}", "Enabling FalHandler".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::fal_handler::FalHandler {
                     pool: pool.clone(),

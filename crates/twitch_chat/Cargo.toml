@@ -15,3 +15,4 @@ async-trait.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 twitch-irc.workspace = true
+colored.workspace = true
