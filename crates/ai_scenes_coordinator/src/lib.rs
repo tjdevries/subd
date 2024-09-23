@@ -85,7 +85,7 @@ fn generate_and_save_tts_audio(
 
     // Call the ElevenLabs TTS API
     let bytes = elevenlabs
-        .tts(&tts_body, &voice_id)
+        .tts(&tts_body, voice_id)
         .map_err(|e| anyhow!("Error calling ElevenLabs: {}", e))?;
 
     // Generate the filename and save path

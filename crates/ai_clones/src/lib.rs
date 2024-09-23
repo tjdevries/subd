@@ -169,7 +169,7 @@ async fn create_new_bogan_source(
 }
 
 fn parse_scene_item_index(scene_item: &str) -> i32 {
-    let v: Vec<&str> = scene_item.split("_").collect();
+    let v: Vec<&str> = scene_item.split('_').collect();
     let index = v.get(1).unwrap_or(&"0");
     index.parse().unwrap_or(0)
 }

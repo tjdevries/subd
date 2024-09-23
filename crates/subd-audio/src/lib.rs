@@ -37,7 +37,7 @@ pub fn get_output_stream_2(
 
     for device in devices {
         // Convert cpal::Device to rodio::Device
-        let dev = rodio::Device::from(device);
+        let dev = device;
         let dev_name = dev.name().unwrap();
         if dev_name == device_name {
             println!("Device found: {}", dev_name);

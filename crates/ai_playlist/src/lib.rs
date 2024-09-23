@@ -350,7 +350,7 @@ mod tests {
         assert!(next_song.is_ok());
         assert_eq!(next_song.unwrap().title, "title");
 
-        let _ = mark_song_as_played(&pool, fake_uuid).await.unwrap();
+        mark_song_as_played(&pool, fake_uuid).await.unwrap();
 
         let next_song = find_next_song_to_play(&pool).await;
         assert!(next_song.is_err());
@@ -358,7 +358,7 @@ mod tests {
         let last_song_uuid = find_last_played_song(&pool).await.unwrap();
         assert_eq!(last_song_uuid, fake_uuid);
 
-        let _ = mark_song_as_played(&pool, fake_uuid).await.unwrap();
+        mark_song_as_played(&pool, fake_uuid).await.unwrap();
         let next_song = find_next_song_to_play(&pool).await;
         assert!(next_song.is_err());
 
@@ -403,7 +403,7 @@ mod tests {
         assert!(next_song.is_ok());
         assert_eq!(next_song.unwrap().song_id, aaaa_uuid);
 
-        let _ = mark_song_as_played(&pool, aaaa_uuid).await.unwrap();
+        mark_song_as_played(&pool, aaaa_uuid).await.unwrap();
         let next_song = find_next_song_to_play(&pool).await;
         assert!(next_song.is_ok());
         assert_eq!(next_song.unwrap().song_id, bbbb_uuid);

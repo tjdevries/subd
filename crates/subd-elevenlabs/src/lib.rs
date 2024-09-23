@@ -47,7 +47,7 @@ pub fn twitch_chat_filename(username: String, voice: String) -> String {
 pub fn chop_text(starting_text: String) -> String {
     let mut seal_text = starting_text.clone();
 
-    let spaces: Vec<_> = starting_text.match_indices(" ").collect();
+    let spaces: Vec<_> = starting_text.match_indices(' ').collect();
     let line_length_modifier = 20;
     let mut line_length_limit = 20;
     for val in spaces.iter() {
