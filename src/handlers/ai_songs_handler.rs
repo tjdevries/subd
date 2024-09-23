@@ -269,23 +269,23 @@ async fn handle_playback_control(command: &str, sink: &Sink) -> Result<()> {
 async fn handle_speed_control(command: &str, sink: &Sink) -> Result<()> {
     match command {
         "!nightcore" => {
-            println!("Setting speed to Nightcore (1.5x).");
+            println!("{}", "Setting speed to Nightcore (1.5x).".yellow());
             sink.set_speed(1.5);
         }
         "!doom" => {
-            println!("Setting speed to Doom (0.5x).");
+            println!("{}", "Setting speed to Doom (0.5x).".yellow());
             sink.set_speed(0.5);
         }
         "!normal" => {
-            println!("Resetting speed to normal (1.0x).");
+            println!("{}", "Resetting speed to normal (1.0x).".yellow());
             sink.set_speed(1.0);
         }
         "!speedup" => {
-            println!("Increasing playback speed.");
+            println!("\t{}", "Increasing playback speed.".yellow());
             sink.set_speed(sink.speed() * 1.25);
         }
         "!slowdown" => {
-            println!("Decreasing playback speed.");
+            println!("\t{}", "Decreasing playback speed.".yellow());
             sink.set_speed(sink.speed() * 0.75);
         }
         _ => {}
@@ -297,19 +297,19 @@ async fn handle_speed_control(command: &str, sink: &Sink) -> Result<()> {
 async fn handle_volume_control(command: &str, sink: &Sink) -> Result<()> {
     match command {
         "!up" => {
-            println!("Increasing volume.");
+            println!("\n{}", "Increasing volume.".yellow());
             sink.set_volume(sink.volume() * 1.20);
         }
         "!down" => {
-            println!("Decreasing volume.");
+            println!("\n{}", "Decreasing volume.".yellow());
             sink.set_volume(sink.volume() * 0.80);
         }
         "!coding_volume" | "!quiet" => {
-            println!("Setting volume for coding (0.1).");
+            println!("\n{}", "Setting volume for coding (0.1).".yellow());
             sink.set_volume(0.1);
         }
         "!party_volume" => {
-            println!("Setting volume to party level (1.0).");
+            println!("\n{}", "Setting volume to party level (1.0).".yellow());
             sink.set_volume(1.0);
         }
         _ => {}
