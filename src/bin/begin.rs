@@ -79,20 +79,20 @@ struct AppResources {
 }
 
 // This doesn't work
-fn create_sink() -> Result<rodio::Sink> {
-    let fe = subd_utils::redirect_stderr()?;
-    let fo = subd_utils::redirect_stdout()?;
-
-    // Initialize audio sink
-    let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-        .expect("Failed to get audio output stream");
-    let sink = rodio::Sink::try_new(&stream_handle)?;
-
-    let _ = subd_utils::restore_stderr(fe);
-    let _ = subd_utils::restore_stdout(fo);
-    return Ok(sink);
-}
-
+// fn create_sink() -> Result<rodio::Sink> {
+//     let fe = subd_utils::redirect_stderr()?;
+//     let fo = subd_utils::redirect_stdout()?;
+//
+//     // Initialize audio sink
+//     let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+//         .expect("Failed to get audio output stream");
+//     let sink = rodio::Sink::try_new(&stream_handle)?;
+//
+//     let _ = subd_utils::restore_stderr(fe);
+//     let _ = subd_utils::restore_stdout(fo);
+//     return Ok(sink);
+// }
+//
 impl AppResources {
     /// Creates a new instance of `AppResources` with fresh resources.
     async fn new() -> Result<Self> {
@@ -208,11 +208,20 @@ async fn main() -> Result<()> {
             }
 
             "implict_soundeffects" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::sound_handler::ImplicitSoundHandler {
-                        sink: sink,
+                        sink,
                         pool: pool.clone(),
                     },
                 );
@@ -220,35 +229,43 @@ async fn main() -> Result<()> {
 
             "explicit_soundeffects" => {
                 println!("{}", "Enabling Explicit Sound Effects\n".yellow());
-                let sink = create_sink()?;
-                // When creating a sink in AppResouces, it spams to the Console
-                // So we supress the output
-                //
-                // This is seeing if the old method worked for some reason
-                // let (_stream, stream_handle) =
-                //     subd_audio::get_output_stream("pulse")
-                //         .expect("Failed to get audio output stream");
-                // let sink = rodio::Sink::try_new(&stream_handle)?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 // let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
-                        // sink: None,
-                        sink: sink,
-                        // sink: resources.sink,
+                        sink,
                         pool: pool.clone(),
                     },
                 );
             }
 
             "tts" => {
-                let sink = create_sink()?;
                 println!("Enabling TTS");
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::elevenlabs_handler::ElevenLabsHandler {
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
-                        sink: sink,
+                        sink,
                         obs_client: resources.obs_client,
                         elevenlabs: resources.elevenlabs,
                     },
@@ -256,7 +273,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_screenshots_handler::AiScreenshotsHandler {
@@ -269,7 +295,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots_timer" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_screenshots_timer_handler::AiScreenshotsTimerHandler {
@@ -282,7 +317,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_telephone" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::ai_telephone_handler::AiTelephoneHandler {
@@ -295,7 +339,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_scenes" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(handlers::ai_scenes_handler::AiScenesHandler {
                     pool: pool.clone(),
@@ -338,7 +391,16 @@ async fn main() -> Result<()> {
                     },
                 );
 
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::skybox_handler::SkyboxRoutingHandler {
@@ -351,7 +413,16 @@ async fn main() -> Result<()> {
             }
 
             "obs" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(
                     handlers::obs_messages_handler::OBSMessageHandler {
@@ -424,7 +495,16 @@ async fn main() -> Result<()> {
             }
 
             "turbo_bg" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 println!("Turbo BG time");
                 let resources = AppResources::new().await?;
                 event_loop.push(handlers::fal_handler::FalHandler {
@@ -436,7 +516,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_songs" => {
-                let sink = create_sink()?;
+                let fe = subd_utils::redirect_stderr()?;
+                let fo = subd_utils::redirect_stdout()?;
+
+                let (_stream, stream_handle) =
+                    subd_audio::get_output_stream("pulse")
+                        .expect("Failed to get audio output stream");
+                let sink = rodio::Sink::try_new(&stream_handle)?;
+
+                let _ = subd_utils::restore_stderr(fe);
+                let _ = subd_utils::restore_stdout(fo);
                 let resources = AppResources::new().await?;
                 event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
