@@ -40,6 +40,7 @@ pub async fn find_oldest_unplayed_song(
     .fetch_optional(pool)
     .await?;
 
+    // This is not right
     if let Some(res) = res {
         let song = models::ai_songs::Model {
             song_id: res.song_id,
@@ -50,6 +51,7 @@ pub async fn find_oldest_unplayed_song(
             audio_url: res.audio_url,
             lyric: res.lyric,
             gpt_description_prompt: res.gpt_description_prompt,
+            downloaded: res.downloaded,
             last_updated: res.last_updated,
             created_at: res.created_at,
         };
@@ -147,6 +149,7 @@ pub async fn get_current_song(
             username: res.username,
             audio_url: res.audio_url,
             lyric: res.lyric,
+            downloaded: res.downloaded,
             gpt_description_prompt: res.gpt_description_prompt,
             last_updated: res.last_updated,
             created_at: res.created_at,
@@ -188,6 +191,7 @@ pub async fn find_last_played_songs(
             audio_url: res.audio_url,
             lyric: res.lyric,
             gpt_description_prompt: res.gpt_description_prompt,
+            downloaded: res.downloaded,
             last_updated: res.last_updated,
             created_at: res.created_at,
         })
@@ -221,6 +225,7 @@ pub async fn find_songs_by_user(
             username: res.username,
             audio_url: res.audio_url,
             lyric: res.lyric,
+            downloaded: res.downloaded,
             gpt_description_prompt: res.gpt_description_prompt,
             last_updated: res.last_updated,
             created_at: res.created_at,
@@ -279,6 +284,7 @@ pub async fn find_next_song_to_play(
             username: res.username,
             audio_url: res.audio_url,
             lyric: res.lyric,
+            downloaded: res.downloaded,
             gpt_description_prompt: res.gpt_description_prompt,
             last_updated: res.last_updated,
             created_at: res.created_at,
@@ -329,6 +335,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         );
 
         ai_song.save(&pool).await.unwrap();
@@ -368,6 +375,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         );
         ai_song.save(&pool).await.unwrap();
         add_song_to_playlist(&pool, aaaa_uuid).await.unwrap();
@@ -385,6 +393,7 @@ mod tests {
             None,
             None,
             None,
+            false,
         );
         ai_song.save(&pool).await.unwrap();
         add_song_to_playlist(&pool, bbbb_uuid).await.unwrap();

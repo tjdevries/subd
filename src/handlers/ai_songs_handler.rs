@@ -243,6 +243,7 @@ async fn handle_play_command(
         gpt_description_prompt: audio_info.metadata.gpt_description_prompt,
         last_updated: Some(created_at),
         created_at: Some(created_at),
+        downloaded: false,
     };
 
     // Save the song if it doesn't already exist

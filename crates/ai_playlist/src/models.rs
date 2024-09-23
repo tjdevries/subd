@@ -19,6 +19,7 @@ pub mod ai_songs {
         pub lyric: Option<String>,
         pub last_updated: Option<OffsetDateTime>,
         pub created_at: Option<OffsetDateTime>,
+        pub downloaded: bool,
     }
 }
 
@@ -42,7 +43,8 @@ impl ai_songs::Model {
                     gpt_description_prompt, 
                     lyric, 
                     last_updated, 
-                    created_at
+                    created_at,
+                    downloaded
                 "#,
                 self.song_id,
                 self.title,
@@ -118,6 +120,7 @@ pub async fn find_by_id(
         gpt_description_prompt: res.gpt_description_prompt,
         last_updated: res.last_updated,
         created_at: res.created_at,
+        downloaded: false,
     };
     Ok(model)
 }

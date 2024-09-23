@@ -194,6 +194,7 @@ pub async fn parse_suno_response_download_and_play(
             .to_string(),
         last_updated: Some(created_at),
         created_at: Some(created_at),
+        downloaded: false,
     };
     new_song.save(pool).await?;
 

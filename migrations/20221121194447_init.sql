@@ -30,7 +30,11 @@ CREATE TABLE ai_songs(
   lyric TEXT,
   gpt_description_prompt TEXT NOT NULL,
   last_updated TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  
+  -- This is something we have to consider
+  -- ALTER TABLE ai_songs ADD COLUMN downloaded boolean NOT NULL DEFAULT false;
+  downloaded boolean NOT NULL DEFAULT false,
 );
 
 CREATE TABLE ai_playlist(
