@@ -178,9 +178,6 @@ async fn handle_info_command(
         let message =
             format!("Current Song - {} - by @{}", song.title, song.username);
         let _ = send_message(twitch_client, message).await;
-        let message =
-            format!("Current Song - {} - by @{}", song.title, song.username);
-        let _ = send_message(twitch_client, message).await;
     }
     Ok(())
 }
