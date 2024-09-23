@@ -5,6 +5,25 @@ use uuid::Uuid;
 
 pub mod models;
 
+pub async fn find_last_played_song(pool: &PgPool) -> Result<Uuid, sqlx::Error> {
+    let res = sqlx::query!(
+        r#"
+        SELECT song_id
+        FROM ai_song_playlist
+        WHERE played_at IS NOT NULL
+        ORDER BY played_at DESC
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some(record) = res {
+        Ok(record.song_id)
+    } else {
+        Err(sqlx::Error::RowNotFound)
+    }
+}
 pub async fn find_oldest_unplayed_song(
     pool: &PgPool,
 ) -> Result<models::ai_songs::Model> {
@@ -235,6 +254,41 @@ pub async fn find_songs_by_user(
 //    Ok(model)
 //}
 
+pub async fn find_next_song_to_play(
+    pool: &PgPool,
+) -> Result<models::ai_songs::Model> {
+    let res = sqlx::query!(
+        r#"
+        SELECT ai_songs.*
+        FROM ai_song_playlist
+        JOIN ai_songs ON ai_song_playlist.song_id = ai_songs.song_id
+        WHERE ai_song_playlist.played_at IS NULL
+        ORDER BY ai_song_playlist.created_at ASC
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some(res) = res {
+        let song = models::ai_songs::Model {
+            song_id: res.song_id,
+            title: res.title,
+            tags: res.tags,
+            prompt: res.prompt,
+            username: res.username,
+            audio_url: res.audio_url,
+            lyric: res.lyric,
+            gpt_description_prompt: res.gpt_description_prompt,
+            last_updated: res.last_updated,
+            created_at: res.created_at,
+        };
+        Ok(song)
+    } else {
+        Err(anyhow::anyhow!("No unplayed songs found"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -243,8 +297,13 @@ mod tests {
     use test_tag::tag;
 
     // This is scary if you run this on the "Prod" database
-    async fn delete_all_ai_songs(pool: &PgPool) -> Result<()> {
+    async fn delete_all_ai_songs_and_playlist(pool: &PgPool) -> Result<()> {
         sqlx::query!("DELETE FROM ai_songs")
+            .execute(pool)
+            .await
+            .unwrap();
+
+        sqlx::query!("DELETE FROM ai_song_playlist")
             .execute(pool)
             .await
             .unwrap();
@@ -255,10 +314,12 @@ mod tests {
     #[tag(database)]
     async fn test_ai_song_creation() {
         let pool = subd_db::get_test_db_pool().await;
-        let _ = delete_all_ai_songs(&pool).await;
+        let _ = delete_all_ai_songs_and_playlist(&pool).await;
 
+        let fake_uuid =
+            Uuid::parse_str("d7d9d6d5-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap();
         let ai_song = ai_songs::Model::new(
-            Uuid::parse_str("d7d9d6d5-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap(),
+            fake_uuid,
             "title".to_string(),
             "tags".to_string(),
             "prompt".to_string(),
@@ -274,13 +335,22 @@ mod tests {
         let res = find_songs_by_user(&pool, "username").await.unwrap();
         assert_eq!(res[0].title, "title");
 
-        // this is requires to be on the AI playlist
-        // Find newest_song
+        add_song_to_playlist(&pool, fake_uuid).await.unwrap();
         let result = find_last_played_songs(&pool, 1).await.unwrap();
-        assert_eq!(result.len(), 1);
-        println!("OK This does work");
-        result.iter().for_each(|song| {
-            println!("{:?}", song);
-        });
+        assert_eq!(result.len(), 0);
+
+        let next_song = find_next_song_to_play(&pool).await;
+        assert!(next_song.is_ok());
+        assert_eq!(next_song.unwrap().title, "title");
+
+        let _ = mark_song_as_played(&pool, fake_uuid).await.unwrap();
+
+        let next_song = find_next_song_to_play(&pool).await;
+        assert!(next_song.is_err());
+
+        let last_song_uuid = find_last_played_song(&pool).await.unwrap();
+        assert_eq!(last_song_uuid, fake_uuid);
+
+        // find last song
     }
 }

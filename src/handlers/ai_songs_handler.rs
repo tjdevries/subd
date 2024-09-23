@@ -1,3 +1,4 @@
+use ai_playlist;
 use ai_playlist::models::ai_songs;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -90,10 +91,10 @@ async fn handle_requests(
         }
 
         // Commands requiring admin privileges
-        "!reverb" | "!queue" | "!play" | "!pause" | "!unpause" | "!skip"
-        | "!stop" | "!nightcore" | "!doom" | "!normal" | "!speedup"
-        | "!slowdown" | "!up" | "!down" | "!coding_volume" | "!quiet"
-        | "!party_volume" => {
+        "!reverb" | "!queue" | "!play" | "!pause" | "!last_song"
+        | "!unpause" | "!skip" | "!stop" | "!nightcore" | "!doom"
+        | "!normal" | "!speedup" | "!slowdown" | "!up" | "!down"
+        | "!coding_volume" | "!quiet" | "!party_volume" => {
             if !is_admin(msg) {
                 return Ok(());
             }
@@ -111,6 +112,9 @@ async fn handle_requests(
                 }
                 "!queue" => {
                     handle_queue_command(pool, splitmsg).await?;
+                }
+                "!last_song" => {
+                    handle_last_song_command(twitch_client, pool).await?;
                 }
                 "!play" => {
                     handle_play_command(
@@ -157,7 +161,7 @@ async fn handle_info_command(
     } else {
         let song = ai_playlist::get_current_song(pool).await?;
         let message =
-            format!("Current Song: {} by {}", song.title, song.username);
+            format!("Current Song - {} - by @{}", song.title, song.username);
         let _ = send_message(twitch_client, message).await;
     }
     Ok(())
@@ -182,6 +186,16 @@ async fn handle_reverb_command(
     println!("Queuing with Reverb: {}", id);
     subd_suno::play_audio(twitch_client, pool, sink, id, &msg.user_name)
         .await?;
+    Ok(())
+}
+
+async fn handle_last_song_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+) -> Result<()> {
+    let uuid = ai_playlist::find_last_played_song(pool).await?;
+    let message = format!("!play {}", uuid);
+    let _ = send_message(twitch_client, message).await;
     Ok(())
 }
 

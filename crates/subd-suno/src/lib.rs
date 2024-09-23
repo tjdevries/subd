@@ -40,6 +40,7 @@ pub async fn play_audio(
     let uuid_id = Uuid::parse_str(id)
         .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
 
+    // Here is an example
     ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
     ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
