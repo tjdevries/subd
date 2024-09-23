@@ -5,6 +5,59 @@ use uuid::Uuid;
 
 pub mod models;
 
+pub async fn find_random_song(
+    pool: &PgPool,
+) -> Result<models::ai_songs::Model> {
+    let res = sqlx::query!(
+        r#"
+        SELECT *
+        FROM ai_songs
+        ORDER BY RANDOM()
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // This seems wrong
+    if let Some(record) = res {
+        Ok(models::ai_songs::Model {
+            song_id: record.song_id,
+            title: record.title,
+            tags: record.tags,
+            prompt: record.prompt,
+            username: record.username,
+            audio_url: record.audio_url,
+            lyric: record.lyric,
+            gpt_description_prompt: record.gpt_description_prompt,
+            downloaded: record.downloaded,
+            last_updated: record.last_updated,
+            created_at: record.created_at,
+        })
+    } else {
+        Err(anyhow::anyhow!("No songs found"))
+    }
+}
+
+pub async fn find_random_song_id(pool: &PgPool) -> Result<Uuid, sqlx::Error> {
+    let res = sqlx::query!(
+        r#"
+        SELECT song_id
+        FROM ai_songs
+        ORDER BY RANDOM()
+        LIMIT 1
+        "#
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some(record) = res {
+        Ok(record.song_id)
+    } else {
+        Err(sqlx::Error::RowNotFound)
+    }
+}
+
 pub async fn find_last_played_song(pool: &PgPool) -> Result<Uuid, sqlx::Error> {
     let res = sqlx::query!(
         r#"

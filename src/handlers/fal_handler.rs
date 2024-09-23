@@ -80,7 +80,6 @@ pub async fn handle_fal_commands(
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";
     let command = splitmsg[0].as_str();
-    let word_count = msg.contents.split_whitespace().count();
 
     match command {
         // This sets the theme, that is passed to the image generation prompt
@@ -106,18 +105,21 @@ pub async fn handle_fal_commands(
 
         _ => {
             return Ok(());
+
+            // TODO: a way to enable or disable Fal on every chat-message
             // We can ignore us here
-            if !command.starts_with('!')
-                && !command.starts_with('@')
-                && word_count > 1
-            {
-                let prompt = msg.contents;
-                let theme =
-                    twitch_stream_state::get_ai_background_theme(pool).await?;
-                let final_prompt = format!("{} {}", theme, prompt);
-                println!("Creating image for prompt: {}", final_prompt);
-                fal_ai::create_turbo_image(final_prompt).await?;
-            }
+            // let word_count = msg.contents.split_whitespace().count();
+            // if !command.starts_with('!')
+            //     && !command.starts_with('@')
+            //     && word_count > 1
+            // {
+            //     let prompt = msg.contents;
+            //     let theme =
+            //         twitch_stream_state::get_ai_background_theme(pool).await?;
+            //     let final_prompt = format!("{} {}", theme, prompt);
+            //     println!("Creating image for prompt: {}", final_prompt);
+            //     fal_ai::create_turbo_image(final_prompt).await?;
+            // }
         }
     };
 

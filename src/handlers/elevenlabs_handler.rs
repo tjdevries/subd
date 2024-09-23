@@ -132,7 +132,7 @@ impl EventHandler for ElevenLabsHandler {
 
             let voice_data =
                 subd_elevenlabs::find_voice_id_by_name(&final_voice);
-            let (voice_id, voice_name) = match voice_data {
+            let (voice_id, _voice_name) = match voice_data {
                 Some((id, name)) => (id, name),
                 None => {
                     _is_random = true;

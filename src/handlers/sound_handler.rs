@@ -84,7 +84,11 @@ impl EventHandler for ExplicitSoundHandler {
                 continue;
             };
 
-            println!("We found an sound to play! {}", full_name);
+            println!(
+                "{} {}",
+                "We found an sound to play! {}".cyan(),
+                full_name
+            );
 
             let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word))
             {
