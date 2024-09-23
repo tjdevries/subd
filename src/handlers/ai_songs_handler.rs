@@ -201,8 +201,10 @@ async fn handle_random_song_command(
     let message = format!("!play {}", song.song_id);
     let _ = send_message(twitch_client, message).await;
 
-    let message =
-        format!("Current Song - {} - by @{}", song.title, song.username);
+    let message = format!(
+        "Adding Song to Queue - {} - by @{}",
+        song.title, song.username
+    );
     let _ = send_message(twitch_client, message).await;
 
     Ok(())
