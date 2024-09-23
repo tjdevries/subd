@@ -292,8 +292,10 @@ async fn handle_random_song_command(
         let song = ai_playlist::find_random_song(pool).await?;
         let message = format!("!queue {}", song.song_id);
         let _ = send_message(twitch_client, message).await;
-        let message =
-            format!("@{} Added Song to Queue - {}", song.username, song.title,);
+        let message = format!(
+            "@{} Added Song to Queue - {} | {}",
+            song.username, song.title, song.tags
+        );
         let _ = send_message(twitch_client, message).await;
     }
 
