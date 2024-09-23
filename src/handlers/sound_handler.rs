@@ -200,11 +200,7 @@ impl EventHandler for ImplicitSoundHandler {
                         );
                     }
                 }
-            } else if msg.roles.is_twitch_sub() {
-                character.voice = Some(voice);
-            } else if !state.sub_only_tts {
-                // This is what everyone get's to speak with
-                // if we are allowing non-subs to speak
+            } else if msg.roles.is_twitch_sub() || !state.sub_only_tts {
                 character.voice = Some(voice);
             }
 
