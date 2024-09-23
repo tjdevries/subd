@@ -128,6 +128,8 @@ pub async fn download_and_play(
                         eprintln!("Error downloading file: {}", e);
                     }
 
+                    // We downloaded, so ew can update the ai_song_playlist
+
                     let info = format!(
                         "@{}'s song {} added to the Queue.",
                         user_name, id
@@ -221,6 +223,8 @@ pub async fn just_download(
     let mut file = fs::File::create(&file_name).await?;
 
     let content = response.bytes().await?;
+
+    // now is a good time to mark a song as downloaded
     tokio::io::copy(&mut &content[..], &mut file).await?;
     println!("Downloaded audio to: {}", file_name);
 

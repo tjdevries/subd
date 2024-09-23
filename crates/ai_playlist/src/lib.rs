@@ -468,7 +468,6 @@ use sqlx::{types::time::OffsetDateTime, Error, PgPool};
 use uuid::Uuid;
 
 pub mod models;
-
 // Fetches a random song from the database.
 pub async fn find_random_song(
     pool: &PgPool,
@@ -552,6 +551,24 @@ pub async fn add_song_to_playlist(
     };
 
     playlist_entry.save(pool).await
+}
+
+// Marks a song as played in the playlist.
+pub async fn mark_song_as_downloaded(
+    pool: &PgPool,
+    song_id: Uuid,
+) -> Result<(), Error> {
+    sqlx::query!(
+        r#"
+        UPDATE ai_songs
+        SET downloaded = true 
+        WHERE song_id = $1
+        "#,
+        song_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 // Marks a song as played in the playlist.
