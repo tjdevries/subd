@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use colored::Colorize;
 use elevenlabs_api::{
     tts::{TtsApi, TtsBody},
     *,
@@ -40,6 +41,8 @@ impl EventHandler for ElevenLabsHandler {
         tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        println!("{}", "Kicking off ElevenLabsHandler".yellow());
+
         let twitch_client = Arc::new(Mutex::new(self.twitch_client));
         let clone_twitch_client = twitch_client.clone();
         let _locked_client = clone_twitch_client.lock().await;
@@ -50,7 +53,7 @@ impl EventHandler for ElevenLabsHandler {
 
         loop {
             // This feels dumb
-            let default_global_voice = "troy".to_string();
+            let default_global_voice = "ethan".to_string();
             let event = rx.recv().await?;
 
             let msg = match event {
@@ -274,6 +277,8 @@ impl EventHandler for ElevenLabsHandler {
                         subd_types::consts::get_soundboard_text_source_name(),
                 },
             ));
+
+            // we create a new sink!!!!
             let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
             // sink.set_volume(1.3);

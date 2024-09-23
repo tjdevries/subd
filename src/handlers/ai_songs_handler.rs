@@ -1,6 +1,7 @@
 use ai_playlist::models::ai_songs;
 use anyhow::Result;
 use async_trait::async_trait;
+use colored::Colorize;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use rodio::Sink;
@@ -28,6 +29,8 @@ impl EventHandler for AISongsHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        println!("{}", "Starting AISongs Handler".green());
+
         loop {
             // Check if the sink is empty and update song statuses accordingly
             if self.sink.empty() {
@@ -37,6 +40,8 @@ impl EventHandler for AISongsHandler {
 
             // Receive the next event
             let event = rx.recv().await?;
+
+            println!("Received event in AISongsHandler: {:?}", event);
 
             // Process only UserMessage events
             let msg = match event {

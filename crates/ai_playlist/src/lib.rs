@@ -239,16 +239,24 @@ pub async fn find_songs_by_user(
 mod tests {
     use super::*;
     use crate::models::ai_songs;
+    use anyhow::Result;
     use test_tag::tag;
+
+    // This is scary if you run this on the "Prod" database
+    async fn delete_all_ai_songs(pool: &PgPool) -> Result<()> {
+        sqlx::query!("DELETE FROM ai_songs")
+            .execute(pool)
+            .await
+            .unwrap();
+        Ok(())
+    }
 
     #[tokio::test]
     #[tag(database)]
     async fn test_ai_song_creation() {
-        // we need to clear the db
         let pool = subd_db::get_test_db_pool().await;
-        // let pool = subd_db::get_db_pool().await;
+        let _ = delete_all_ai_songs(&pool).await;
 
-        // I could generate a new one here
         let ai_song = ai_songs::Model::new(
             Uuid::parse_str("d7d9d6d5-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap(),
             "title".to_string(),
@@ -264,16 +272,15 @@ mod tests {
 
         ai_song.save(&pool).await.unwrap();
         let res = find_songs_by_user(&pool, "username").await.unwrap();
-        assert_eq!(res[0].title, "titles");
+        assert_eq!(res[0].title, "title");
+
+        // this is requires to be on the AI playlist
         // Find newest_song
         let result = find_last_played_songs(&pool, 1).await.unwrap();
+        assert_eq!(result.len(), 1);
         println!("OK This does work");
         result.iter().for_each(|song| {
             println!("{:?}", song);
         });
-
-        //dbg!(result);
-        // assert_eq!(result, vec![]);
-        // OK
     }
 }

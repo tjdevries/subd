@@ -25,9 +25,12 @@ fix:
 chat:
 	cargo run --bin chat
 	
+ai_playlist:
+	cargo run --bin begin -- --enable ai_songs twitch_chat_saving
+
 sfx:
-	cargo run --bin begin -- --enable explicit_soundeffects
-	twitch_chat_saving implict_soundeffects
+	cargo run --bin begin -- --enable explicit_soundeffects twitch_chat_saving
+	# twitch_chat_saving implict_soundeffects
 	
 tts:
 	cargo run --bin begin -- --enable tts twitch_chat_saving implict_soundeffects

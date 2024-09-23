@@ -74,6 +74,8 @@ pub async fn play_sound_instantly(
     match Decoder::new(file) {
         Ok(decoder) => {
             println!("\tAppending Sound");
+
+            // It should be playing here, if the queue is empty
             sink.append(decoder);
             Ok(())
         }

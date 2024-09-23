@@ -25,6 +25,29 @@ pub async fn play_sound(sink: &Sink, soundname: String) -> Result<()> {
     Ok(())
 }
 
+pub fn get_output_stream_2(
+    device_name: &str,
+) -> Result<(OutputStream, OutputStreamHandle)> {
+    let host = cpal::default_host();
+    let devices = host.output_devices().unwrap();
+
+    // for device in devices {
+    //     println!("Device found: {}", device.name()?);
+    // }
+
+    for device in devices {
+        // Convert cpal::Device to rodio::Device
+        let dev = rodio::Device::from(device);
+        let dev_name = dev.name().unwrap();
+        if dev_name == device_name {
+            println!("Device found: {}", dev_name);
+            // Return the result directly without unwrapping
+            return Ok(OutputStream::try_from_device(&dev)?);
+        }
+    }
+
+    Err(anyhow::anyhow!("Device not found"))
+}
 pub fn get_output_stream(
     device_name: &str,
 ) -> Result<(OutputStream, OutputStreamHandle)> {
