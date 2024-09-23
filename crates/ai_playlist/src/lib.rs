@@ -351,6 +351,52 @@ mod tests {
         let last_song_uuid = find_last_played_song(&pool).await.unwrap();
         assert_eq!(last_song_uuid, fake_uuid);
 
-        // find last song
+        let _ = mark_song_as_played(&pool, fake_uuid).await.unwrap();
+        let next_song = find_next_song_to_play(&pool).await;
+        assert!(next_song.is_err());
+
+        let aaaa_uuid =
+            Uuid::parse_str("aaaaaaaa-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap();
+        let ai_song = ai_songs::Model::new(
+            aaaa_uuid,
+            "title".to_string(),
+            "tags".to_string(),
+            "prompt".to_string(),
+            "username".to_string(),
+            "audio_url".to_string(),
+            "gpt_description_prompt".to_string(),
+            None,
+            None,
+            None,
+        );
+        ai_song.save(&pool).await.unwrap();
+        add_song_to_playlist(&pool, aaaa_uuid).await.unwrap();
+
+        let bbbb_uuid =
+            Uuid::parse_str("bbbbbbbb-9b4c-4b2f-8d8e-2d5f6b3b2b4f").unwrap();
+        let ai_song = ai_songs::Model::new(
+            bbbb_uuid,
+            "title".to_string(),
+            "tags".to_string(),
+            "prompt".to_string(),
+            "username".to_string(),
+            "audio_url".to_string(),
+            "gpt_description_prompt".to_string(),
+            None,
+            None,
+            None,
+        );
+        ai_song.save(&pool).await.unwrap();
+        add_song_to_playlist(&pool, bbbb_uuid).await.unwrap();
+        // We want to test having multiple unplayed songs
+
+        let next_song = find_next_song_to_play(&pool).await;
+        assert!(next_song.is_ok());
+        assert_eq!(next_song.unwrap().song_id, aaaa_uuid);
+
+        let _ = mark_song_as_played(&pool, aaaa_uuid).await.unwrap();
+        let next_song = find_next_song_to_play(&pool).await;
+        assert!(next_song.is_ok());
+        assert_eq!(next_song.unwrap().song_id, bbbb_uuid);
     }
 }
