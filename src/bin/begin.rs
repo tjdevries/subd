@@ -70,44 +70,21 @@ struct Args {
     enable: Vec<String>,
 }
 
-// Define a struct to hold app resources
 struct AppResources {
     obs_client: Client,
-    // sink: &rodio::Sink,
+    sink: rodio::Sink,
     twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     elevenlabs: Elevenlabs,
 }
 
-// This doesn't work
-// fn create_sink() -> Result<rodio::Sink> {
-//     let fe = subd_utils::redirect_stderr()?;
-//     let fo = subd_utils::redirect_stdout()?;
-//
-//     // Initialize audio sink
-//     let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-//         .expect("Failed to get audio output stream");
-//     let sink = rodio::Sink::try_new(&stream_handle)?;
-//
-//     let _ = subd_utils::restore_stderr(fe);
-//     let _ = subd_utils::restore_stdout(fo);
-//     return Ok(sink);
-// }
-//
 impl AppResources {
     /// Creates a new instance of `AppResources` with fresh resources.
-    async fn new() -> Result<Self> {
+    async fn new(stream_handle: &rodio::OutputStreamHandle) -> Result<Self> {
         // Initialize OBS client
         let obs_client = create_obs_client().await?;
 
-        // is this where we should be redirecting output???
-        // let fe = subd_utils::redirect_stderr()?;
-        // let fo = subd_utils::redirect_stdout()?;
         // Initialize audio sink
-        // let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-        //     .expect("Failed to get audio output stream");
-        // let sink = rodio::Sink::try_new(&stream_handle)?;
-        // let _ = subd_utils::restore_stderr(fe);
-        // let _ = subd_utils::restore_stdout(fo);
+        let sink = rodio::Sink::try_new(stream_handle)?;
 
         // Initialize Twitch client
         let twitch_config = get_chat_config();
@@ -123,7 +100,7 @@ impl AppResources {
 
         Ok(Self {
             obs_client,
-            // sink,
+            sink,
             twitch_client,
             elevenlabs,
         })
@@ -203,7 +180,7 @@ async fn main() -> Result<()> {
                 );
 
                 // Create new resources for this feature
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::voices_handler::VoicesHandler {
                     pool: pool.clone(),
                     obs_client: resources.obs_client,
@@ -211,17 +188,10 @@ async fn main() -> Result<()> {
             }
 
             "implict_soundeffects" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::sound_handler::ImplicitSoundHandler {
-                        sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                     },
                 );
@@ -229,17 +199,10 @@ async fn main() -> Result<()> {
 
             "explicit_soundeffects" => {
                 println!("{}", "Enabling Explicit Sound Effects\n".yellow());
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                // let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::sound_handler::ExplicitSoundHandler {
-                        sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                     },
                 );
@@ -247,19 +210,12 @@ async fn main() -> Result<()> {
 
             "tts" => {
                 println!("Enabling TTS");
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::elevenlabs_handler::ElevenLabsHandler {
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
-                        sink,
+                        sink: resources.sink,
                         obs_client: resources.obs_client,
                         elevenlabs: resources.elevenlabs,
                     },
@@ -267,18 +223,11 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_screenshots_handler::AiScreenshotsHandler {
                         obs_client: resources.obs_client,
-                        sink: sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                     },
@@ -286,18 +235,11 @@ async fn main() -> Result<()> {
             }
 
             "ai_screenshots_timer" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_screenshots_timer_handler::AiScreenshotsTimerHandler {
                         obs_client: resources.obs_client,
-                        sink: sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                     },
@@ -305,18 +247,11 @@ async fn main() -> Result<()> {
             }
 
             "ai_telephone" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_telephone_handler::AiTelephoneHandler {
                         obs_client: resources.obs_client,
-                        sink: sink,
+                        sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                     },
@@ -324,23 +259,16 @@ async fn main() -> Result<()> {
             }
 
             "ai_scenes" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::ai_scenes_handler::AiScenesHandler {
                     pool: pool.clone(),
                     twitch_client: resources.twitch_client,
-                    sink: sink,
+                    sink: resources.sink,
                     obs_client: resources.obs_client,
                     elevenlabs: resources.elevenlabs,
                 });
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::music_scenes_handler::MusicScenesHandler {
                         pool: pool.clone(),
@@ -350,7 +278,7 @@ async fn main() -> Result<()> {
             }
 
             "channel_rewards" => {
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::reward_handler::RewardHandler {
                     obs_client: resources.obs_client,
                     pool: pool.clone(),
@@ -359,31 +287,23 @@ async fn main() -> Result<()> {
             }
 
             "skybox" => {
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::skybox_handler::SkyboxHandler {
                     obs_client: resources.obs_client,
                     pool: pool.clone(),
                 });
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::skybox_status_handler::SkyboxStatusHandler {
                         obs_client: resources.obs_client,
                         pool: pool.clone(),
                     },
                 );
-
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::skybox_handler::SkyboxRoutingHandler {
-                        sink: sink,
+                        sink: resources.sink,
                         twitch_client: resources.twitch_client,
                         obs_client: resources.obs_client,
                         pool: pool.clone(),
@@ -392,38 +312,31 @@ async fn main() -> Result<()> {
             }
 
             "obs" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::obs_messages_handler::OBSMessageHandler {
                         obs_client: resources.obs_client,
                         twitch_client: resources.twitch_client,
                         pool: pool.clone(),
-                        sink: sink,
+                        sink: resources.sink,
                     },
                 );
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::trigger_obs_hotkey_handler::TriggerHotkeyHandler {
                         obs_client: resources.obs_client,
                     },
                 );
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::transform_obs_test_handler::TransformOBSTextHandler {
                         obs_client: resources.obs_client,
                     },
                 );
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::source_visibility_handler::SourceVisibilityHandler {
                         obs_client: resources.obs_client,
@@ -432,7 +345,7 @@ async fn main() -> Result<()> {
             }
 
             "stream_character" => {
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::stream_character_handler::StreamCharacterHandler {
                         obs_client: resources.obs_client,
@@ -441,7 +354,7 @@ async fn main() -> Result<()> {
             }
 
             "chat_gpt_response" => {
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::chatgpt_response_handler::ChatGPTResponse {
                         twitch_client: resources.twitch_client,
@@ -451,7 +364,7 @@ async fn main() -> Result<()> {
 
             "twitch_eventsub" => {
                 println!("Attempting to run Twitch Event Sub");
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::twitch_eventsub_handler::TwitchEventSubHandler {
                         pool: pool.clone(),
@@ -462,7 +375,7 @@ async fn main() -> Result<()> {
             }
 
             "dynamic_stream_background" => {
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::stream_background_handler::StreamBackgroundHandler {
                         obs_client: resources.obs_client,
@@ -471,40 +384,26 @@ async fn main() -> Result<()> {
             }
 
             "turbo_bg" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
                 println!("Turbo BG time");
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::fal_handler::FalHandler {
                     pool: pool.clone(),
-                    sink: sink,
+                    sink: resources.sink,
                     obs_client: resources.obs_client,
                     twitch_client: resources.twitch_client,
                 });
             }
 
             "ai_songs" => {
-                let fe = subd_utils::redirect_stderr()?;
-                let fo = subd_utils::redirect_stdout()?;
-
-                let sink = rodio::Sink::try_new(&stream_handle)?;
-
-                let _ = subd_utils::restore_stderr(fe);
-                let _ = subd_utils::restore_stdout(fo);
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
-                    sink: sink,
+                    sink: resources.sink,
                     obs_client: resources.obs_client,
                     twitch_client: resources.twitch_client,
                 });
 
-                let resources = AppResources::new().await?;
+                let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_songs_downloader_handler::AISongsDownloader {
                         pool: pool.clone(),
