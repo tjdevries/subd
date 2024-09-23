@@ -19,12 +19,12 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     ))
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct EventSubRoot {
-    subscription: Subscription,
-    event: Option<EventSub>,
-    challenge: Option<String>,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// struct EventSubRoot {
+//     subscription: Subscription,
+//     event: Option<EventSub>,
+//     challenge: Option<String>,
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Subscription {
@@ -83,6 +83,7 @@ impl AppResources {
         // Initialize OBS client
         let obs_client = create_obs_client().await?;
 
+        // This is how we play audio
         let sink = rodio::Sink::try_new(stream_handle)?;
 
         // Initialize Twitch client

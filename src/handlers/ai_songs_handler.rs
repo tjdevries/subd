@@ -163,7 +163,21 @@ async fn handle_info_command(
         let res = subd_suno::get_audio_information(id).await?;
         println!("Suno Response: {:?}", res);
     } else {
-        let song = ai_playlist::get_current_song(pool).await?;
+        let song = match ai_playlist::get_current_song(pool).await {
+            Ok(song) => song,
+            Err(_) => {
+                let _ = send_message(
+                    twitch_client,
+                    // What should we do so it's not read
+                    "!No current song playing".to_string(),
+                )
+                .await;
+                return Ok(());
+            }
+        };
+        let message =
+            format!("Current Song - {} - by @{}", song.title, song.username);
+        let _ = send_message(twitch_client, message).await;
         let message =
             format!("Current Song - {} - by @{}", song.title, song.username);
         let _ = send_message(twitch_client, message).await;
