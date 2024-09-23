@@ -244,20 +244,20 @@ async fn handle_play_command(
 async fn handle_playback_control(command: &str, sink: &Sink) -> Result<()> {
     match command {
         "!pause" => {
-            println!("Pausing playback.");
+            println!("\t{}", "Pausing playback.".yellow());
             sink.pause();
         }
         "!unpause" => {
-            println!("Resuming playback.");
+            println!("\t{}", "Resuming playback.".yellow());
             sink.play();
         }
         "!skip" => {
-            println!("Skipping current track.");
+            println!("\t{}", "Skipping current track.".yellow());
             sink.skip_one();
             sink.play();
         }
         "!stop" => {
-            println!("Stopping playback.");
+            println!("\t{}", "Stopping playback.".yellow());
             sink.stop();
         }
         _ => {}
@@ -269,15 +269,15 @@ async fn handle_playback_control(command: &str, sink: &Sink) -> Result<()> {
 async fn handle_speed_control(command: &str, sink: &Sink) -> Result<()> {
     match command {
         "!nightcore" => {
-            println!("{}", "Setting speed to Nightcore (1.5x).".yellow());
+            println!("\t{}", "Setting speed to Nightcore (1.5x).".yellow());
             sink.set_speed(1.5);
         }
         "!doom" => {
-            println!("{}", "Setting speed to Doom (0.5x).".yellow());
+            println!("\t{}", "Setting speed to Doom (0.5x).".yellow());
             sink.set_speed(0.5);
         }
         "!normal" => {
-            println!("{}", "Resetting speed to normal (1.0x).".yellow());
+            println!("\t{}", "Resetting speed to normal (1.0x).".yellow());
             sink.set_speed(1.0);
         }
         "!speedup" => {
@@ -297,19 +297,19 @@ async fn handle_speed_control(command: &str, sink: &Sink) -> Result<()> {
 async fn handle_volume_control(command: &str, sink: &Sink) -> Result<()> {
     match command {
         "!up" => {
-            println!("\n{}", "Increasing volume.".yellow());
+            println!("\t{}", "Increasing volume.".yellow());
             sink.set_volume(sink.volume() * 1.20);
         }
         "!down" => {
-            println!("\n{}", "Decreasing volume.".yellow());
+            println!("\t{}", "Decreasing volume.".yellow());
             sink.set_volume(sink.volume() * 0.80);
         }
         "!coding_volume" | "!quiet" => {
-            println!("\n{}", "Setting volume for coding (0.1).".yellow());
+            println!("\t{}", "Setting volume for coding (0.1).".yellow());
             sink.set_volume(0.1);
         }
         "!party_volume" => {
-            println!("\n{}", "Setting volume to party level (1.0).".yellow());
+            println!("\t{}", "Setting volume to party level (1.0).".yellow());
             sink.set_volume(1.0);
         }
         _ => {}
