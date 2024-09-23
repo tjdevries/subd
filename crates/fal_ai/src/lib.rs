@@ -48,6 +48,8 @@ pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
 /// Creates an image using the "fal-ai/fast-sdxl" model.
 pub async fn create_turbo_image(prompt: String) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
+
+    // is this the wrong model?
     let model = "fal-ai/fast-sdxl";
 
     // Create the image

@@ -116,9 +116,16 @@ async fn handle_requests(
                 "!last_song" => {
                     handle_last_song_command(twitch_client, pool).await?;
                 }
+
+                // !random 5 to add random songs to the queue
                 "!random_song" => {
-                    println!("Handling random song command");
-                    handle_random_song_command(twitch_client, pool).await?;
+                    let index = splitmsg
+                        .get(1)
+                        .unwrap_or(&"1".to_string())
+                        .parse::<usize>()
+                        .unwrap_or(1);
+                    handle_random_song_command(twitch_client, pool, index)
+                        .await?;
                 }
                 "!play" => {
                     handle_play_command(
@@ -175,8 +182,10 @@ async fn handle_info_command(
                 return Ok(());
             }
         };
-        let message =
-            format!("Current Song - {} - by @{}", song.title, song.username);
+        let message = format!(
+            "@{}'s Song is Currently playing - {} | {}",
+            song.username, song.title, song.tags
+        );
         let _ = send_message(twitch_client, message).await;
     }
     Ok(())
@@ -207,16 +216,17 @@ async fn handle_reverb_command(
 async fn handle_random_song_command(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
+    amount: usize,
 ) -> Result<()> {
-    let song = ai_playlist::find_random_song(pool).await?;
-    let message = format!("!play {}", song.song_id);
-    let _ = send_message(twitch_client, message).await;
-
-    let message = format!(
-        "Adding Song to Queue - {} - by @{}",
-        song.title, song.username
-    );
-    let _ = send_message(twitch_client, message).await;
+    // We could also make sure we don't pull duplicates
+    for _ in 0..amount {
+        let song = ai_playlist::find_random_song(pool).await?;
+        let message = format!("!queue {}", song.song_id);
+        let _ = send_message(twitch_client, message).await;
+        let message =
+            format!("@{} Added Song to Queue - {}", song.username, song.title,);
+        let _ = send_message(twitch_client, message).await;
+    }
 
     Ok(())
 }

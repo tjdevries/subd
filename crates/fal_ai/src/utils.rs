@@ -18,7 +18,7 @@ pub async fn parse_and_process_images_from_json(
         let main_filename =
             format!("{}-{}.{}", main_filename_pattern, index, extension);
         let additional_filename =
-            format!("{}-{}.{}", additional_filename_pattern, index, extension);
+            format!("{}.{}", additional_filename_pattern, extension);
         let extra_filename = extra_save_folder.map(|folder| {
             format!(
                 "{}/{}-{}.{}",

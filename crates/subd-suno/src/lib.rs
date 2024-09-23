@@ -21,16 +21,21 @@ pub struct AudioGenerationData {
 }
 
 /// Plays audio based on the provided song ID.
+pub async fn queue_audio(pool: &sqlx::PgPool, id: &str) -> Result<()> {
+    let uuid_id = Uuid::parse_str(id)
+        .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
+    ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
+
+    Ok(())
+}
+/// Plays audio based on the provided song ID.
 pub async fn play_audio(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     sink: &Sink,
     id: &str,
-    user_name: &str,
+    username: &str,
 ) -> Result<()> {
-    let info = format!("@{} added {} to Queue", user_name, id);
-    send_message(twitch_client, info).await?;
-
     let file_name = format!("ai_songs/{}.mp3", id);
     let mp3 = File::open(&file_name).map_err(|e| {
         anyhow!("Error opening sound file {}: {}", file_name, e)
@@ -40,11 +45,11 @@ pub async fn play_audio(
     let uuid_id = Uuid::parse_str(id)
         .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
 
+    // This isn't marked as playing right here
     // Here is an example
     ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
-    ai_playlist::mark_song_as_played(pool, uuid_id).await?;
-
     play_sound_instantly(sink, file).await?;
+    ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     Ok(())
 }
@@ -71,6 +76,8 @@ pub async fn play_sound_instantly(
 ) -> Result<()> {
     match Decoder::new(file) {
         Ok(decoder) => {
+            // I also need to update the database here
+            // sink.clear();
             sink.append(decoder);
             Ok(())
         }
