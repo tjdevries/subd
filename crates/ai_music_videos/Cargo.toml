@@ -24,3 +24,4 @@ bytes = "1.7.1"
 colored.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
+futures.workspace = true
