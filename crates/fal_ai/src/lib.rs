@@ -14,14 +14,15 @@ pub async fn create_image_for_music_video(
     let model = "fal-ai/fast-sdxl";
     let save_dir = format!("./tmp/music_videos/{}/", id);
 
-    // the face this takes an index
+    // This only needs an index to save the name properly
     fal_service
-        .create_image_for_music_video(
+        .create_image(
             model,
             prompt,
             "landscape_16_9",
             &save_dir,
-            index,
+            Some(index),
+            None,
         )
         .await
 }
@@ -31,8 +32,16 @@ pub async fn create_turbo_image(prompt: &str) -> Result<()> {
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-turbo-diffusion";
     let save_dir = "./tmp/fal_images";
+
     fal_service
-        .create_image(model, prompt, "landscape_16_9", save_dir)
+        .create_image(
+            model,
+            prompt,
+            "landscape_16_9",
+            save_dir,
+            None,
+            Some("./tmp/dalle-1.png"),
+        )
         .await
 }
 
@@ -42,7 +51,14 @@ pub async fn create_fast_sd_image(prompt: &str) -> Result<()> {
     let model = "fal-ai/fast-sdxl";
     let save_dir = "./tmp/fal_images";
     fal_service
-        .create_image(model, prompt, "landscape_16_9", save_dir)
+        .create_image(
+            model,
+            prompt,
+            "landscape_16_9",
+            save_dir,
+            None,
+            Some("./tmp/dalle-1.png"),
+        )
         .await
 }
 
@@ -54,7 +70,14 @@ pub async fn create_image_from_prompt_in_folder(
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/stable-cascade";
     fal_service
-        .create_image(model, prompt, "landscape_16_9", save_folder)
+        .create_image(
+            model,
+            prompt,
+            "landscape_16_9",
+            save_folder,
+            None,
+            Some("./tmp/dalle-1.png"),
+        )
         .await
 }
 

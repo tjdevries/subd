@@ -39,6 +39,8 @@ impl FalService {
         prompt: &str,
         image_size: &str,
         save_dir: &str,
+        index: Option<usize>,
+        obs_background_image_path: Option<&str>,
     ) -> Result<()> {
         // Prepare the parameters
         let parameters = serde_json::json!({
@@ -59,47 +61,14 @@ impl FalService {
         self.process_images(
             &raw_json,
             save_dir,
-            None,
-            Some("./tmp/dalle-1.png"),
+            index,
+            obs_background_image_path,
         )
         .await?;
 
         Ok(())
     }
-    // ===============================================================
-    // This is a little odd, because we did this because we were trying to figure
-    // out a quick version of images for music video
-    //
-    /// Creates an image for a music video using the specified model, prompt, and index, and saves it to the specified directory.
-    pub async fn create_image_for_music_video(
-        &self,
-        model: &str,
-        prompt: &str,
-        image_size: &str,
-        save_dir: &str,
-        index: usize,
-    ) -> Result<()> {
-        // Prepare the parameters
-        let parameters = serde_json::json!({
-            "prompt": prompt,
-            "image_size": image_size,
-        });
 
-        // Run the model and get the raw JSON response
-        let raw_json =
-            self.run_model_and_get_raw_json(model, parameters).await?;
-
-        // Save the raw JSON response to a file
-        let timestamp = Utc::now().timestamp();
-        let json_save_path = format!("{}/{}.json", save_dir, timestamp);
-        utils::save_raw_json_response(&raw_json, &json_save_path).await?;
-
-        // Process images specifically for the music video
-        self.process_images(&raw_json, save_dir, Some(index), None)
-            .await?;
-
-        Ok(())
-    }
     // ===============================================================
     // Stable Movie
 
