@@ -4,29 +4,6 @@ pub mod fal_service;
 pub mod models;
 pub mod utils;
 
-/// Creates an image for a music video using the specified id, prompt, and index.
-pub async fn create_image_for_music_video(
-    id: &str,
-    prompt: &str,
-    index: usize,
-) -> Result<()> {
-    let fal_service = fal_service::FalService::new();
-    let model = "fal-ai/fast-sdxl";
-    let save_dir = format!("./tmp/music_videos/{}/", id);
-
-    // This only needs an index to save the name properly
-    fal_service
-        .create_image(
-            model,
-            prompt,
-            "landscape_16_9",
-            &save_dir,
-            Some(index),
-            None,
-        )
-        .await
-}
-
 /// Creates a turbo image using the "fal-ai/fast-turbo-diffusion" model.
 pub async fn create_turbo_image(prompt: &str) -> Result<()> {
     let fal_service = fal_service::FalService::new();
@@ -46,9 +23,10 @@ pub async fn create_turbo_image(prompt: &str) -> Result<()> {
 }
 
 /// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
-pub async fn create_fast_sd_image(prompt: &str) -> Result<()> {
+pub async fn create_from_fal_api(prompt: &str) -> Result<()> {
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-sdxl";
+    // let model = "fal-ai/stable-cascade";
     let save_dir = "./tmp/fal_images";
     fal_service
         .create_image(
@@ -62,21 +40,25 @@ pub async fn create_fast_sd_image(prompt: &str) -> Result<()> {
         .await
 }
 
-/// Creates an image from a prompt and saves it to the specified folder.
-pub async fn create_image_from_prompt_in_folder(
+/// Creates an image for a music video using the specified id, prompt, and index.
+pub async fn create_image_for_music_video(
+    id: &str,
     prompt: &str,
-    save_folder: &str,
+    index: usize,
 ) -> Result<()> {
     let fal_service = fal_service::FalService::new();
-    let model = "fal-ai/stable-cascade";
+    let model = "fal-ai/fast-sdxl";
+    let save_dir = format!("./tmp/music_videos/{}/", id);
+
+    // This only needs an index to save the name properly
     fal_service
         .create_image(
             model,
             prompt,
             "landscape_16_9",
-            save_folder,
+            &save_dir,
+            Some(index),
             None,
-            Some("./tmp/dalle-1.png"),
         )
         .await
 }
@@ -107,6 +89,7 @@ mod tests {
     use test_tag::tag;
 
     #[tokio::test]
+    #[ignore]
     #[tag(fal)]
     async fn test_create_turbo_image() {
         let prompt = "man raccoon";
@@ -115,10 +98,12 @@ mod tests {
         assert!(true);
     }
 
-    // async fn test_create_turbo_image() {
-    //     let prompt = "man raccoon";
-    //     let res = create_turbo_image(prompt).await.unwrap();
-    //     dbg!(res);
-    //     assert!(true);
-    // }
+    #[tokio::test]
+    #[tag(fal)]
+    async fn test_create_image_from_fal_api() {
+        let prompt = "fancy dog";
+        let res = create_from_fal_api(prompt).await.unwrap();
+        dbg!(res);
+        assert!(true);
+    }
 }

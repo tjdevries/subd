@@ -40,6 +40,7 @@ impl FalService {
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
         utils::save_raw_bytes(&json_save_path, &raw_json).await?;
 
+        // I think this is the problem
         self.process_images(
             &raw_json,
             save_dir,
@@ -109,6 +110,7 @@ impl FalService {
         create_dir_all(save_dir).await?;
 
         for (i, image) in data.images.iter().enumerate() {
+            // This extract image data is the problem
             let (image_bytes, extension) =
                 utils::extract_image_data(&image.url)?;
 
