@@ -26,6 +26,23 @@ pub async fn create_image_for_music_video(
 }
 
 /// Creates an image using the "fal-ai/fast-sdxl" model.
+pub async fn create_turbo_image(prompt: String) -> Result<()> {
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    let model = "fal-ai/fast-turbo-diffusion";
+
+    let stream_background_path = "./tmp/dalle-1.png";
+    run_model_create_and_save_image(
+        &client,
+        model,
+        prompt,
+        Some(stream_background_path),
+        None,
+    )
+    .await
+}
+
+/// Creates an image using the "fal-ai/fast-sdxl" model.
 pub async fn create_fast_sd_image(prompt: String) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
 
@@ -162,6 +179,8 @@ async fn run_model_create_and_save_image(
     let raw_json =
         run_model_and_get_raw_json(client, model, parameters).await?;
 
+    println!("Raw JSON: {:?}", raw_json);
+
     // Save the raw JSON response to a file
     let timestamp = Utc::now().timestamp();
     save_raw_json_response(&raw_json, timestamp).await?;
@@ -285,6 +304,10 @@ mod tests {
     #[tokio::test]
     #[tag(fal)]
     async fn test_turbo_sd() {
+        let prompt = "raccoon".to_string();
+        let res = create_turbo_image(prompt).await.unwrap();
+        dbg!(res);
+        // Now we can test it
         assert!(true);
     }
 }

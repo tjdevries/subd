@@ -2,7 +2,6 @@ use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use tokio::fs::create_dir_all;
 
-// I'm going to try jpg
 pub async fn parse_and_process_images_from_json_for_music_video(
     raw_json: &[u8],
     main_filename_pattern: &str,
