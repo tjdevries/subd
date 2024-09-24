@@ -108,11 +108,11 @@ impl FalService {
         let data: models::FalData = serde_json::from_slice(raw_json)?;
 
         create_dir_all(save_dir).await?;
+        let extension = "png";
 
         for (i, image) in data.images.iter().enumerate() {
-            // This extract image data is the problem
-            let (image_bytes, extension) =
-                utils::extract_image_data(&image.url)?;
+            let image_bytes =
+                subd_image_utils::get_image_bytes(&image.url).await?;
 
             // do we have to pass in the timestamp
             let filename = match index {

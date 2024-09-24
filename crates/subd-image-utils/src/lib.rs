@@ -86,20 +86,14 @@ pub fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
     Ok((mime_type, base64_data))
 }
 
-pub async fn get_image_bytes(url: &str, index: usize) -> Result<Vec<u8>> {
+pub async fn get_image_bytes(url: &str) -> Result<Vec<u8>> {
     if url.starts_with("data:") {
-        let (_mime_type, base64_data) =
-            parse_data_url(url).with_context(|| {
-                format!("Invalid data URL for image at index {}", index)
-            })?;
-        let image_bytes = general_purpose::STANDARD
-            .decode(base64_data)
-            .with_context(|| {
-                format!(
-                    "Failed to decode base64 data for image at index {}",
-                    index
-                )
-            })?;
+        let (_mime_type, base64_data) = parse_data_url(url)
+            .with_context(|| format!("Invalid data URL for image"))?;
+        let image_bytes =
+            general_purpose::STANDARD.decode(base64_data).with_context(
+                || format!("Failed to decode base64 data for image"),
+            )?;
         Ok(image_bytes)
     } else {
         let image_bytes = download_image_to_vec(url.to_string(), None).await?;

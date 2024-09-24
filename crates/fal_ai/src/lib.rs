@@ -89,10 +89,9 @@ mod tests {
     use test_tag::tag;
 
     #[tokio::test]
-    #[ignore]
     #[tag(fal)]
     async fn test_create_turbo_image() {
-        let prompt = "man raccoon";
+        let prompt = "fancy raccoon";
         let res = create_turbo_image(prompt).await.unwrap();
         dbg!(res);
         assert!(true);

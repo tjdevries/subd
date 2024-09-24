@@ -1,8 +1,5 @@
 use serde::Deserialize;
 
-// We aren't using these
-// we are parsing just to JSON
-
 #[derive(Deserialize)]
 pub struct FalImage {
     pub url: String,
