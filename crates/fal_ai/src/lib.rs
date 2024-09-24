@@ -1,7 +1,12 @@
 use anyhow::{anyhow, Context, Result};
+use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
+use regex::Regex;
+use serde::Deserialize;
 use tokio::fs::create_dir_all;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 pub mod models;
 pub mod utils;
@@ -296,6 +301,113 @@ async fn save_video_bytes(
     Ok(filename)
 }
 
+pub async fn create_turbo_image_in_folder(prompt: String) -> Result<()> {
+    // Can I move this into it's own function that takes a prompt?
+    // So here is as silly place I can run fal
+    let client = FalClient::new(ClientCredentials::from_env());
+
+    // let model = "fal-ai/stable-cascade";
+    let model = "fal-ai/fast-turbo-diffusion";
+
+    let res = client
+        .run(
+            model,
+            serde_json::json!({
+                "prompt": prompt,
+                "image_size": "landscape_16_9",
+            }),
+        )
+        .await
+        .unwrap();
+
+    let raw_json = res.bytes().await.unwrap();
+    let timestamp = chrono::Utc::now().timestamp();
+    let json_path = format!("tmp/fal_responses/{}.json", timestamp);
+    tokio::fs::write(&json_path, &raw_json).await.unwrap();
+
+    // This is not the folder
+    // let save_folder = "tmp/fal_images";
+    let _ = process_images_from_turbo(&timestamp.to_string(), &json_path).await;
+
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct FalImage {
+    url: String,
+    _width: Option<u32>,
+    _height: Option<u32>,
+    _content_type: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct FalData {
+    images: Vec<FalImage>,
+}
+
+async fn process_images_from_turbo(
+    timestamp: &str,
+    json_path: &str,
+) -> Result<()> {
+    // Read the JSON file asynchronously
+    let json_data = tokio::fs::read_to_string(json_path).await?;
+
+    // Parse the JSON data into the FalData struct
+    let data: FalData = serde_json::from_str(&json_data)?;
+
+    // Regex to match data URLs
+    let data_url_regex =
+        Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
+
+    for (index, image) in data.images.iter().enumerate() {
+        // Match the data URL and extract MIME type and base64 data
+        if let Some(captures) = data_url_regex.captures(&image.url) {
+            let mime_type = captures.name("mime").unwrap().as_str();
+            let base64_data = captures.name("data").unwrap().as_str();
+
+            // Decode the base64 data
+            let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
+
+            // Determine the file extension based on the MIME type
+            let extension = match mime_type {
+                "image/png" => "png",
+                "image/jpeg" => "jpg",
+                _ => "bin", // Default to binary if unknown type
+            };
+
+            // Construct the filename using the timestamp and extension
+            let filename =
+                format!("./tmp/fal_images/{}.{}", timestamp, extension);
+
+            // Save the image bytes to a file asynchronously
+            let mut file =
+                File::create(&filename).await.with_context(|| {
+                    format!("Error creating file: {}", filename)
+                })?;
+            file.write_all(&image_bytes).await.with_context(|| {
+                format!("Error writing to file: {}", filename)
+            })?;
+
+            // **New Code Start**
+            // Also save the image to "./tmp/dalle-1.png"
+            let additional_filename = "./tmp/dalle-1.png";
+            let mut additional_file =
+                File::create(additional_filename).await.with_context(|| {
+                    format!("Error creating file: {}", additional_filename)
+                })?;
+            additional_file.write_all(&image_bytes).await.with_context(
+                || format!("Error writing to file: {}", additional_filename),
+            )?;
+
+            println!("Saved {}", filename);
+        } else {
+            eprintln!("Invalid data URL for image at index {}", index);
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -305,7 +417,7 @@ mod tests {
     #[tag(fal)]
     async fn test_turbo_sd() {
         let prompt = "raccoon".to_string();
-        let res = create_turbo_image(prompt).await.unwrap();
+        let res = create_turbo_image_in_folder(prompt).await.unwrap();
         dbg!(res);
         // Now we can test it
         assert!(true);

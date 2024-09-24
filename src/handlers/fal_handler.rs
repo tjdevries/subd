@@ -115,7 +115,8 @@ pub async fn handle_fal_commands(
                     twitch_stream_state::get_ai_background_theme(pool).await?;
                 let final_prompt = format!("{} {}", theme, prompt);
                 println!("Creating image for prompt: {}", final_prompt);
-                fal_ai::create_fast_sd_image(final_prompt).await?;
+                fal_ai::create_turbo_image_in_folder(final_prompt).await?;
+                // fal_ai::create_fast_sd_image(final_prompt).await?;
             }
         }
     };

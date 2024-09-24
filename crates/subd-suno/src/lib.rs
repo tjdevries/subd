@@ -50,11 +50,14 @@ pub async fn play_audio(
 }
 /// Plays audio based on the provided song ID.
 pub async fn add_to_playlist_and_play_audio(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
     pool: &sqlx::PgPool,
     sink: &Sink,
     id: &str,
-    username: &str,
+    _username: &str,
 ) -> Result<()> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mp3 = File::open(&file_name).map_err(|e| {
