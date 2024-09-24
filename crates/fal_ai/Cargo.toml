@@ -18,6 +18,7 @@ tokio.workspace = true
 chrono = "*"
 regex = "1.10.6"
 base64 = "0.22.1"
+reqwest.workspace = true
 
 [dev-dependencies]
 
