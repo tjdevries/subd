@@ -169,6 +169,7 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
+    // TODO: Move this to it's own function
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
     let ai_scenes: ai_scenes_coordinator::models::AIScenes =

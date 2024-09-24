@@ -107,10 +107,10 @@ async fn handle_requests(
         }
 
         // Commands requiring admin privileges
-        "!reverb" | "!queue" | "!play" | "!pause" | "!random_song"
-        | "!last_song" | "!unpause" | "!skip" | "!stop" | "!nightcore"
-        | "!doom" | "!normal" | "!speedup" | "!slowdown" | "!up" | "!down"
-        | "!coding_volume" | "!quiet" | "!party_volume" => {
+        "!reverb" | "!queue" | "!play" | "!play_fake_song" | "!pause"
+        | "!random_song" | "!last_song" | "!unpause" | "!skip" | "!stop"
+        | "!nightcore" | "!doom" | "!normal" | "!speedup" | "!slowdown"
+        | "!up" | "!down" | "!coding_volume" | "!quiet" | "!party_volume" => {
             if !is_admin(msg) {
                 return Ok(());
             }
@@ -142,6 +142,16 @@ async fn handle_requests(
                         .unwrap_or(1);
                     handle_random_song_command(twitch_client, pool, index)
                         .await?;
+                }
+                "!play_fake_song" => {
+                    handle_fake_play_command(
+                        twitch_client,
+                        pool,
+                        sink,
+                        splitmsg,
+                        msg,
+                    )
+                    .await?;
                 }
                 "!play" => {
                     handle_play_command(
@@ -281,6 +291,59 @@ async fn handle_queue_command(
 }
 
 /// Handles the "!play" command to play a song immediately
+async fn handle_fake_play_command(
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    pool: &PgPool,
+    sink: &Sink,
+    splitmsg: &[String],
+    msg: &UserMessage,
+) -> Result<()> {
+    let id = match splitmsg.get(1) {
+        Some(id) => id,
+        None => return Ok(()),
+    };
+
+    println!("Attempting to use UUID: {}", id);
+
+    //
+    let title = match splitmsg.get(2..) {
+        Some(title_parts) => title_parts.join(" "),
+        None => return Ok(()),
+    };
+
+    let created_at = sqlx::types::time::OffsetDateTime::now_utc();
+
+    // At this point it should be downloaded I think???
+    let song_id = Uuid::parse_str(&id)?;
+    let new_song = ai_playlist::models::ai_songs::Model {
+        song_id,
+        title,
+        tags: "".to_string(),
+        prompt: "".to_string(),
+        username: "beginbot".to_string(),
+        audio_url: "".to_string(),
+        lyric: None,
+        gpt_description_prompt: "".to_string(),
+        last_updated: Some(created_at),
+        created_at: Some(created_at),
+        downloaded: true,
+    };
+
+    // Save the song if it doesn't already exist
+    let _ = new_song.save(pool).await;
+
+    // Play the audio
+    subd_suno::add_to_playlist_and_play_audio(
+        twitch_client,
+        pool,
+        sink,
+        id,
+        &msg.user_name,
+    )
+    .await?;
+    Ok(())
+}
+/// Handles the "!play" command to play a song immediately
 async fn handle_play_command(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
@@ -294,6 +357,7 @@ async fn handle_play_command(
     };
 
     // Fetch audio information
+    // How do we skip this?
     let audio_info = subd_suno::get_audio_information(id).await?;
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
