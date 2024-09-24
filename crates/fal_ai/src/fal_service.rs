@@ -1,11 +1,9 @@
+use crate::utils;
 use anyhow::{anyhow, Context, Result};
-use base64::{engine::general_purpose, Engine as _};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
-use regex::Regex;
 use serde::Deserialize;
-use tokio::fs::{create_dir_all, File};
-use tokio::io::AsyncWriteExt;
+use tokio::fs::create_dir_all;
 
 /// A service for interacting with the FAL API.
 pub struct FalService {
@@ -33,7 +31,7 @@ impl FalService {
         }
     }
 
-    // this is called on the outside of this function
+    //// this is called on the outside of this function
     /// Creates an image using the specified model, prompt, and image size, and saves it to the specified directory.
     pub async fn create_image(
         &self,
@@ -55,131 +53,19 @@ impl FalService {
         // Save the raw JSON response to a file
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
-        self.save_raw_json_response(&raw_json, &json_save_path)
-            .await?;
+        utils::save_raw_json_response(&raw_json, &json_save_path).await?;
 
         // Process images from the JSON response and save them
-        self.process_images_from_json(&raw_json, save_dir).await?;
+        self.process_images(
+            &raw_json,
+            save_dir,
+            None,
+            Some("./tmp/dalle-1.png"),
+        )
+        .await?;
 
         Ok(())
     }
-
-    // ===================================================
-
-    /// Processes images from the raw JSON response and saves them to the specified directory.
-    async fn process_images_from_json(
-        &self,
-        raw_json: &[u8],
-        save_dir: &str,
-    ) -> Result<()> {
-        // Deserialize the JSON response into FalData struct
-        let data: FalData = serde_json::from_slice(raw_json)?;
-
-        // Regex to match data URLs in the image URLs
-        let data_url_regex =
-            Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-
-        // Ensure the save directory exists
-        create_dir_all(save_dir).await?;
-
-        for (index, image) in data.images.iter().enumerate() {
-            if let Some(captures) = data_url_regex.captures(&image.url) {
-                let mime_type = captures.name("mime").unwrap().as_str();
-                let base64_data = captures.name("data").unwrap().as_str();
-
-                // Decode the base64 data to bytes
-                let image_bytes =
-                    general_purpose::STANDARD.decode(base64_data)?;
-
-                // Determine the file extension based on MIME type
-                let extension = match mime_type {
-                    "image/png" => "png",
-                    "image/jpeg" => "jpg",
-                    _ => "bin",
-                };
-
-                let filename =
-                    format!("{}/image_{}.{}", save_dir, index, extension);
-                let mut file =
-                    File::create(&filename).await.with_context(|| {
-                        format!("Error creating file: {}", filename)
-                    })?;
-                file.write_all(&image_bytes).await.with_context(|| {
-                    format!("Error writing to file: {}", filename)
-                })?;
-
-                // Like not for if we are generating a music video
-                // We need this to only happen sometime
-                let filename = format!("./tmp/dalle-1.png");
-                let mut file =
-                    File::create(&filename).await.with_context(|| {
-                        format!("Error creating file: {}", filename)
-                    })?;
-                file.write_all(&image_bytes).await.with_context(|| {
-                    format!("Error writing to file: {}", filename)
-                })?;
-
-                println!("Saved image to {}", filename);
-            } else {
-                eprintln!("Invalid data URL for image at index {}", index);
-            }
-        }
-        Ok(())
-    }
-
-    /// Processes images specifically for a music video and saves them with indexing.
-    async fn process_images_for_music_video(
-        &self,
-        raw_json: &[u8],
-        save_dir: &str,
-        index: usize,
-    ) -> Result<()> {
-        // Deserialize the JSON response into FalData struct
-        let data: FalData = serde_json::from_slice(raw_json)?;
-
-        // Regex to match data URLs in the image URLs
-        let data_url_regex =
-            Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)")?;
-
-        // Ensure the save directory exists
-        create_dir_all(save_dir).await?;
-
-        for (i, image) in data.images.iter().enumerate() {
-            if let Some(captures) = data_url_regex.captures(&image.url) {
-                let mime_type = captures.name("mime").unwrap().as_str();
-                let base64_data = captures.name("data").unwrap().as_str();
-
-                // Decode the base64 data to bytes
-                let image_bytes =
-                    general_purpose::STANDARD.decode(base64_data)?;
-
-                // Determine the file extension based on MIME type
-                let extension = match mime_type {
-                    "image/png" => "png",
-                    "image/jpeg" => "jpg",
-                    _ => "bin",
-                };
-
-                // Use the provided index in the filename
-                let filename =
-                    format!("{}/image_{}_{}.{}", save_dir, index, i, extension);
-
-                // Save the image bytes to a file
-                let mut file =
-                    File::create(&filename).await.with_context(|| {
-                        format!("Error creating file: {}", filename)
-                    })?;
-                file.write_all(&image_bytes).await.with_context(|| {
-                    format!("Error writing to file: {}", filename)
-                })?;
-                println!("Saved image to {}", filename);
-            } else {
-                eprintln!("Invalid data URL for image at index {}", i);
-            }
-        }
-        Ok(())
-    }
-
     // ===============================================================
     // This is a little odd, because we did this because we were trying to figure
     // out a quick version of images for music video
@@ -206,16 +92,14 @@ impl FalService {
         // Save the raw JSON response to a file
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
-        self.save_raw_json_response(&raw_json, &json_save_path)
-            .await?;
+        utils::save_raw_json_response(&raw_json, &json_save_path).await?;
 
         // Process images specifically for the music video
-        self.process_images_for_music_video(&raw_json, save_dir, index)
+        self.process_images(&raw_json, save_dir, Some(index), None)
             .await?;
 
         Ok(())
     }
-
     // ===============================================================
     // Stable Movie
 
@@ -248,7 +132,7 @@ impl FalService {
         // Save the video bytes to a file
         let timestamp = Utc::now().timestamp();
         let filename = format!("{}/{}.mp4", save_dir, timestamp);
-        self.save_video_bytes(&video_bytes, &filename).await?;
+        utils::save_video_bytes(&video_bytes, &filename).await?;
 
         Ok(())
     }
@@ -273,8 +157,64 @@ impl FalService {
     }
 
     // ===================================================================
+    // Private
 
-    // Run Models and get back the desired format
+    /// Processes images from the raw JSON response and saves them to the specified directory.
+    async fn process_images(
+        &self,
+        raw_json: &[u8],
+        save_dir: &str,
+        index: Option<usize>,
+        extra_save_path: Option<&str>,
+    ) -> Result<()> {
+        // Deserialize the JSON response into FalData struct
+        let data: FalData = serde_json::from_slice(raw_json)?;
+
+        // Ensure the save directory exists
+        create_dir_all(save_dir).await?;
+
+        for (i, image) in data.images.iter().enumerate() {
+            // Extract image bytes and extension from the data URL
+            let (image_bytes, extension) =
+                utils::extract_image_data(&image.url)?;
+
+            // Generate the filename
+            let filename = match index {
+                Some(idx) => {
+                    format!("{}/image_{}_{}.{}", save_dir, idx, i, extension)
+                }
+                None => format!("{}/image_{}.{}", save_dir, i, extension),
+            };
+
+            // Save the image bytes to a file
+            utils::save_image_bytes(&filename, &image_bytes).await?;
+
+            // Optionally save the image to an extra path
+            if let Some(extra_path) = extra_save_path {
+                utils::save_image_bytes(extra_path, &image_bytes).await?;
+            }
+
+            println!("Saved image to {}", filename);
+        }
+        Ok(())
+    }
+
+    ///// Runs a model with the given parameters and returns the response as JSON.
+    async fn run_model_and_get_json(
+        &self,
+        model: &str,
+        parameters: serde_json::Value,
+    ) -> Result<serde_json::Value> {
+        let res =
+            self.client.run(model, parameters).await.map_err(|e| {
+                anyhow!("Failed to run model '{}': {:?}", model, e)
+            })?;
+
+        let body = res.text().await?;
+        let json: serde_json::Value = serde_json::from_str(&body)?;
+        Ok(json)
+    }
+
     /// Runs a model with the given parameters and returns the raw JSON response as bytes.
     async fn run_model_and_get_raw_json(
         &self,
@@ -292,23 +232,6 @@ impl FalService {
 
         Ok(raw_json)
     }
-
-    /// Runs a model with the given parameters and returns the response as JSON.
-    async fn run_model_and_get_json(
-        &self,
-        model: &str,
-        parameters: serde_json::Value,
-    ) -> Result<serde_json::Value> {
-        let res =
-            self.client.run(model, parameters).await.map_err(|e| {
-                anyhow!("Failed to run model '{}': {:?}", model, e)
-            })?;
-
-        let body = res.text().await?;
-        let json: serde_json::Value = serde_json::from_str(&body)?;
-        Ok(json)
-    }
-
     /// Runs a model with the given parameters and returns the response as text.
     async fn run_model_and_get_text(
         &self,
@@ -331,49 +254,5 @@ impl FalService {
                 response.status()
             ))
         }
-    }
-
-    // ===================================================
-    // UTILS
-    /// Saves video bytes to the specified file path.
-    async fn save_video_bytes(
-        &self,
-        video_bytes: &[u8],
-        filename: &str,
-    ) -> Result<()> {
-        // Ensure the directory exists
-        let dir = std::path::Path::new(filename).parent().unwrap();
-        create_dir_all(dir).await?;
-
-        // Write the video data to the file
-        tokio::fs::write(&filename, video_bytes)
-            .await
-            .with_context(|| {
-                format!("Failed to write video to {}", filename)
-            })?;
-
-        println!("Video saved to: {}", filename);
-        Ok(())
-    }
-
-    // This could be somewhere else
-    /// Saves the raw JSON response to a specified file path.
-    async fn save_raw_json_response(
-        &self,
-        raw_json: &[u8],
-        save_path: &str,
-    ) -> Result<()> {
-        // Ensure the directory exists
-        let dir = std::path::Path::new(save_path).parent().unwrap();
-        create_dir_all(dir).await?;
-
-        // Write the JSON data to the file
-        tokio::fs::write(&save_path, raw_json)
-            .await
-            .with_context(|| {
-                format!("Failed to write JSON to {}", save_path)
-            })?;
-
-        Ok(())
     }
 }

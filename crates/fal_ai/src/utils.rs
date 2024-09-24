@@ -1,153 +1,97 @@
 use anyhow::{anyhow, Context, Result};
-use std::path::Path;
-use tokio::fs::create_dir_all;
+use base64::engine::general_purpose;
+use base64::Engine;
+use once_cell::sync::Lazy;
+use regex::bytes::Regex;
+use std::str;
+use tokio::fs::{create_dir_all, File};
+use tokio::io::AsyncWriteExt;
 
-pub async fn parse_and_process_images_from_json_for_music_video(
-    raw_json: &[u8],
-    main_filename_pattern: &str,
-    outer_index: usize,
-    extra_save_folder: Option<&str>,
-) -> Result<()> {
-    // Parse images from the raw JSON data
-    let images = parse_images_from_json(raw_json)?;
-    let extension = "jpg";
+static DATA_URL_REGEX: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)").unwrap()
+});
 
-    for (index, image) in images.into_iter().enumerate() {
-        // This shouild be timestamp?
-        let main_filename =
-            format!("{}-{}.{}", main_filename_pattern, index, extension);
-        let extra_filename = extra_save_folder.map(|folder| {
-            format!("{}/{}.{}", folder, (index + 1) * (outer_index), extension)
-        });
+pub fn extract_image_data(data_url: &str) -> Result<(Vec<u8>, String)> {
+    let data_url_bytes = data_url.as_bytes();
 
-        parse_json_save_image(
-            index,
-            &image,
-            &main_filename,
-            None,
-            extra_filename.as_deref(),
-        )
-        .await?;
-    }
-    Ok(())
-}
+    if let Some(captures) = DATA_URL_REGEX.captures(data_url_bytes) {
+        let mime_match = captures.name("mime").unwrap();
+        let base64_match = captures.name("data").unwrap();
 
-pub async fn parse_and_process_images_from_json(
-    raw_json: &[u8],
-    main_filename_pattern: &str,
-    stream_background_path: Option<&str>,
-    extra_save_folder: Option<&str>,
-) -> Result<()> {
-    // Parse images from the raw JSON data
-    let images = parse_images_from_json(raw_json)?;
-    let extension = "png"; // Assuming PNG as the image extension
+        // Extract matched substrings using slice indices
+        let mime_type = str::from_utf8(
+            &data_url_bytes[mime_match.start()..mime_match.end()],
+        )?;
+        let base64_data = str::from_utf8(
+            &data_url_bytes[base64_match.start()..base64_match.end()],
+        )?;
 
-    // Process each image
-    for (index, image) in images.into_iter().enumerate() {
-        // Construct filenames for saving the image
-        let main_filename =
-            format!("{}-{}.{}", main_filename_pattern, index, extension);
-        let extra_filename = extra_save_folder.map(|folder| {
-            format!(
-                "{}/{}-{}.{}",
-                folder, main_filename_pattern, index, extension
-            )
-        });
+        // Decode the base64 data to bytes
+        let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
 
-        // Process and save the image
-        parse_json_save_image(
-            index,
-            &image,
-            &main_filename,
-            stream_background_path,
-            extra_filename.as_deref(),
-        )
-        .await?;
-    }
-    Ok(())
-}
+        // Determine the file extension based on MIME type
+        let extension = match mime_type {
+            "image/png" => "png",
+            "image/jpeg" => "jpg",
+            _ => "bin",
+        };
 
-async fn parse_json_save_image(
-    index: usize,
-    image: &serde_json::Value,
-    main_filename: &str,
-    stream_background_path: Option<&str>,
-    extra_filename: Option<&str>,
-) -> Result<()> {
-    // Extract the URL of the image from the JSON data
-    if let Some(url) = image["url"].as_str() {
-        // Retrieve the image bytes from the URL
-        let image_bytes = subd_image_utils::get_image_bytes(url, index).await?;
-
-        // Save the image bytes to the specified filenames
-        save_image_bytes(
-            &image_bytes,
-            main_filename,
-            stream_background_path,
-            extra_filename,
-        )
-        .await?;
+        Ok((image_bytes, extension.to_string()))
     } else {
-        eprintln!("Failed to find image URL for image at index {}", index);
+        Err(anyhow!("Invalid data URL"))
     }
-    Ok(())
 }
 
-async fn save_image_bytes(
+/// Saves image bytes to the specified file path.
+pub async fn save_image_bytes(
+    filename: &str,
     image_bytes: &[u8],
-    main_filename: &str,
-    additional_filename: Option<&str>,
-    extra_filename: Option<&str>,
 ) -> Result<()> {
-    // Save the image to the main filename
-    save_image(image_bytes, main_filename).await?;
+    // Ensure the directory exists
+    let dir = std::path::Path::new(filename).parent().unwrap();
+    create_dir_all(dir).await?;
 
-    // Save the image to the additional filename
-    if let Some(filename) = additional_filename {
-        save_image(image_bytes, filename).await?;
-    }
-
-    // If an extra filename is provided, save the image there as well
-    if let Some(extra_filename) = extra_filename {
-        save_image(image_bytes, extra_filename).await?;
-    }
-
-    println!("Saved {}", main_filename);
-    Ok(())
-}
-
-async fn save_image(image_bytes: &[u8], filename: &str) -> Result<()> {
-    // Ensure the parent directories exist
-    if let Some(parent) = Path::new(filename).parent() {
-        create_dir_all(parent).await?;
-    }
-    // Write the image bytes to the file
-    tokio::fs::write(filename, image_bytes)
+    // Write the image data to the file
+    let mut file = File::create(&filename)
+        .await
+        .with_context(|| format!("Error creating file: {}", filename))?;
+    file.write_all(image_bytes)
         .await
         .with_context(|| format!("Error writing to file: {}", filename))?;
     Ok(())
 }
 
-pub fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
-    // Parse the JSON string into a serde_json::Value
-    let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
+/// Saves video bytes to the specified file path.
+pub async fn save_video_bytes(
+    video_bytes: &[u8],
+    filename: &str,
+) -> Result<()> {
+    // Ensure the directory exists
+    let dir = std::path::Path::new(filename).parent().unwrap();
+    create_dir_all(dir).await?;
 
-    // Navigate through the JSON to get the video URL
-    fal_result_json
-        .get("video")
-        .and_then(|video| video.get("url"))
-        .and_then(|url| url.as_str())
-        .map(|s| s.to_string())
-        .ok_or_else(|| anyhow!("Failed to extract video URL from FAL result"))
+    // Write the video data to the file
+    tokio::fs::write(&filename, video_bytes)
+        .await
+        .with_context(|| format!("Failed to write video to {}", filename))?;
+
+    println!("Video saved to: {}", filename);
+    Ok(())
 }
 
-fn parse_images_from_json(raw_json: &[u8]) -> Result<Vec<serde_json::Value>> {
-    // Parse the raw JSON bytes into a serde_json::Value
-    let data: serde_json::Value = serde_json::from_slice(raw_json)?;
+/// Saves the raw JSON response to a specified file path.
+pub async fn save_raw_json_response(
+    raw_json: &[u8],
+    save_path: &str,
+) -> Result<()> {
+    // Ensure the directory exists
+    let dir = std::path::Path::new(save_path).parent().unwrap();
+    create_dir_all(dir).await?;
 
-    // Extract the array of images from the JSON data
-    data["images"]
-        .as_array()
-        .cloned()
-        .ok_or_else(|| anyhow!("Failed to extract images from JSON"))
+    // Write the JSON data to the file
+    tokio::fs::write(&save_path, raw_json)
+        .await
+        .with_context(|| format!("Failed to write JSON to {}", save_path))?;
+
+    Ok(())
 }

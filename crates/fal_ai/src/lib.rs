@@ -13,6 +13,8 @@ pub async fn create_image_for_music_video(
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-sdxl";
     let save_dir = format!("./tmp/music_videos/{}/", id);
+
+    // the face this takes an index
     fal_service
         .create_image_for_music_video(
             model,
