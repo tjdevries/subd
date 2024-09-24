@@ -169,16 +169,10 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-    // We could check our DB first, before printing this
-    // We want this to occur later on, after some filtering
-    // dbg!(&eventsub_body);
-
-    // We need to read in the json file
     let file_path = "/home/begin/code/subd/data/AIScenes.json";
     let contents = fs::read_to_string(file_path).expect("Can read file");
     let ai_scenes: ai_scenes_coordinator::models::AIScenes =
         serde_json::from_str(&contents).unwrap();
-
     let ai_scenes_map: HashMap<
         String,
         &ai_scenes_coordinator::models::AIScene,
@@ -200,19 +194,19 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
             println!("follow time");
         }
         "channel.poll.begin" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+            println!("\nPoll time");
         }
         "channel.poll.progress" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+            println!("\nPoll time");
         }
         "channel.poll.end" => {
-            println!("\nPOLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+            println!("\nPol time");
         }
 
         "channel.channel_points_custom_reward_redemption.add" => {
             match eventsub_body.event {
                 Some(event) => {
-                    let _ = handle_ai_scene(
+                    let _ = handle_channel_rewards_request(
                         tx,
                         pool,
                         &obs_client,
@@ -271,64 +265,7 @@ async fn trigger_full_scene(
     Ok(())
 }
 
-async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
-    pool: Arc<sqlx::PgPool>,
-    reward_manager: Arc<RewardManager<'a, C>>,
-    id: Uuid,
-    command: String,
-    reward_id: Uuid,
-    reward_cost: i32,
-    user_name: String,
-    user_input: String,
-) -> Result<()> {
-    let old_redemp = redemptions::find_redemption_by_twitch_id(&pool, id).await;
-
-    match old_redemp {
-        Ok(_reward_id) => {
-            println!("\nWe found a redemption: {}\n", command.clone());
-            return Ok(());
-        }
-        Err(e) => {
-            println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), id.clone());
-
-            let _ = redemptions::save_redemptions(
-                &pool,
-                command,
-                reward_cost,
-                user_name,
-                id,
-                reward_id,
-                user_input,
-            )
-            .await;
-
-            let increase_mult = 1.5;
-            let _decrease_mult = 0.8;
-
-            let reward_cost_as_float = reward_cost as f32;
-
-            let _other_ids =
-                twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
-
-            let new_cost =
-                (reward_cost_as_float * increase_mult).round() as usize;
-            println!("Updating Reward: {}- {}", reward_id, new_cost);
-            let _ = reward_manager
-                .update_reward(reward_id.to_string(), new_cost)
-                .await;
-            let cost_as_i32 = new_cost as i32;
-            let _ = twitch_rewards::update_cost_by_id(
-                &pool,
-                reward_id,
-                cost_as_i32,
-            )
-            .await;
-        }
-    }
-    Ok(())
-}
-
-async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
+async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
     _obs_client: &OBSClient,
@@ -343,8 +280,6 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     let reward = event.reward.unwrap();
     let command = reward.title.clone();
     println!("{} {}", "Kicking off AI Scene: ".cyan(), command.green());
-
-    // So if we have the reward title here we can filter
 
     let user_input = match event.user_input.clone() {
         Some(input) => input,
@@ -444,4 +379,73 @@ async fn handle_ai_scene<'a, C: twitch_api::HttpClient>(
     }
 
     Ok(())
+}
+
+async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
+    pool: Arc<sqlx::PgPool>,
+    reward_manager: Arc<RewardManager<'a, C>>,
+    id: Uuid,
+    command: String,
+    reward_id: Uuid,
+    reward_cost: i32,
+    user_name: String,
+    user_input: String,
+) -> Result<()> {
+    let old_redemp = redemptions::find_redemption_by_twitch_id(&pool, id).await;
+
+    match old_redemp {
+        Ok(_reward_id) => {
+            println!("\nWe found a redemption: {}\n", command.clone());
+            return Ok(());
+        }
+        Err(e) => {
+            println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), id.clone());
+
+            let _ = redemptions::save_redemptions(
+                &pool,
+                command,
+                reward_cost,
+                user_name,
+                id,
+                reward_id,
+                user_input,
+            )
+            .await;
+
+            let increase_mult = 1.5;
+            let _decrease_mult = 0.8;
+
+            let reward_cost_as_float = reward_cost as f32;
+
+            let _other_ids =
+                twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
+
+            let new_cost =
+                (reward_cost_as_float * increase_mult).round() as usize;
+            println!("Updating Reward: {}- {}", reward_id, new_cost);
+            let _ = reward_manager
+                .update_reward(reward_id.to_string(), new_cost)
+                .await;
+            let cost_as_i32 = new_cost as i32;
+            let _ = twitch_rewards::update_cost_by_id(
+                &pool,
+                reward_id,
+                cost_as_i32,
+            )
+            .await;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use uuid::Uuid;
+
+    #[test]
+    fn test_uuid() {
+        let uuid = "ba11ad0f-dad5-c001-c001-700bac00le57";
+        let res = Uuid::parse_str(uuid);
+        assert!(res.is_ok())
+    }
 }

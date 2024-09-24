@@ -21,7 +21,7 @@ pub async fn run_ai_scene(
     elevenlabs: &Elevenlabs,
     ai_scene_req: &AiScenesRequest,
 ) -> Result<()> {
-    // Determine the voice to use for the voice-over
+    // This is probably broken
     let final_voice = determine_voice_to_use(
         &ai_scene_req.username,
         ai_scene_req.voice.clone(),

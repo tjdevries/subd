@@ -85,6 +85,7 @@ async fn sync_lips_and_update(
     let video_bytes =
         sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
 
+    // We only save one version of the ai_friend lip-sync
     // We are saving he video
     let video_path = format!("./ai_assets/{}.mp4", friend_name);
     match tokio::fs::write(&video_path, &video_bytes).await {
@@ -120,4 +121,15 @@ async fn sync_lips_and_update(
     .await;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[tag(fal)]
+    fn test_lip_syncing() {
+        // Test here
+    }
 }
