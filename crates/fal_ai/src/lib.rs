@@ -5,7 +5,7 @@ pub mod models;
 pub mod utils;
 
 /// Creates a turbo image using the "fal-ai/fast-turbo-diffusion" model.
-pub async fn create_turbo_image(prompt: &str) -> Result<()> {
+pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-turbo-diffusion";
     let save_dir = "./tmp/fal_images";
@@ -23,10 +23,24 @@ pub async fn create_turbo_image(prompt: &str) -> Result<()> {
 }
 
 /// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
-pub async fn create_from_fal_api(prompt: &str) -> Result<()> {
+pub async fn create_from_fal_api_return_filename(
+    prompt: &str,
+) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
-    let model = "fal-ai/fast-sdxl";
-    // let model = "fal-ai/stable-cascade";
+    // let model = "fal-ai/fast-sdxl";
+    let model = "fal-ai/stable-cascade";
+    let save_dir = "./tmp/fal_images";
+    let files = fal_service
+        .create_image(model, prompt, "landscape_16_9", save_dir, None, None)
+        .await?;
+    Ok(files)
+}
+
+/// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
+pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
+    let fal_service = fal_service::FalService::new();
+    // let model = "fal-ai/fast-sdxl";
+    let model = "fal-ai/stable-cascade";
     let save_dir = "./tmp/fal_images";
     fal_service
         .create_image(
@@ -45,7 +59,7 @@ pub async fn create_image_for_music_video(
     id: &str,
     prompt: &str,
     index: usize,
-) -> Result<()> {
+) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-sdxl";
     let save_dir = format!("./tmp/music_videos/{}/", id);
@@ -64,11 +78,17 @@ pub async fn create_image_for_music_video(
 }
 
 /// Creates a video from the given image file path.
-pub async fn create_video_from_image(image_file_path: &str) -> Result<()> {
+pub async fn create_video_from_image(
+    image_file_path: &str,
+    save_dir: Option<String>,
+) -> Result<String> {
     let fal_service = fal_service::FalService::new();
-    let save_dir = subd_types::consts::get_ai_videos_dir();
+    let video_dir = match save_dir {
+        Some(dir) => dir,
+        None => subd_types::consts::get_ai_videos_dir(),
+    };
     fal_service
-        .create_video_from_image(image_file_path, &save_dir)
+        .create_video_from_image(image_file_path, &video_dir)
         .await
 }
 

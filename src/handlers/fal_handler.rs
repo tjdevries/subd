@@ -96,7 +96,8 @@ pub async fn handle_fal_commands(
             // Not sure why this is hardcoded here
             println!("\n\nTALK TIME!");
             let image_file_path = "teej_2.jpg";
-            let _ = fal_ai::create_video_from_image(image_file_path).await;
+            let _ =
+                fal_ai::create_video_from_image(image_file_path, None).await;
         }
 
         _ => {

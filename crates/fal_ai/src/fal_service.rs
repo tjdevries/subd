@@ -27,7 +27,7 @@ impl FalService {
         save_dir: &str,
         index: Option<usize>,
         obs_background_image_path: Option<&str>,
-    ) -> Result<()> {
+    ) -> Result<Vec<String>> {
         let parameters = serde_json::json!({
             "prompt": prompt,
             "image_size": image_size,
@@ -41,16 +41,17 @@ impl FalService {
         utils::save_raw_bytes(&json_save_path, &raw_json).await?;
 
         // I think this is the problem
-        self.process_images(
-            &raw_json,
-            save_dir,
-            &timestamp.to_string(),
-            index,
-            obs_background_image_path,
-        )
-        .await?;
+        let files = self
+            .process_images(
+                &raw_json,
+                save_dir,
+                &timestamp.to_string(),
+                index,
+                obs_background_image_path,
+            )
+            .await?;
 
-        Ok(())
+        Ok(files)
     }
 
     /// Creates a video from the given image file path and saves it to the specified directory.
@@ -58,7 +59,7 @@ impl FalService {
         &self,
         image_file_path: &str,
         save_dir: &str,
-    ) -> Result<()> {
+    ) -> Result<String> {
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
@@ -76,7 +77,7 @@ impl FalService {
         let filename = format!("{}/{}.mp4", save_dir, timestamp);
         utils::save_raw_bytes(&filename, &video_bytes).await?;
 
-        Ok(())
+        Ok(filename)
     }
 
     /// Submits a request to the Sadtalker model with the given source image and driven audio data URIs.
@@ -104,11 +105,13 @@ impl FalService {
         name: &str,
         index: Option<usize>,
         extra_save_path: Option<&str>,
-    ) -> Result<()> {
+    ) -> Result<Vec<String>> {
         let data: models::FalData = serde_json::from_slice(raw_json)?;
 
         create_dir_all(save_dir).await?;
         let extension = "png";
+
+        let mut image_paths = Vec::new();
 
         for (i, image) in data.images.iter().enumerate() {
             let image_bytes =
@@ -122,6 +125,8 @@ impl FalService {
                 None => format!("{}/{}-{}.{}", save_dir, name, i, extension),
             };
 
+            image_paths.push(filename.clone());
+
             utils::save_raw_bytes(&filename, &image_bytes).await?;
 
             if let Some(extra_path) = extra_save_path {
@@ -130,7 +135,7 @@ impl FalService {
 
             println!("Saved image to {}", filename);
         }
-        Ok(())
+        Ok(image_paths)
     }
 
     /// Runs a model with the given parameters and returns the response as JSON.

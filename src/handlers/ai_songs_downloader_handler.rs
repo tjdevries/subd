@@ -82,7 +82,8 @@ pub async fn handle_requests(
         }
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            let filename = ai_music_videos::create_music_video(pool, id).await?;
+            let filename =
+                ai_music_videos::create_music_video_2(pool, id).await?;
             let path = std::fs::canonicalize(&filename)?;
             let full_path = path
                 .into_os_string()

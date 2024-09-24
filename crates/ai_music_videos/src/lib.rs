@@ -5,11 +5,45 @@ use std::path::Path;
 use subd_db;
 use uuid::Uuid;
 
+// This going to generate a single better quality image
+// then create a video from that
+pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
+    println!("\tIt's **New** Music Video time!");
+
+    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
+    let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
+        lyric
+            .lines()
+            .filter(|line| !line.trim().starts_with('['))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric)?;
+    let images =
+        fal_ai::create_from_fal_api_return_filename(&lyric_chunks[0]).await?;
+    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+    let filename = fal_ai::create_video_from_image(first_image, None).await?;
+
+    // Then we need to update in OBS
+
+    // create_images_for_lyrics(&ai_song, &lyric_chunks).await?;
+    // let output_file = create_video(&id)?;
+
+    Ok(filename)
+}
+
 pub async fn create_music_video(pool: &PgPool, id: String) -> Result<String> {
     println!("\tIt's Music Video time!");
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
-    let lyric_chunks = get_lyric_chunks(&ai_song.lyric)?;
+    let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
+        lyric
+            .lines()
+            .filter(|line| !line.trim().starts_with('['))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric)?;
 
     create_images_for_lyrics(&ai_song, &lyric_chunks).await?;
     let output_file = create_video(&id)?;
