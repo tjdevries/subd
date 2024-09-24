@@ -34,6 +34,7 @@ obs_move_transition = { path = "crates/obs_move_transition" }
 obs_bootstrap = { path = "crates/obs_bootstrap" }
 skybox = { path = "crates/skybox" }
 obs_3d_filter = { path = "crates/obs_3d_filter" }
+ai_music_videos = { path = "crates/ai_music_videos" }
 
 twitch-irc.workspace = true
 anyhow.workspace = true

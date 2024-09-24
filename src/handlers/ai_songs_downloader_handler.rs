@@ -82,21 +82,13 @@ pub async fn handle_requests(
         }
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            let filename = handle_create_music_video_command(
-                twitch_client,
-                pool,
-                tx,
-                msg.user_name,
-                id,
-            )
-            .await?;
+            let filename = ai_music_videos::create_music_video(pool, id).await?;
             let path = std::fs::canonicalize(&filename)?;
             let full_path = path
                 .into_os_string()
                 .into_string()
                 .map_err(|_| anyhow!("Failed to convert path to string"))?;
 
-            // path.file_name().and_then
             let source = "music-video".to_string();
             let _ = obs_service::obs_source::set_enabled(
                 "AIFriends",
@@ -119,10 +111,6 @@ pub async fn handle_requests(
             )
             .await;
             Ok(())
-            // obs_client
-
-            // We have the id and the video is complete
-            // I could use OBS client, to play the video
         }
     }
 }
@@ -160,91 +148,6 @@ async fn handle_download_command(
     id: String,
 ) -> Result<()> {
     subd_suno::download_and_play(twitch_client, tx, user_name, &id).await
-}
-
-/// Handles the `!create_music_video` and `!music_video` commands.
-async fn handle_create_music_video_command(
-    _twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
-    pool: &PgPool,
-    _tx: &broadcast::Sender<Event>,
-    _user_name: String,
-    id: String,
-) -> Result<String> {
-    println!("\tIt's Music Video time!");
-    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
-
-    // let chunk_count = ai_song.lyric.split_whitespace().count() / 10;
-    let lyric_chunks = ai_song
-        .lyric
-        .ok_or(anyhow!("No Lyrics to parse"))?
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .chunks(20)
-        .map(|chunk| chunk.join(" "))
-        .collect::<Vec<String>>();
-
-    for (index, lyric) in lyric_chunks.into_iter().enumerate() {
-        println!(
-            "{} - {}",
-            "Creating Image for Lyric Chunk: {}".cyan(),
-            lyric.green()
-        );
-
-        // I should return and do something
-        let _ = fal_ai::create_image_for_music_video(
-            &format!("{}", ai_song.song_id),
-            &format!("{} {}", ai_song.title, lyric),
-            index + 1,
-        )
-        .await;
-    }
-
-    let output_file =
-        format!("./tmp/music_videos/{}/video.mp4", ai_song.song_id);
-    let input_pattern = format!("./tmp/music_videos/{}/*.jpg", ai_song.song_id);
-    std::fs::read_dir(Path::new(&input_pattern).parent().unwrap())
-        .unwrap()
-        .for_each(|entry| {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "jpg" {
-                let metadata = std::fs::metadata(&path).unwrap();
-                if metadata.len() <= 10_000 {
-                    println!("Removing: {:?}", path);
-                    std::fs::remove_file(&path).unwrap();
-                }
-            }
-        });
-
-    let status = std::process::Command::new("ffmpeg")
-        .args([
-            "-y",
-            "-framerate",
-            "1/2",
-            "-pattern_type",
-            "glob",
-            "-i",
-            &input_pattern,
-            "-c:v",
-            "libx264",
-            "-r",
-            "30",
-            "-pix_fmt",
-            "yuv420p",
-            &output_file,
-        ])
-        .status()?;
-
-    if status.success() {
-        println!("Video created successfully: {}", output_file);
-    } else {
-        return Err(anyhow!("Failed to create video"));
-    }
-
-    Ok(output_file)
 }
 
 async fn handle_create_song_command(

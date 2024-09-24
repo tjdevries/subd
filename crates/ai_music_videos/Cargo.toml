@@ -1,0 +1,26 @@
+[package]
+name = "ai_music_videos"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+twitch-irc.workspace = true
+tokio.workspace = true
+
+fal_ai = { path = "../fal_ai/" }
+obws = "0.10"
+subd-types = { path = "../subd-types/" }
+twitch_chat = { path = "../twitch_chat/" }
+obs_service = { path = "../obs_service/" }
+ai_playlist = { path = "../ai_playlist/" }
+subd-db = { path = "../subd-db/" }
+subd-image-utils = { path = "../subd-image-utils/" }
+chrono.workspace = true
+anyhow.workspace = true
+bytes = "1.7.1"
+colored.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
