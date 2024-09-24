@@ -4,14 +4,14 @@ use serde::Deserialize;
 // we are parsing just to JSON
 
 #[derive(Deserialize)]
-struct FalImage {
-    _url: String,
-    _width: Option<u32>,
-    _height: Option<u32>,
-    _content_type: Option<String>,
+pub struct FalImage {
+    pub url: String,
+    pub _width: Option<u32>,
+    pub _height: Option<u32>,
+    pub _content_type: Option<String>,
 }
 
 #[derive(Deserialize)]
-struct FalData {
-    _images: Vec<FalImage>,
+pub struct FalData {
+    pub images: Vec<FalImage>,
 }

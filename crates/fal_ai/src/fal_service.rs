@@ -1,26 +1,13 @@
+use crate::models;
 use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
-use serde::Deserialize;
 use tokio::fs::create_dir_all;
 
 /// A service for interacting with the FAL API.
 pub struct FalService {
     client: FalClient,
-}
-
-#[derive(Deserialize)]
-struct FalData {
-    images: Vec<FalImage>,
-}
-
-#[derive(Deserialize)]
-struct FalImage {
-    url: String,
-    _width: Option<u32>,
-    _height: Option<u32>,
-    _content_type: Option<String>,
 }
 
 impl FalService {
@@ -31,7 +18,6 @@ impl FalService {
         }
     }
 
-    //// this is called on the outside of this function
     /// Creates an image using the specified model, prompt, and image size, and saves it to the specified directory.
     pub async fn create_image(
         &self,
@@ -137,7 +123,7 @@ impl FalService {
         extra_save_path: Option<&str>,
     ) -> Result<()> {
         // Deserialize the JSON response into FalData struct
-        let data: FalData = serde_json::from_slice(raw_json)?;
+        let data: models::FalData = serde_json::from_slice(raw_json)?;
 
         // Ensure the save directory exists
         create_dir_all(save_dir).await?;
@@ -168,7 +154,7 @@ impl FalService {
         Ok(())
     }
 
-    ///// Runs a model with the given parameters and returns the response as JSON.
+    /// Runs a model with the given parameters and returns the response as JSON.
     async fn run_model_and_get_json(
         &self,
         model: &str,
@@ -201,6 +187,7 @@ impl FalService {
 
         Ok(raw_json)
     }
+
     /// Runs a model with the given parameters and returns the response as text.
     async fn run_model_and_get_text(
         &self,
