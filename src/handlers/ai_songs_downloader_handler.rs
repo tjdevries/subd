@@ -192,10 +192,11 @@ async fn handle_create_music_video_command(
             "Creating Image for Lyric Chunk: {}".cyan(),
             lyric.green()
         );
+
         // I should return and do something
         let _ = fal_ai::create_image_for_music_video(
-            format!("{}", ai_song.song_id),
-            format!("{} {}", ai_song.title, lyric),
+            &format!("{}", ai_song.song_id),
+            &format!("{} {}", ai_song.title, lyric),
             index + 1,
         )
         .await;
@@ -204,7 +205,7 @@ async fn handle_create_music_video_command(
     let output_file =
         format!("./tmp/music_videos/{}/video.mp4", ai_song.song_id);
     let input_pattern = format!("./tmp/music_videos/{}/*.jpg", ai_song.song_id);
-    let _ = std::fs::read_dir(Path::new(&input_pattern).parent().unwrap())
+    std::fs::read_dir(Path::new(&input_pattern).parent().unwrap())
         .unwrap()
         .for_each(|entry| {
             let entry = entry.unwrap();
@@ -219,7 +220,7 @@ async fn handle_create_music_video_command(
         });
 
     let status = std::process::Command::new("ffmpeg")
-        .args(&[
+        .args([
             "-y",
             "-framerate",
             "1/2",
@@ -243,7 +244,7 @@ async fn handle_create_music_video_command(
         return Err(anyhow!("Failed to create video"));
     }
 
-    return Ok(output_file);
+    Ok(output_file)
 }
 
 async fn handle_create_song_command(
@@ -291,12 +292,11 @@ async fn handle_create_song_command(
 #[cfg(test)]
 mod tests {
 
-    
     #[test]
     fn test_music_video_path() {
         let id = "d7de2c63-aff6-4057-84eb-f273719f0a5f";
         let filename = format!("./tmp/music_videos/{}/video.mp4", id);
-        let path = std::fs::canonicalize(&filename).unwrap();
+        let path = std::fs::canonicalize(filename).unwrap();
         let full_path = path.into_os_string().into_string().unwrap();
         println!("Full Path: {}", full_path);
     }
