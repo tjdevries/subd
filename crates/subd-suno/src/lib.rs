@@ -313,8 +313,7 @@ mod tests {
         assert_eq!(suno_responses[0].title, "Street Pyro");
         assert_eq!(suno_responses[0].user_id, "");
         assert_eq!(suno_responses[0].play_count, 0);
-        assert_eq!(suno_responses[0].image_url,
-            "https://cdn2.suno.ai/image_f12dda07-2588-4326-b15b-63dece759c5f.jpeg");
+        assert_eq!(suno_responses[0].image_url, Some("https://cdn2.suno.ai/image_f12dda07-2588-4326-b15b-63dece759c5f.jpeg".to_string()));
         assert_eq!(suno_responses[0].audio_url,
             "https://audiopipe.suno.ai/?item_id=f12dda07-2588-4326-b15b-63dece759c5f",
         );

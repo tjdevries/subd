@@ -19,6 +19,13 @@ loudtest:
 test:
 	cargo test
 
+
+test_database:
+	cargo test -- :database:
+
+test_fal:
+	cargo test -- :fal:
+	
 fix:
 	cargo fix --lib -p server
 

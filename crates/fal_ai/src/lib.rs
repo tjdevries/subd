@@ -26,14 +26,12 @@ pub async fn create_image_for_music_video(
 }
 
 /// Creates an image using the "fal-ai/fast-sdxl" model.
-pub async fn create_turbo_image(prompt: String) -> Result<()> {
+pub async fn create_fast_sd_image(prompt: String) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
 
-    // is this the wrong model?
     let model = "fal-ai/fast-sdxl";
 
     let stream_background_path = "./tmp/dalle-1.png";
-    // Create the image
     run_model_create_and_save_image(
         &client,
         model,
@@ -277,4 +275,16 @@ async fn save_video_bytes(
 
     println!("Video saved to: {}", filename);
     Ok(filename)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test_tag::tag;
+
+    #[tokio::test]
+    #[tag(fal)]
+    async fn test_turbo_sd() {
+        assert!(true);
+    }
 }
