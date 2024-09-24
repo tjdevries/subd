@@ -1,5 +1,3 @@
-// use ai_playlist::models::ai_songs;
-// use ai_playlist::{self, models::ai_playlist};
 use ai_playlist;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -85,51 +83,6 @@ impl EventHandler for AISongsHandler {
         }
     }
 }
-
-// #[async_trait]
-// impl EventHandler for AISongsHandler {
-//     async fn handle(
-//         self: Box<Self>,
-//         _tx: broadcast::Sender<Event>,
-//         mut rx: broadcast::Receiver<Event>,
-//     ) -> Result<()> {
-//         loop {
-//             // I want this to be run, and not blocked waiting for event
-//             if self.sink.empty() {
-//                 println!(
-//                     "{}",
-//                     "Sink is empty. Marking all songs as stopped.".red()
-//                 );
-//                 let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
-//             }
-//             // This event blocks
-//             let event = rx.recv().await?;
-//
-//             let msg = match event {
-//                 Event::UserMessage(msg) => msg,
-//                 _ => continue,
-//             };
-//
-//             // Split the message into words
-//             let splitmsg: Vec<String> =
-//                 msg.contents.split_whitespace().map(String::from).collect();
-//
-//             // Handle the command
-//             if let Err(err) = handle_requests(
-//                 &self.sink,
-//                 &self.twitch_client,
-//                 &self.pool,
-//                 &splitmsg,
-//                 &msg,
-//             )
-//             .await
-//             {
-//                 eprintln!("Error in AISongsHandler: {err}");
-//                 continue;
-//             }
-//         }
-//     }
-// }
 
 /// Determines if the user is an admin (beginbot or beginbotbot)
 fn is_admin(msg: &UserMessage) -> bool {

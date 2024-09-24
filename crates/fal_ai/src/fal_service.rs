@@ -86,12 +86,10 @@ impl FalService {
         driven_audio_data_uri: &str,
     ) -> Result<String> {
         let model = "fal-ai/sadtalker";
-        // Prepare the parameters
         let parameters = serde_json::json!({
             "source_image_url": source_image_data_uri,
             "driven_audio_url": driven_audio_data_uri,
         });
-        // Run the model and get the text response
         self.run_model_and_get_text(model, parameters).await
     }
 
