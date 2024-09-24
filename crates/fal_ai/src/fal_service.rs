@@ -28,22 +28,18 @@ impl FalService {
         index: Option<usize>,
         obs_background_image_path: Option<&str>,
     ) -> Result<()> {
-        // Prepare the parameters
         let parameters = serde_json::json!({
             "prompt": prompt,
             "image_size": image_size,
         });
 
-        // Run the model and get the raw JSON response
         let raw_json =
             self.run_model_and_get_raw_json(model, parameters).await?;
 
-        // Save the raw JSON response to a file
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
         utils::save_raw_json_response(&raw_json, &json_save_path).await?;
 
-        // Process images from the JSON response and save them
         self.process_images(
             &raw_json,
             save_dir,
@@ -55,45 +51,33 @@ impl FalService {
         Ok(())
     }
 
-    // ===============================================================
-    // Stable Movie
-
     /// Creates a video from the given image file path and saves it to the specified directory.
     pub async fn create_video_from_image(
         &self,
         image_file_path: &str,
         save_dir: &str,
     ) -> Result<()> {
-        // Encode the image file as a data URI
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
         let model = "fal-ai/stable-video";
 
-        // Prepare the parameters
         let parameters = serde_json::json!({ "image_url": image_data_uri });
 
-        // Run the model and get the JSON response
         let json = self.run_model_and_get_json(model, parameters).await?;
 
-        // Extract the video URL from the JSON response
         let video_url = json["video"]["url"]
             .as_str()
             .ok_or_else(|| anyhow!("Failed to extract video URL from JSON"))?;
 
-        // Download the video bytes from the URL
         let video_bytes = subd_image_utils::download_video(video_url).await?;
 
-        // Save the video bytes to a file
         let timestamp = Utc::now().timestamp();
         let filename = format!("{}/{}.mp4", save_dir, timestamp);
         utils::save_video_bytes(&video_bytes, &filename).await?;
 
         Ok(())
     }
-
-    // ===============================================================
-    // Sadtalk Request
 
     /// Submits a request to the Sadtalker model with the given source image and driven audio data URIs.
     pub async fn submit_sadtalker_request(
@@ -111,7 +95,7 @@ impl FalService {
         self.run_model_and_get_text(model, parameters).await
     }
 
-    // ===================================================================
+    // =======================================================================================
     // Private
 
     /// Processes images from the raw JSON response and saves them to the specified directory.
@@ -122,18 +106,14 @@ impl FalService {
         index: Option<usize>,
         extra_save_path: Option<&str>,
     ) -> Result<()> {
-        // Deserialize the JSON response into FalData struct
         let data: models::FalData = serde_json::from_slice(raw_json)?;
 
-        // Ensure the save directory exists
         create_dir_all(save_dir).await?;
 
         for (i, image) in data.images.iter().enumerate() {
-            // Extract image bytes and extension from the data URL
             let (image_bytes, extension) =
                 utils::extract_image_data(&image.url)?;
 
-            // Generate the filename
             let filename = match index {
                 Some(idx) => {
                     format!("{}/image_{}_{}.{}", save_dir, idx, i, extension)
@@ -141,10 +121,8 @@ impl FalService {
                 None => format!("{}/image_{}.{}", save_dir, i, extension),
             };
 
-            // Save the image bytes to a file
             utils::save_image_bytes(&filename, &image_bytes).await?;
 
-            // Optionally save the image to an extra path
             if let Some(extra_path) = extra_save_path {
                 utils::save_image_bytes(extra_path, &image_bytes).await?;
             }

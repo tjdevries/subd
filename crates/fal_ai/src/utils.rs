@@ -18,7 +18,6 @@ pub fn extract_image_data(data_url: &str) -> Result<(Vec<u8>, String)> {
         let mime_match = captures.name("mime").unwrap();
         let base64_match = captures.name("data").unwrap();
 
-        // Extract matched substrings using slice indices
         let mime_type = str::from_utf8(
             &data_url_bytes[mime_match.start()..mime_match.end()],
         )?;
@@ -26,10 +25,8 @@ pub fn extract_image_data(data_url: &str) -> Result<(Vec<u8>, String)> {
             &data_url_bytes[base64_match.start()..base64_match.end()],
         )?;
 
-        // Decode the base64 data to bytes
         let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
 
-        // Determine the file extension based on MIME type
         let extension = match mime_type {
             "image/png" => "png",
             "image/jpeg" => "jpg",
@@ -47,11 +44,9 @@ pub async fn save_image_bytes(
     filename: &str,
     image_bytes: &[u8],
 ) -> Result<()> {
-    // Ensure the directory exists
     let dir = std::path::Path::new(filename).parent().unwrap();
     create_dir_all(dir).await?;
 
-    // Write the image data to the file
     let mut file = File::create(&filename)
         .await
         .with_context(|| format!("Error creating file: {}", filename))?;
@@ -66,11 +61,9 @@ pub async fn save_video_bytes(
     video_bytes: &[u8],
     filename: &str,
 ) -> Result<()> {
-    // Ensure the directory exists
     let dir = std::path::Path::new(filename).parent().unwrap();
     create_dir_all(dir).await?;
 
-    // Write the video data to the file
     tokio::fs::write(&filename, video_bytes)
         .await
         .with_context(|| format!("Failed to write video to {}", filename))?;
@@ -84,11 +77,9 @@ pub async fn save_raw_json_response(
     raw_json: &[u8],
     save_path: &str,
 ) -> Result<()> {
-    // Ensure the directory exists
     let dir = std::path::Path::new(save_path).parent().unwrap();
     create_dir_all(dir).await?;
 
-    // Write the JSON data to the file
     tokio::fs::write(&save_path, raw_json)
         .await
         .with_context(|| format!("Failed to write JSON to {}", save_path))?;
@@ -97,10 +88,8 @@ pub async fn save_raw_json_response(
 }
 
 pub fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
-    // Parse the JSON string into a serde_json::Value
     let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
 
-    // Navigate through the JSON to get the video URL
     fal_result_json
         .get("video")
         .and_then(|video| video.get("url"))
