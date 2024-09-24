@@ -1,6 +1,8 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use num_traits::FromPrimitive;
+use obws::requests::custom::source_settings::ColorRange;
+use obws::requests::custom::source_settings::FfmpegSource;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::Slideshow;
 use obws::requests::custom::source_settings::SlideshowFile;
@@ -222,6 +224,38 @@ pub async fn update_slideshow_source(
     };
     let _ = obs_client.inputs().set_settings(set_settings).await;
     Ok(())
+}
+
+pub async fn update_video_source(
+    obs_client: &OBSClient,
+    source: String,
+    filename: String,
+) -> Result<()> {
+    let settings = FfmpegSource {
+        is_local_file: true,
+        local_file: Path::new(&filename),
+        looping: true,
+        buffering_mb: 0,
+        input: "",
+        input_format: "",
+        reconnect_delay_sec: 5,
+        restart_on_activate: true,
+        clear_on_media_end: true,
+        close_when_inactive: true,
+        speed_percent: 100,
+        color_range: ColorRange::Auto,
+        seekable: false,
+    };
+    let set_settings = SetSettings {
+        settings: &settings,
+        input: &source,
+        overlay: Some(true),
+    };
+    obs_client
+        .inputs()
+        .set_settings(set_settings)
+        .await
+        .map_err(|e| anyhow!("{}", e))
 }
 
 pub async fn update_image_source(

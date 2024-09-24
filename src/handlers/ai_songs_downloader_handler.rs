@@ -3,8 +3,10 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use events::EventHandler;
+use obs_service;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
+use std::path::Path;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_irc::{
@@ -54,7 +56,7 @@ impl EventHandler for AISongsDownloader {
 /// Handles incoming requests based on the parsed command.
 pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
-    _obs_client: &OBSClient,
+    obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
     msg: UserMessage,
@@ -80,14 +82,47 @@ pub async fn handle_requests(
         }
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            handle_create_music_video_command(
+            let filename = handle_create_music_video_command(
                 twitch_client,
                 pool,
                 tx,
                 msg.user_name,
                 id,
             )
-            .await
+            .await?;
+            let path = std::fs::canonicalize(&filename)?;
+            let full_path = path
+                .into_os_string()
+                .into_string()
+                .map_err(|_| anyhow!("Failed to convert path to string"))?;
+
+            // path.file_name().and_then
+            let source = "music-video".to_string();
+            let _ = obs_service::obs_source::set_enabled(
+                "AIFriends",
+                &source.clone(),
+                false,
+                obs_client,
+            )
+            .await;
+            let _ = obs_service::obs_source::update_video_source(
+                obs_client,
+                source.clone(),
+                full_path,
+            )
+            .await;
+            let _ = obs_service::obs_source::set_enabled(
+                "AIFriends",
+                &source,
+                true,
+                obs_client,
+            )
+            .await;
+            Ok(())
+            // obs_client
+
+            // We have the id and the video is complete
+            // I could use OBS client, to play the video
         }
     }
 }
@@ -96,6 +131,13 @@ pub async fn handle_requests(
 fn parse_command(msg: &UserMessage) -> Command {
     let mut words = msg.contents.split_whitespace();
     match words.next() {
+        Some("!create_music_video") => {
+            if let Some(id) = words.next() {
+                Command::CreateMusicVideo { id: id.to_string() }
+            } else {
+                Command::Unknown
+            }
+        }
         Some("!download") => {
             if let Some(id) = words.next() {
                 Command::Download { id: id.to_string() }
@@ -130,7 +172,7 @@ async fn handle_create_music_video_command(
     _tx: &broadcast::Sender<Event>,
     _user_name: String,
     id: String,
-) -> Result<()> {
+) -> Result<String> {
     println!("\tIt's Music Video time!");
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
 
@@ -140,7 +182,7 @@ async fn handle_create_music_video_command(
         .ok_or(anyhow!("No Lyrics to parse"))?
         .split_whitespace()
         .collect::<Vec<_>>()
-        .chunks(10)
+        .chunks(20)
         .map(|chunk| chunk.join(" "))
         .collect::<Vec<String>>();
 
@@ -153,12 +195,55 @@ async fn handle_create_music_video_command(
         // I should return and do something
         let _ = fal_ai::create_image_for_music_video(
             format!("{}", ai_song.song_id),
-            lyric,
+            format!("{} {}", ai_song.title, lyric),
             index + 1,
         )
         .await;
     }
-    return Ok(());
+
+    let output_file =
+        format!("./tmp/music_videos/{}/video.mp4", ai_song.song_id);
+    let input_pattern = format!("./tmp/music_videos/{}/*.jpg", ai_song.song_id);
+    let _ = std::fs::read_dir(Path::new(&input_pattern).parent().unwrap())
+        .unwrap()
+        .for_each(|entry| {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_file() && path.extension().unwrap_or_default() == "jpg" {
+                let metadata = std::fs::metadata(&path).unwrap();
+                if metadata.len() <= 10_000 {
+                    println!("Removing: {:?}", path);
+                    std::fs::remove_file(&path).unwrap();
+                }
+            }
+        });
+
+    let status = std::process::Command::new("ffmpeg")
+        .args(&[
+            "-y",
+            "-framerate",
+            "1/2",
+            "-pattern_type",
+            "glob",
+            "-i",
+            &input_pattern,
+            "-c:v",
+            "libx264",
+            "-r",
+            "30",
+            "-pix_fmt",
+            "yuv420p",
+            &output_file,
+        ])
+        .status()?;
+
+    if status.success() {
+        println!("Video created successfully: {}", output_file);
+    } else {
+        return Err(anyhow!("Failed to create video"));
+    }
+
+    return Ok(output_file);
 }
 
 async fn handle_create_song_command(
@@ -200,5 +285,19 @@ async fn handle_create_song_command(
             eprintln!("Error generating audio: {}", e);
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn test_music_video_path() {
+        let id = "d7de2c63-aff6-4057-84eb-f273719f0a5f";
+        let filename = format!("./tmp/music_videos/{}/video.mp4", id);
+        let path = std::fs::canonicalize(&filename).unwrap();
+        let full_path = path.into_os_string().into_string().unwrap();
+        println!("Full Path: {}", full_path);
     }
 }

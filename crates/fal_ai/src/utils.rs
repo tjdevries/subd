@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 use tokio::fs::create_dir_all;
 
+// I'm going to try jpg
 pub async fn parse_and_process_images_from_json_for_music_video(
     raw_json: &[u8],
     main_filename_pattern: &str,
@@ -10,19 +11,14 @@ pub async fn parse_and_process_images_from_json_for_music_video(
 ) -> Result<()> {
     // Parse images from the raw JSON data
     let images = parse_images_from_json(raw_json)?;
-    let extension = "png"; // Assuming PNG as the image extension
+    let extension = "jpg";
 
     for (index, image) in images.into_iter().enumerate() {
+        // This shouild be timestamp?
         let main_filename =
             format!("{}-{}.{}", main_filename_pattern, index, extension);
         let extra_filename = extra_save_folder.map(|folder| {
-            format!(
-                "{}/{}-{}.{}",
-                folder,
-                main_filename_pattern,
-                (index + 1) * (outer_index),
-                extension
-            )
+            format!("{}/{}.{}", folder, (index + 1) * (outer_index), extension)
         });
 
         parse_json_save_image(

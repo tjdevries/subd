@@ -13,7 +13,7 @@ pub async fn create_image_for_music_video(
 ) -> Result<()> {
     let client = FalClient::new(ClientCredentials::from_env());
     let model = "fal-ai/fast-sdxl";
-    let music_video_folder = format!("./tmp/music_videos/{}", id);
+    let music_video_folder = format!("./tmp/music_videos/{}/", id);
 
     run_model_create_and_save_image_with_index(
         &client,
@@ -130,12 +130,12 @@ async fn run_model_create_and_save_image_with_index(
     // Save the raw JSON response to a file
     let timestamp = Utc::now().timestamp();
     save_raw_json_response(&raw_json, timestamp).await?;
-    let primary_save_path = format!("tmp/fal_images/{}", timestamp);
+    let primary_save_path = format!("./tmp/fal_images/{}", timestamp);
 
     // Parse and process images from the JSON response
     utils::parse_and_process_images_from_json_for_music_video(
         &raw_json,
-        &primary_save_path,
+        &extra_save_folder.unwrap_or(&primary_save_path),
         index,
         extra_save_folder,
     )
