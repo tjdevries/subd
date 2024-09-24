@@ -95,3 +95,16 @@ pub async fn save_raw_json_response(
 
     Ok(())
 }
+
+pub fn extract_video_url_from_fal_result(fal_result: &str) -> Result<String> {
+    // Parse the JSON string into a serde_json::Value
+    let fal_result_json: serde_json::Value = serde_json::from_str(fal_result)?;
+
+    // Navigate through the JSON to get the video URL
+    fal_result_json
+        .get("video")
+        .and_then(|video| video.get("url"))
+        .and_then(|url| url.as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| anyhow!("Failed to extract video URL from FAL result"))
+}
