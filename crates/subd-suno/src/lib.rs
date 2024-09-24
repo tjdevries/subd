@@ -158,15 +158,6 @@ pub async fn download_and_play(
                         eprintln!("Error downloading file: {}", e);
                     }
 
-                    let info = format!(
-                        "@{}'s song {} added to the Queue.",
-                        user_name, id
-                    );
-
-                    if let Err(e) = send_message(&twitch_client, info).await {
-                        eprintln!("Error sending message: {}", e);
-                    }
-
                     let _ = tx.send(subd_types::Event::UserMessage(
                         subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
@@ -183,14 +174,6 @@ pub async fn download_and_play(
                     if let Err(e) = send_message(&twitch_client, info).await {
                         eprintln!("Error sending message: {}", e);
                     }
-
-                    let _ = tx.send(subd_types::Event::UserMessage(
-                        subd_types::UserMessage {
-                            user_name: "beginbot".to_string(),
-                            contents: format!("!play {}", id),
-                            ..Default::default()
-                        },
-                    ));
 
                     break;
                 }

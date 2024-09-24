@@ -18,11 +18,32 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
             .collect::<Vec<_>>()
             .join("\n")
     });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric)?;
-    let images =
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 100)?;
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+
+    let first_set_of_images =
         fal_ai::create_from_fal_api_return_filename(&lyric_chunks[0]).await?;
-    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
-    let filename = fal_ai::create_video_from_image(first_image, None).await?;
+    let first_image = first_set_of_images
+        .get(0)
+        .ok_or_else(|| anyhow!("No Image"))?;
+    println!("Image: {}", first_image);
+    let folder = format!("./tmp/music_videos/{}", id);
+    let filename =
+        fal_ai::create_video_from_image(first_image, Some(folder.clone()))
+            .await?;
+
+    let first_set_of_images =
+        fal_ai::create_from_fal_api_return_filename(&lyric_chunks[1]).await?;
+    let first_image = first_set_of_images
+        .get(0)
+        .ok_or_else(|| anyhow!("No Image"))?;
+    println!("Image: {}", first_image);
+    let folder = format!("./tmp/music_videos/{}", id);
+    let filename =
+        fal_ai::create_video_from_image(first_image, Some(folder.clone()))
+            .await?;
+
+    // How do we combine the files
 
     // Then we need to update in OBS
 
@@ -43,7 +64,7 @@ pub async fn create_music_video(pool: &PgPool, id: String) -> Result<String> {
             .collect::<Vec<_>>()
             .join("\n")
     });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric)?;
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 20)?;
 
     create_images_for_lyrics(&ai_song, &lyric_chunks).await?;
     let output_file = create_video(&id)?;
@@ -52,14 +73,17 @@ pub async fn create_music_video(pool: &PgPool, id: String) -> Result<String> {
 }
 
 // this can fail
-fn get_lyric_chunks(lyric: &Option<String>) -> Result<Vec<String>> {
+fn get_lyric_chunks(
+    lyric: &Option<String>,
+    chunksize: usize,
+) -> Result<Vec<String>> {
     let lyric = lyric
         .as_ref()
         .ok_or_else(|| anyhow!("No Lyrics to parse"))?;
     let chunks = lyric
         .split_whitespace()
         .collect::<Vec<_>>()
-        .chunks(20)
+        .chunks(chunksize)
         .map(|chunk| chunk.join(" "))
         .collect();
     Ok(chunks)
