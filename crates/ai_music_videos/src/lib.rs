@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use chrono::Utc;
 use colored::Colorize;
 use sqlx::PgPool;
 use std::path::Path;
@@ -40,7 +41,9 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
         video_chunks.push(filename);
     }
 
-    let output_file = format!("{}/{}", music_video_folder, "final_video.mp4");
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let output_file =
+        format!("{}/{}_{}", music_video_folder, timestamp, "final_video.mp4");
     combine_videos(video_chunks, &output_file);
 
     Ok(output_file)
