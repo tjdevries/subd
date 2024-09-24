@@ -4,8 +4,7 @@ use base64::Engine;
 use once_cell::sync::Lazy;
 use regex::bytes::Regex;
 use std::str;
-use tokio::fs::{create_dir_all, File};
-use tokio::io::AsyncWriteExt;
+use tokio::fs::create_dir_all;
 
 static DATA_URL_REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"data:(?P<mime>[\w/]+);base64,(?P<data>.+)").unwrap()
@@ -40,50 +39,13 @@ pub fn extract_image_data(data_url: &str) -> Result<(Vec<u8>, String)> {
 }
 
 /// Saves image bytes to the specified file path.
-pub async fn save_image_bytes(
-    filename: &str,
-    image_bytes: &[u8],
-) -> Result<()> {
+pub async fn save_raw_bytes(filename: &str, raw_bytes: &[u8]) -> Result<()> {
     let dir = std::path::Path::new(filename).parent().unwrap();
     create_dir_all(dir).await?;
 
-    let mut file = File::create(&filename)
-        .await
-        .with_context(|| format!("Error creating file: {}", filename))?;
-    file.write_all(image_bytes)
-        .await
-        .with_context(|| format!("Error writing to file: {}", filename))?;
-    Ok(())
-}
-
-/// Saves video bytes to the specified file path.
-pub async fn save_video_bytes(
-    video_bytes: &[u8],
-    filename: &str,
-) -> Result<()> {
-    let dir = std::path::Path::new(filename).parent().unwrap();
-    create_dir_all(dir).await?;
-
-    tokio::fs::write(&filename, video_bytes)
+    tokio::fs::write(&filename, raw_bytes)
         .await
         .with_context(|| format!("Failed to write video to {}", filename))?;
-
-    println!("Video saved to: {}", filename);
-    Ok(())
-}
-
-/// Saves the raw JSON response to a specified file path.
-pub async fn save_raw_json_response(
-    raw_json: &[u8],
-    save_path: &str,
-) -> Result<()> {
-    let dir = std::path::Path::new(save_path).parent().unwrap();
-    create_dir_all(dir).await?;
-
-    tokio::fs::write(&save_path, raw_json)
-        .await
-        .with_context(|| format!("Failed to write JSON to {}", save_path))?;
-
     Ok(())
 }
 

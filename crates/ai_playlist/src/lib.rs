@@ -258,10 +258,10 @@ mod tests {
 
     // Deletes all songs and playlist entries. Use with caution.
     async fn delete_all_ai_songs_and_playlist(pool: &PgPool) -> Result<()> {
-        sqlx::query!("DELETE FROM ai_songs").execute(pool).await?;
         sqlx::query!("DELETE FROM ai_song_playlist")
             .execute(pool)
             .await?;
+        sqlx::query!("DELETE FROM ai_songs").execute(pool).await?;
         Ok(())
     }
 
@@ -269,7 +269,9 @@ mod tests {
     #[tag(database)]
     async fn test_ai_song_creation() {
         let pool = subd_db::get_test_db_pool().await;
-        let _ = delete_all_ai_songs_and_playlist(&pool).await;
+        let _ = delete_all_ai_songs_and_playlist(&pool).await.unwrap();
+
+        // This must not be working here
 
         let fake_uuid = Uuid::new_v4();
         let ai_song = ai_songs::Model::new(
@@ -290,6 +292,7 @@ mod tests {
         let res = find_songs_by_user(&pool, "username").await.unwrap();
         assert_eq!(res[0].title, "title");
 
+        // This is failing for some reason
         add_song_to_playlist(&pool, fake_uuid).await.unwrap();
         let result = find_last_played_songs(&pool, 1).await.unwrap();
         assert!(result.is_empty());

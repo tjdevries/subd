@@ -12,7 +12,6 @@ use twitch_irc::{
 use twitch_stream_state;
 
 pub struct FalHandler {
-    // pub queue_rx: &'static queue::SourcesQueueOutput<f32>,
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
     pub sink: Sink,
@@ -73,9 +72,6 @@ pub async fn handle_fal_commands(
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
-    //let default_source = constants::DEFAULT_SOURCE.to_string();
-    // let source: &str = splitmsg.get(1).unwrap_or(&default_source);
-
     let is_mod = msg.roles.is_twitch_mod();
     let _not_beginbot =
         msg.user_name != "beginbot" && msg.user_name != "beginbotbot";

@@ -38,11 +38,12 @@ impl FalService {
 
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
-        utils::save_raw_json_response(&raw_json, &json_save_path).await?;
+        utils::save_raw_bytes(&json_save_path, &raw_json).await?;
 
         self.process_images(
             &raw_json,
             save_dir,
+            &timestamp.to_string(),
             index,
             obs_background_image_path,
         )
@@ -60,10 +61,8 @@ impl FalService {
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
-        let model = "fal-ai/stable-video";
-
         let parameters = serde_json::json!({ "image_url": image_data_uri });
-
+        let model = "fal-ai/stable-video";
         let json = self.run_model_and_get_json(model, parameters).await?;
 
         let video_url = json["video"]["url"]
@@ -74,7 +73,7 @@ impl FalService {
 
         let timestamp = Utc::now().timestamp();
         let filename = format!("{}/{}.mp4", save_dir, timestamp);
-        utils::save_video_bytes(&video_bytes, &filename).await?;
+        utils::save_raw_bytes(&filename, &video_bytes).await?;
 
         Ok(())
     }
@@ -101,6 +100,7 @@ impl FalService {
         &self,
         raw_json: &[u8],
         save_dir: &str,
+        name: &str,
         index: Option<usize>,
         extra_save_path: Option<&str>,
     ) -> Result<()> {
@@ -112,17 +112,18 @@ impl FalService {
             let (image_bytes, extension) =
                 utils::extract_image_data(&image.url)?;
 
+            // do we have to pass in the timestamp
             let filename = match index {
                 Some(idx) => {
-                    format!("{}/image_{}_{}.{}", save_dir, idx, i, extension)
+                    format!("{}/{}-{}-{}.{}", save_dir, name, idx, i, extension)
                 }
-                None => format!("{}/image_{}.{}", save_dir, i, extension),
+                None => format!("{}/{}-{}.{}", save_dir, name, i, extension),
             };
 
-            utils::save_image_bytes(&filename, &image_bytes).await?;
+            utils::save_raw_bytes(&filename, &image_bytes).await?;
 
             if let Some(extra_path) = extra_save_path {
-                utils::save_image_bytes(extra_path, &image_bytes).await?;
+                utils::save_raw_bytes(extra_path, &image_bytes).await?;
             }
 
             println!("Saved image to {}", filename);
