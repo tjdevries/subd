@@ -18,41 +18,67 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
             .collect::<Vec<_>>()
             .join("\n")
     });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 100)?;
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 20)?;
+
     let music_video_folder = format!("./tmp/music_videos/{}", id);
+    let mut video_chunks: Vec<String> = Vec::new();
+    for (index, lyric) in lyric_chunks.iter().enumerate() {
+        println!(
+            "{} - {}",
+            "Creating Image for Lyric Chunk: {}".cyan(),
+            lyric.green()
+        );
+        let prompt = format!("{} {}", ai_song.title, lyric);
+        let images =
+            fal_ai::create_from_fal_api_return_filename(&prompt).await?;
+        let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+        println!("Image: {}", first_image);
+        let folder = format!("./tmp/music_videos/{}", id);
+        let filename =
+            fal_ai::create_video_from_image(first_image, Some(folder.clone()))
+                .await?;
+        video_chunks.push(filename);
+    }
 
-    let first_set_of_images =
-        fal_ai::create_from_fal_api_return_filename(&lyric_chunks[0]).await?;
-    let first_image = first_set_of_images
-        .get(0)
-        .ok_or_else(|| anyhow!("No Image"))?;
-    println!("Image: {}", first_image);
-    let folder = format!("./tmp/music_videos/{}", id);
-    let filename =
-        fal_ai::create_video_from_image(first_image, Some(folder.clone()))
-            .await?;
+    let output_file = format!("{}/{}", music_video_folder, "final_video.mp4");
+    combine_videos(video_chunks, &output_file);
 
-    let first_set_of_images =
-        fal_ai::create_from_fal_api_return_filename(&lyric_chunks[1]).await?;
-    let first_image = first_set_of_images
-        .get(0)
-        .ok_or_else(|| anyhow!("No Image"))?;
-    println!("Image: {}", first_image);
-    let folder = format!("./tmp/music_videos/{}", id);
-    let filename =
-        fal_ai::create_video_from_image(first_image, Some(folder.clone()))
-            .await?;
-
-    // How do we combine the files
-
-    // Then we need to update in OBS
-
-    // create_images_for_lyrics(&ai_song, &lyric_chunks).await?;
-    // let output_file = create_video(&id)?;
-
-    Ok(filename)
+    Ok(output_file)
 }
 
+fn combine_videos(video_chunks: Vec<String>, output_file: &str) -> Result<()> {
+    let mut input_files = String::new();
+    for chunk in video_chunks {
+        input_files.push_str(&format!("file '{}'\n", chunk));
+    }
+
+    let temp_file = "temp_file_list.txt";
+    std::fs::write(temp_file, input_files)?;
+
+    let status = std::process::Command::new("ffmpeg")
+        .args(&[
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+            temp_file,
+            "-c",
+            "copy",
+            output_file,
+        ])
+        .status()?;
+
+    std::fs::remove_file(temp_file)?;
+
+    if status.success() {
+        println!("Combined video created successfully: {}", output_file);
+        Ok(())
+    } else {
+        Err(anyhow!("Failed to combine videos"))
+    }
+}
 pub async fn create_music_video(pool: &PgPool, id: String) -> Result<String> {
     println!("\tIt's Music Video time!");
 
