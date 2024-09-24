@@ -111,6 +111,9 @@ pub async fn handle_requests(
                 obs_client,
             )
             .await;
+
+            obs_service::obs_scenes::change_scene(obs_client, "Movie Trailer")
+                .await;
             Ok(())
         }
     }
