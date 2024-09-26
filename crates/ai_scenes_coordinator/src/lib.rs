@@ -42,7 +42,8 @@ pub async fn run_ai_scene(
     if let Some(image_file_path) =
         build_face_scene_request(&final_voice).await?
     {
-        println!("Triggering AI Friend Scene");
+        // So things are wrong here
+        println!("Triggering AI Friend Scene: {:?}", ai_scene_req);
         ai_friends::trigger_ai_friend(
             obs_client,
             twitch_client,
@@ -171,6 +172,14 @@ fn twitch_chat_filename(username: &str, voice: &str) -> String {
 
 async fn build_face_scene_request(voice: &str) -> Result<Option<String>> {
     let voice_to_face_image: HashMap<&str, &str> = HashMap::from([
+        // ("Fin", "archive/pepe_2.png"),
+        //
+        // The prime does work
+        // ("Fin", "archive/pepe_3.jpg"),
+        // ("Fin", "archive/pepe_4.png"),
+        // Works
+        // ("Fin", "archive/alex_jones_2.png"),
+        ("troy", "archive/troy.png"),
         ("satan", "archive/satan.png"),
         ("god", "archive/god.png"),
         ("ethan", "archive/alex_jones.png"),

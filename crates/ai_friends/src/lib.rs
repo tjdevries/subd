@@ -97,6 +97,7 @@ async fn sync_lips_and_update(
     }
     println!("Video saved to {}", video_path);
 
+    println!("Triggering OBS Source: {}", friend_name);
     // This code is in the main section
     // so not usable here
     let scene = "AIFriends";

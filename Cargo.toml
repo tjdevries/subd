@@ -71,8 +71,8 @@ youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a8782
 # fal-rust = { git = "https://github.com/davidbegin/fal-rust" }
 # Fixes skip bug skip_one
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
-# elevenlabs-api = { path = "../elevenlabs-api" }
-elevenlabs-api = "0.1.1"
+elevenlabs-api = { path = "../elevenlabs-api" }
+# elevenlabs-api = "0.1.1"
 # openai = "1.0.0-alpha.13"
 openai = { path = "../openai" }
 colored = "2.1.0"

@@ -251,7 +251,7 @@ async fn trigger_full_scene(
                 }));
         }
         None => {
-            println!("\n\tDalle Prompt: None");
+            println!("\tTriggering AI Scene: {}", voice.clone());
             let _ =
                 tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
                     voice: Some(voice),
@@ -363,8 +363,9 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
                 None
             };
 
-            println!("Dalle GPT response: {:?}", dalle_prompt.clone());
+            // println!("Dalle GPT response: {:?}", dalle_prompt.clone());
 
+            println!("Triggering Scene: {}", scene.voice.clone());
             let _ = trigger_full_scene(
                 tx.clone(),
                 scene.voice.clone(),
@@ -376,7 +377,7 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
         }
         None => {
             println!("Scene not found for reward title")
-        }
+        } // ================================================================
     }
 
     Ok(())
