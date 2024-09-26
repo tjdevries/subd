@@ -28,7 +28,8 @@ pub async fn create_from_fal_api_return_filename(
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     // let model = "fal-ai/fast-sdxl";
-    let model = "fal-ai/stable-cascade";
+    // let model = "fal-ai/stable-cascade";
+    let model = "fal-ai/flux/dev";
     let save_dir = "./tmp/fal_images";
     let files = fal_service
         .create_image(model, prompt, "landscape_16_9", save_dir, None, None)
