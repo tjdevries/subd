@@ -110,12 +110,24 @@ async fn handle_requests(
         "!reverb" | "!queue" | "!play" | "!play_fake_song" | "!pause"
         | "!random_song" | "!last_song" | "!unpause" | "!skip" | "!stop"
         | "!nightcore" | "!doom" | "!normal" | "!speedup" | "!slowdown"
-        | "!up" | "!down" | "!coding_volume" | "!quiet" | "!party_volume" => {
+        | "!up" | "!down" | "!coding_volume" | "!quiet" | "!party_volume"
+        | "!delete_song" => {
             if !is_admin(msg) {
                 return Ok(());
             }
 
             match command {
+                "!delete" => {
+                    let id = match splitmsg.get(1) {
+                        Some(id) => id,
+                        None => {
+                            println!("{}", "No ID provided for delete.".red());
+                            return Ok(());
+                        }
+                    };
+                    let uuid_id = Uuid::parse_str(id)?;
+                    ai_playlist::delete_song(pool, uuid_id).await?;
+                }
                 "!reverb" => {
                     handle_reverb_command(
                         twitch_client,

@@ -416,6 +416,15 @@ async fn main() -> Result<()> {
                         twitch_client: resources.twitch_client,
                     },
                 );
+
+                let resources = AppResources::new(&stream_handle).await?;
+                event_loop.push(
+                    handlers::ai_music_video_creator_handler::AIMusicVideoCreatorHandler{
+                        pool: pool.clone(),
+                        obs_client: resources.obs_client,
+                        twitch_client: resources.twitch_client,
+                    },
+                );
             }
 
             _ => {

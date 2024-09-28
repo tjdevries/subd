@@ -249,6 +249,29 @@ pub async fn find_next_song_to_play(
     .ok_or(Error::RowNotFound)
 }
 
+pub async fn delete_song(pool: &PgPool, song_id: Uuid) -> Result<(), Error> {
+    sqlx::query!(
+        r#"
+        DELETE FROM ai_song_playlist
+        WHERE song_id = $1
+        "#,
+        song_id
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query!(
+        r#"
+        DELETE FROM ai_songs
+        WHERE song_id = $1
+        "#,
+        song_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

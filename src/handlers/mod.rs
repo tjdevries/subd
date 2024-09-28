@@ -1,3 +1,4 @@
+pub mod ai_music_video_creator_handler;
 pub mod ai_scenes_handler;
 pub mod ai_screenshots_handler;
 pub mod ai_screenshots_timer_handler;
