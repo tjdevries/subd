@@ -1,0 +1,17 @@
+[package]
+name = "ai_song_vote"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+sqlx.workspace = true
+
+subd-macros = { path = "../subd-macros/" }
+subd-db = { path = "../subd-db/" }
+uuid.workspace = true
+
+[dev-dependencies]
+
+tokio.workspace = true
+test-tag = "0.1.4"
