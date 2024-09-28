@@ -25,15 +25,17 @@ pub async fn find_song_by_id(
     .ok_or(anyhow!("Couldn't find song"))
 }
 
-// Fetches a random song from the database.
 pub async fn find_random_song(
     pool: &PgPool,
 ) -> Result<models::ai_songs::Model, Error> {
     sqlx::query_as!(
         models::ai_songs::Model,
         r#"
-        SELECT *
+        SELECT ai_songs.*
         FROM ai_songs
+        LEFT JOIN ai_song_playlist ON ai_songs.song_id = ai_song_playlist.song_id
+        WHERE ai_song_playlist.played_at IS NULL
+           OR ai_song_playlist.played_at < NOW() - INTERVAL '1 hour'
         ORDER BY RANDOM()
         LIMIT 1
         "#
@@ -185,7 +187,40 @@ pub async fn get_current_song(
         find_oldest_unplayed_song(pool).await
     }
 }
+pub async fn update_song_tags(
+    pool: &PgPool,
+    song_id: Uuid,
+    new_tags: String,
+) -> Result<(), Error> {
+    sqlx::query!(
+        r#"
+        UPDATE ai_songs
+        SET tags = $1
+        WHERE song_id = $2
+        "#,
+        new_tags,
+        song_id
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
+}
+pub async fn find_songs_without_tags(
+    pool: &PgPool,
+) -> Result<Vec<models::ai_songs::Model>, Error> {
+    let songs = sqlx::query_as!(
+        models::ai_songs::Model,
+        r#"
+        SELECT *
+        FROM ai_songs
+        WHERE tags IS NULL OR tags = ''
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
 
+    Ok(songs)
+}
 // Fetches the last played songs up to a specified limit.
 pub async fn find_last_played_songs(
     pool: &PgPool,

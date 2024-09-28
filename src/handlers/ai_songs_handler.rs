@@ -61,11 +61,9 @@ impl EventHandler for AISongsHandler {
                         _ => continue,
                     };
 
-                    // Split the message into words
                     let splitmsg: Vec<String> =
                         msg.contents.split_whitespace().map(String::from).collect();
 
-                    // Handle the command
                     if let Err(err) = handle_requests(
                         &self.sink,
                         &self.twitch_client,
@@ -126,7 +124,7 @@ async fn handle_requests(
                         }
                     };
                     let uuid_id = Uuid::parse_str(id)?;
-                    ai_playlist::delete_song(pool, uuid_id).await?;
+                    ai_playlist::delete_song(pool, uuid_id).await?
                 }
                 "!reverb" => {
                     handle_reverb_command(
@@ -136,13 +134,11 @@ async fn handle_requests(
                         splitmsg,
                         msg,
                     )
-                    .await?;
+                    .await?
                 }
-                "!queue" => {
-                    handle_queue_command(pool, splitmsg).await?;
-                }
+                "!queue" => handle_queue_command(pool, splitmsg).await?,
                 "!last_song" => {
-                    handle_last_song_command(twitch_client, pool).await?;
+                    handle_last_song_command(twitch_client, pool).await?
                 }
 
                 // !random 5 to add random songs to the queue
@@ -153,7 +149,7 @@ async fn handle_requests(
                         .parse::<usize>()
                         .unwrap_or(1);
                     handle_random_song_command(twitch_client, pool, index)
-                        .await?;
+                        .await?
                 }
                 "!play_fake_song" => {
                     handle_fake_play_command(
@@ -163,7 +159,7 @@ async fn handle_requests(
                         splitmsg,
                         msg,
                     )
-                    .await?;
+                    .await?
                 }
                 "!play" => {
                     handle_play_command(
@@ -173,18 +169,16 @@ async fn handle_requests(
                         splitmsg,
                         msg,
                     )
-                    .await?;
+                    .await?
                 }
                 "!pause" | "!unpause" | "!skip" | "!stop" => {
-                    handle_playback_control(command, sink).await?;
+                    handle_playback_control(command, sink).await?
                 }
                 "!nightcore" | "!doom" | "!normal" | "!speedup"
-                | "!slowdown" => {
-                    handle_speed_control(command, sink).await?;
-                }
+                | "!slowdown" => handle_speed_control(command, sink).await?,
                 "!up" | "!down" | "!coding_volume" | "!quiet"
                 | "!party_volume" => {
-                    handle_volume_control(command, sink).await?;
+                    handle_volume_control(command, sink).await?
                 }
                 _ => {}
             }

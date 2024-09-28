@@ -13,6 +13,21 @@ use twitch_irc::{
 
 pub mod models;
 
+/// Retrieves audio information based on the song ID.
+pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
+    let base_url = "http://localhost:3000";
+    let url = format!("{}/api/get?ids={}", base_url, id);
+
+    let client = Client::new();
+    let response = client.get(&url).send().await?;
+    let suno_response: Vec<models::SunoResponse> = response.json().await?;
+
+    suno_response
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow!("No audio information found"))
+}
+
 #[derive(Default, Debug, serde::Serialize)]
 pub struct AudioGenerationData {
     pub prompt: String,
@@ -79,21 +94,6 @@ pub async fn add_to_playlist_and_play_audio(
     ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     Ok(())
-}
-
-/// Retrieves audio information based on the song ID.
-pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
-    let base_url = "http://localhost:3000";
-    let url = format!("{}/api/get?ids={}", base_url, id);
-
-    let client = Client::new();
-    let response = client.get(&url).send().await?;
-    let suno_response: Vec<models::SunoResponse> = response.json().await?;
-
-    suno_response
-        .into_iter()
-        .next()
-        .ok_or_else(|| anyhow!("No audio information found"))
 }
 
 /// Plays sound instantly by appending it to the sink.
