@@ -37,7 +37,11 @@ pub async fn play_audio(
 ) -> Result<()> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mp3 = File::open(&file_name).map_err(|e| {
-        anyhow!("Error opening sound file {}: {}", file_name, e)
+        anyhow!(
+            "Error opening sound file in play_audio {}: {}",
+            file_name,
+            e
+        )
     })?;
     let file = BufReader::new(mp3);
     let uuid_id = Uuid::parse_str(id)
@@ -262,7 +266,7 @@ pub async fn just_download(
     println!("Downloaded audio to: {}", file_name);
 
     let mp3 = File::open(&file_name).map_err(|e| {
-        anyhow!("Error opening sound file {}: {}", file_name, e)
+        anyhow!("Error downloading sound file {}: {}", file_name, e)
     })?;
     let file = BufReader::new(mp3);
 

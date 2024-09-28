@@ -94,7 +94,10 @@ impl EventHandler for ExplicitSoundHandler {
             {
                 Ok(v) => v,
                 Err(e) => {
-                    eprintln!("Error opening sound file: {}", e);
+                    eprintln!(
+                        "Error opening sound file in ExplicitSoundHandler: {}",
+                        e
+                    );
                     continue;
                 }
             };
