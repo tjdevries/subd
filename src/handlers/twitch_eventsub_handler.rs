@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_uuid() {
-        let uuid = "ba11ad0f-dad5-c001-c001-700bac00le57";
+        let uuid = "ba11ad0f-dad5-c001-c001-700bac001e57";
         let res = Uuid::parse_str(uuid);
         assert!(res.is_ok())
     }

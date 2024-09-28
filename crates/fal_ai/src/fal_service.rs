@@ -60,12 +60,14 @@ impl FalService {
         image_file_path: &str,
         save_dir: &str,
     ) -> Result<String> {
+        let model = "fal-ai/stable-video";
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
         let parameters = serde_json::json!({ "image_url": image_data_uri });
-        let model = "fal-ai/stable-video";
         let json = self.run_model_and_get_json(model, parameters).await?;
+
+        println!("Create Video From Image Raw JSON: {:?}", json);
 
         let video_url = json["video"]["url"]
             .as_str()

@@ -19,7 +19,7 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
             .collect::<Vec<_>>()
             .join("\n")
     });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 10)?;
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
@@ -62,6 +62,8 @@ async fn process_lyric_chunk(
         "Creating Image for Lyric Chunk: {}".cyan(),
         lyric.green()
     );
+
+    //
     let prompt = format!("{} {}", ai_song.title, lyric);
     let images = fal_ai::create_from_fal_api_return_filename(&prompt).await?;
     let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
