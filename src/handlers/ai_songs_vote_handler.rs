@@ -78,6 +78,8 @@ pub async fn handle_telephone_requests(
             // unwraps are bad
             let score = splitmsg.get(1).unwrap();
             println!("Voting for {}", score);
+            // ai_songs_vote::vote(obs_client, score).await?;
+
             Ok(())
         }
 

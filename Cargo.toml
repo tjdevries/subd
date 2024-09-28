@@ -35,6 +35,7 @@ obs_bootstrap = { path = "crates/obs_bootstrap" }
 skybox = { path = "crates/skybox" }
 obs_3d_filter = { path = "crates/obs_3d_filter" }
 ai_music_videos = { path = "crates/ai_music_videos" }
+ai_songs_vote = { path = "crates/ai_songs_vote" }
 
 twitch-irc.workspace = true
 anyhow.workspace = true

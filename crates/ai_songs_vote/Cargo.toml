@@ -1,5 +1,5 @@
 [package]
-name = "ai_song_vote"
+name = "ai_songs_vote"
 version = "0.0.1"
 edition = "2021"
 
