@@ -221,8 +221,8 @@ async fn handle_info_command(
             }
         };
         let message = format!(
-            "@{}'s Song is Currently playing - {} | {}",
-            song.username, song.title, song.tags
+            "@{}'s Song is Currently playing - {} | {} | {}",
+            song.username, song.title, song.tags, song.song_id
         );
         let _ = send_message(twitch_client, message).await;
     }

@@ -5,8 +5,6 @@ use futures::future::join_all;
 use sqlx::PgPool;
 use std::path::Path;
 use std::sync::Arc;
-use subd_db;
-use uuid::Uuid;
 
 pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     println!("\tIt's **New** Music Video time!");
@@ -21,12 +19,12 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
             .collect::<Vec<_>>()
             .join("\n")
     });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 20)?;
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 10)?;
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
     // Create a vector of futures for concurrent execution
-    let futures = lyric_chunks.into_iter().enumerate().map(|(index, lyric)| {
+    let futures = lyric_chunks.into_iter().enumerate().map(|(_, lyric)| {
         let ai_song = Arc::clone(&ai_song);
         let id = id.clone();
         async move { process_lyric_chunk(ai_song, lyric, id).await }
@@ -54,49 +52,6 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
 
     Ok(output_file)
 }
-// // This going to generate a single better quality image
-// // then create a video from that
-// pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
-//     println!("\tIt's **New** Music Video time!");
-//
-//     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
-//     let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
-//         lyric
-//             .lines()
-//             .filter(|line| !line.trim().starts_with('['))
-//             .collect::<Vec<_>>()
-//             .join("\n")
-//     });
-//     let lyric_chunks = get_lyric_chunks(&filtered_lyric, 20)?;
-//
-//     let music_video_folder = format!("./tmp/music_videos/{}", id);
-//     let mut video_chunks: Vec<String> = Vec::new();
-//     for (index, lyric) in lyric_chunks.iter().enumerate() {
-//         println!(
-//             "{} - {}",
-//             "Creating Image for Lyric Chunk: {}".cyan(),
-//             lyric.green()
-//         );
-//         let prompt = format!("{} {}", ai_song.title, lyric);
-//         let images =
-//             fal_ai::create_from_fal_api_return_filename(&prompt).await?;
-//         let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
-//         println!("Image: {}", first_image);
-//         let folder = format!("./tmp/music_videos/{}", id);
-//         let filename =
-//             fal_ai::create_video_from_image(first_image, Some(folder.clone()))
-//                 .await?;
-//         video_chunks.push(filename);
-//     }
-//
-//     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-//     let output_file =
-//         format!("{}/{}_{}", music_video_folder, timestamp, "final_video.mp4");
-//     combine_videos(video_chunks, &output_file);
-//
-//     Ok(output_file)
-// }
-
 async fn process_lyric_chunk(
     ai_song: Arc<ai_playlist::models::ai_songs::Model>,
     lyric: String,
