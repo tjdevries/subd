@@ -425,6 +425,15 @@ async fn main() -> Result<()> {
                         twitch_client: resources.twitch_client,
                     },
                 );
+
+                let resources = AppResources::new(&stream_handle).await?;
+                event_loop.push(
+                    handlers::ai_songs_vote_handler::AISongsVoteHandler {
+                        pool: pool.clone(),
+                        obs_client: resources.obs_client,
+                        twitch_client: resources.twitch_client,
+                    },
+                );
             }
 
             _ => {
