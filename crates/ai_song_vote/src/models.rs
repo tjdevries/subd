@@ -40,8 +40,56 @@ impl ai_song_vote::Model {
         .await?)
     }
 
-    /// Returns the `song_id` field.
-    pub fn get_song_id(&self) -> Uuid {
-        self.song_id
+    pub async fn update_score(
+        &self,
+        pool: &PgPool,
+        song_id: Uuid,
+        user_id: Uuid,
+        new_score: BigDecimal,
+    ) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            UPDATE ai_song_vote
+            SET score = $1
+            WHERE song_id = $2 AND user_id = $3
+            RETURNING
+                song_id,
+                user_id,
+                good_song,
+                score
+            "#,
+            new_score,
+            song_id,
+            user_id,
+        )
+        .fetch_one(pool)
+        .await?)
+    }
+
+    pub async fn update_good_song(
+        pool: &PgPool,
+        song_id: Uuid,
+        user_id: Uuid,
+        new_good_song: bool,
+    ) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            UPDATE ai_song_vote
+            SET good_song = $1
+            WHERE song_id = $2 AND user_id = $3
+            RETURNING
+                song_id,
+                user_id,
+                good_song,
+                score
+            "#,
+            new_good_song,
+            song_id,
+            user_id,
+        )
+        .fetch_one(pool)
+        .await?)
     }
 }
