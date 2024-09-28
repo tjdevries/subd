@@ -4,6 +4,7 @@ pub mod ai_screenshots_handler;
 pub mod ai_screenshots_timer_handler;
 pub mod ai_songs_downloader_handler;
 pub mod ai_songs_handler;
+pub mod ai_songs_vote_handler;
 pub mod ai_telephone_handler;
 pub mod chatgpt_response_handler;
 pub mod elevenlabs_handler;

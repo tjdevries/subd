@@ -45,12 +45,13 @@ CREATE TABLE ai_playlist(
     stopped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
--- Create the ai_song_playlist table
 CREATE TABLE ai_song_vote(
     song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
-    user_id UUID UNIQUE NOT NULL references users NOT NULL,
+    user_id UUID NOT NULL references users,
     good_song boolean NOT NULL DEFAULT false,
-    score DECIMAL
+    score DECIMAL,
+    PRIMARY KEY (song_id, user_id),
+    CONSTRAINT unique_user_song_vote UNIQUE (user_id, song_id)
 );
 
 -- ALTER TABLE twitch_stream_state ADD COLUMN current_song_id UUID UNIQUE references ai_song_playlist;

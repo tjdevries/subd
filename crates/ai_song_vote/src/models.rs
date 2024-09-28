@@ -92,4 +92,59 @@ impl ai_song_vote::Model {
         .fetch_one(pool)
         .await?)
     }
+
+    pub async fn find_or_create_and_save_good_song(
+        pool: &PgPool,
+        song_id: Uuid,
+        user_id: Uuid,
+        good_song: bool,
+    ) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            INSERT INTO ai_song_vote (song_id, user_id, good_song)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (song_id, user_id)
+            DO UPDATE SET good_song = $3
+            RETURNING
+                song_id,
+                user_id,
+                good_song,
+                score
+            "#,
+            song_id,
+            user_id,
+            good_song,
+        )
+        .fetch_one(pool)
+        .await?)
+    }
+
+    pub async fn find_or_create_and_save_score(
+        pool: &PgPool,
+        song_id: Uuid,
+        user_id: Uuid,
+        score: BigDecimal,
+    ) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+                INSERT INTO ai_song_vote (song_id, user_id, score, good_song)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (song_id, user_id)
+                DO UPDATE SET score = $3, good_song = $4
+                RETURNING
+                    song_id,
+                    user_id,
+                    good_song,
+                    score
+                "#,
+            song_id,
+            user_id,
+            score,
+            score >= BigDecimal::from(5),
+        )
+        .fetch_one(pool)
+        .await?)
+    }
 }
