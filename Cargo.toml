@@ -68,7 +68,7 @@ url = "2.5.2"
 time = "0.3.36"
 
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
-# fal-rust = { git = "https://github.com/davidbegin/fal-rust" }
+fal-rust = { git = "https://github.com/davidbegin/fal-rust" }
 # Fixes skip bug skip_one
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
 elevenlabs-api = { path = "../elevenlabs-api" }
