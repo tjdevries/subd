@@ -1,30 +1,9 @@
 use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
-use elevenlabs_api::{Auth, Elevenlabs};
-use obs_service::obs::create_obs_client;
-use obws::Client;
 use serde::{Deserialize, Serialize};
-use server::handlers;
 use std::collections::HashMap;
 use subd_db::get_db_pool;
-use twitch_irc::login::StaticLoginCredentials;
-use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
-
-fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
-    let twitch_username = subd_types::consts::get_twitch_bot_username();
-    ClientConfig::new_simple(StaticLoginCredentials::new(
-        twitch_username,
-        Some(subd_types::consts::get_twitch_bot_oauth()),
-    ))
-}
-
-// #[derive(Serialize, Deserialize, Debug)]
-// struct EventSubRoot {
-//     subscription: Subscription,
-//     event: Option<EventSub>,
-//     challenge: Option<String>,
-// }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Subscription {
@@ -68,43 +47,6 @@ struct Args {
     /// Whether to Enable Specific Features
     #[arg(long, value_delimiter = ' ', num_args = 1..)]
     enable: Vec<String>,
-}
-
-struct AppResources {
-    obs_client: Client,
-    sink: rodio::Sink,
-    twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    elevenlabs: Elevenlabs,
-}
-
-impl AppResources {
-    /// Creates a new instance of `AppResources` with fresh resources.
-    async fn new(stream_handle: &rodio::OutputStreamHandle) -> Result<Self> {
-        // Initialize OBS client
-        let obs_client = create_obs_client().await?;
-
-        // This is how we play audio
-        let sink = rodio::Sink::try_new(stream_handle)?;
-
-        // Initialize Twitch client
-        let twitch_config = get_chat_config();
-        let (_, twitch_client) = TwitchIRCClient::<
-            SecureTCPTransport,
-            StaticLoginCredentials,
-        >::new(twitch_config);
-
-        // Initialize ElevenLabs client
-        let elevenlabs_auth = Auth::from_env().unwrap();
-        let elevenlabs =
-            Elevenlabs::new(elevenlabs_auth, "https://api.elevenlabs.io/v1/");
-
-        Ok(Self {
-            obs_client,
-            sink,
-            twitch_client,
-            elevenlabs,
-        })
-    }
 }
 
 #[tokio::main]

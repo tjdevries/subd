@@ -219,6 +219,7 @@ fn remove_small_images(song_id: &str, min_size: u64) -> Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
     use ai_playlist::models::ai_songs;

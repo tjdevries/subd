@@ -4,16 +4,11 @@ use colored::Colorize;
 use events::EventHandler;
 use rodio::Decoder;
 use rodio::*;
-use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
 use std::fs::File;
 use std::io::BufReader;
-use std::thread;
-use std::time;
-use subd_elevenlabs;
 use subd_types::Event;
-use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
 use twitch_stream_state;
 
@@ -29,8 +24,8 @@ impl EventHandler for ExplicitSoundHandler {
         _tx: broadcast::Sender<Event>,
         mut rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        // Get all soundeffects loaded up once
-        // so we can search through them all
+        // Load all soundeffects so we can search through
+        // move to a function
         let soundeffect_files = fs::read_dir("./MP3s").unwrap();
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for soundeffect_file in soundeffect_files {
@@ -39,12 +34,8 @@ impl EventHandler for ExplicitSoundHandler {
 
         loop {
             let event = rx.recv().await?;
-
-            // This is meant to filter out messages
-            // Right now it only filters Nightbot
             let msg = match event {
                 Event::UserMessage(msg) => {
-                    // TODO: Add a list here
                     if msg.user_name == "Nightbot" {
                         continue;
                     }
@@ -52,44 +43,36 @@ impl EventHandler for ExplicitSoundHandler {
                 }
                 _ => continue,
             };
-
             let state =
                 twitch_stream_state::get_twitch_state(&self.pool).await?;
 
-            // Only continue if we have the implicit_soundeffects enabled
+            // Only continue if we have the explicit enabled
             if !state.explicit_soundeffects {
                 continue;
             }
 
-            let mut potential_sound = msg.contents.clone();
+            // ======================================
+            // Now we can maybe parse
+            // ======================================
+
+            let mut potential_sound = msg.contents.clone().to_lowercase();
             let first_char = potential_sound.remove(0);
             if first_char != '!' {
                 continue;
             }
-            let word = potential_sound;
-            let sanitized_word = word.to_lowercase();
-            let full_name = format!("./MP3s/{}.mp3", sanitized_word);
+            let full_name = format!("./MP3s/{}.mp3", potential_sound);
             if !mp3s.contains(&full_name) {
                 continue;
             };
 
-            println!(
-                "{} {}",
-                "We found an sound to play! {}".cyan(),
-                full_name
-            );
-
-            let mp3 = match File::open(format!("./MP3s/{}.mp3", sanitized_word))
-            {
-                Ok(v) => v,
-                Err(e) => {
-                    eprintln!(
-                        "Error opening sound file in ExplicitSoundHandler: {}",
-                        e
-                    );
-                    continue;
-                }
-            };
+            let mp3 =
+                match File::open(format!("./MP3s/{}.mp3", potential_sound)) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        eprintln!("Error opening file: {}", e);
+                        continue;
+                    }
+                };
 
             let file = BufReader::new(mp3.try_clone()?);
             let sound = match Decoder::new(BufReader::new(file)) {
@@ -100,9 +83,13 @@ impl EventHandler for ExplicitSoundHandler {
                 }
             };
 
+            println!("{} {}", "Playing Sound: {}".cyan(), full_name);
             self.sink.set_volume(0.5);
             self.sink.append(sound);
             // We don't need to sleep until the end necessarily
+            // But this also makes sure another sound isn't trigger at the same time
+            // but that could be desirable
+            // for instance for lots of !claps
             self.sink.sleep_until_end();
         }
     }
