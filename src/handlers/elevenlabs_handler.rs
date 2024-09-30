@@ -56,19 +56,111 @@ impl ElevenLabsHandler {
             return Ok(());
         }
 
-        let final_voice = self.determine_final_voice(&msg).await?;
+        let voice = self.determine_final_voice(&msg).await?;
         let chat_message =
             subd_elevenlabs::sanitize_chat_message(msg.message.clone());
-        let audio_path = self
-            .process_audio(&final_voice, &chat_message, &msg)
-            .await?;
+        let audio_path =
+            self.process_audio(&voice, &chat_message, &msg).await?;
 
-        self.play_audio(&audio_path, &final_voice);
+        self.play_audio(&audio_path, &voice);
         Ok(())
     }
 
     fn should_skip_message(&self, message: &str) -> bool {
         matches!(message.chars().next(), Some('!') | Some('@'))
+    }
+
+    async fn apply_audio_effects(
+        &self,
+        audio_path: String,
+        final_voice: &str,
+        msg: &ElevenLabsRequest,
+    ) -> Result<String> {
+        // Normalize the audio once
+        let mut local_audio_path =
+            match subd_elevenlabs::normalize_tts_file(audio_path.clone()) {
+                Ok(path) => path,
+                Err(err) => {
+                    eprintln!("Error normalizing tts file: {:?}", err);
+                    // If normalization fails, we can decide to continue with the original path or return an error
+                    return Ok(audio_path); // Proceeding with the original audio
+                }
+            };
+
+        // Apply user-specified effects
+        if msg.reverb {
+            local_audio_path =
+                subd_elevenlabs::add_reverb(local_audio_path.clone())
+                    .unwrap_or_else(|err| {
+                        eprintln!("Error adding reverb: {:?}", err);
+                        local_audio_path.clone()
+                    });
+        }
+
+        if let Some(stretch) = &msg.stretch {
+            local_audio_path = subd_elevenlabs::stretch_audio(
+                local_audio_path.clone(),
+                stretch.clone(),
+            )
+            .unwrap_or_else(|err| {
+                eprintln!("Error stretching audio: {:?}", err);
+                local_audio_path.clone()
+            });
+        }
+
+        if let Some(pitch) = &msg.pitch {
+            local_audio_path = subd_elevenlabs::change_pitch(
+                local_audio_path.clone(),
+                pitch.clone(),
+            )
+            .unwrap_or_else(|err| {
+                eprintln!("Error changing pitch: {:?}", err);
+                local_audio_path.clone()
+            });
+        }
+
+        // Apply special voice effects
+        match final_voice {
+            "evil_pokimane" => {
+                local_audio_path = subd_elevenlabs::change_pitch(
+                    local_audio_path.clone(),
+                    "-200".to_string(),
+                )
+                .and_then(subd_elevenlabs::add_reverb)
+                .unwrap_or_else(|err| {
+                    eprintln!(
+                        "Error processing 'evil_pokimane' voice: {:?}",
+                        err
+                    );
+                    local_audio_path.clone()
+                });
+            }
+            "satan" => {
+                local_audio_path = subd_elevenlabs::change_pitch(
+                    local_audio_path.clone(),
+                    "-350".to_string(),
+                )
+                .and_then(subd_elevenlabs::add_reverb)
+                .unwrap_or_else(|err| {
+                    eprintln!("Error processing 'satan' voice: {:?}", err);
+                    local_audio_path.clone()
+                });
+            }
+            "god" => {
+                local_audio_path =
+                    subd_elevenlabs::add_reverb(local_audio_path.clone())
+                        .unwrap_or_else(|err| {
+                            eprintln!(
+                                "Error processing 'god' voice: {:?}",
+                                err
+                            );
+                            local_audio_path.clone()
+                        });
+            }
+            _ => {}
+        }
+
+        Ok(local_audio_path)
     }
 
     async fn determine_final_voice(
@@ -98,26 +190,34 @@ impl ElevenLabsHandler {
         .await
         .unwrap_or_else(|_| global_voice.clone());
 
-        let final_voice = match &msg.voice {
-            Some(voice) => {
-                if is_global_voice_enabled {
-                    println!("Using Global Voice");
-                    global_voice
-                } else {
-                    voice.clone()
-                }
-            }
-            None => {
-                if is_global_voice_enabled {
-                    println!("Using Global Voice");
-                    global_voice
-                } else {
-                    user_voice
-                }
+        let final_voice = if is_global_voice_enabled {
+            global_voice.clone()
+        } else {
+            msg.voice.as_ref().unwrap_or(&user_voice).clone()
+        };
+        Ok(final_voice)
+    }
+    fn play_audio(&self, audio_path: &str, final_voice: &str) {
+        self.sink.set_volume(match final_voice {
+            "melkey" | "beginbot" | "evil_pokimane" => 1.0,
+            "satan" | "god" => 0.7,
+            _ => 0.5,
+        });
+
+        let file = match File::open(audio_path) {
+            Ok(f) => BufReader::new(f),
+            Err(e) => {
+                eprintln!("Error opening tts file: {:?}", e);
+                return;
             }
         };
 
-        Ok(final_voice)
+        if let Ok(decoder) = Decoder::new(BufReader::new(file)) {
+            self.sink.append(decoder);
+            self.sink.sleep_until_end();
+        } else {
+            eprintln!("Error decoding audio file");
+        }
     }
 
     async fn process_audio(
@@ -164,118 +264,5 @@ impl ElevenLabsHandler {
             .await?;
 
         Ok(local_audio_path)
-    }
-
-    async fn apply_audio_effects(
-        &self,
-        audio_path: String,
-        final_voice: &str,
-        msg: &ElevenLabsRequest,
-    ) -> Result<String> {
-        let mut local_audio_path = audio_path;
-
-        if msg.reverb {
-            if let Ok(audio_path) =
-                subd_elevenlabs::normalize_tts_file(local_audio_path.clone())
-                    .and_then(|audio_path| {
-                        subd_elevenlabs::add_reverb(audio_path.clone())
-                    })
-            {
-                local_audio_path = audio_path;
-            }
-        }
-
-        if let Some(stretch) = &msg.stretch {
-            if let Ok(audio_path) =
-                subd_elevenlabs::normalize_tts_file(local_audio_path.clone())
-                    .and_then(|audio_path| {
-                        subd_elevenlabs::stretch_audio(
-                            audio_path,
-                            stretch.clone(),
-                        )
-                    })
-            {
-                local_audio_path = audio_path;
-            }
-        }
-
-        if let Some(pitch) = &msg.pitch {
-            if let Ok(audio_path) =
-                subd_elevenlabs::normalize_tts_file(local_audio_path.clone())
-                    .and_then(|audio_path| {
-                        subd_elevenlabs::change_pitch(audio_path, pitch.clone())
-                    })
-            {
-                local_audio_path = audio_path;
-            }
-        }
-
-        match final_voice {
-            "evil_pokimane" => {
-                if let Ok(audio_path) = subd_elevenlabs::normalize_tts_file(
-                    local_audio_path.clone(),
-                )
-                .and_then(|audio_path| {
-                    subd_elevenlabs::change_pitch(
-                        audio_path,
-                        "-200".to_string(),
-                    )
-                })
-                .and_then(subd_elevenlabs::add_reverb)
-                {
-                    local_audio_path = audio_path;
-                }
-            }
-            "satan" => {
-                if let Ok(audio_path) = subd_elevenlabs::normalize_tts_file(
-                    local_audio_path.clone(),
-                )
-                .and_then(|audio_path| {
-                    subd_elevenlabs::change_pitch(
-                        audio_path,
-                        "-350".to_string(),
-                    )
-                })
-                .and_then(subd_elevenlabs::add_reverb)
-                {
-                    local_audio_path = audio_path;
-                }
-            }
-            "god" => {
-                if let Ok(audio_path) = subd_elevenlabs::normalize_tts_file(
-                    local_audio_path.clone(),
-                )
-                .and_then(subd_elevenlabs::add_reverb)
-                {
-                    local_audio_path = audio_path;
-                }
-            }
-            _ => {}
-        }
-
-        Ok(local_audio_path)
-    }
-
-    fn play_audio(&self, audio_path: &str, final_voice: &str) {
-        self.sink.set_volume(match final_voice {
-            "melkey" | "beginbot" | "evil_pokimane" => 1.0,
-            "satan" | "god" => 0.7,
-            _ => 0.5,
-        });
-
-        let file = match File::open(audio_path) {
-            Ok(f) => BufReader::new(f),
-            Err(e) => {
-                eprintln!("Error opening tts file: {:?}", e);
-                return;
-            }
-        };
-
-        if let Ok(decoder) = Decoder::new(BufReader::new(file)) {
-            self.sink.append(decoder);
-            self.sink.sleep_until_end();
-        } else {
-            eprintln!("Error decoding audio file");
-        }
     }
 }
