@@ -115,14 +115,14 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
     let mut words = msg.contents.split_whitespace();
     match words.next() {
         Some("!create_music_video") => {
-            if let Some(id) = words.next() {
-                Ok(Command::CreateMusicVideo { id: id.to_string() })
-            } else {
-                let current_song = ai_playlist::get_current_song(pool).await?;
-                Ok(Command::CreateMusicVideo {
-                    id: current_song.song_id.to_string(),
-                })
-            }
+            let id = match words.next() {
+                Some(id) => id.to_string(),
+                None => ai_playlist::get_current_song(pool)
+                    .await?
+                    .song_id
+                    .to_string(),
+            };
+            Ok(Command::CreateMusicVideo { id })
         }
         _ => Ok(Command::Unknown),
     }

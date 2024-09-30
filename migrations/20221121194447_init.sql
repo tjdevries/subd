@@ -45,7 +45,7 @@ CREATE TABLE ai_playlist(
     stopped_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
 
-CREATE TABLE ai_song_vote(
+CREATE TABLE ai_songs_vote(
     song_id UUID REFERENCES ai_songs(song_id) NOT NULL,
     user_id UUID NOT NULL references users,
     good_song boolean NOT NULL DEFAULT false,
