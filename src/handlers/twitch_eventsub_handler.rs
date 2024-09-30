@@ -1,29 +1,23 @@
-use crate::redemptions;
-use crate::twitch_rewards;
+use crate::{redemptions, twitch_rewards};
 use ai_scenes_coordinator;
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use axum::routing::post;
 use axum::{
-    http::StatusCode, response::IntoResponse, Extension, Json, Router, Server,
+    extract::Extension, http::StatusCode, response::IntoResponse,
+    routing::post, Json, Router, Server,
 };
 use colored::Colorize;
 use events::EventHandler;
 use obws::Client as OBSClient;
+use openai::chat;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
-use std::collections::HashMap;
-use std::env;
-use std::fs;
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{collections::HashMap, fs, net::SocketAddr, sync::Arc};
 use subd_openai;
-use subd_twitch::rewards;
-use subd_twitch::rewards::RewardManager;
+use subd_twitch::rewards::{self, RewardManager};
 use subd_types::Event;
 use tokio::sync::broadcast;
-use twitch_api::helix::HelixClient;
-use twitch_api::twitch_oauth2::UserToken;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -51,18 +45,14 @@ pub struct Subscription {
     type_field: String,
     version: String,
     condition: Condition,
-    // condition: HashMap<String, String>,
     transport: Transport,
     created_at: String,
-    // cost: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Condition {
     broadcaster_user_id: String,
     reward_id: String,
-    // Will this crash shit
-    // user_input: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -101,52 +91,21 @@ impl EventHandler for TwitchEventSubHandler {
         tx: broadcast::Sender<Event>,
         _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
-        let clonable_obs_client = Arc::new(self.obs_client);
-        let clonable_pool = Arc::new(self.pool);
-
-        // This is need to create Reward Manager
-        //
-        // This should be expect
-        let twitch_user_access_token =
-            env::var("TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN")
-                .expect("Missing TWITCH_CHANNEL_REWARD_USER_ACCESS_TOKEN");
-
-        let reqwest = reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .build()?;
-        let twitch_reward_client: HelixClient<reqwest::Client> =
-            HelixClient::new();
-        let token = UserToken::from_existing(
-            &reqwest,
-            twitch_user_access_token.into(),
-            None,
-            None,
-        )
-        .await?;
-
-        let _box_token: &'static UserToken = Box::leak(Box::new(token));
-        let _box_twitch_client: &'static HelixClient<reqwest::Client> =
-            Box::leak(Box::new(twitch_reward_client));
-
-        let _broadcaster_id = "424038378";
-        // RewardManager::new(&box_twitch_client, &box_token, broadcaster_id);
+        let obs_client = Arc::new(self.obs_client);
+        let pool = Arc::new(self.pool);
         let reward_manager = rewards::build_reward_manager().await?;
-        let cloneable_reward_manager = Arc::new(reward_manager);
+        let reward_manager = Arc::new(reward_manager);
 
         println!("{}", "Kicking off a new reward router!".yellow());
 
-        // How do you specify Generic arguments to a function that is being passed to another
-        // function?
-        // Define the route
         let app = Router::new()
             .route("/eventsub", post(post_request::<reqwest::Client>))
-            .layer(Extension(clonable_obs_client))
-            .layer(Extension(clonable_pool))
-            .layer(Extension(cloneable_reward_manager))
+            .layer(Extension(obs_client))
+            .layer(Extension(pool))
+            .layer(Extension(reward_manager))
             .layer(Extension(tx))
             .layer(Extension(self.twitch_client));
 
-        // // Run the Axum server in a separate async task
         tokio::spawn(async move {
             let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
             Server::bind(&addr)
@@ -154,7 +113,7 @@ impl EventHandler for TwitchEventSubHandler {
                 .await
                 .unwrap();
         });
-        //
+
         Ok(())
     }
 }
@@ -169,125 +128,102 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     >,
 ) -> impl IntoResponse {
-    // TODO: Move this to it's own function
-    let file_path = "/home/begin/code/subd/data/AIScenes.json";
-    let contents = fs::read_to_string(file_path).expect("Can read file");
-    let ai_scenes: ai_scenes_coordinator::models::AIScenes =
-        serde_json::from_str(&contents).unwrap();
-    let ai_scenes_map: HashMap<
-        String,
-        &ai_scenes_coordinator::models::AIScene,
-    > = ai_scenes
-        .scenes
-        .iter()
-        .map(|scene| (scene.reward_title.clone(), scene))
-        .collect();
-
-    // This is required for EventSub's to work!
-    // If we don't Twitch's challenge, you don't events
     if let Some(challenge) = eventsub_body.challenge {
         println!("We got a challenge!");
         return (StatusCode::OK, challenge);
     }
 
-    match eventsub_body.subscription.type_field.as_str() {
-        "channel.follow" => {
-            println!("follow time");
-        }
-        "channel.poll.begin" => {
-            println!("\nPoll time");
-        }
-        "channel.poll.progress" => {
-            println!("\nPoll time");
-        }
-        "channel.poll.end" => {
-            println!("\nPol time");
-        }
-
-        "channel.channel_points_custom_reward_redemption.add" => {
-            match eventsub_body.event {
-                Some(event) => {
-                    let _ = handle_channel_rewards_request(
-                        tx,
-                        pool,
-                        &obs_client,
-                        reward_manager,
-                        ai_scenes_map,
-                        event,
-                    )
-                    .await;
-                }
-                None => {
-                    println!("NO Event Found for redemption!")
+    if let Some(event) = eventsub_body.event {
+        match eventsub_body.subscription.type_field.as_str() {
+            "channel.channel_points_custom_reward_redemption.add" => {
+                if let Err(e) = handle_channel_rewards_request(
+                    tx,
+                    pool,
+                    &obs_client,
+                    reward_manager,
+                    event,
+                )
+                .await
+                {
+                    eprintln!("Error handling reward request: {:?}", e);
                 }
             }
+            _ => println!("Unhandled event type"),
         }
-        _ => {
-            println!("NO EVENT FOUND!")
-        }
-    };
+    }
 
     (StatusCode::OK, "".to_string())
 }
 
-async fn trigger_full_scene(
+// =========================================================================
+
+fn load_ai_scenes(
+) -> Result<HashMap<String, ai_scenes_coordinator::models::AIScene>> {
+    let file_path = "./data/AIScenes.json";
+    let contents = fs::read_to_string(file_path)?;
+    let ai_scenes: ai_scenes_coordinator::models::AIScenes =
+        serde_json::from_str(&contents)?;
+    let ai_scenes_map = ai_scenes
+        .scenes
+        .into_iter()
+        .map(|scene| (scene.reward_title.clone(), scene))
+        .collect();
+    Ok(ai_scenes_map)
+}
+
+async fn process_ai_scene(
     tx: broadcast::Sender<Event>,
-    voice: String,
-    music_bg: String,
-    content: String,
-    dalle_prompt: Option<String>,
+    scene: &ai_scenes_coordinator::models::AIScene,
+    user_input: String,
+    enable_dalle: bool,
+    enable_stable_diffusion: bool,
 ) -> Result<()> {
-    match dalle_prompt {
-        Some(prompt) => {
-            println!("\n{} {}", "Dalle Prompt: ".green(), prompt.clone());
-            let _ =
-                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                    voice: Some(voice),
-                    message: content.clone(),
-                    voice_text: content.clone(),
-                    music_bg: Some(music_bg),
-                    prompt: Some(prompt),
-                    ..Default::default()
-                }));
-        }
-        None => {
-            println!("\tTriggering AI Scene: {}", voice.clone());
-            let _ =
-                tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-                    voice: Some(voice),
-                    message: content.clone(),
-                    voice_text: content,
-                    music_bg: Some(music_bg),
-                    prompt: None,
-                    ..Default::default()
-                }));
-        }
-    }
+    println!("{} {}", "Asking Chat GPT:".green(), user_input);
+    let content = ask_chat_gpt(&user_input, &scene.base_prompt).await?;
+    println!("\n{} {}", "Chat GPT response: ".green(), content);
+
+    let dalle_prompt = if enable_dalle || enable_stable_diffusion {
+        Some(format!("{} {}", scene.base_dalle_prompt, user_input))
+    } else {
+        None
+    };
+
+    println!("Triggering Scene: {}", scene.voice);
+    trigger_full_scene(
+        tx,
+        scene.voice.clone(),
+        scene.music_bg.clone(),
+        content,
+        dalle_prompt,
+    )
+    .await?;
+
     Ok(())
 }
+
+// =========================================================================
 
 async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
     pool: Arc<sqlx::PgPool>,
     _obs_client: &OBSClient,
     reward_manager: Arc<RewardManager<'a, C>>,
-    ai_scenes_map: HashMap<String, &ai_scenes_coordinator::models::AIScene>,
     event: SubEvent,
 ) -> Result<()> {
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
-    let enable_dalle = state.dalle_mode;
-    let enable_stable_diffusion = state.enable_stable_diffusion;
+    let ai_scenes_map = load_ai_scenes()?;
 
-    let reward = event.reward.unwrap();
-    let command = reward.title.clone();
-    println!("{} {}", "Kicking off AI Scene: ".cyan(), command.green());
-
-    let user_input = match event.user_input.clone() {
-        Some(input) => input,
+    let reward = match event.reward {
+        Some(r) => r,
         None => return Ok(()),
     };
 
-    let _ = find_or_save_redemption(
+    let command = reward.title.clone();
+    println!("{} {}", "Processing AI Scene: ".cyan(), command.green());
+
+    let user_input = event.user_input.unwrap_or_default();
+
+    find_or_save_redemption(
         pool.clone(),
         reward_manager,
         event.id,
@@ -297,89 +233,77 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
         event.user_name.clone(),
         user_input.clone(),
     )
-    .await;
+    .await?;
 
     if command == "Set Theme" {
         println!("Setting the Theme: {}", &user_input);
         twitch_stream_state::set_ai_background_theme(&pool, &user_input)
             .await?;
+        return Ok(());
     }
 
-    match ai_scenes_map.get(&command) {
-        Some(scene) => {
-            let user_input = event.user_input.unwrap();
-            let base_prompt = scene.base_prompt.clone();
+    if let Some(scene) = ai_scenes_map.get(&command) {
+        process_ai_scene(
+            tx,
+            scene,
+            user_input,
+            state.dalle_mode,
+            state.enable_stable_diffusion,
+        )
+        .await?;
+    } else {
+        println!("Scene not found for reward title")
+    }
 
-            // We need to color this better
-            println!("{} {}", "Asking Chat GPT:".green(), user_input);
+    Ok(())
+}
 
-            let chat_response = subd_openai::ask_chat_gpt(
-                user_input.clone().to_string(),
-                base_prompt,
-            )
-            .await;
+async fn ask_chat_gpt(user_input: &str, base_prompt: &str) -> Result<String> {
+    let response = subd_openai::ask_chat_gpt(
+        user_input.to_string(),
+        base_prompt.to_string(),
+    )
+    .await
+    .map_err(|e| {
+        eprintln!("Error occurred: {:?}", e);
+        anyhow!("Error response")
+    })?;
 
-            let content = match chat_response {
-                Ok(response) => {
-                    match response.content {
-                        Some(content) => {
-                            match content {
-                                ::openai::chat::ChatCompletionContent::Message(message) => {
-                                    message.unwrap()
-                                }
-                                ::openai::chat::ChatCompletionContent::VisionMessage(message) => {
-                                    let first_msg = message.get(1).unwrap();
-                                    match first_msg {
-                                        ::openai::chat::VisionMessage::Text { content_type, text } => {
-                                            println!("Content Type: {:?}", content_type);
-                                            text.to_owned()
-                                        }
-                                        ::openai::chat::VisionMessage::Image { content_type, image_url } => {
-                                            println!("Content Type: {:?}", content_type);
-                                            image_url.url.to_owned()
-                                        }
-                                    }
-                                }
-                            }
-                            // Some(content) => content,
-                            // None => "Error Unwrapping Content".to_string(),
-                        }
-                        None => "Error Unwrapping Content".to_string(),
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Error occurred: {:?}", e); // Example error logging
-                    "Error response".to_string() // Example default value
-                }
-            };
+    let content = response.content.ok_or_else(|| anyhow!("No content"))?;
 
-            println!("\n{} {}", "Chat GPT response: ".green(), content.clone());
-
-            let dalle_prompt = if enable_dalle || enable_stable_diffusion {
-                let base_dalle_prompt = scene.base_dalle_prompt.clone();
-                let prompt = format!("{} {}", base_dalle_prompt, user_input);
-                Some(prompt)
-            } else {
-                None
-            };
-
-            // println!("Dalle GPT response: {:?}", dalle_prompt.clone());
-
-            println!("Triggering Scene: {}", scene.voice.clone());
-            let _ = trigger_full_scene(
-                tx.clone(),
-                scene.voice.clone(),
-                scene.music_bg.clone(),
-                content.clone(),
-                dalle_prompt.clone(),
-            )
-            .await;
+    match content {
+        chat::ChatCompletionContent::Message(message) => {
+            Ok(message.unwrap_or_default())
         }
-        None => {
-            println!("Scene not found for reward title")
-        } // ================================================================
+        chat::ChatCompletionContent::VisionMessage(messages) => messages
+            .iter()
+            .find_map(|msg| {
+                if let chat::VisionMessage::Text { text, .. } = msg {
+                    Some(text.clone())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| anyhow!("No text content found")),
     }
+}
 
+async fn trigger_full_scene(
+    tx: broadcast::Sender<Event>,
+    voice: String,
+    music_bg: String,
+    content: String,
+    dalle_prompt: Option<String>,
+) -> Result<()> {
+    println!("\tTriggering AI Scene: {}", voice);
+    tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+        voice: Some(voice),
+        message: content.clone(),
+        voice_text: content,
+        music_bg: Some(music_bg),
+        prompt: dalle_prompt,
+        ..Default::default()
+    }))?;
     Ok(())
 }
 
@@ -393,61 +317,56 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     user_name: String,
     user_input: String,
 ) -> Result<()> {
-    let old_redemp = redemptions::find_redemption_by_twitch_id(&pool, id).await;
-
-    match old_redemp {
-        Ok(_reward_id) => {
-            println!("\nWe found a redemption: {}\n", command.clone());
-            return Ok(());
-        }
-        Err(e) => {
-            println!("\nNo redemption found, saving new redemption: {:?} | Command: {} ID: {}\n", e, command.clone(), id.clone());
-
-            let _ = redemptions::save_redemptions(
-                &pool,
-                command,
-                reward_cost,
-                user_name,
-                id,
-                reward_id,
-                user_input,
-            )
-            .await;
-
-            let increase_mult = 1.5;
-            let _decrease_mult = 0.8;
-
-            let reward_cost_as_float = reward_cost as f32;
-
-            let _other_ids =
-                twitch_rewards::find_all_ids_except(&pool, reward_id).await?;
-
-            let new_cost =
-                (reward_cost_as_float * increase_mult).round() as usize;
-            println!("Updating Reward: {}- {}", reward_id, new_cost);
-            let _ = reward_manager
-                .update_reward(reward_id.to_string(), new_cost)
-                .await;
-            let cost_as_i32 = new_cost as i32;
-            let _ = twitch_rewards::update_cost_by_id(
-                &pool,
-                reward_id,
-                cost_as_i32,
-            )
-            .await;
-        }
+    if redemptions::find_redemption_by_twitch_id(&pool, id)
+        .await
+        .is_ok()
+    {
+        println!("\nRedemption already exists: {}\n", command);
+        return Ok(());
     }
+
+    println!("\nSaving new redemption: Command: {} ID: {}\n", command, id);
+    redemptions::save_redemptions(
+        &pool,
+        command.clone(),
+        reward_cost,
+        user_name,
+        id,
+        reward_id,
+        user_input,
+    )
+    .await?;
+
+    adjust_reward_cost(&pool, &reward_manager, reward_id, reward_cost).await?;
+    Ok(())
+}
+
+async fn adjust_reward_cost<'a, C: twitch_api::HttpClient>(
+    pool: &Arc<sqlx::PgPool>,
+    reward_manager: &Arc<RewardManager<'a, C>>,
+    reward_id: Uuid,
+    reward_cost: i32,
+) -> Result<()> {
+    let increase_mult = 1.5;
+    let new_cost = (reward_cost as f32 * increase_mult).round() as usize;
+
+    println!("Updating Reward: {} - New Cost: {}", reward_id, new_cost);
+    reward_manager
+        .update_reward(reward_id.to_string(), new_cost)
+        .await?;
+
+    twitch_rewards::update_cost_by_id(pool, reward_id, new_cost as i32).await?;
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use uuid::Uuid;
 
     #[test]
-    fn test_uuid() {
-        let uuid = "ba11ad0f-dad5-c001-c001-700bac001e57";
-        let res = Uuid::parse_str(uuid);
-        assert!(res.is_ok())
+    fn test_uuid_parsing() {
+        let uuid_str = "ba11ad0f-dad5-c001-c001-700bac001e57";
+        assert!(Uuid::parse_str(uuid_str).is_ok());
     }
 }
