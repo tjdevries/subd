@@ -13,7 +13,7 @@ use obws::Client as OBSClient;
 use openai::chat;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
-use std::{collections::HashMap, fs, net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 use subd_openai;
 use subd_twitch::rewards::{self, RewardManager};
 use subd_types::Event;
@@ -155,22 +155,6 @@ async fn post_request<'a, C: twitch_api::HttpClient>(
     (StatusCode::OK, "".to_string())
 }
 
-// =========================================================================
-
-fn load_ai_scenes(
-) -> Result<HashMap<String, ai_scenes_coordinator::models::AIScene>> {
-    let file_path = "./data/AIScenes.json";
-    let contents = fs::read_to_string(file_path)?;
-    let ai_scenes: ai_scenes_coordinator::models::AIScenes =
-        serde_json::from_str(&contents)?;
-    let ai_scenes_map = ai_scenes
-        .scenes
-        .into_iter()
-        .map(|scene| (scene.reward_title.clone(), scene))
-        .collect();
-    Ok(ai_scenes_map)
-}
-
 async fn process_ai_scene(
     tx: broadcast::Sender<Event>,
     scene: &ai_scenes_coordinator::models::AIScene,
@@ -189,19 +173,51 @@ async fn process_ai_scene(
     };
 
     println!("Triggering Scene: {}", scene.voice);
-    trigger_full_scene(
-        tx,
-        scene.voice.clone(),
-        scene.music_bg.clone(),
-        content,
-        dalle_prompt,
-    )
-    .await?;
+    tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
+        voice: Some(scene.voice.clone()),
+        message: content.clone(),
+        voice_text: content,
+        music_bg: Some(scene.music_bg.clone()),
+        prompt: dalle_prompt,
+        ..Default::default()
+    }))?;
 
     Ok(())
 }
 
 // =========================================================================
+
+async fn ask_chat_gpt(user_input: &str, base_prompt: &str) -> Result<String> {
+    let response = subd_openai::ask_chat_gpt(
+        user_input.to_string(),
+        base_prompt.to_string(),
+    )
+    .await
+    .map_err(|e| {
+        eprintln!("Error occurred: {:?}", e);
+        anyhow!("Error response")
+    })?;
+
+    let content = response.content.ok_or_else(|| anyhow!("No content"))?;
+
+    match content {
+        chat::ChatCompletionContent::Message(message) => {
+            Ok(message.unwrap_or_default())
+        }
+        chat::ChatCompletionContent::VisionMessage(messages) => messages
+            .iter()
+            .find_map(|msg| {
+                if let chat::VisionMessage::Text { text, .. } = msg {
+                    Some(text.clone())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| anyhow!("No text content found")),
+    }
+}
+
+// REWARDS ==============================================================
 
 async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     tx: broadcast::Sender<Event>,
@@ -211,7 +227,7 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     event: SubEvent,
 ) -> Result<()> {
     let state = twitch_stream_state::get_twitch_state(&pool).await?;
-    let ai_scenes_map = load_ai_scenes()?;
+    let ai_scenes_map = ai_scenes_coordinator::load_ai_scenes()?;
 
     let reward = match event.reward {
         Some(r) => r,
@@ -255,55 +271,6 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
         println!("Scene not found for reward title")
     }
 
-    Ok(())
-}
-
-async fn ask_chat_gpt(user_input: &str, base_prompt: &str) -> Result<String> {
-    let response = subd_openai::ask_chat_gpt(
-        user_input.to_string(),
-        base_prompt.to_string(),
-    )
-    .await
-    .map_err(|e| {
-        eprintln!("Error occurred: {:?}", e);
-        anyhow!("Error response")
-    })?;
-
-    let content = response.content.ok_or_else(|| anyhow!("No content"))?;
-
-    match content {
-        chat::ChatCompletionContent::Message(message) => {
-            Ok(message.unwrap_or_default())
-        }
-        chat::ChatCompletionContent::VisionMessage(messages) => messages
-            .iter()
-            .find_map(|msg| {
-                if let chat::VisionMessage::Text { text, .. } = msg {
-                    Some(text.clone())
-                } else {
-                    None
-                }
-            })
-            .ok_or_else(|| anyhow!("No text content found")),
-    }
-}
-
-async fn trigger_full_scene(
-    tx: broadcast::Sender<Event>,
-    voice: String,
-    music_bg: String,
-    content: String,
-    dalle_prompt: Option<String>,
-) -> Result<()> {
-    println!("\tTriggering AI Scene: {}", voice);
-    tx.send(Event::AiScenesRequest(subd_types::AiScenesRequest {
-        voice: Some(voice),
-        message: content.clone(),
-        voice_text: content,
-        music_bg: Some(music_bg),
-        prompt: dalle_prompt,
-        ..Default::default()
-    }))?;
     Ok(())
 }
 

@@ -14,6 +14,18 @@ use twitch_irc::{
 
 pub mod models;
 
+pub fn load_ai_scenes() -> Result<HashMap<String, models::AIScene>> {
+    let file_path = "./data/AIScenes.json";
+    let contents = fs::read_to_string(file_path)?;
+    let ai_scenes: models::AIScenes = serde_json::from_str(&contents)?;
+    let ai_scenes_map = ai_scenes
+        .scenes
+        .into_iter()
+        .map(|scene| (scene.reward_title.clone(), scene))
+        .collect();
+    Ok(ai_scenes_map)
+}
+
 pub async fn run_ai_scene(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     obs_client: &OBSClient,
