@@ -2,11 +2,8 @@ use crate::constants;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use obs_service::obs_source;
-use subd_elevenlabs;
-use twitch_stream_state;
-// use dotenv::dotenv;
 use events::EventHandler;
+use obs_service::obs_source;
 use obws::Client as OBSClient;
 use reqwest::multipart::{Form, Part};
 use reqwest::Client;
@@ -19,20 +16,15 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::process::Command;
+use subd_elevenlabs;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use twitch_stream_state;
 
 pub struct VoicesHandler {
     pub obs_client: OBSClient,
     pub pool: sqlx::PgPool,
 }
-
-// #[derive(Serialize)]
-//struct CloneVoiceRequest {
-//    name: String,
-//    description: String,
-//    files: Vec<String>,
-//}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Voice {

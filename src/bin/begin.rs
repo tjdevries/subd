@@ -195,7 +195,7 @@ async fn main() -> Result<()> {
             "implict_soundeffects" => {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
-                    handlers::sound_handler::ImplicitSoundHandler {
+                    handlers::implicit_sound_handler::ImplicitSoundHandler {
                         sink: resources.sink,
                         pool: pool.clone(),
                     },
@@ -206,7 +206,7 @@ async fn main() -> Result<()> {
                 println!("{}", "Enabling Explicit Sound Effects".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
-                    handlers::sound_handler::ExplicitSoundHandler {
+                    handlers::explicit_sound_handler::ExplicitSoundHandler {
                         sink: resources.sink,
                         pool: pool.clone(),
                     },

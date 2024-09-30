@@ -114,35 +114,6 @@ pub fn generate_random_prompt() -> String {
     selected_choice.to_string()
 }
 
-// =================================================
-
-// #[derive(Debug, Serialize, Deserialize, Default)]
-// struct ImageResult {
-//     url: String,
-// }
-//
-// #[derive(Debug, Serialize, Deserialize)]
-// struct Output {
-//     images: Vec<ImageResult>,
-// }
-//
-// #[derive(Debug, Serialize, Deserialize)]
-// struct FalResponse {
-//     images: Vec<TurboImageResult>,
-//     seed: u64,
-//     // num_inference_steps: u32,
-// }
-//
-// #[derive(Debug, Serialize, Deserialize)]
-// struct TurboImageResult {
-//     // That fact this is string is wrong?
-//     url: String,
-//     width: u32,
-//     height: u32,
-// }
-
-// ================
-
 #[cfg(test)]
 mod tests {
     use super::*;

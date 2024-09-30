@@ -60,7 +60,7 @@ impl EventHandler for AISongsVoteHandler {
 
 pub async fn handle_telephone_requests(
     _tx: &broadcast::Sender<Event>,
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     _twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
         StaticLoginCredentials,

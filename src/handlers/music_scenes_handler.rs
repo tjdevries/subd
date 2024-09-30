@@ -274,6 +274,7 @@ async fn handle_commands(
 }
 
 fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
+    // TODO: Make this configurable
     let full_path =
         format!("/home/begin/stream/Stream/BackgroundMusic/{}", folder_path);
     let paths = fs::read_dir(full_path).ok()?;

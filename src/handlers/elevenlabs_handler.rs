@@ -162,7 +162,7 @@ impl EventHandler for ElevenLabsHandler {
             // w/ Extension
             let full_filename = format!("{}.wav", filename);
             // TODO: Don't reference begin's computer
-            let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
+            let tts_folder = "./TwitchChatTTSRecordings";
             let mut local_audio_path =
                 format!("{}/{}", tts_folder, full_filename);
 

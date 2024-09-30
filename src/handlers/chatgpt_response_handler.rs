@@ -10,10 +10,6 @@ use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-// use std::time::Duration;
-// use twitch_chat::send_message;
-// use subd_types::ElevenLabsRequest;
-// use std::time::SystemTime;
 
 pub struct ChatGPTResponse {
     pub twitch_client:
@@ -27,6 +23,7 @@ impl EventHandler for ChatGPTResponse {
         tx: broadcast::Sender<Event>,
         _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
+        // TODO: This needs to be updated and re-considered
         let response_file =
             "/home/begin/code/BeginGPT/tmp/current/chatgpt_response.txt";
         let metadata = fs::metadata(response_file).await.unwrap();

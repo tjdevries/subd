@@ -51,7 +51,7 @@ impl EventHandler for AISongsDownloader {
 /// Handles incoming requests based on the parsed command.
 pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
     msg: UserMessage,
@@ -82,7 +82,6 @@ pub async fn handle_requests(
 /// Parses a user's message into a `Command`.
 fn parse_command(msg: &UserMessage) -> Command {
     let mut words = msg.contents.split_whitespace();
-    let prompt = msg.contents.clone();
     match words.next() {
         Some("!download") => {
             if let Some(id) = words.next() {
