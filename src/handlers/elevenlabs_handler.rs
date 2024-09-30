@@ -197,6 +197,7 @@ impl ElevenLabsHandler {
         };
         Ok(final_voice)
     }
+
     fn play_audio(&self, audio_path: &str, final_voice: &str) {
         self.sink.set_volume(match final_voice {
             "melkey" | "beginbot" | "evil_pokimane" => 1.0,
@@ -240,10 +241,6 @@ impl ElevenLabsHandler {
             voice_settings: None,
         };
 
-        // TODO: What's up with tts here
-        println!("Calling TTS");
-
-        //            let tts_result = self.elevenlabs.tts(&tts_body, voice_id);
         let bytes = self.elevenlabs.tts(&tts_body, voice_id).map_err(|e| {
             eprintln!("ElevenLabs TTS Error: {:?}", e);
             anyhow!(e)
