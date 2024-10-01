@@ -1,5 +1,7 @@
+use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
+use axum::routing::any;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
@@ -8,6 +10,7 @@ use tokio::sync::broadcast;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use uuid::Uuid;
 
 pub struct AISongsVoteHandler {
     pub obs_client: OBSClient,
@@ -65,7 +68,7 @@ pub async fn handle_telephone_requests(
         SecureTCPTransport,
         StaticLoginCredentials,
     >,
-    _pool: &sqlx::PgPool,
+    pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
 ) -> Result<()> {
@@ -75,12 +78,18 @@ pub async fn handle_telephone_requests(
 
     match command {
         "!vote" => {
-            // unwraps are bad
-            let score = splitmsg.get(1).unwrap();
+            let score = splitmsg
+                .get(1)
+                .ok_or_else(|| anyhow!("No score provided"))?
+                .parse::<f64>()?;
             println!("Voting for {}", score);
-            // ai_songs_vote::vote(obs_client, score).await?;
 
-            Ok(())
+            ai_songs_vote::vote_for_current_song_with_score(
+                pool,
+                msg.user_id.into(),
+                score,
+            )
+            .await
         }
 
         _ => Ok(()),

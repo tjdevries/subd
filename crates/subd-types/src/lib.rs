@@ -25,6 +25,12 @@ pub struct UserID(pub uuid::Uuid);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
+impl Into<uuid::Uuid> for UserID {
+    fn into(self) -> uuid::Uuid {
+        self.0
+    }
+}
+
 impl TryFrom<TwitchUserID> for UserID {
     type Error = String;
 
