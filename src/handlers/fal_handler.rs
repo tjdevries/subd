@@ -102,19 +102,19 @@ pub async fn handle_fal_commands(
 
         _ => {
             // TODO: a way to enable or disable Fal on every chat-message
-            // let word_count = msg.contents.split_whitespace().count();
-            // if !command.starts_with('!')
-            //     && !command.starts_with('@')
-            //     && word_count > 1
-            // {
-            //     let prompt = msg.contents;
-            //     let theme =
-            //         twitch_stream_state::get_ai_background_theme(pool).await?;
-            //     let final_prompt = format!("{} {}", theme, prompt);
-            //     println!("Creating image for prompt: {}", final_prompt);
-            //     fal_ai::create_turbo_image(&final_prompt).await?;
-            //     // fal_ai::create_fast_sd_image(final_prompt).await?;
-            // }
+            let word_count = msg.contents.split_whitespace().count();
+            if !command.starts_with('!')
+                && !command.starts_with('@')
+                && word_count > 1
+            {
+                let prompt = msg.contents;
+                let theme =
+                    twitch_stream_state::get_ai_background_theme(pool).await?;
+                let final_prompt = format!("{} {}", theme, prompt);
+                println!("Creating image for prompt: {}", final_prompt);
+                fal_ai::create_turbo_image(&final_prompt).await?;
+                // fal_ai::create_fast_sd_image(final_prompt).await?;
+            }
         }
     };
 
