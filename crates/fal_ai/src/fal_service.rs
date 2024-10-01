@@ -38,6 +38,8 @@ impl FalService {
 
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
+
+        println!("create_song JSON Save Path: {}", json_save_path);
         utils::save_raw_bytes(&json_save_path, &raw_json).await?;
 
         // I think this is the problem

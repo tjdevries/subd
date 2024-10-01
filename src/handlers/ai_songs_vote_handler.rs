@@ -95,8 +95,17 @@ pub async fn handle_telephone_requests(
                 .get(1)
                 .ok_or_else(|| anyhow!("No score provided"))?
                 .parse::<f64>()?;
-            println!("Voting for {}", score);
 
+            if score < 0.0 || score > 10.0 {
+                let _ = send_message(
+                    twitch_client,
+                    "You must vote between 0.0 and 10.0",
+                )
+                .await;
+                return Ok(());
+            }
+
+            println!("Voting for {}", score);
             ai_songs_vote::vote_for_current_song_with_score(
                 pool,
                 msg.user_id.into(),

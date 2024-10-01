@@ -52,6 +52,7 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
 
     Ok(output_file)
 }
+
 async fn process_lyric_chunk(
     ai_song: Arc<ai_playlist::models::ai_songs::Model>,
     lyric: String,
@@ -64,11 +65,15 @@ async fn process_lyric_chunk(
     );
 
     //
+    let folder = format!("./tmp/music_videos/{}", id);
     let prompt = format!("{} {}", ai_song.title, lyric);
-    let images = fal_ai::create_from_fal_api_return_filename(&prompt).await?;
+    let images = fal_ai::create_from_fal_api_return_filename(
+        &prompt,
+        Some(folder.clone()),
+    )
+    .await?;
     let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
     println!("Image: {}", first_image);
-    let folder = format!("./tmp/music_videos/{}", id);
     let filename =
         fal_ai::create_video_from_image(first_image, Some(folder.clone()))
             .await?;

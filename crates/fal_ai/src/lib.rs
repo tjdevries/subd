@@ -25,14 +25,19 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
 /// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
 pub async fn create_from_fal_api_return_filename(
     prompt: &str,
+    save_dir: Option<String>,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     // let model = "fal-ai/fast-sdxl";
     // let model = "fal-ai/stable-cascade";
     let model = "fal-ai/flux/dev";
-    let save_dir = "./tmp/fal_images";
+
+    let dir = match save_dir {
+        Some(d) => d,
+        None => "./tmp/fal_images".to_string(),
+    };
     let files = fal_service
-        .create_image(model, prompt, "landscape_16_9", save_dir, None, None)
+        .create_image(model, prompt, "landscape_16_9", &dir, None, None)
         .await?;
     Ok(files)
 }
