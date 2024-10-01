@@ -292,7 +292,17 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
         return Ok(());
     }
 
-    println!("\nSaving new redemption: Command: {} ID: {}\n", command, id);
+    // Saving new redemption: Command: Ask Melkey a Question ID: 9e3e2aa3-7135-4de3-8604-1b9a81f1ddb7
+    //
+    // Error handling reward request: error returned from database: duplicate key value violates unique constraint "redemptions_reward_id_key"
+    //
+    // Caused by:
+    //     duplicate key value violates unique constraint "redemptions_reward_id_key"
+
+    println!(
+        "\nSaving new redemption: Command: {} | ID: {} | Reward ID: {} \n",
+        command, id, reward_id
+    );
     redemptions::save_redemptions(
         &pool,
         command.clone(),

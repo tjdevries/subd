@@ -1,5 +1,6 @@
 // use anyhow::Error;
 use anyhow::Result;
+use sqlx::postgres::PgQueryResult;
 use sqlx::postgres::PgRow;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::types::Uuid;
@@ -58,20 +59,22 @@ pub async fn save_redemptions(
     twitch_id: Uuid,
     reward_id: Uuid,
     user_input: String,
-) -> Result<()> {
+) -> Result<PgQueryResult> {
+    // Watch out, we have confused up the idea of reward_id and twitch_id
+    // we have unique constraint on reward_id, which is the static ID to a reward in Twitch
+    // it's not pure request
     sqlx::query!(
         r#"INSERT INTO redemptions (title, cost, user_name, twitch_id, reward_id, user_input)
        VALUES ( $1, $2, $3, $4, $5, $6 )"#,
         title,
         cost,
         user_name,
-        twitch_id,
         reward_id,
+        twitch_id,
         user_input,
     )
     .execute(pool)
-    .await?;
-    Ok(())
+    .await.map_err(|e| e.into())
 }
 
 pub async fn find_redemption_by_twitch_id(
