@@ -7,6 +7,7 @@ use obws::Client as OBSClient;
 use sqlx::PgPool;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -64,10 +65,7 @@ impl EventHandler for AISongsVoteHandler {
 pub async fn handle_telephone_requests(
     _tx: &broadcast::Sender<Event>,
     _obs_client: &OBSClient,
-    _twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
     msg: UserMessage,
@@ -77,6 +75,21 @@ pub async fn handle_telephone_requests(
     let command = splitmsg[0].as_str();
 
     match command {
+        "!top_songs" => {
+            //
+            let songs = ai_songs_vote::get_top_songs(pool, 5).await?;
+            // let mut stats = "Top Songs: ".to_string();
+            for (index, song) in songs.iter().enumerate() {
+                let rank_msg = &format!(
+                    "!Song #{} | {}: {:.2}\n",
+                    index + 1,
+                    song.title,
+                    song.avg_score
+                );
+                let _ = send_message(twitch_client, rank_msg).await;
+            }
+            Ok(())
+        }
         "!vote" => {
             let score = splitmsg
                 .get(1)

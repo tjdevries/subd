@@ -6,6 +6,8 @@ use uuid::Uuid;
 
 #[database_model]
 pub mod ai_songs {
+    use sqlx::types::BigDecimal;
+
     use super::*;
 
     pub struct Model {
@@ -22,6 +24,46 @@ pub mod ai_songs {
         pub downloaded: bool,
     }
 }
+
+// #[database_model]
+// pub mod ai_songs_vote {
+//     use super::*;
+//
+//     pub struct Model {
+//         pub song_id: Uuid,
+//         pub user_id: Uuid,
+//         pub good_song: bool,
+//         pub score: Option<BigDecimal>,
+//     }
+// }
+
+// pub async fn get_top_voted_songs(
+//     pool: &PgPool,
+//     count: i64,
+// ) -> Result<Vec<ai_songs::Model>> {
+//     let songs = sqlx::query_as!(
+//         ai_songs::Model,
+//         r#"
+//         SELECT
+//             ai_songs.*,
+//             COALESCE(AVG(CASE WHEN ai_songs_vote.good_song THEN 1 ELSE 0 END)::float, 0) as avg_vote
+//         FROM
+//             ai_songs
+//         LEFT JOIN
+//             ai_songs_vote ON ai_songs.song_id = ai_songs_vote.song_id
+//         GROUP BY
+//             ai_songs.song_id
+//         ORDER BY
+//             avg_vote DESC
+//         LIMIT $1
+//         "#,
+//         count
+//     )
+//     .fetch_all(pool)
+//     .await?;
+//
+//     Ok(songs)
+// }
 
 impl ai_songs::Model {
     #[allow(dead_code)]
