@@ -9,6 +9,12 @@ pub struct FalService {
     client: FalClient,
 }
 
+// We might want to return Vec of theses
+struct SavedImageResponse {
+    image_path: String,
+    image_bytes: Vec<u8>,
+}
+
 impl FalService {
     pub fn new() -> Self {
         Self {
@@ -39,15 +45,18 @@ impl FalService {
         println!("Saving JSON to: {}", json_save_path);
         self.save_raw_json(&json_save_path, &raw_json).await?;
 
-        let files = self
-            .process_images(
-                &raw_json,
-                save_dir,
-                &timestamp.to_string(),
-                index,
-                obs_background_image_path,
-            )
+        let file_responses = self
+            .process_images(&raw_json, save_dir, &timestamp.to_string(), index)
             .await?;
+
+        // TODO: Consider improving this
+        // while only handle the first file
+        if let Some(extra_path) = obs_background_image_path {
+            self.save_raw_bytes(extra_path, &file_responses[0].image_bytes)
+                .await?;
+        }
+
+        let files = file_responses.into_iter().map(|m| m.image_path).collect();
 
         Ok(files)
     }
@@ -113,8 +122,7 @@ impl FalService {
         save_dir: &str,
         name: &str,
         index: Option<usize>,
-        extra_save_path: Option<&str>,
-    ) -> Result<Vec<String>> {
+    ) -> Result<Vec<SavedImageResponse>> {
         let data: models::FalData = serde_json::from_slice(raw_json)
             .context("Failed to parse raw JSON into FalData")?;
 
@@ -122,20 +130,19 @@ impl FalService {
             format!("Failed to create directory '{}'", save_dir)
         })?;
 
-        let mut image_paths = Vec::new();
-
+        // We could iterate through this instead
+        let mut image_responses = Vec::new();
         for (i, image) in data.images.iter().enumerate() {
             let filename = self.construct_filename(save_dir, name, index, i);
-            image_paths.push(filename.clone());
 
             let image_bytes = self.save_image(&image.url, &filename).await?;
-
-            if let Some(extra_path) = extra_save_path {
-                self.save_raw_bytes(extra_path, &image_bytes).await?;
-            }
+            image_responses.push(SavedImageResponse {
+                image_path: filename,
+                image_bytes,
+            });
         }
 
-        Ok(image_paths)
+        Ok(image_responses)
     }
 
     fn construct_filename(
