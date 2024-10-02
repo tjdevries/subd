@@ -3,6 +3,7 @@ use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
+use futures::stream::{self, StreamExt, TryStreamExt};
 use tokio::fs::create_dir_all;
 
 pub struct FalService {
@@ -130,17 +131,20 @@ impl FalService {
             format!("Failed to create directory '{}'", save_dir)
         })?;
 
-        // We could iterate through this instead
-        let mut image_responses = Vec::new();
-        for (i, image) in data.images.iter().enumerate() {
-            let filename = self.construct_filename(save_dir, name, index, i);
-
-            let image_bytes = self.save_image(&image.url, &filename).await?;
-            image_responses.push(SavedImageResponse {
-                image_path: filename,
-                image_bytes,
-            });
-        }
+        let image_responses = stream::iter(data.images.iter().enumerate())
+            .then(|(i, image)| async move {
+                // Double indexes are dumb here I think
+                let filename =
+                    self.construct_filename(&save_dir, &name, index, i);
+                let image_bytes =
+                    self.save_image(&image.url, &filename).await?;
+                Ok::<SavedImageResponse, anyhow::Error>(SavedImageResponse {
+                    image_path: filename,
+                    image_bytes,
+                })
+            })
+            .try_collect::<Vec<SavedImageResponse>>()
+            .await?;
 
         Ok(image_responses)
     }
