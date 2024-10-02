@@ -5,20 +5,17 @@ use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
 use tokio::fs::create_dir_all;
 
-/// A service for interacting with the FAL API.
 pub struct FalService {
     client: FalClient,
 }
 
 impl FalService {
-    /// Creates a new instance of `FalService`.
     pub fn new() -> Self {
         Self {
             client: FalClient::new(ClientCredentials::from_env()),
         }
     }
 
-    /// Creates an image using the specified model, prompt, and image size, and saves it to the specified directory.
     pub async fn create_image(
         &self,
         model: &str,
@@ -39,10 +36,9 @@ impl FalService {
         let timestamp = Utc::now().timestamp();
         let json_save_path = format!("{}/{}.json", save_dir, timestamp);
 
-        println!("create_song JSON Save Path: {}", json_save_path);
-        utils::save_raw_bytes(&json_save_path, &raw_json).await?;
+        println!("Saving JSON to: {}", json_save_path);
+        self.save_raw_json(&json_save_path, &raw_json).await?;
 
-        // I think this is the problem
         let files = self
             .process_images(
                 &raw_json,
@@ -56,7 +52,6 @@ impl FalService {
         Ok(files)
     }
 
-    /// Creates a video from the given image file path and saves it to the specified directory.
     pub async fn create_video_from_image(
         &self,
         image_file_path: &str,
@@ -79,12 +74,11 @@ impl FalService {
 
         let timestamp = Utc::now().timestamp();
         let filename = format!("{}/{}.mp4", save_dir, timestamp);
-        utils::save_raw_bytes(&filename, &video_bytes).await?;
+        self.save_raw_bytes(&filename, &video_bytes).await?;
 
         Ok(filename)
     }
 
-    /// Submits a request to the Sadtalker model with the given source image and driven audio data URIs.
     pub async fn submit_sadtalker_request(
         &self,
         source_image_data_uri: &str,
@@ -99,9 +93,20 @@ impl FalService {
     }
 
     // =======================================================================================
-    // Private
+    // Private methods
 
-    /// Processes images from the raw JSON response and saves them to the specified directory.
+    async fn save_raw_json(&self, path: &str, raw_json: &[u8]) -> Result<()> {
+        utils::save_raw_bytes(path, raw_json)
+            .await
+            .context("Failed to save raw JSON")
+    }
+
+    async fn save_raw_bytes(&self, path: &str, bytes: &[u8]) -> Result<()> {
+        utils::save_raw_bytes(path, bytes)
+            .await
+            .with_context(|| format!("Failed to save bytes to '{}'", path))
+    }
+
     async fn process_images(
         &self,
         raw_json: &[u8],
@@ -110,73 +115,96 @@ impl FalService {
         index: Option<usize>,
         extra_save_path: Option<&str>,
     ) -> Result<Vec<String>> {
-        let data: models::FalData = serde_json::from_slice(raw_json)?;
+        let data: models::FalData = serde_json::from_slice(raw_json)
+            .context("Failed to parse raw JSON into FalData")?;
 
-        create_dir_all(save_dir).await?;
-        let extension = "png";
+        create_dir_all(save_dir).await.with_context(|| {
+            format!("Failed to create directory '{}'", save_dir)
+        })?;
 
         let mut image_paths = Vec::new();
 
         for (i, image) in data.images.iter().enumerate() {
-            let image_bytes =
-                subd_image_utils::get_image_bytes(&image.url).await?;
-
-            // do we have to pass in the timestamp
-            let filename = match index {
-                Some(idx) => {
-                    format!("{}/{}-{}-{}.{}", save_dir, name, idx, i, extension)
-                }
-                None => format!("{}/{}-{}.{}", save_dir, name, i, extension),
-            };
-
+            let filename = self.construct_filename(save_dir, name, index, i);
             image_paths.push(filename.clone());
 
-            utils::save_raw_bytes(&filename, &image_bytes).await?;
+            let image_bytes = self.save_image(&image.url, &filename).await?;
 
             if let Some(extra_path) = extra_save_path {
-                utils::save_raw_bytes(extra_path, &image_bytes).await?;
+                self.save_raw_bytes(extra_path, &image_bytes).await?;
             }
-
-            println!("Saved image to {}", filename);
         }
+
         Ok(image_paths)
     }
 
-    /// Runs a model with the given parameters and returns the response as JSON.
+    fn construct_filename(
+        &self,
+        save_dir: &str,
+        name: &str,
+        index: Option<usize>,
+        i: usize,
+    ) -> String {
+        let extension = "png";
+        match index {
+            Some(idx) => {
+                format!("{}/{}-{}-{}.{}", save_dir, name, idx, i, extension)
+            }
+            None => format!("{}/{}-{}.{}", save_dir, name, i, extension),
+        }
+    }
+
+    async fn save_image(
+        &self,
+        image_url: &str,
+        save_path: &str,
+    ) -> Result<Vec<u8>> {
+        let image_bytes = subd_image_utils::get_image_bytes(image_url)
+            .await
+            .with_context(|| {
+                format!("Failed to get image bytes from '{}'", image_url)
+            })?;
+
+        self.save_raw_bytes(save_path, &image_bytes).await?;
+
+        println!("Saved image to {}", save_path);
+        Ok(image_bytes)
+    }
+
     async fn run_model_and_get_json(
         &self,
         model: &str,
         parameters: serde_json::Value,
     ) -> Result<serde_json::Value> {
-        let res =
+        let response =
             self.client.run(model, parameters).await.map_err(|e| {
                 anyhow!("Failed to run model '{}': {:?}", model, e)
             })?;
 
-        let body = res.text().await?;
-        let json: serde_json::Value = serde_json::from_str(&body)?;
-        Ok(json)
+        let body = response
+            .text()
+            .await
+            .context("Failed to get response text from model")?;
+
+        serde_json::from_str(&body)
+            .context("Failed to parse response body into JSON")
     }
 
-    /// Runs a model with the given parameters and returns the raw JSON response as bytes.
     async fn run_model_and_get_raw_json(
         &self,
         model: &str,
         parameters: serde_json::Value,
     ) -> Result<bytes::Bytes> {
-        let res =
+        let response =
             self.client.run(model, parameters).await.map_err(|e| {
                 anyhow!("Failed to run model '{}': {:?}", model, e)
             })?;
 
-        let raw_json = res.bytes().await.with_context(|| {
+        response.bytes().await.with_context(|| {
             format!("Failed to get bytes from model '{}'", model)
-        })?;
-
-        Ok(raw_json)
+        })
     }
 
-    /// Runs a model with the given parameters and returns the response as text.
     async fn run_model_and_get_text(
         &self,
         model: &str,
@@ -187,16 +215,16 @@ impl FalService {
                 anyhow!("Failed to run model '{}': {:?}", model, e)
             })?;
 
-        if response.status().is_success() {
-            response.text().await.map_err(|e| {
-                anyhow!("Error getting text from model '{}': {:?}", model, e)
-            })
-        } else {
-            Err(anyhow!(
+        if !response.status().is_success() {
+            return Err(anyhow!(
                 "Request to model '{}' failed with status: {}",
                 model,
                 response.status()
-            ))
+            ));
         }
+
+        response.text().await.with_context(|| {
+            format!("Error getting text from model '{}'", model)
+        })
     }
 }
