@@ -29,7 +29,6 @@ impl FalService {
         prompt: &str,
         image_size: &str,
         save_dir: &str,
-        index: Option<usize>,
         obs_background_image_path: Option<&str>,
     ) -> Result<Vec<String>> {
         let parameters = serde_json::json!({
@@ -47,7 +46,7 @@ impl FalService {
         self.save_raw_json(&json_save_path, &raw_json).await?;
 
         let file_responses = self
-            .process_images(&raw_json, save_dir, &timestamp.to_string(), index)
+            .process_images(&raw_json, save_dir, &timestamp.to_string())
             .await?;
 
         // TODO: Consider improving this
@@ -122,7 +121,6 @@ impl FalService {
         raw_json: &[u8],
         save_dir: &str,
         name: &str,
-        index: Option<usize>,
     ) -> Result<Vec<SavedImageResponse>> {
         let data: models::FalData = serde_json::from_slice(raw_json)
             .context("Failed to parse raw JSON into FalData")?;
@@ -133,9 +131,7 @@ impl FalService {
 
         let image_responses = stream::iter(data.images.iter().enumerate())
             .then(|(i, image)| async move {
-                // Double indexes are dumb here I think
-                let filename =
-                    self.construct_filename(&save_dir, &name, index, i);
+                let filename = self.construct_filename(&save_dir, &name, i);
                 let image_bytes =
                     self.save_image(&image.url, &filename).await?;
                 Ok::<SavedImageResponse, anyhow::Error>(SavedImageResponse {
@@ -153,16 +149,10 @@ impl FalService {
         &self,
         save_dir: &str,
         name: &str,
-        index: Option<usize>,
         i: usize,
     ) -> String {
         let extension = "png";
-        match index {
-            Some(idx) => {
-                format!("{}/{}-{}-{}.{}", save_dir, name, idx, i, extension)
-            }
-            None => format!("{}/{}-{}.{}", save_dir, name, i, extension),
-        }
+        format!("{}/{}-{}.{}", save_dir, name, i, extension)
     }
 
     async fn save_image(
