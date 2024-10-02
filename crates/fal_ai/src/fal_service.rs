@@ -52,6 +52,7 @@ impl FalService {
         // TODO: Consider improving this
         // while only handle the first file
         if let Some(extra_path) = obs_background_image_path {
+            println!("Saving Extra Image to: {}", extra_path);
             self.save_raw_bytes(extra_path, &file_responses[0].image_bytes)
                 .await?;
         }
