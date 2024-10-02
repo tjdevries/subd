@@ -51,7 +51,9 @@ uuid.workspace = true
 
 obws = "0.10"
 chrono = "*"
-axum = "0.5.4"
+# axum = { version= "0.5.4", features = ["macros"]}
+axum = { version= "0.7.*", features = ["macros"]}
+# axum = "0.7.7"
 futures = "0.3.21"
 clap = { version = "4.4.11", features = ["derive"] }
 psl = "2.0.89"

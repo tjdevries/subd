@@ -3,9 +3,11 @@ use ai_scenes_coordinator;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
+use axum::debug_handler;
+// use axum::serve;
 use axum::{
-    extract::Extension, http::StatusCode, response::IntoResponse,
-    routing::post, Json, Router, Server,
+    extract::Extension, extract::FromRef, extract::State, http::StatusCode,
+    response::IntoResponse, routing::get, routing::post, Json, Router,
 };
 use colored::Colorize;
 use events::EventHandler;
@@ -84,8 +86,51 @@ pub struct SubEvent {
     user_input: Option<String>,
 }
 
+#[derive(Clone)]
+struct AppState<'a, C: twitch_api::HttpClient> {
+    obs_client: Arc<OBSClient>,
+    pool: Arc<sqlx::PgPool>,
+    tx: broadcast::Sender<Event>,
+    reward_manager: Arc<RewardManager<'a, C>>,
+    // RewardManager<&'static, twitch_api::HttpClient<Error = anyhow::Error>>,
+    // reward_manager: Box<dyn RewardManager<'a, twitch_api::HttpClient>>,
+}
+
+impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+    for broadcast::Sender<Event>
+{
+    fn from_ref(app_state: &AppState<C>) -> broadcast::Sender<Event> {
+        app_state.tx.clone()
+    }
+}
+
+impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+    for Arc<OBSClient>
+{
+    fn from_ref(app_state: &AppState<C>) -> Arc<OBSClient> {
+        app_state.obs_client.clone()
+    }
+}
+
+impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+    for Arc<sqlx::PgPool>
+{
+    fn from_ref(app_state: &AppState<C>) -> Arc<sqlx::PgPool> {
+        app_state.pool.clone()
+    }
+}
+
+impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+    for Arc<RewardManager<'a, C>>
+{
+    fn from_ref(app_state: &AppState<'a, C>) -> Arc<RewardManager<'a, C>> {
+        app_state.reward_manager.clone()
+    }
+}
+
 #[async_trait]
 impl EventHandler for TwitchEventSubHandler {
+    // #[axum::debug_handler]
     async fn handle(
         self: Box<Self>,
         tx: broadcast::Sender<Event>,
@@ -98,18 +143,21 @@ impl EventHandler for TwitchEventSubHandler {
 
         println!("{}", "Kicking off a new reward router!".yellow());
 
+        let state = AppState {
+            obs_client,
+            pool,
+            tx,
+            reward_manager,
+        };
+
         let app = Router::new()
-            .route("/eventsub", post(post_request::<reqwest::Client>))
-            .layer(Extension(obs_client))
-            .layer(Extension(pool))
-            .layer(Extension(reward_manager))
-            .layer(Extension(tx))
-            .layer(Extension(self.twitch_client));
+            .route("/eventsub", post(simple_post_request))
+            .with_state(state);
 
         tokio::spawn(async move {
-            let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-            Server::bind(&addr)
-                .serve(app.into_make_service())
+            let listener =
+                tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
+            axum::serve(listener, app.into_make_service())
                 .await
                 .unwrap();
         });
@@ -117,17 +165,16 @@ impl EventHandler for TwitchEventSubHandler {
         Ok(())
     }
 }
+#[derive(Clone)]
+struct HttpClient {}
 
-async fn post_request<'a, C: twitch_api::HttpClient>(
+async fn simple_post_request<'a, C: twitch_api::HttpClient>(
+    State(obs_client): State<Arc<OBSClient>>,
+    State(pool): State<Arc<sqlx::PgPool>>,
+    State(tx): State<broadcast::Sender<Event>>,
+    State(reward_manager): State<Arc<RewardManager<'a, C>>>,
     Json(eventsub_body): Json<EventSubRoot>,
-    Extension(obs_client): Extension<Arc<OBSClient>>,
-    Extension(pool): Extension<Arc<sqlx::PgPool>>,
-    Extension(reward_manager): Extension<Arc<RewardManager<'a, C>>>,
-    Extension(tx): Extension<broadcast::Sender<Event>>,
-    Extension(_twitch_client): Extension<
-        TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    >,
-) -> impl IntoResponse {
+) -> (StatusCode, String) {
     if let Some(challenge) = eventsub_body.challenge {
         println!("We got a challenge!");
         return (StatusCode::OK, challenge);
