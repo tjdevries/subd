@@ -31,3 +31,4 @@ subd.*.db
 .env
 test.wav
 .oauth_token.json
+.DS_Store

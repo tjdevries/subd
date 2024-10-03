@@ -90,6 +90,8 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
 
     let base_path = "/images";
 
+    // We need total songs
+
     // We need to display the top 5 songs
     for song in songs {
         html.push_str(&format!("Song: {}", song.title))

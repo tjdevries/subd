@@ -4,10 +4,13 @@ use sqlx::PgPool;
 use subd_macros::database_model;
 use uuid::Uuid;
 
+// This should maybe in lib.rs
+pub async fn count_of_ai_songs(_pool: &sqlx::PgPool) -> Result<u64> {
+    Ok(0)
+}
+
 #[database_model]
 pub mod ai_songs {
-    use sqlx::types::BigDecimal;
-
     use super::*;
 
     pub struct Model {
@@ -21,49 +24,12 @@ pub mod ai_songs {
         pub lyric: Option<String>,
         pub last_updated: Option<OffsetDateTime>,
         pub created_at: Option<OffsetDateTime>,
+
+        // This has a default of false in the DB, so I think this could be optional
+        // need to double check migration and actual tables
         pub downloaded: bool,
     }
 }
-
-// #[database_model]
-// pub mod ai_songs_vote {
-//     use super::*;
-//
-//     pub struct Model {
-//         pub song_id: Uuid,
-//         pub user_id: Uuid,
-//         pub good_song: bool,
-//         pub score: Option<BigDecimal>,
-//     }
-// }
-
-// pub async fn get_top_voted_songs(
-//     pool: &PgPool,
-//     count: i64,
-// ) -> Result<Vec<ai_songs::Model>> {
-//     let songs = sqlx::query_as!(
-//         ai_songs::Model,
-//         r#"
-//         SELECT
-//             ai_songs.*,
-//             COALESCE(AVG(CASE WHEN ai_songs_vote.good_song THEN 1 ELSE 0 END)::float, 0) as avg_vote
-//         FROM
-//             ai_songs
-//         LEFT JOIN
-//             ai_songs_vote ON ai_songs.song_id = ai_songs_vote.song_id
-//         GROUP BY
-//             ai_songs.song_id
-//         ORDER BY
-//             avg_vote DESC
-//         LIMIT $1
-//         "#,
-//         count
-//     )
-//     .fetch_all(pool)
-//     .await?;
-//
-//     Ok(songs)
-// }
 
 impl ai_songs::Model {
     #[allow(dead_code)]
@@ -73,8 +39,8 @@ impl ai_songs::Model {
                 Self,
                 r#"
                 INSERT INTO ai_songs
-                (song_id, title, tags, prompt, username, audio_url, gpt_description_prompt, lyric)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                (song_id, title, tags, prompt, username, audio_url, gpt_description_prompt, lyric, downloaded)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING 
                     song_id, 
                     title, 
@@ -96,52 +62,14 @@ impl ai_songs::Model {
                 self.audio_url,
                 self.gpt_description_prompt,
                 self.lyric,
+                self.downloaded,
             )
             .fetch_one(pool)
             .await?)
     }
-
-    /// Returns the `song_id` field.
-    pub fn get_song_id(&self) -> Uuid {
-        self.song_id
-    }
-
-    /// Returns a reference to the `title` field.
-    pub fn get_title(&self) -> &str {
-        &self.title
-    }
-
-    /// Returns a reference to the `tags` field.
-    pub fn get_tags(&self) -> &str {
-        &self.tags
-    }
-
-    /// Returns a reference to the `prompt` field.
-    pub fn get_prompt(&self) -> &str {
-        &self.prompt
-    }
-
-    /// Returns a reference to the `username` field.
-    pub fn get_username(&self) -> &str {
-        &self.username
-    }
-
-    /// Returns a reference to the `audio_url` field.
-    pub fn get_audio_url(&self) -> &str {
-        &self.audio_url
-    }
-
-    /// Returns a reference to the `lyric` field.
-    // pub fn get_lyric(&self) -> &str {
-    //     &self.lyric
-    // }
-
-    /// Returns a reference to the `gpt_description_prompt` field.
-    pub fn get_gpt_description_prompt(&self) -> &str {
-        &self.gpt_description_prompt
-    }
 }
 
+// This is confusing because you're not sure if its for ai_playlist of ai_songs
 pub async fn find_by_id(
     pool: &sqlx::PgPool,
     song_id: Uuid,
@@ -151,6 +79,7 @@ pub async fn find_by_id(
             .fetch_one(pool)
             .await?;
 
+    // TODO: it seems wierd we can't just return a single object
     let model = ai_songs::Model {
         song_id,
         title: res.title,
@@ -162,7 +91,7 @@ pub async fn find_by_id(
         gpt_description_prompt: res.gpt_description_prompt,
         last_updated: res.last_updated,
         created_at: res.created_at,
-        downloaded: false,
+        downloaded: res.downloaded,
     };
     Ok(model)
 }
@@ -205,16 +134,4 @@ impl ai_playlist::Model {
         .fetch_one(pool)
         .await
     }
-
-    // This creates a new one, but doesn't save it
-    // Creates a new instance of ai_playlist::Model
-    // pub fn new(playlist_id: Uuid, song_id: Uuid) -> Self {
-    //     Self {
-    //         playlist_id,
-    //         song_id,
-    //         created_at: None,
-    //         played_at: None,
-    //         stopped_at: None,
-    //     }
-    // }
 }
