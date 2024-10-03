@@ -220,9 +220,11 @@ async fn handle_info_command(
                 return Ok(());
             }
         };
+        let score =
+            ai_songs_vote::get_average_score(pool, song.song_id).await?;
         let message = format!(
-            "@{}'s Song is Currently playing - {} | {} | {}",
-            song.username, song.title, song.tags, song.song_id
+            "@{}'s Song is Currently playing - {} | {} | {} | AVG Score: {}",
+            song.username, song.title, song.tags, song.song_id, score.avg_score,
         );
         let _ = send_message(twitch_client, message).await;
     }

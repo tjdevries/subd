@@ -197,7 +197,10 @@ pub async fn download_and_play(
                         created_at: Some(created_at),
                         downloaded: false,
                     };
+
+                    // This should be an update
                     // We only need to message if there's an error
+                    // We need to handle the error here
                     if let Err(e) = new_song.save(&pool).await {
                         eprintln!("Error saving the song!: {}", e);
                     }
