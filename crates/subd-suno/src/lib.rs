@@ -102,6 +102,7 @@ pub async fn play_sound_instantly(
     sink: &Sink,
     file: BufReader<File>,
 ) -> Result<()> {
+    println!("Attempting to play sound: {:?}", file);
     match Decoder::new(file) {
         Ok(decoder) => {
             // I also need to update the database here
@@ -138,6 +139,7 @@ pub async fn generate_audio_by_prompt(
 
 /// Downloads the song and initiates playback.
 pub async fn download_and_play(
+    pool: &sqlx::PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<subd_types::Event>,
     user_name: String,
@@ -146,6 +148,7 @@ pub async fn download_and_play(
     let id = id.clone();
     let tx = tx.clone();
     let twitch_client = twitch_client.clone();
+    let pool = pool.clone();
 
     // We need to handle the await here
     tokio::spawn(async move {
@@ -160,6 +163,9 @@ pub async fn download_and_play(
             // This response here is where we download
             match reqwest::get(&cdn_url).await {
                 Ok(response) if response.status().is_success() => {
+                    // We need to parse this
+                    // is this not a suno response
+                    // this is pure downloading
                     let content = response.text().await.unwrap();
                     if let Err(e) =
                         just_download(content.as_bytes(), id.clone()).await
@@ -167,33 +173,35 @@ pub async fn download_and_play(
                         eprintln!("Error downloading file: {}", e);
                     }
 
-                    //let t = response.text().await.unwrap();
-                    //let suno_response: models::SunoResponse =
-                    //    serde_json::from_str(&t).expect("Failed to parse JSON");
+                    let suno_response =
+                        get_audio_information(&id).await.unwrap();
                     // we need to create the song here
-                    //let created_at =
-                    //    sqlx::types::time::OffsetDateTime::now_utc();
-                    //let song_id = Uuid::parse_str(&id).unwrap();
+                    let created_at =
+                        sqlx::types::time::OffsetDateTime::now_utc();
+                    let song_id = Uuid::parse_str(&id).unwrap();
 
                     //// This should be the builder
-                    //let new_song = ai_playlist::models::ai_songs::Model {
-                    //    song_id,
-                    //    title: response.title.to_string(),
-                    //    tags: response.metadata.tags.to_string(),
-                    //    prompt: response.metadata.prompt,
-                    //    username: user_name.clone(),
-                    //    audio_url: response.audio_url.to_string(),
-                    //    lyric: response.lyric,
-                    //    gpt_description_prompt: suno_response
-                    //        .metadata
-                    //        .gpt_description_prompt
-                    //        .to_string(),
-                    //    last_updated: Some(created_at),
-                    //    created_at: Some(created_at),
-                    //    downloaded: false,
-                    //};
-                    //new_song.save(pool).await?;
-                    //
+                    let new_song = ai_playlist::models::ai_songs::Model {
+                        song_id,
+                        title: suno_response.title.to_string(),
+                        tags: suno_response.metadata.tags.to_string(),
+                        prompt: suno_response.metadata.prompt,
+                        username: user_name.clone(),
+                        audio_url: suno_response.audio_url.to_string(),
+                        lyric: suno_response.lyric,
+                        gpt_description_prompt: suno_response
+                            .metadata
+                            .gpt_description_prompt
+                            .to_string(),
+                        last_updated: Some(created_at),
+                        created_at: Some(created_at),
+                        downloaded: false,
+                    };
+                    // We only need to message if there's an error
+                    if let Err(e) = new_song.save(&pool).await {
+                        eprintln!("Error saving the song!: {}", e);
+                    }
+
                     let _ = tx.send(subd_types::Event::UserMessage(
                         subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
@@ -276,9 +284,14 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    let _ =
-        download_and_play(twitch_client, tx, user_name, &song_id.to_string())
-            .await;
+    let _ = download_and_play(
+        pool,
+        twitch_client,
+        tx,
+        user_name,
+        &song_id.to_string(),
+    )
+    .await;
 
     Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
 }

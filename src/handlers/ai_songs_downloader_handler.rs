@@ -63,7 +63,8 @@ pub async fn handle_requests(
 
     match parse_command(&msg) {
         Command::Download { id } => {
-            handle_download_command(twitch_client, tx, msg.user_name, id).await
+            handle_download_command(pool, twitch_client, tx, msg.user_name, id)
+                .await
         }
         Command::CreateSong { prompt } => {
             handle_create_song_command(
@@ -99,12 +100,13 @@ fn parse_command(msg: &UserMessage) -> Command {
 }
 
 async fn handle_download_command(
+    pool: &PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<Event>,
     user_name: String,
     id: String,
 ) -> Result<()> {
-    subd_suno::download_and_play(twitch_client, tx, user_name, &id).await
+    subd_suno::download_and_play(pool, twitch_client, tx, user_name, &id).await
 }
 
 async fn handle_create_song_command(

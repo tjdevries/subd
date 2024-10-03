@@ -47,7 +47,13 @@ impl EventHandler for AISongsHandler {
 
                             // is there a better way?
                             let id = format!("{}", song.song_id);
-                            subd_suno::play_audio(&self.pool, &self.sink, &id).await?;
+
+                            // We need ot not let it crash here
+                            if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
+                                eprint!("Error playing Audio: {}", e);
+                                let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;
+
+                            }
                         }
 
 
