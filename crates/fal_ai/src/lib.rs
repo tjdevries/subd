@@ -17,6 +17,7 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
             "landscape_16_9",
             save_dir,
             Some("./tmp/dalle-1.png"),
+            None,
         )
         .await
 }
@@ -25,6 +26,7 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
 pub async fn create_from_fal_api_return_filename(
     prompt: &str,
     save_dir: Option<String>,
+    filename: String,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     // let model = "fal-ai/fast-sdxl";
@@ -36,7 +38,14 @@ pub async fn create_from_fal_api_return_filename(
         None => "./tmp/fal_images".to_string(),
     };
     let files = fal_service
-        .create_image(model, prompt, "landscape_16_9", &dir, None)
+        .create_image(
+            model,
+            prompt,
+            "landscape_16_9",
+            &dir,
+            None,
+            Some(&filename),
+        )
         .await?;
     Ok(files)
 }
@@ -54,6 +63,7 @@ pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
             "landscape_16_9",
             save_dir,
             Some("./tmp/dalle-1.png"),
+            None,
         )
         .await
 }
@@ -71,7 +81,7 @@ pub async fn create_image_for_music_video(
     // So just this is a problem because of the index
     // This only needs an index to save the name properly
     fal_service
-        .create_image(model, prompt, "landscape_16_9", &save_dir, None)
+        .create_image(model, prompt, "landscape_16_9", &save_dir, None, None)
         .await
 }
 

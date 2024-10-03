@@ -7,10 +7,10 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
-    println!("\tIt's **New** Music Video time!");
+    println!("\tStarting to create NEW Music Video!");
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
-    let ai_song = Arc::new(ai_song); // Use Arc to share ai_song between tasks
+    let ai_song = Arc::new(ai_song);
 
     let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
         lyric
@@ -21,13 +21,13 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     });
     let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
 
-    let music_video_folder = format!("./tmp/music_videos/{}", id);
-
     // Create a vector of futures for concurrent execution
-    let futures = lyric_chunks.into_iter().enumerate().map(|(_, lyric)| {
+    let futures = lyric_chunks.into_iter().enumerate().map(|(index, lyric)| {
         let ai_song = Arc::clone(&ai_song);
         let id = id.clone();
-        async move { process_lyric_chunk(ai_song, lyric, id).await }
+
+        // This index might need to be added to the current highest image name
+        async move { process_lyric_chunk(ai_song, lyric, id, index).await }
     });
 
     // Run all futures concurrently and collect the results
@@ -45,6 +45,7 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
         }
     }
 
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let output_file =
         format!("{}/{}_{}", music_video_folder, timestamp, "final_video.mp4");
@@ -57,6 +58,7 @@ async fn process_lyric_chunk(
     ai_song: Arc<ai_playlist::models::ai_songs::Model>,
     lyric: String,
     id: String,
+    index: usize,
 ) -> Result<String> {
     println!(
         "{} - {}",
@@ -67,9 +69,11 @@ async fn process_lyric_chunk(
     //
     let folder = format!("./tmp/music_videos/{}", id);
     let prompt = format!("{} {}", ai_song.title, lyric);
+    // Pass the index into here
     let images = fal_ai::create_from_fal_api_return_filename(
         &prompt,
         Some(folder.clone()),
+        index.to_string(),
     )
     .await?;
     let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;

@@ -30,6 +30,7 @@ impl FalService {
         image_size: &str,
         save_dir: &str,
         obs_background_image_path: Option<&str>,
+        filename: Option<&str>,
     ) -> Result<Vec<String>> {
         let parameters = serde_json::json!({
             "prompt": prompt,
@@ -39,15 +40,19 @@ impl FalService {
         let raw_json =
             self.run_model_and_get_raw_json(model, parameters).await?;
 
-        let timestamp = Utc::now().timestamp();
-        let json_save_path = format!("{}/{}.json", save_dir, timestamp);
+        let filename = match filename {
+            Some(f) => f.to_string(),
+            None => {
+                format!("{}", Utc::now().timestamp())
+            }
+        };
+        let json_save_path = format!("{}/{}.json", save_dir, filename);
 
         println!("Saving JSON to: {}", json_save_path);
         self.save_raw_json(&json_save_path, &raw_json).await?;
 
-        let file_responses = self
-            .process_images(&raw_json, save_dir, &timestamp.to_string())
-            .await?;
+        let file_responses =
+            self.process_images(&raw_json, save_dir, &filename).await?;
 
         // TODO: Consider improving this
         // while only handle the first file
