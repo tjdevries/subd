@@ -79,6 +79,18 @@ elevenlabs-api = { path = "../elevenlabs-api" }
 # openai = "1.0.0-alpha.13"
 openai = { path = "../openai" }
 colored = "2.1.0"
+# tower-http = { version = "0.6.1" }
+# tower-http = "0.6.1"
+
+# tower = "0.4"
+tower = "*"
+# tower-http = "*"
+tower-http = { version = "*", features = ["fs", "cors"] }
+hyper = { version = "*", features = ["full"] }
+
+
+# tower-http = { version = "0.6", features = ["serve"] }
+
 
 [workspace]
 

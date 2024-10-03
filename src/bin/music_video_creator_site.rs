@@ -1,57 +1,82 @@
 use axum::{
-    http::StatusCode,
-    routing::{get, post},
-    Json, Router,
+    http::{Method, StatusCode},
+    response::Html,
+    routing::{get, Router},
 };
-use serde::{Deserialize, Serialize};
+use std::{fs, net::SocketAddr};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    services::ServeDir,
+};
+use tracing_subscriber;
 
 #[tokio::main]
 async fn main() {
-    // initialize tracing
     tracing_subscriber::fmt::init();
 
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
-        // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+    // Build our static file service
+    let serve_dir = ServeDir::new("./tmp/fal_images");
 
-    // run our app with hyper, listening globally on port 3000
+    // Build our application with routes
+    let app = Router::new()
+        .route("/", get(root))
+        // Serve static files from "./tmp/fal_images" at the "/images" path
+        .nest_service("/images", serve_dir)
+        // Add CORS layer if needed
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any) // Allow any origin
+                .allow_methods([Method::GET]),
+        );
+
+    // Run our app with hyper, listening globally on port 4001
+    let addr = SocketAddr::from(([0, 0, 0, 0], 4001));
+    println!("Listening on {}", addr);
+
     let listener = tokio::net::TcpListener::bind("0.0.0.0:4001").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
-// basic handler that responds with a static string
-async fn root() -> &'static str {
-    "Hello, World!"
-}
+// Handler that responds with an HTML page displaying images
+async fn root() -> Result<Html<String>, (StatusCode, String)> {
+    // Read the "./tmp/fal_images" directory
+    let entries = fs::read_dir("./tmp/fal_images").map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Error reading directory: {}", e),
+        )
+    })?;
 
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
-    Json(payload): Json<CreateUser>,
-) -> (StatusCode, Json<User>) {
-    // insert your application logic here
-    let user = User {
-        id: 1337,
-        username: payload.username,
-    };
+    // Collect image file names
+    let images = entries
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    let ext = extension.to_string_lossy().to_lowercase();
+                    if ext == "png" || ext == "jpg" || ext == "jpeg" {
+                        return path
+                            .file_name()
+                            .map(|name| name.to_string_lossy().into_owned());
+                    }
+                }
+            }
+            None
+        })
+        .collect::<Vec<_>>();
 
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
-}
+    let mut html = String::from("<html><body>\n");
 
-// the input to our `create_user` handler
-#[derive(Deserialize)]
-struct CreateUser {
-    username: String,
-}
+    let base_path = "/images";
 
-// the output to our `create_user` handler
-#[derive(Serialize)]
-struct User {
-    id: u64,
-    username: String,
+    for (index, image) in images.into_iter().enumerate() {
+        html.push_str(&format!(
+            "<b>{}</b> <img src=\"{}/{}\" alt=\"{}\" style=\"max-width:200px; max-height:200px;\" />\n",
+            index, base_path, image, image
+        ));
+    }
+    html.push_str("</body></html>\n");
+
+    Ok(Html(html))
 }
