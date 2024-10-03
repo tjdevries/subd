@@ -17,7 +17,11 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     // Build our static file service
-    let serve_dir = ServeDir::new("./tmp/fal_images");
+    // Does this also
+    //
+    // Should we check for songs that have music videos?
+    // Should we generate a file for each
+    let serve_dir = ServeDir::new("./tmp/music_videos");
 
     let app = Router::new()
         .route("/", get(root))
@@ -35,16 +39,23 @@ async fn main() {
 
 async fn root() -> Result<Html<String>, (StatusCode, String)> {
     let pool = get_db_pool().await;
+    let current_song = ai_playlist::get_current_song(&pool)
+        .await
+        .map_err(|_| "Error getting current song")
+        .unwrap();
+    let count = ai_playlist::total_ai_songs(&pool).await.unwrap();
     let songs = ai_songs_vote::get_top_songs(&pool, 5)
         .await
         .map_err(|_| "Error getting top songs")
         .unwrap();
-    let entries = fs::read_dir("./tmp/fal_images").map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Error reading directory: {}", e),
-        )
-    })?;
+    let entries =
+        fs::read_dir(format!("./tmp/music_videos/{}/", current_song.song_id))
+            .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Error reading directory: {}", e),
+            )
+        })?;
 
     let images = entries
         .filter_map(|entry| {
@@ -64,8 +75,6 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
         })
         .collect::<Vec<_>>();
 
-    let count = ai_playlist::total_ai_songs(&pool).await.unwrap();
-
     let mut html = String::from(
         "<html>
             <head>
@@ -75,6 +84,11 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
                     }
                     .sub-header{
                         font-size: 200%;
+                    }
+
+                    .current-song {
+                        padding: 10px;
+                        border: 2px solid black;
                     }
 
                     .header{
@@ -94,7 +108,7 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
         ",
     );
 
-    let base_path = "/images";
+    let base_path = format!("/images/{}", current_song.song_id);
 
     html.push_str(&"<h1 class=\"header grid-item\"> AI Top of the Pops</h1>");
     html.push_str(&format!(
@@ -106,15 +120,22 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
         count
     ));
 
+    html.push_str(&format!(
+        "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {}</h2>",
+        current_song.title, current_song.tags, current_song.username, current_song.song_id
+    ));
+
     html.push_str(&"<h1 class=\"grid-item\"><code class=\"\">!vote 0.0 - 10.0</code></h1>");
     html.push_str(&"<hr />");
-    html.push_str("<div class=\"grid-container\">");
 
     // Soon this will be be top of the pops
     // We would like to display the top 5 songs
-    //for song in songs {
-    //    html.push_str(&format!("Song: {}", song.title))
-    //}
+    html.push_str(&"<hr />");
+    for song in songs {
+        html.push_str(&format!("Song: {}", song.title))
+    }
+    html.push_str(&"<hr />");
+    html.push_str("<div class=\"grid-container\">");
 
     // Add each image and its ID to the grid
     for (index, image) in images.into_iter().enumerate() {
