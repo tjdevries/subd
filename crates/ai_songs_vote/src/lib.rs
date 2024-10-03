@@ -38,6 +38,22 @@ pub async fn get_top_songs(
     .bind(limit)
     .fetch_all(pool)
     .await?;
+    //
+    //    SELECT
+    //            s.song_id,
+    //            s.title,
+    //            CAST(AVG(v.score) AS DOUBLE PRECISION) AS avg_score,
+    //            CAST(SUM(v.score) AS DOUBLE PRECISION) AS total_score,
+    //            (COUNT(*) / 10) AS multipler
+    //        FROM
+    //            ai_songs s
+    //        JOIN
+    //            ai_songs_vote v ON s.song_id = v.song_id
+    //        GROUP BY
+    //            s.song_id, s.title
+    //        ORDER BY
+    //            avg_score DESC
+    //;
 
     Ok(songs)
 }
