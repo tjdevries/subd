@@ -1,9 +1,11 @@
+use anyhow::Result;
 use axum::{
     http::{Method, StatusCode},
     response::Html,
     routing::{get, Router},
 };
 use std::{fs, net::SocketAddr};
+use subd_db::get_db_pool;
 use tower_http::{
     cors::{Any, CorsLayer},
     services::ServeDir,
@@ -34,6 +36,11 @@ async fn main() {
 
 // Handler that responds with an HTML page displaying images in a grid
 async fn root() -> Result<Html<String>, (StatusCode, String)> {
+    let pool = get_db_pool().await;
+    let songs = ai_songs_vote::get_top_songs(&pool, 5)
+        .await
+        .map_err(|_| "Error getting top songs")
+        .unwrap();
     // Read the "./tmp/fal_images" directory
     let entries = fs::read_dir("./tmp/fal_images").map_err(|e| {
         (
@@ -82,6 +89,11 @@ async fn root() -> Result<Html<String>, (StatusCode, String)> {
     );
 
     let base_path = "/images";
+
+    // We need to display the top 5 songs
+    for song in songs {
+        html.push_str(&format!("Song: {}", song.title))
+    }
 
     // Add each image and its ID to the grid
     for (index, image) in images.into_iter().enumerate() {

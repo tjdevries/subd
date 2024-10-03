@@ -20,3 +20,4 @@ twitch_chat = { path = "../twitch_chat" }
 reqwest.workspace = true
 tokio.workspace = true
 chrono.workspace = true
+bytes = "1.7.2"

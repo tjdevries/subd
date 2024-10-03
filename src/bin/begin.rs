@@ -128,12 +128,14 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Redirect the stdout to cleanup bootup logs
-    let fe = subd_utils::redirect_stderr()?;
-    let fo = subd_utils::redirect_stdout()?;
-    let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-        .expect("Failed to get audio output stream");
-    subd_utils::restore_stderr(fe);
-    subd_utils::restore_stdout(fo);
+    //let fe = subd_utils::redirect_stderr()?;
+    //let fo = subd_utils::redirect_stdout()?;
+    //let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+    //    .expect("Failed to get audio output stream");
+    //subd_utils::restore_stderr(fe);
+    //subd_utils::restore_stdout(fo);
+
+    let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
 
     // Determine which features to enable
     let features = if args.enable_all {

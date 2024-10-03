@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use bytes;
 use reqwest::Client;
 use rodio::{Decoder, Sink};
 use sqlx::types::Uuid;
@@ -146,6 +147,7 @@ pub async fn download_and_play(
     let tx = tx.clone();
     let twitch_client = twitch_client.clone();
 
+    // We need to handle the await here
     tokio::spawn(async move {
         let cdn_url = format!("https://cdn1.suno.ai/{}.mp3", id);
         loop {
@@ -158,10 +160,40 @@ pub async fn download_and_play(
             // This response here is where we download
             match reqwest::get(&cdn_url).await {
                 Ok(response) if response.status().is_success() => {
-                    if let Err(e) = just_download(response, id.clone()).await {
+                    let content = response.text().await.unwrap();
+                    if let Err(e) =
+                        just_download(content.as_bytes(), id.clone()).await
+                    {
                         eprintln!("Error downloading file: {}", e);
                     }
 
+                    //let t = response.text().await.unwrap();
+                    //let suno_response: models::SunoResponse =
+                    //    serde_json::from_str(&t).expect("Failed to parse JSON");
+                    // we need to create the song here
+                    //let created_at =
+                    //    sqlx::types::time::OffsetDateTime::now_utc();
+                    //let song_id = Uuid::parse_str(&id).unwrap();
+
+                    //// This should be the builder
+                    //let new_song = ai_playlist::models::ai_songs::Model {
+                    //    song_id,
+                    //    title: response.title.to_string(),
+                    //    tags: response.metadata.tags.to_string(),
+                    //    prompt: response.metadata.prompt,
+                    //    username: user_name.clone(),
+                    //    audio_url: response.audio_url.to_string(),
+                    //    lyric: response.lyric,
+                    //    gpt_description_prompt: suno_response
+                    //        .metadata
+                    //        .gpt_description_prompt
+                    //        .to_string(),
+                    //    last_updated: Some(created_at),
+                    //    created_at: Some(created_at),
+                    //    downloaded: false,
+                    //};
+                    //new_song.save(pool).await?;
+                    //
                     let _ = tx.send(subd_types::Event::UserMessage(
                         subd_types::UserMessage {
                             user_name: "beginbot".to_string(),
@@ -253,13 +285,14 @@ pub async fn parse_suno_response_download_and_play(
 
 /// Downloads the audio file and saves it locally.
 pub async fn just_download(
-    response: reqwest::Response,
+    content: &[u8],
+    // response: reqwest::Response,
     id: String,
 ) -> Result<BufReader<File>> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mut file = fs::File::create(&file_name).await?;
 
-    let content = response.bytes().await?;
+    // let content = response.bytes().await?;
 
     // now is a good time to mark a song as downloaded
     tokio::io::copy(&mut &content[..], &mut file).await?;

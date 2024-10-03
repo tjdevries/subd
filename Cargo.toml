@@ -87,6 +87,7 @@ tower = "*"
 # tower-http = "*"
 tower-http = { version = "*", features = ["fs", "cors"] }
 hyper = { version = "*", features = ["full"] }
+bytes = "1.7.2"
 
 
 # tower-http = { version = "0.6", features = ["serve"] }
