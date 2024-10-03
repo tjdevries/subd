@@ -29,6 +29,9 @@ test_fal:
 fix:
 	cargo fix --lib -p server
 
+mv:
+	cargo run --bin music_video_creator_site
+	
 chat:
 	cargo run --bin chat
 	
