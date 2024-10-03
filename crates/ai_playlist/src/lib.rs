@@ -5,6 +5,11 @@ use uuid::Uuid;
 
 pub mod models;
 
+// This should maybe in lib.rs
+pub async fn total_ai_songs(_pool: &sqlx::PgPool) -> Result<u64> {
+    Ok(0)
+}
+
 pub async fn find_song_by_id(
     pool: &PgPool,
     song_id: &str,

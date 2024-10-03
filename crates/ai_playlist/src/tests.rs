@@ -4,13 +4,14 @@ use sqlx::PgPool;
 use test_tag::tag;
 use uuid::Uuid;
 
-// Deletes all songs and playlist entries. Use with caution.
-async fn delete_all_ai_songs_and_playlist(pool: &PgPool) -> Result<()> {
-    sqlx::query!("DELETE FROM ai_song_playlist")
-        .execute(pool)
-        .await?;
-    sqlx::query!("DELETE FROM ai_songs").execute(pool).await?;
-    Ok(())
+#[tokio::test]
+#[tag(database)]
+async fn test_ai_song_functions() {
+    let pool = subd_db::get_test_db_pool().await;
+    let count = total_ai_songs(&pool).await.unwrap();
+    assert_eq!(count, 0);
+
+    // Now I need to create an ai_songs
 }
 
 #[tokio::test]
@@ -100,4 +101,15 @@ async fn test_ai_song_creation() {
     mark_song_as_played(&pool, aaaa_uuid).await.unwrap();
     let next_song = find_next_song_to_play(&pool).await.unwrap();
     assert_eq!(next_song.song_id, bbbb_uuid);
+}
+
+// Helper Methods =======================================================
+
+// Deletes all songs and playlist entries. Use with caution.
+async fn delete_all_ai_songs_and_playlist(pool: &PgPool) -> Result<()> {
+    sqlx::query!("DELETE FROM ai_song_playlist")
+        .execute(pool)
+        .await?;
+    sqlx::query!("DELETE FROM ai_songs").execute(pool).await?;
+    Ok(())
 }

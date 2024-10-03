@@ -4,15 +4,11 @@ use sqlx::PgPool;
 use subd_macros::database_model;
 use uuid::Uuid;
 
-// This should maybe in lib.rs
-pub async fn count_of_ai_songs(_pool: &sqlx::PgPool) -> Result<u64> {
-    Ok(0)
-}
-
 #[database_model]
 pub mod ai_songs {
     use super::*;
 
+    // Can I add the default macro?
     pub struct Model {
         pub song_id: Uuid,
         pub title: String,
@@ -21,6 +17,7 @@ pub mod ai_songs {
         pub username: String,
         pub audio_url: String,
         pub gpt_description_prompt: String,
+
         pub lyric: Option<String>,
         pub last_updated: Option<OffsetDateTime>,
         pub created_at: Option<OffsetDateTime>,
