@@ -8,7 +8,6 @@ use uuid::Uuid;
 pub mod ai_songs {
     use super::*;
 
-    // Can I add the default macro?
     pub struct Model {
         pub song_id: Uuid,
         pub title: String,

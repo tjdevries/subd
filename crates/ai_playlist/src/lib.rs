@@ -5,9 +5,16 @@ use uuid::Uuid;
 
 pub mod models;
 
-// This should maybe in lib.rs
-pub async fn total_ai_songs(_pool: &sqlx::PgPool) -> Result<u64> {
-    Ok(0)
+pub async fn total_ai_songs(pool: &sqlx::PgPool) -> Result<i64> {
+    let record = sqlx::query!(
+        "
+        SELECT COUNT(*) as count
+        FROM ai_songs
+        ",
+    )
+    .fetch_one(pool)
+    .await?;
+    record.count.ok_or(anyhow!("Error on ai_songs count"))
 }
 
 pub async fn find_song_by_id(

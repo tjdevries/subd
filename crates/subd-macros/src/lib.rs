@@ -175,7 +175,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let vis = input.vis;
     TokenStream::from(quote! {
          #vis mod #name {
-            #[derive(Debug)]
+            #[derive(Debug, Default)]
             #model
 
             #[derive(Debug, Default)]
@@ -183,9 +183,10 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
 
             #(#content)*
 
+            // Should I pass in default here???
             impl Model {
                 pub fn new(#new_args) -> Self {
-                    Self { #self_body }
+                    Self { #self_body, ..Default::default() }
                 }
 
                 #read

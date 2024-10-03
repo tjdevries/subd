@@ -7,11 +7,29 @@ use uuid::Uuid;
 #[tokio::test]
 #[tag(database)]
 async fn test_ai_song_functions() {
+    // TODO: the fact we are using multiple DBs this is a problem
     let pool = subd_db::get_test_db_pool().await;
+    let _ = delete_all_ai_songs_and_playlist(&pool).await.unwrap();
     let count = total_ai_songs(&pool).await.unwrap();
-    assert_eq!(count, 0);
+    assert_eq!(count, 0, "ok");
 
-    // Now I need to create an ai_songs
+    // they say there is default, but it ain't working
+    let m = models::ai_songs::Model {
+        ..Default::default()
+    };
+
+    // I should add Builder Pattern????
+    // let m = models::ai_songs::Model::new();
+
+    assert_eq!(m.title, "");
+
+    // This is creating 2?
+    // or 2 or running at the same time?
+    let res = m.save(&pool).await;
+    assert!(res.is_ok());
+    let count = total_ai_songs(&pool).await.unwrap();
+    // since tests are async counts are hard
+    assert!(count > 0);
 }
 
 #[tokio::test]
