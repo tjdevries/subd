@@ -50,7 +50,7 @@ async fn root(
         "<html>
             <head>
             
-                <meta http-equiv=\"refresh\" content=\"1\" />
+                <meta http-equiv=\"refresh\" content=\"5\" />
                 <style>
                     body {
                         font-family: \"Papyrus\";
@@ -122,6 +122,7 @@ async fn root(
             )
         })?;
 
+        // Entries
         let images = entries
             .filter_map(|entry| {
                 let entry = entry.ok()?;
@@ -139,6 +140,30 @@ async fn root(
                 None
             })
             .collect::<Vec<_>>();
+
+        let entries = fs::read_dir(&music_directory).map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Error reading directory: {}", e),
+            )
+        })?;
+        let videos = entries
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(extension) = path.extension() {
+                        let ext = extension.to_string_lossy().to_lowercase();
+                        if ext == "mp4" {
+                            return path.file_name().map(|name| {
+                                name.to_string_lossy().into_owned()
+                            });
+                        }
+                    }
+                }
+                None
+            })
+            .collect::<Vec<_>>();
         let base_path = format!("/images/{}", current_song.song_id);
         html.push_str(&format!(
             "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {}</h2>",
@@ -147,8 +172,7 @@ async fn root(
 
         html.push_str("<div class=\"grid-container\">");
 
-        // only need this if we have a current_song
-        // Add each image and its ID to the grid
+        // This shows all Images
         for (index, image) in images.into_iter().enumerate() {
             html.push_str(&format!(
                 "<div class=\"grid-item\">
@@ -156,6 +180,16 @@ async fn root(
                     <h1><code>!like {} | !veto {}</code></h1>
                 </div>",
                 base_path, image, image, index, index
+            ));
+        }
+
+        for (index, video) in videos.into_iter().enumerate() {
+            html.push_str(&format!(
+                "<div class=\"grid-item\">
+                    <video src=\"{}/{}\" alt=\"{}\" style=\"max-width:400px; max-height:400px;\" autoplay loop muted></video><br/>
+                    <h1><code>!like {} | !veto {}</code></h1>
+                </div>",
+                base_path, video, video, index, index
             ));
         }
     }
