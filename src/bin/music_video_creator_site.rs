@@ -1,11 +1,10 @@
 use anyhow::Result;
 use axum::{
-    extract::Extension, extract::FromRef, extract::State, http::StatusCode,
-    response::IntoResponse, routing::get, routing::post, Json, Router,
+    extract::FromRef, extract::State, http::StatusCode, routing::get, Router,
 };
 use axum::{http::Method, response::Html};
 use std::fs;
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 use subd_db::get_db_pool;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -129,54 +128,10 @@ async fn generate_html(
             })?;
         }
 
-        let entries = fs::read_dir(&music_directory).map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Error reading directory: {}", e),
-            )
-        })?;
+        let images =
+            get_files_by_ext(&music_directory, &vec!["png", "jpg", "jpeg"]);
+        let videos = get_files_by_ext(&music_directory, &vec!["mp4"]);
 
-        let images = entries
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(extension) = path.extension() {
-                        let ext = extension.to_string_lossy().to_lowercase();
-                        if ext == "png" || ext == "jpg" || ext == "jpeg" {
-                            return path.file_name().map(|name| {
-                                name.to_string_lossy().into_owned()
-                            });
-                        }
-                    }
-                }
-                None
-            })
-            .collect::<Vec<_>>();
-
-        let entries = fs::read_dir(&music_directory).map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Error reading directory: {}", e),
-            )
-        })?;
-        let videos = entries
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(extension) = path.extension() {
-                        let ext = extension.to_string_lossy().to_lowercase();
-                        if ext == "mp4" {
-                            return path.file_name().map(|name| {
-                                name.to_string_lossy().into_owned()
-                            });
-                        }
-                    }
-                }
-                None
-            })
-            .collect::<Vec<_>>();
         let base_path = format!("/images/{}", current_song.song_id);
         html.push_str(&format!(
             "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {} | AVG Score: {}</h2>",
@@ -215,4 +170,29 @@ async fn generate_html(
     );
 
     Ok(html)
+}
+
+fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
+    let entries = match fs::read_dir(&directory) {
+        Ok(d) => d,
+        Err(_) => return vec![],
+    };
+
+    entries
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(extension) = path.extension() {
+                    let ext = extension.to_string_lossy().to_lowercase();
+                    if extensions.contains(&ext.as_str()) {
+                        return path
+                            .file_name()
+                            .map(|name| name.to_string_lossy().into_owned());
+                    }
+                }
+            }
+            None
+        })
+        .collect::<Vec<_>>()
 }

@@ -19,6 +19,7 @@ pub struct AIMusicVideoCreatorHandler {
 }
 
 enum Command {
+    CreateMusicVideoImages { id: String },
     CreateMusicVideo { id: String },
     Unknown,
 }
@@ -70,7 +71,18 @@ pub async fn handle_requests(
         Command::CreateMusicVideo { id } => {
             Ok(handle_create_music_video(obs_client, pool, id).await?)
         }
+        Command::CreateMusicVideoImages { id } => {
+            Ok(handle_create_music_video_images(pool, id).await?)
+        }
     }
+}
+
+async fn handle_create_music_video_images(
+    pool: &sqlx::PgPool,
+    id: String,
+) -> Result<()> {
+    let _ = ai_music_videos::create_music_video_images(pool, id).await;
+    Ok(())
 }
 
 async fn handle_create_music_video(
@@ -114,6 +126,16 @@ async fn handle_create_music_video(
 async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
     let mut words = msg.contents.split_whitespace();
     match words.next() {
+        Some("!create_music_video_images") => {
+            let id = match words.next() {
+                Some(id) => id.to_string(),
+                None => ai_playlist::get_current_song(pool)
+                    .await?
+                    .song_id
+                    .to_string(),
+            };
+            Ok(Command::CreateMusicVideo { id })
+        }
         Some("!create_music_video") => {
             let id = match words.next() {
                 Some(id) => id.to_string(),

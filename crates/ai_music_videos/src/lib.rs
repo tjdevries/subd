@@ -6,9 +6,67 @@ use sqlx::PgPool;
 use std::path::Path;
 use std::sync::Arc;
 
+pub async fn create_music_video_images(
+    pool: &PgPool,
+    id: String,
+) -> Result<()> {
+    println!("\tStarting to create NEW Music Video!");
+
+    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
+    let ai_song = Arc::new(ai_song);
+
+    let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
+        lyric
+            .lines()
+            .filter(|line| !line.trim().starts_with('['))
+            .collect::<Vec<_>>()
+            .join("\n")
+    });
+    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
+
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+
+    std::fs::create_dir_all(&music_video_folder)?;
+
+    let image_files = match std::fs::read_dir(&music_video_folder) {
+        Ok(files) => files,
+        Err(_) => return Ok(()),
+    };
+
+    let highest_number = image_files
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            entry
+                .path()
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(String::from)
+        })
+        .filter_map(|name| name.parse::<usize>().ok())
+        .max()
+        .unwrap_or(0);
+
+    println!("Highest Number: {}", highest_number);
+
+    // Create a vector of futures for concurrent execution
+    let futures =
+        lyric_chunks.into_iter().enumerate().map(|(index, lyric)| {
+            let ai_song = Arc::clone(&ai_song);
+            let id = id.clone();
+
+            let file_index = highest_number + (index + 1);
+            async move {
+                create_image_from_lyric(ai_song, lyric, id, file_index).await
+            }
+        });
+
+    // Run all futures concurrently and collect the results
+    let _results: Vec<Result<String>> = join_all(futures).await;
+    Ok(())
+}
+
 pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     println!("\tStarting to create NEW Music Video!");
-    let music_video_folder = format!("./tmp/music_videos/{}", id);
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
@@ -58,6 +116,8 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     // Run all futures concurrently and collect the results
     let results: Vec<Result<String>> = join_all(futures).await;
 
+    // I don't always to do this
+
     // Collect filenames or handle errors
     let mut video_chunks: Vec<String> = Vec::new();
     for result in results {
@@ -77,6 +137,31 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     combine_videos(video_chunks, &output_file)?;
 
     Ok(output_file)
+}
+
+async fn create_image_from_lyric(
+    ai_song: Arc<ai_playlist::models::ai_songs::Model>,
+    lyric: String,
+    id: String,
+    index: usize,
+) -> Result<String> {
+    println!(
+        "{} - {}",
+        "Creating Image for Lyric Chunk: {}".cyan(),
+        lyric.green()
+    );
+
+    //
+    let folder = format!("./tmp/music_videos/{}", id);
+    let prompt = format!("{} {}", ai_song.title, lyric);
+    let images = fal_ai::create_from_fal_api_return_filename(
+        &prompt,
+        Some(folder.clone()),
+        index.to_string(),
+    )
+    .await?;
+    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+    Ok(first_image.to_string())
 }
 
 async fn process_lyric_chunk(
