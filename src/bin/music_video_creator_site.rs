@@ -46,6 +46,8 @@ async fn root(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let ai_songs_count = ai_playlist::total_ai_songs(&pool).await.unwrap();
     let ai_votes_count = ai_songs_vote::total_votes(&pool).await.unwrap();
+    let unplayed_songs =
+        ai_playlist::count_unplayed_songs(&pool).await.unwrap();
 
     let current_song = match ai_playlist::get_current_song(&pool).await {
         Ok(song) => song,
@@ -56,6 +58,7 @@ async fn root(
                     ai_songs_count,
                     ai_votes_count,
                     0,
+                    unplayed_songs,
                     Err("Error getting current song"),
                 )
                 .await?,
@@ -75,6 +78,7 @@ async fn root(
         ai_songs_count,
         ai_votes_count,
         current_song_votes_count,
+        unplayed_songs,
         Ok(current_song),
     )
     .await?;
@@ -87,6 +91,7 @@ async fn generate_html(
     ai_songs_count: i64,
     ai_votes_count: i64,
     current_songs_vote_count: i64,
+    unplayed_songs: i64,
     current_song: Result<ai_playlist::models::ai_songs::Model, &str>,
 ) -> Result<String, (StatusCode, String)> {
     let mut html = String::from(
@@ -135,6 +140,10 @@ async fn generate_html(
     html.push_str(&format!(
         "<h2 class=\"sub-header grid-item\"> Total AI Song Votes: {}</h2>",
         ai_votes_count,
+    ));
+    html.push_str(&format!(
+        "<h1 class=\"grid-item\">Songs in Playlist: {}</h1>",
+        unplayed_songs
     ));
     html.push_str(&"<h1 class=\"grid-item\"><code class=\"\">!vote 0.0 - 10.0</code></h1>");
     html.push_str(&"<hr />");

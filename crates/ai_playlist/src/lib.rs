@@ -108,7 +108,22 @@ pub async fn find_oldest_unplayed_song(
     .ok_or(Error::RowNotFound)
 }
 
-// Adds a song to the playlist.
+pub async fn count_unplayed_songs(pool: &PgPool) -> Result<i64, Error> {
+    let count = sqlx::query_scalar!(
+        r#"
+        SELECT COUNT(*)
+        FROM ai_song_playlist
+        WHERE played_at IS NULL AND stopped_at IS NULL
+        "#
+    )
+    .fetch_one(pool)
+    .await?;
+
+    match count {
+        Some(count) => Ok(count),
+        None => Ok(0),
+    }
+}
 pub async fn add_song_to_playlist(
     pool: &PgPool,
     song_id: Uuid,
