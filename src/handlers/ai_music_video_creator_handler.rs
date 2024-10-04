@@ -134,7 +134,7 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
                     .song_id
                     .to_string(),
             };
-            Ok(Command::CreateMusicVideo { id })
+            Ok(Command::CreateMusicVideoImages { id })
         }
         Some("!create_music_video") => {
             let id = match words.next() {
