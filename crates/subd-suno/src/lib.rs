@@ -296,7 +296,7 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    let _ = download_and_play(
+    let res = download_and_play(
         pool,
         twitch_client,
         tx,
@@ -305,7 +305,16 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await;
 
-    Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
+    match res {
+        Ok(_) => {
+            println!("Downloaded and played song: {}", song_id);
+            Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
+        }
+        Err(e) => {
+            eprintln!("Error downloading and playing song: {}", e);
+            Ok(())
+        }
+    }
 }
 
 /// Downloads the audio file and saves it locally.
