@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     println!("\tStarting to create NEW Music Video!");
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
@@ -21,13 +22,37 @@ pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
     });
     let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
 
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+
+    std::fs::create_dir_all(&music_video_folder)?;
+
+    let image_files = match std::fs::read_dir(&music_video_folder) {
+        Ok(files) => files,
+        Err(_) => return Ok("0".to_string()),
+    };
+
+    let highest_number = image_files
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            entry
+                .path()
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(String::from)
+        })
+        .filter_map(|name| name.parse::<usize>().ok())
+        .max()
+        .unwrap_or(0);
+
+    println!("Highest Number: {}", highest_number);
+
     // Create a vector of futures for concurrent execution
     let futures = lyric_chunks.into_iter().enumerate().map(|(index, lyric)| {
         let ai_song = Arc::clone(&ai_song);
         let id = id.clone();
 
-        // This index might need to be added to the current highest image name
-        async move { process_lyric_chunk(ai_song, lyric, id, index).await }
+        let file_index = highest_number + (index + 1);
+        async move { process_lyric_chunk(ai_song, lyric, id, file_index).await }
     });
 
     // Run all futures concurrently and collect the results
@@ -234,6 +259,29 @@ mod tests {
     use ai_playlist::models::ai_songs;
     use uuid::Uuid;
 
+    #[tokio::test]
+    async fn test_highest_file_number() {
+        let uuid_str = "0833d255-607f-4b74-bea9-4818f032140a";
+        let id = Uuid::parse_str(uuid_str).unwrap();
+        let music_video_folder = format!("../../tmp/music_videos/{}", id);
+        let highest_number = std::fs::read_dir(&music_video_folder)
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| {
+                entry
+                    .path()
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(String::from)
+            })
+            .filter_map(|name| name.parse::<usize>().ok())
+            .max()
+            .unwrap_or(0);
+        println!("Highest Number: {}", highest_number);
+        assert_eq!(1727998927, highest_number);
+    }
+
+    #[ignore]
     #[tokio::test]
     async fn test_create_music_video() {
         let pool = subd_db::get_test_db_pool().await;

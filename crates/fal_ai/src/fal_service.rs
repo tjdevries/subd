@@ -136,8 +136,11 @@ impl FalService {
         })?;
 
         let image_responses = stream::iter(data.images.iter().enumerate())
-            .then(|(i, image)| async move {
-                let filename = self.construct_filename(&save_dir, &name, i);
+            .then(|(_i, image)| async move {
+                // let filename = self.construct_filename(&save_dir, &name, i);
+                let extension = "png";
+                let filename = format!("{}/{}.{}", save_dir, name, extension);
+
                 let image_bytes =
                     self.save_image(&image.url, &filename).await?;
                 Ok::<SavedImageResponse, anyhow::Error>(SavedImageResponse {
