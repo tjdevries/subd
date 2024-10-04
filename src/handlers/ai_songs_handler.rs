@@ -221,10 +221,14 @@ async fn handle_info_command(
             }
         };
         let score =
-            ai_songs_vote::get_average_score(pool, song.song_id).await?;
+            match ai_songs_vote::get_average_score(pool, song.song_id).await {
+                Ok(ranking) => ranking.avg_score.to_string(),
+                Err(_) => "No Votes for Song".to_string(),
+            };
+
         let message = format!(
             "@{}'s Song is Currently playing - {} | {} | {} | AVG Score: {}",
-            song.username, song.title, song.tags, song.song_id, score.avg_score,
+            song.username, song.title, song.tags, song.song_id, score
         );
         let _ = send_message(twitch_client, message).await;
     }

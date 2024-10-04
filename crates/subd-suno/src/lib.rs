@@ -181,6 +181,7 @@ pub async fn download_and_play(
                         }
                     }
 
+                    // So we are failing on getting the audio resoponse and parsing it!
                     let suno_response =
                         get_audio_information(&id).await.unwrap();
                     // we need to create the song here
