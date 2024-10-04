@@ -1,10 +1,11 @@
 use anyhow::Result;
 use axum::{
-    http::{Method, StatusCode},
-    response::Html,
-    routing::{get, Router},
+    extract::Extension, extract::FromRef, extract::State, http::StatusCode,
+    response::IntoResponse, routing::get, routing::post, Json, Router,
 };
+use axum::{http::Method, response::Html};
 use std::fs;
+use std::{net::SocketAddr, sync::Arc};
 use subd_db::get_db_pool;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -12,16 +13,26 @@ use tower_http::{
 };
 use tracing_subscriber;
 
+#[derive(Clone, FromRef)]
+struct AppState {
+    pool: Arc<sqlx::PgPool>,
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
     let serve_dir = ServeDir::new("./tmp/music_videos");
+    let pool = get_db_pool().await;
+    let state = AppState {
+        pool: Arc::new(pool),
+    };
 
     let app = Router::new()
         .route("/", get(root))
         // Serve static files from "./tmp/fal_images" at the "/images" path
         .nest_service("/images", serve_dir)
+        .with_state(state)
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
@@ -32,12 +43,14 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn root() -> Result<Html<String>, (StatusCode, String)> {
-    let pool = get_db_pool().await;
-
+async fn root(
+    State(pool): State<Arc<sqlx::PgPool>>,
+) -> Result<Html<String>, (StatusCode, String)> {
     let mut html = String::from(
         "<html>
             <head>
+            
+                <meta http-equiv=\"refresh\" content=\"1\" />
                 <style>
                     body {
                         font-family: \"Papyrus\";
