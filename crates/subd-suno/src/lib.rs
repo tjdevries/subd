@@ -63,7 +63,7 @@ pub async fn play_audio(
     let uuid_id = Uuid::parse_str(id)
         .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
 
-    play_sound_instantly(sink, file).await?;
+    add_song_to_sink_queue(sink, file).await?;
     ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     Ok(())
@@ -88,17 +88,24 @@ pub async fn add_to_playlist_and_play_audio(
     let uuid_id = Uuid::parse_str(id)
         .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))?;
 
+    println!("Adding Song to Playlist: {}", uuid_id);
     // This isn't marked as playing right here
     // Here is an example
     ai_playlist::add_song_to_playlist(pool, uuid_id).await?;
-    play_sound_instantly(sink, file).await?;
-    ai_playlist::mark_song_as_played(pool, uuid_id).await?;
+
+    println!("Adding Song to Sink Queue: {}", uuid_id);
+    // Does this wait for the song to play
+    // This doesn't wait until the song is done
+    add_song_to_sink_queue(sink, file).await?;
+
+    // TODO: this could be wrong
+    // ai_playlist::mark_song_as_played(pool, uuid_id).await?;
 
     Ok(())
 }
 
 /// Plays sound instantly by appending it to the sink.
-pub async fn play_sound_instantly(
+pub async fn add_song_to_sink_queue(
     sink: &Sink,
     file: BufReader<File>,
 ) -> Result<()> {

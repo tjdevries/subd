@@ -44,19 +44,49 @@ async fn main() {
 async fn root(
     State(pool): State<Arc<sqlx::PgPool>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let count = ai_playlist::total_ai_songs(&pool).await.unwrap();
-    let current_song = ai_playlist::get_current_song(&pool)
-        .await
-        .map_err(|_| "Error getting current song");
+    let ai_songs_count = ai_playlist::total_ai_songs(&pool).await.unwrap();
+    let ai_votes_count = ai_songs_vote::total_votes(&pool).await.unwrap();
 
-    let html = generate_html(pool, count, current_song).await?;
+    let current_song = match ai_playlist::get_current_song(&pool).await {
+        Ok(song) => song,
+        Err(_) => {
+            return Ok(Html(
+                generate_html(
+                    pool,
+                    ai_songs_count,
+                    ai_votes_count,
+                    0,
+                    Err("Error getting current song"),
+                )
+                .await?,
+            ))
+        }
+    };
+
+    let current_song_votes_count =
+        match ai_songs_vote::total_votes_by_id(&pool, current_song.song_id)
+            .await
+        {
+            Ok(count) => count,
+            Err(_) => 0,
+        };
+    let html = generate_html(
+        pool,
+        ai_songs_count,
+        ai_votes_count,
+        current_song_votes_count,
+        Ok(current_song),
+    )
+    .await?;
 
     Ok(Html(html))
 }
 
 async fn generate_html(
     pool: Arc<sqlx::PgPool>,
-    count: i64,
+    ai_songs_count: i64,
+    ai_votes_count: i64,
+    current_songs_vote_count: i64,
     current_song: Result<ai_playlist::models::ai_songs::Model, &str>,
 ) -> Result<String, (StatusCode, String)> {
     let mut html = String::from(
@@ -100,11 +130,11 @@ async fn generate_html(
     html.push_str(&"<h1 class=\"header grid-item\"> AI Top of the Pops</h1>");
     html.push_str(&format!(
         "<h2 class=\"sub-header grid-item\"> Total AI Songs Created: {}</h2>",
-        count
+        ai_songs_count
     ));
     html.push_str(&format!(
         "<h2 class=\"sub-header grid-item\"> Total AI Song Votes: {}</h2>",
-        count
+        ai_votes_count,
     ));
     html.push_str(&"<h1 class=\"grid-item\"><code class=\"\">!vote 0.0 - 10.0</code></h1>");
     html.push_str(&"<hr />");
@@ -134,9 +164,19 @@ async fn generate_html(
 
         let base_path = format!("/images/{}", current_song.song_id);
         html.push_str(&format!(
-            "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {} | AVG Score: {}</h2>",
-            current_song.title, current_song.tags, current_song.username, current_song.song_id, score
+            "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {} | AVG Score: {} | Total Votes: {}</h2>",
+            current_song.title, current_song.tags, current_song.username, current_song.song_id, score, current_songs_vote_count
         ));
+
+        println!("--------------------");
+        println!("Lyrics: {:?}", current_song.lyric);
+        println!("--------------------");
+
+        let lyrics = current_song
+            .lyric
+            .unwrap_or("".to_string())
+            .replace("\n", "<br />");
+        html.push_str(&format!("<div>{}</div>", lyrics));
 
         html.push_str("<div class=\"grid-container\">");
 

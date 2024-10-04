@@ -379,6 +379,7 @@ async fn handle_play_command(
     let audio_info = subd_suno::get_audio_information(id).await?;
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
+    // We don't know if the song is downloaded here!!!!
     // At this point it should be downloaded I think???
     let song_id = Uuid::parse_str(&audio_info.id)?;
     let new_song = ai_playlist::models::ai_songs::Model {
@@ -392,6 +393,7 @@ async fn handle_play_command(
         gpt_description_prompt: audio_info.metadata.gpt_description_prompt,
         last_updated: Some(created_at),
         created_at: Some(created_at),
+        // We need to not update this!!!!!
         downloaded: true,
     };
 

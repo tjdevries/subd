@@ -1,5 +1,6 @@
 pub mod models;
 use ai_playlist;
+use anyhow::anyhow;
 use anyhow::Result;
 use sqlx;
 use sqlx::types::BigDecimal;
@@ -12,6 +13,34 @@ pub struct AiSongRanking {
     pub song_id: Uuid,
     pub title: String,
     pub avg_score: f64,
+}
+
+pub async fn total_votes_by_id(pool: &PgPool, song_id: Uuid) -> Result<i64> {
+    let record = sqlx::query!(
+        "
+        SELECT COUNT(*) as count
+        FROM ai_songs_vote
+        WHERE song_id = $1
+        ",
+        song_id
+    )
+    .fetch_one(pool)
+    .await?;
+    record
+        .count
+        .ok_or(anyhow!("Error on ai_songs by song_id count"))
+}
+
+pub async fn total_votes(pool: &PgPool) -> Result<i64> {
+    let record = sqlx::query!(
+        "
+        SELECT COUNT(*) as count
+        FROM ai_songs_vote
+        ",
+    )
+    .fetch_one(pool)
+    .await?;
+    record.count.ok_or(anyhow!("Error on ai_songs count"))
 }
 
 pub async fn get_average_score(
