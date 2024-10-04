@@ -30,7 +30,6 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
-        // Serve static files from "./tmp/fal_images" at the "/images" path
         .nest_service("/images", serve_dir)
         .with_state(state)
         .layer(
@@ -46,10 +45,24 @@ async fn main() {
 async fn root(
     State(pool): State<Arc<sqlx::PgPool>>,
 ) -> Result<Html<String>, (StatusCode, String)> {
+    let count = ai_playlist::total_ai_songs(&pool).await.unwrap();
+    let current_song = ai_playlist::get_current_song(&pool)
+        .await
+        .map_err(|_| "Error getting current song");
+
+    let html = generate_html(pool, count, current_song).await?;
+
+    Ok(Html(html))
+}
+
+async fn generate_html(
+    pool: Arc<sqlx::PgPool>,
+    count: i64,
+    current_song: Result<ai_playlist::models::ai_songs::Model, &str>,
+) -> Result<String, (StatusCode, String)> {
     let mut html = String::from(
         "<html>
             <head>
-            
                 <meta http-equiv=\"refresh\" content=\"5\" />
                 <style>
                     body {
@@ -58,12 +71,10 @@ async fn root(
                     .sub-header{
                         font-size: 200%;
                     }
-
                     .current-song {
                         padding: 10px;
                         border: 2px solid black;
                     }
-
                     .header{
                         font-size: 400%;
                     }
@@ -86,11 +97,6 @@ async fn root(
             <body>
         ",
     );
-    let count = ai_playlist::total_ai_songs(&pool).await.unwrap();
-    // let songs = ai_songs_vote::get_top_songs(&pool, 5)
-    //     .await
-    //     .map_err(|_| "Error getting top songs")
-    //     .unwrap();
 
     html.push_str(&"<h1 class=\"header grid-item\"> AI Top of the Pops</h1>");
     html.push_str(&format!(
@@ -103,12 +109,6 @@ async fn root(
     ));
     html.push_str(&"<h1 class=\"grid-item\"><code class=\"\">!vote 0.0 - 10.0</code></h1>");
     html.push_str(&"<hr />");
-
-    let current_song = ai_playlist::get_current_song(&pool)
-        .await
-        .map_err(|_| "Error getting current song");
-
-    // We need
 
     if let Ok(current_song) = current_song {
         let score =
@@ -185,7 +185,6 @@ async fn root(
 
         html.push_str("<div class=\"grid-container\">");
 
-        // This shows all Images
         for (index, image) in images.into_iter().enumerate() {
             html.push_str(&format!(
                 "<div class=\"grid-item\">
@@ -196,8 +195,6 @@ async fn root(
             ));
         }
 
-        // How can I take up a whole grid
-        // I don't know if this is ok
         html.push_str(&format!("<hr class=\"full-width\" />"));
 
         for (index, video) in videos.into_iter().enumerate() {
@@ -211,20 +208,11 @@ async fn root(
         }
     }
 
-    // Soon this will be be top of the pops
-    // We would like to display the top 5 songs
-    // html.push_str(&"<hr />");
-    // for song in songs {
-    //     html.push_str(&format!("Song: {}", song.title))
-    // }
-    // html.push_str(&"<hr />");
-
-    // Close the HTML tags
     html.push_str(
         "       </div>
             </body>
         </html>",
     );
 
-    Ok(Html(html))
+    Ok(html)
 }
