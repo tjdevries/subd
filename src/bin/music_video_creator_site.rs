@@ -75,6 +75,12 @@ async fn root(
                     .grid-item {
                         text-align: center;
                     }
+                    .full-width {
+                        width: 100%;
+                        margin: 20px 0;
+                        border: 0;
+                        border-top: 1px solid #ccc;
+                    }
                 </style>
             </head>
             <body>
@@ -102,8 +108,16 @@ async fn root(
         .await
         .map_err(|_| "Error getting current song");
 
+    // We need
+
     if let Ok(current_song) = current_song {
-        // We need to just leave this loop
+        let score =
+            match ai_songs_vote::get_average_score(&pool, current_song.song_id)
+                .await
+            {
+                Ok(score) => score.avg_score.to_string(),
+                Err(_) => "No Votes for Song".to_string(),
+            };
         let music_directory =
             format!("./tmp/music_videos/{}/", current_song.song_id);
         if !fs::metadata(&music_directory).is_ok() {
@@ -122,7 +136,6 @@ async fn root(
             )
         })?;
 
-        // Entries
         let images = entries
             .filter_map(|entry| {
                 let entry = entry.ok()?;
@@ -166,8 +179,8 @@ async fn root(
             .collect::<Vec<_>>();
         let base_path = format!("/images/{}", current_song.song_id);
         html.push_str(&format!(
-            "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {}</h2>",
-            current_song.title, current_song.tags, current_song.username, current_song.song_id
+            "<h2 class=\"sub-header grid-item current-song\"> Current Song: {} | Tags: {} | Creator: @{} | {} | AVG Score: {}</h2>",
+            current_song.title, current_song.tags, current_song.username, current_song.song_id, score
         ));
 
         html.push_str("<div class=\"grid-container\">");
@@ -182,6 +195,10 @@ async fn root(
                 base_path, image, image, index, index
             ));
         }
+
+        // How can I take up a whole grid
+        // I don't know if this is ok
+        html.push_str(&format!("<hr class=\"full-width\" />"));
 
         for (index, video) in videos.into_iter().enumerate() {
             html.push_str(&format!(
