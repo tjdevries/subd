@@ -160,17 +160,25 @@ pub async fn download_and_play(
                 cdn_url
             );
 
+            // We might want to mark something to stop attempting to download maybe?
+            // Will this keep looping?
             // This response here is where we download
             match reqwest::get(&cdn_url).await {
                 Ok(response) if response.status().is_success() => {
-                    // We need to parse this
-                    // is this not a suno response
-                    // this is pure downloading
-                    let content = response.text().await.unwrap();
-                    if let Err(e) =
-                        just_download(content.as_bytes(), id.clone()).await
-                    {
-                        eprintln!("Error downloading file: {}", e);
+                    let content = response.bytes().await;
+                    match content {
+                        Ok(content) => {
+                            if let Err(e) =
+                                just_download(&content, id.clone()).await
+                            {
+                                eprintln!("Error downloading file: {}", e);
+                                continue;
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error downloading file: {}", e);
+                            continue;
+                        }
                     }
 
                     let suno_response =
