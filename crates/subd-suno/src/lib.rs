@@ -14,6 +14,13 @@ use twitch_irc::{
 
 pub mod models;
 
+#[derive(Default, Debug, serde::Serialize)]
+pub struct AudioGenerationData {
+    pub prompt: String,
+    pub make_instrumental: bool,
+    pub wait_audio: bool,
+}
+
 /// Retrieves audio information based on the song ID.
 pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
     let base_url = "http://localhost:3000";
@@ -27,13 +34,6 @@ pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
         .into_iter()
         .next()
         .ok_or_else(|| anyhow!("No audio information found"))
-}
-
-#[derive(Default, Debug, serde::Serialize)]
-pub struct AudioGenerationData {
-    pub prompt: String,
-    pub make_instrumental: bool,
-    pub wait_audio: bool,
 }
 
 /// Plays audio based on the provided song ID.
@@ -70,10 +70,6 @@ pub async fn play_audio(
 }
 /// Plays audio based on the provided song ID.
 pub async fn add_to_playlist_and_play_audio(
-    _twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
     pool: &sqlx::PgPool,
     sink: &Sink,
     id: &str,
@@ -221,13 +217,31 @@ pub async fn download_and_play(
                         eprintln!("Error saving the song!: {}", e);
                     }
 
-                    let _ = tx.send(subd_types::Event::UserMessage(
-                        subd_types::UserMessage {
-                            user_name: "beginbot".to_string(),
-                            contents: format!("!play {}", id),
-                            ..Default::default()
-                        },
-                    ));
+                    // These unwraps are bad!!!
+                    let uuid_id = Uuid::parse_str(&id)
+                        .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))
+                        .unwrap();
+
+                    ai_playlist::add_song_to_playlist(&pool, uuid_id)
+                        .await
+                        .unwrap();
+
+                    // add_to_playlist_and_play_audio(
+                    //     &pool,
+                    //     sink,
+                    //     id,
+                    //     &msg.user_name,
+                    // )
+                    // .await?;
+                    // I should just add it to a playlist here!!!
+                    // Is this play the part that is fucking it up?????
+                    // let _ = tx.send(subd_types::Event::UserMessage(
+                    //     subd_types::UserMessage {
+                    //         user_name: "beginbot".to_string(),
+                    //         contents: format!("!play {}", id),
+                    //         ..Default::default()
+                    //     },
+                    // ));
 
                     let info = format!(
                         "@{}'s song {} added to the Queue.",
@@ -303,6 +317,7 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await?;
 
+    // This must be fucking me up!!!
     let res = download_and_play(
         pool,
         twitch_client,

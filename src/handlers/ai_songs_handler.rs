@@ -252,14 +252,8 @@ async fn handle_reverb_command(
     };
 
     println!("Queuing with Reverb: {}", id);
-    subd_suno::add_to_playlist_and_play_audio(
-        twitch_client,
-        pool,
-        sink,
-        id,
-        &msg.user_name,
-    )
-    .await?;
+    subd_suno::add_to_playlist_and_play_audio(pool, sink, id, &msg.user_name)
+        .await?;
     Ok(())
 }
 
@@ -351,14 +345,8 @@ async fn handle_fake_play_command(
     let _ = new_song.save(pool).await;
 
     // Play the audio
-    subd_suno::add_to_playlist_and_play_audio(
-        twitch_client,
-        pool,
-        sink,
-        id,
-        &msg.user_name,
-    )
-    .await?;
+    subd_suno::add_to_playlist_and_play_audio(pool, sink, id, &msg.user_name)
+        .await?;
     Ok(())
 }
 /// Handles the "!play" command to play a song immediately
@@ -401,14 +389,8 @@ async fn handle_play_command(
     let _ = new_song.save(pool).await;
 
     // Play the audio
-    subd_suno::add_to_playlist_and_play_audio(
-        twitch_client,
-        pool,
-        sink,
-        id,
-        &msg.user_name,
-    )
-    .await?;
+    subd_suno::add_to_playlist_and_play_audio(pool, sink, id, &msg.user_name)
+        .await?;
     Ok(())
 }
 
