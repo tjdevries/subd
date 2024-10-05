@@ -131,3 +131,113 @@ impl ai_playlist::Model {
         .await
     }
 }
+
+// ---------------------------------------------
+//
+
+/// Represents the type of vote: either "love" or "hate".
+#[derive(sqlx::Type, Debug, Clone, PartialEq, Eq, Default, Copy)]
+#[sqlx(type_name = "vote_enum", rename_all = "lowercase")]
+pub enum VoteType {
+    #[default]
+    Love,
+    Hate,
+}
+
+#[database_model]
+pub mod image_votes {
+    use super::*;
+    use sqlx::Type;
+
+    pub struct Model {
+        pub user_id: Uuid,
+        pub song_id: Uuid,
+        pub image_name: String,
+        pub vote_type: VoteType,
+        pub voted_at: Option<OffsetDateTime>,
+    }
+}
+
+impl image_votes::Model {
+    /// Saves a vote (love or hate) for an image associated with a song.
+    pub async fn save(&self, pool: &PgPool) -> Result<Self, sqlx::Error> {
+        let res = sqlx::query_as!(
+            Self,
+            r#"
+            INSERT INTO image_votes
+            (user_id, song_id, image_name, vote_type)
+            VALUES ($1, $2, $3, $4::vote_enum)
+            ON CONFLICT (user_id, song_id, image_name)
+            DO UPDATE SET vote_type = EXCLUDED.vote_type
+            RETURNING
+                user_id,
+                song_id,
+                image_name,
+                vote_type as "vote_type: VoteType",
+                voted_at
+            "#,
+            self.user_id,
+            self.song_id,
+            self.image_name,
+            self.vote_type as VoteType,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(res)
+    }
+
+    /// Casts a "love" vote for the specified image.
+    pub async fn love_image(
+        pool: &PgPool,
+        user_id: Uuid,
+        song_id: Uuid,
+        image_name: &str,
+    ) -> Result<Self, sqlx::Error> {
+        Self::vote(pool, user_id, song_id, image_name, VoteType::Love).await
+    }
+
+    /// Casts a "hate" vote for the specified image.
+    pub async fn hate_image(
+        pool: &PgPool,
+        user_id: Uuid,
+        song_id: Uuid,
+        image_name: &str,
+    ) -> Result<Self, sqlx::Error> {
+        Self::vote(pool, user_id, song_id, image_name, VoteType::Hate).await
+    }
+
+    /// Helper function to cast a vote (love or hate) for an image.
+    pub async fn vote(
+        pool: &PgPool,
+        user_id: Uuid,
+        song_id: Uuid,
+        image_name: &str,
+        vote_type: VoteType,
+    ) -> Result<Self, sqlx::Error> {
+        let res = sqlx::query_as!(
+            Self,
+            r#"
+            INSERT INTO image_votes
+            (user_id, song_id, image_name, vote_type)
+            VALUES ($1, $2, $3, $4::vote_enum)
+            ON CONFLICT (user_id, song_id, image_name)
+            DO UPDATE SET vote_type = EXCLUDED.vote_type
+            RETURNING
+                user_id,
+                song_id,
+                image_name,
+                vote_type as "vote_type: VoteType",
+                voted_at
+            "#,
+            user_id,
+            song_id,
+            image_name,
+            vote_type as VoteType,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(res)
+    }
+}

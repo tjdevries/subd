@@ -19,6 +19,7 @@ CREATE TABLE ai_song_playlist (
     stopped_at TIMESTAMP WITH TIME ZONE
 );
 
+
   -- TODO: Figure out status
 CREATE TABLE ai_songs(
   song_id UUID NOT NULL UNIQUE,
@@ -174,3 +175,14 @@ CREATE TABLE obs_sources (
   scale      DECIMAL NOT NULL
 );
 
+
+CREATE TYPE vote_enum AS ENUM ('love', 'hate');
+
+CREATE TABLE image_votes (
+    user_id UUID NOT NULL REFERENCES users(user_id),
+    song_id UUID NOT NULL REFERENCES ai_songs(song_id),
+    image_name TEXT NOT NULL,
+    vote_type vote_enum NOT NULL,
+    voted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, song_id, image_name)
+);

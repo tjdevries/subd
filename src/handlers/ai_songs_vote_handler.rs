@@ -88,6 +88,89 @@ pub async fn handle_telephone_requests(
             }
             Ok(())
         }
+
+        "!love" => {
+            let image_base_name = splitmsg[1].as_str();
+            let image_name = format!("{}.png", image_base_name);
+            let current_song = ai_playlist::get_current_song(pool).await?;
+            let image_path = format!(
+                "./tmp/music_videos/{}/{}",
+                current_song.song_id, image_name
+            );
+
+            if std::path::Path::new(&image_path).exists() {
+                // The image path exists, proceed with the love vote
+                let love_vote =
+                    ai_playlist::models::image_votes::Model::love_image(
+                        pool,
+                        msg.user_id.into(),
+                        current_song.song_id,
+                        &image_name,
+                    )
+                    .await?;
+                let _ = send_message(
+                    twitch_client,
+                    &format!(
+                        "Loved image {} for the current song!",
+                        image_name
+                    ),
+                )
+                .await;
+            } else {
+                // The image path does not exist
+                let _ = send_message(
+                    twitch_client,
+                    &format!(
+                        "Image {} not found for the current song.",
+                        image_name
+                    ),
+                )
+                .await;
+            }
+
+            // let current_song = ai_songs_vote::get_current_song(pool).await?;
+            // let song_id = current_song.id;
+            // let image_name = splitmsg
+            //     .get(1)
+            //     .ok_or_else(|| anyhow!("No image name provided"))?;
+            // let image_path = format!("music_videos/{}/{}", song_id, image_name);
+            //
+            // if std::path::Path::new(&image_path).exists() {
+            //     let love_vote = image_votes::Model::love_image(
+            //         pool,
+            //         msg.user_id.into(),
+            //         song_id,
+            //         image_name,
+            //     )
+            //     .await?;
+            //     let _ = send_message(
+            //         twitch_client,
+            //         &format!(
+            //             "Loved image {} for the current song!",
+            //             image_name
+            //         ),
+            //     )
+            //     .await;
+            // } else {
+            //     let _ = send_message(
+            //         twitch_client,
+            //         &format!(
+            //             "Image {} not found for the current song.",
+            //             image_name
+            //         ),
+            //     )
+            //     .await;
+            // }
+            Ok(())
+        }
+
+        // let user_id = Uuid::new_v4();
+        // let song_id = Uuid::new_v4();
+        // let image_name = "example_image.png";
+        //
+        //
+        // // To cast a "hate" vote
+        // let hate_vote = image_votes::Model::hate_image(&pool, user_id, song_id, image_name).await?;
         "!vote" => {
             let score = splitmsg
                 .get(1)
