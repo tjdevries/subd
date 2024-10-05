@@ -19,13 +19,6 @@ fn get_chat_config() -> ClientConfig<StaticLoginCredentials> {
     ))
 }
 
-// #[derive(Serialize, Deserialize, Debug)]
-// struct EventSubRoot {
-//     subscription: Subscription,
-//     event: Option<EventSub>,
-//     challenge: Option<String>,
-// }
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Subscription {
     id: String,

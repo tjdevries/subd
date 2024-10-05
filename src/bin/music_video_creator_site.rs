@@ -3,6 +3,7 @@ use axum::{
     extract::FromRef, extract::State, http::StatusCode, routing::get, Router,
 };
 use axum::{http::Method, response::Html};
+use chrono::prelude::*;
 use std::fs;
 use std::sync::Arc;
 use subd_db::get_db_pool;
@@ -46,8 +47,9 @@ async fn root(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let ai_songs_count = ai_playlist::total_ai_songs(&pool).await.unwrap();
     let ai_votes_count = ai_songs_vote::total_votes(&pool).await.unwrap();
-    let unplayed_songs =
+    let unplayed_songs_count =
         ai_playlist::count_unplayed_songs(&pool).await.unwrap();
+    let unplayed_songs = ai_playlist::get_unplayed_songs(&pool).await.unwrap();
 
     let current_song = match ai_playlist::get_current_song(&pool).await {
         Ok(song) => song,
@@ -58,6 +60,7 @@ async fn root(
                     ai_songs_count,
                     ai_votes_count,
                     0,
+                    unplayed_songs_count,
                     unplayed_songs,
                     Err("Error getting current song"),
                 )
@@ -78,6 +81,7 @@ async fn root(
         ai_songs_count,
         ai_votes_count,
         current_song_votes_count,
+        unplayed_songs_count,
         unplayed_songs,
         Ok(current_song),
     )
@@ -91,7 +95,8 @@ async fn generate_html(
     ai_songs_count: i64,
     ai_votes_count: i64,
     current_songs_vote_count: i64,
-    unplayed_songs: i64,
+    unplayed_songs_count: i64,
+    unplayed_songs: Vec<ai_playlist::models::ai_songs::Model>,
     current_song: Result<ai_playlist::models::ai_songs::Model, &str>,
 ) -> Result<String, (StatusCode, String)> {
     let mut html = String::from(
@@ -100,7 +105,7 @@ async fn generate_html(
                 <meta http-equiv=\"refresh\" content=\"5\" />
                 <style>
                     body {
-                        font-family: \"Papyrus\";
+                        font-family: 'Comic Sans MS', cursive, sans-serif;
                     }
                     .sub-header{
                         font-size: 200%;
@@ -143,9 +148,26 @@ async fn generate_html(
     ));
     html.push_str(&format!(
         "<h1 class=\"grid-item\">Songs in Playlist: {}</h1>",
-        unplayed_songs
+        unplayed_songs_count
     ));
     html.push_str(&"<h1 class=\"grid-item\"><code class=\"\">!vote 0.0 - 10.0</code></h1>");
+
+    html.push_str(&"<h2>Songs in Playlist</h2>");
+    for (_index, song) in unplayed_songs.into_iter().enumerate() {
+        // TODO: Figure out why I'm too dumb to show a formatted string of a date
+        // let pst = song.created_at.unwrap().hour();
+        // This is wrong
+        // let formatted =
+        //     format!("{:?}", song.created_at.unwrap().format("%d/%m/%Y %H:%M"));
+        //     format::strftime("%Y-%m-%d %H:%M:%S", &song.created_at.unwrap());
+        // let pst_time = song.created_at.unwrap().format(&"%H:%M:%S").unwrap();
+        html.push_str(&format!(
+            "<div class=\"grid-item\">@{}'s {} - {}<div>",
+            song.username, song.title, song.song_id
+        ));
+    }
+
+    // We need iterate here
     html.push_str(&"<hr />");
 
     if let Ok(current_song) = current_song {

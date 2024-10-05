@@ -1,7 +1,6 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use axum::routing::any;
 use events::EventHandler;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
@@ -11,7 +10,6 @@ use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
-use uuid::Uuid;
 
 pub struct AISongsVoteHandler {
     pub obs_client: OBSClient,

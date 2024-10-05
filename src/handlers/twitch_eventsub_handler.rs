@@ -3,11 +3,9 @@ use ai_scenes_coordinator;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
-use axum::debug_handler;
-// use axum::serve;
 use axum::{
-    extract::Extension, extract::FromRef, extract::State, http::StatusCode,
-    response::IntoResponse, routing::get, routing::post, Json, Router,
+    extract::FromRef, extract::State, http::StatusCode, routing::post, Json,
+    Router,
 };
 use colored::Colorize;
 use events::EventHandler;
@@ -15,7 +13,7 @@ use obws::Client as OBSClient;
 use openai::chat;
 use serde::{Deserialize, Serialize};
 use sqlx::types::Uuid;
-use std::{net::SocketAddr, sync::Arc};
+use std::sync::Arc;
 use subd_openai;
 use subd_twitch::rewards::{self, RewardManager};
 use subd_types::Event;
