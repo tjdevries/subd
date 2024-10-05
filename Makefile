@@ -118,3 +118,6 @@ error:
 
 fmt:
 	cargo fmt --all
+
+db-restore:
+	pg_restore --no-privileges --no-owner -h localhost -p 5432 -U beginbot -d subd -1 subd.sql
