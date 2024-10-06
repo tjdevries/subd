@@ -67,6 +67,37 @@ impl FalService {
         Ok(files)
     }
 
+    pub async fn create_runway_video_from_image(
+        &self,
+        prompt: &str,
+        image_file_path: &str,
+        save_dir: &str,
+    ) -> Result<String> {
+        let model = "fal-ai/runway-gen3/turbo/image-to-video";
+        let image_data_uri =
+            subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
+
+        let parameters = serde_json::json!({
+            "image_url": image_data_uri,
+            "prompt": prompt,
+        });
+        let json = self.run_model_and_get_json(model, parameters).await?;
+
+        println!("Create Video From Image Raw JSON: {:?}", json);
+
+        let video_url = json["video"]["url"]
+            .as_str()
+            .ok_or_else(|| anyhow!("Failed to extract video URL from JSON"))?;
+
+        let video_bytes = subd_image_utils::download_video(video_url).await?;
+
+        let timestamp = Utc::now().timestamp();
+        let filename = format!("{}/{}.mp4", save_dir, timestamp);
+        self.save_raw_bytes(&filename, &video_bytes).await?;
+
+        Ok(filename)
+    }
+
     pub async fn create_video_from_image(
         &self,
         image_file_path: &str,

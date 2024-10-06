@@ -28,6 +28,7 @@ struct MusicVideoScenes {
 struct MusicVideoScene {
     image_prompt: String,
     camera_move: String,
+    image_name: Option<String>,
 }
 // ==============================================================
 
@@ -39,7 +40,7 @@ async fn generate_scene_prompts(
     let instructor_client = from_openai(client);
 
     let prompt = format!(
-        "Describe 5 scenes for a Music Video: image_prompt and camera_move based on the following Lyrics: {} and Title: {}. They should be fun scenes that stick to an overall theme",
+        "Describe 5 scenes for a Music Video: image_prompt and camera_move based on the following Lyrics: {} and Title: {}. They should be fun scenes that stick to an overall theme based on the title.",
         lyrics, title);
 
     println!("\tUsing the Prompt: {}", prompt);
@@ -53,9 +54,14 @@ async fn generate_scene_prompts(
         }],
     );
 
-    let result = instructor_client
-        .chat_completion::<MusicVideoScenes>(req, 3)
-        .unwrap();
+    let result =
+        match instructor_client.chat_completion::<MusicVideoScenes>(req, 3) {
+            Ok(scenes) => scenes,
+            Err(e) => {
+                eprintln!("Error generating scene prompts: {:?}", e);
+                return Err(anyhow!("Failed to generate scene prompts"));
+            }
+        };
 
     println!("{:?}", result);
     Ok(result)
@@ -63,7 +69,7 @@ async fn generate_scene_prompts(
 pub async fn create_music_video_images(
     pool: &PgPool,
     id: String,
-) -> Result<()> {
+) -> Result<String> {
     println!("\tStarting to create NEW Music Video!");
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
@@ -80,7 +86,7 @@ pub async fn create_music_video_images(
 
     let image_files = match std::fs::read_dir(&music_video_folder) {
         Ok(files) => files,
-        Err(_) => return Ok(()),
+        Err(_) => return Ok("".to_string()),
     };
 
     let highest_number = image_files
@@ -121,8 +127,40 @@ pub async fn create_music_video_images(
             });
 
     // Run all futures concurrently and collect the results
-    let _results: Vec<Result<String>> = join_all(futures).await;
-    Ok(())
+    let results: Vec<Result<String>> = join_all(futures).await;
+
+    let mut video_results = Vec::new();
+    for (index, result) in results.iter().enumerate() {
+        match result {
+            Ok(filename) => {
+                println!("result: {}", filename);
+                let scene = &scenes_prompts.scenes[index];
+
+                let video_result = generate_runway_video_for_image(
+                    &scene.image_prompt,
+                    &scene.camera_move,
+                    ai_song.song_id.to_string(),
+                    index,
+                );
+                video_results.push(video_result);
+            }
+            Err(e) => eprintln!("Error processing image: {:?}", e),
+        }
+    }
+
+    let video_filenames: Vec<String> = join_all(video_results)
+        .await
+        .into_iter()
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+    let output_file =
+        format!("{}/{}_{}", music_video_folder, timestamp, "final_video.mp4");
+    combine_videos(video_filenames, &output_file)?;
+
+    Ok(output_file)
 }
 
 pub async fn create_music_video_2(pool: &PgPool, id: String) -> Result<String> {
@@ -222,6 +260,30 @@ async fn create_image_from_lyric(
     .await?;
     let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
     Ok(first_image.to_string())
+}
+
+async fn generate_runway_video_for_image(
+    image_prompt: &str,
+    video_prompt: &str,
+    id: String,
+    index: usize,
+) -> Result<String> {
+    let folder = format!("./tmp/music_videos/{}", id);
+    let images = fal_ai::create_from_fal_api_return_filename(
+        &image_prompt,
+        Some(folder.clone()),
+        index.to_string(),
+    )
+    .await?;
+    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+    println!("Image: {}", first_image);
+    let filename = fal_ai::create_runway_video_from_image(
+        &video_prompt,
+        first_image,
+        Some(folder.clone()),
+    )
+    .await?;
+    Ok(filename)
 }
 
 async fn process_lyric_chunk(

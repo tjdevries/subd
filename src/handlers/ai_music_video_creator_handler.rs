@@ -72,17 +72,47 @@ pub async fn handle_requests(
             Ok(handle_create_music_video(obs_client, pool, id).await?)
         }
         Command::CreateMusicVideoImages { id } => {
-            Ok(handle_create_music_video_images(pool, id).await?)
+            Ok(handle_create_music_video_images(obs_client, pool, id).await?)
         }
     }
 }
 
 async fn handle_create_music_video_images(
+    obs_client: &OBSClient,
     pool: &sqlx::PgPool,
     id: String,
 ) -> Result<()> {
-    let _ = ai_music_videos::create_music_video_images(pool, id).await;
-    Ok(())
+    let filename = ai_music_videos::create_music_video_images(pool, id).await?;
+    // let filename = ai_music_videos::create_music_video_2(pool, id).await?;
+    let path = std::fs::canonicalize(&filename)?;
+    let full_path = path
+        .into_os_string()
+        .into_string()
+        .map_err(|_| anyhow!("Failed to convert path to string"))?;
+
+    let source = "music-video".to_string();
+    let _ = obs_service::obs_source::set_enabled(
+        "AIFriends",
+        &source.clone(),
+        false,
+        obs_client,
+    )
+    .await;
+    let _ = obs_service::obs_source::update_video_source(
+        obs_client,
+        source.clone(),
+        full_path,
+    )
+    .await;
+    let _ = obs_service::obs_source::set_enabled(
+        "AIFriends",
+        &source,
+        true,
+        obs_client,
+    )
+    .await;
+
+    obs_service::obs_scenes::change_scene(obs_client, "Movie Trailer").await
 }
 
 async fn handle_create_music_video(
