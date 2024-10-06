@@ -85,6 +85,11 @@ tower-http = { version = "*", features = ["fs", "cors"] }
 hyper = { version = "*", features = ["full"] }
 bytes = "1.7.2"
 
+instructor-ai = "0.1.8"
+instruct-macros = "0.1.8"
+openai-api-rs = "4.1.0"
+instruct-macros-types = "0.1.8"
+
 # This broken for me
 # kalosm = { git = "https://github.com/floneum/floneum.git", rev = "0b51b6b347bc5653958669951402226c3c38b9e8" }
 
