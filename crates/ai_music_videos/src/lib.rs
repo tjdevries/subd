@@ -33,6 +33,13 @@ pub async fn create_music_video_images(
         Err(_) => return Ok(()),
     };
 
+    // we are creating a music video
+    // We want scenes based on the the lyrics
+    // we need a theme of some sort
+    // for lyric in lyric_chunks {
+    //     // What are base scenes to juice this prompt
+    // }
+    //
     let highest_number = image_files
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| {

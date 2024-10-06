@@ -19,6 +19,7 @@ pub struct AISongsDownloader {
 enum Command {
     Download { id: String },
     CreateSong { prompt: String },
+    CreateInstrumentalSong { prompt: String },
     Unknown,
 }
 
@@ -73,6 +74,18 @@ pub async fn handle_requests(
                 tx,
                 msg.user_name,
                 prompt,
+                false,
+            )
+            .await
+        }
+        Command::CreateInstrumentalSong { prompt } => {
+            handle_create_song_command(
+                twitch_client,
+                pool,
+                tx,
+                msg.user_name,
+                prompt,
+                true,
             )
             .await
         }
@@ -95,6 +108,10 @@ fn parse_command(msg: &UserMessage) -> Command {
             let prompt = words.collect::<Vec<_>>().join(" ");
             Command::CreateSong { prompt }
         }
+        Some("!create_instrumental_song") | Some("!instrumental") => {
+            let prompt = words.collect::<Vec<_>>().join(" ");
+            Command::CreateInstrumentalSong { prompt }
+        }
         _ => Command::Unknown,
     }
 }
@@ -115,11 +132,12 @@ async fn handle_create_song_command(
     tx: &broadcast::Sender<Event>,
     user_name: String,
     prompt: String,
+    instrumental: bool,
 ) -> Result<()> {
     println!("\tIt's Song time!");
     let data = subd_suno::AudioGenerationData {
         prompt,
-        make_instrumental: false,
+        make_instrumental: instrumental,
         wait_audio: true,
     };
     match subd_suno::generate_audio_by_prompt(data).await {

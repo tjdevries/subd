@@ -79,19 +79,14 @@ elevenlabs-api = { path = "../elevenlabs-api" }
 # openai = "1.0.0-alpha.13"
 openai = { path = "../openai" }
 colored = "2.1.0"
-# tower-http = { version = "0.6.1" }
-# tower-http = "0.6.1"
 
-# tower = "0.4"
 tower = "*"
-# tower-http = "*"
 tower-http = { version = "*", features = ["fs", "cors"] }
 hyper = { version = "*", features = ["full"] }
 bytes = "1.7.2"
 
-
-# tower-http = { version = "0.6", features = ["serve"] }
-
+# This broken for me
+# kalosm = { git = "https://github.com/floneum/floneum.git", rev = "0b51b6b347bc5653958669951402226c3c38b9e8" }
 
 [workspace]
 
