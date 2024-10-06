@@ -6,66 +6,11 @@ use sqlx::PgPool;
 use std::path::Path;
 use std::sync::Arc;
 
-// ==============================================================
-use instruct_macros::InstructMacro;
-use instruct_macros_types::Parameter;
-use instruct_macros_types::{ParameterInfo, StructInfo};
-use instructor_ai::from_openai;
-use openai_api_rs::v1::{
-    api::Client,
-    chat_completion::{self, ChatCompletionRequest},
-    common::GPT3_5_TURBO,
-};
-use serde::{Deserialize, Serialize};
-use std::env;
+pub mod scenes_builder;
 
-#[derive(InstructMacro, Debug, Serialize, Deserialize)]
-struct MusicVideoScenes {
-    scenes: Vec<MusicVideoScene>,
-}
+#[cfg(test)]
+mod tests;
 
-#[derive(InstructMacro, Debug, Serialize, Deserialize)]
-struct MusicVideoScene {
-    image_prompt: String,
-    camera_move: String,
-    image_name: Option<String>,
-}
-// ==============================================================
-
-async fn generate_scene_prompts(
-    lyrics: String,
-    title: String,
-) -> Result<MusicVideoScenes> {
-    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
-    let instructor_client = from_openai(client);
-
-    let prompt = format!(
-        "Describe 5 scenes for a Music Video: image_prompt and camera_move based on the following Lyrics: {} and Title: {}. They should be fun scenes that stick to an overall theme based on the title.",
-        lyrics, title);
-
-    println!("\tUsing the Prompt: {}", prompt);
-
-    let req = ChatCompletionRequest::new(
-        GPT3_5_TURBO.to_string(),
-        vec![chat_completion::ChatCompletionMessage {
-            role: chat_completion::MessageRole::user,
-            content: chat_completion::Content::Text(String::from(prompt)),
-            name: None,
-        }],
-    );
-
-    let result =
-        match instructor_client.chat_completion::<MusicVideoScenes>(req, 3) {
-            Ok(scenes) => scenes,
-            Err(e) => {
-                eprintln!("Error generating scene prompts: {:?}", e);
-                return Err(anyhow!("Failed to generate scene prompts"));
-            }
-        };
-
-    println!("{:?}", result);
-    Ok(result)
-}
 pub async fn create_music_video_images(
     pool: &PgPool,
     id: String,
@@ -77,8 +22,11 @@ pub async fn create_music_video_images(
 
     let lyrics = ai_song.lyric.as_ref().unwrap();
     let title = &ai_song.title;
-    let scenes_prompts =
-        generate_scene_prompts(lyrics.to_string(), title.to_string()).await?;
+    let scenes_prompts = scenes_builder::generate_scene_prompts(
+        lyrics.to_string(),
+        title.to_string(),
+    )
+    .await?;
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
@@ -368,7 +316,6 @@ pub async fn create_music_video(pool: &PgPool, id: String) -> Result<String> {
     Ok(output_file)
 }
 
-// this can fail
 fn get_lyric_chunks(
     lyric: &Option<String>,
     chunksize: usize,
@@ -457,59 +404,4 @@ fn remove_small_images(song_id: &str, min_size: u64) -> Result<()> {
         }
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ai_playlist::models::ai_songs;
-    use uuid::Uuid;
-
-    #[tokio::test]
-    async fn test_highest_file_number() {
-        let uuid_str = "0833d255-607f-4b74-bea9-4818f032140a";
-        let id = Uuid::parse_str(uuid_str).unwrap();
-        let music_video_folder = format!("../../tmp/music_videos/{}", id);
-        let highest_number = std::fs::read_dir(&music_video_folder)
-            .unwrap()
-            .filter_map(|entry| entry.ok())
-            .filter_map(|entry| {
-                entry
-                    .path()
-                    .file_stem()
-                    .and_then(|s| s.to_str())
-                    .map(String::from)
-            })
-            .filter_map(|name| name.parse::<usize>().ok())
-            .max()
-            .unwrap_or(0);
-        println!("Highest Number: {}", highest_number);
-        assert_eq!(1727998927, highest_number);
-    }
-
-    #[ignore]
-    #[tokio::test]
-    async fn test_create_music_video() {
-        let pool = subd_db::get_test_db_pool().await;
-
-        let fake_uuid = Uuid::new_v4();
-        let ai_song = ai_songs::Model::new(
-            fake_uuid,
-            "title".into(),
-            "tags".into(),
-            "prompt".into(),
-            "username".into(),
-            "audio_url".into(),
-            "gpt_description_prompt".into(),
-            Some("Lyrics Hooray!".to_string()),
-            None,
-            None,
-            false,
-        );
-
-        ai_song.save(&pool).await.unwrap();
-        let id = format!("{}", fake_uuid);
-        let res = create_music_video(&pool, id).await.unwrap();
-        // OK
-    }
 }
