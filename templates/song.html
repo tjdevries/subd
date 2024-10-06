@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+    <a class="button" href="javascript:window.history.back();">Back</a>
+    <h2 class="sub-header current-song">
+        Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | {{ current_song.song_id }} | Total Votes: {{ current_song_votes_count }}
+    </h2>
+    <div class="grid-container">
+        {% for image in images %}
+            {% set image_score = image_scores | selectattr("0", "equalto", image) | list | first %}
+            {% set love = image_score[1] if image_score else 0 %}
+            {% set hate = image_score[2] if image_score else 0 %}
+            {% set image_without_ext = image.split('.').0 %}
+            <div class="grid-item">
+                <img src="{{ base_path }}/{{ image }}" alt="{{ image }}" style="max-width:300px; max-height:300px;" /><br/>
+                <h1><code>!love {{ image_without_ext }} | !hate {{ image_without_ext }}</code></h1>
+                <p>Loves: {{ love }} | Hates: {{ hate }}</p>
+            </div>
+        {% endfor %}
+        {% for video in videos %}
+            <div class="grid-item">
+                <video src="{{ base_path }}/{{ video }}" alt="{{ video }}" style="max-width:300px; max-height:300px;" autoplay loop muted></video><br/>
+            </div>
+        {% endfor %}
+    </div>
+    {% if current_song.lyric %}
+        <div>{{ current_song.lyric | replace("\n", "<br />") | safe }}</div>
+    {% endif %}
+{% endblock %}
+

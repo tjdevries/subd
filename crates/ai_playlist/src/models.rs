@@ -1,13 +1,23 @@
 use anyhow::Result;
+use serde::Deserialize;
+use serde::Serialize;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::PgPool;
 use subd_macros::database_model;
+// use time::serde;
 use uuid::Uuid;
+
+#[derive(Serialize, Deserialize)]
+struct Debate {
+    #[serde(skip_serializing)]
+    pub song_id: Uuid,
+}
 
 #[database_model]
 pub mod ai_songs {
     use super::*;
 
+    #[derive(Serialize)]
     pub struct Model {
         pub song_id: Uuid,
         pub title: String,
@@ -18,7 +28,13 @@ pub mod ai_songs {
         pub gpt_description_prompt: String,
 
         pub lyric: Option<String>,
+
+        #[serde(skip_serializing)]
+        #[serde(with = "time::serde::rfc3339::option")]
         pub last_updated: Option<OffsetDateTime>,
+
+        #[serde(skip_serializing)]
+        #[serde(with = "time::serde::rfc3339::option")]
         pub created_at: Option<OffsetDateTime>,
 
         // This has a default of false in the DB, so I think this could be optional

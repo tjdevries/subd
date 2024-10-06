@@ -44,7 +44,7 @@ reqwest.workspace = true
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 sqlx.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["full"] }
 tungstenite.workspace = true
 tokio-tungstenite.workspace = true
 uuid.workspace = true
@@ -52,7 +52,7 @@ uuid.workspace = true
 obws = "0.10"
 chrono = "*"
 # axum = { version= "0.5.4", features = ["macros"]}
-axum = { version= "0.7.*", features = ["macros"]}
+axum = { version = "0.7.*", features = ["macros"] }
 # axum = "0.7.7"
 futures = "0.3.21"
 clap = { version = "4.4.11", features = ["derive"] }
@@ -89,6 +89,8 @@ instructor-ai = "0.1.8"
 instruct-macros = "0.1.8"
 openai-api-rs = "4.1.0"
 instruct-macros-types = "0.1.8"
+minijinja = { version = "2.3.1", features = ["builtins", "loader"] }
+axum-template = "2.4.0"
 
 # This broken for me
 # kalosm = { git = "https://github.com/floneum/floneum.git", rev = "0b51b6b347bc5653958669951402226c3c38b9e8" }

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Songs in Playlist</h2>
+    {% for song in unplayed_songs %}
+        <div class="grid-item">
+            <a href="/ai_songs/{{ song.song_id }}">@{{ song.username }}'s {{ song.title }} - {{ song.song_id }}</a>
+        </div>
+    {% endfor %}
+    <hr />
+    {% if current_song %}
+        {% set score = current_song.avg_score | default("No Votes for Song") %}
+        <h2 class="sub-header current-song">
+            Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | {{ current_song.song_id }} | AVG Score: {{ score }} | Total Votes: {{ current_song_votes_count }}
+        </h2>
+    {% endif %}
+{% endblock %}
+

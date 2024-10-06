@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="5" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h4 class="header">AI Top of the Pops</h4>
+    <h4 class="sub-header">Total AI Songs Created: {{ stats.ai_songs_count }}</h4>
+    <h4 class="sub-header">Total AI Song Votes: {{ stats.ai_votes_count }}</h4>
+    <h3>Songs in Playlist: {{ stats.unplayed_songs_count }}</h3>
+    {% block content %}{% endblock %}
+</body>
+</html>
+

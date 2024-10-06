@@ -4,12 +4,23 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
+
 anyhow.workspace = true
-sqlx.workspace = true
 
 subd-macros = { path = "../subd-macros/" }
 subd-db = { path = "../subd-db/" }
 uuid.workspace = true
+
+time = { version = "0.3", features = ["serde"] }
+
+# serde = { version = "1.0.210",  features = ["derive"] }
+serde.workspace = true
+serde_json.workspace = true
+
+# including time in fucks like up I think
+# we have mismatched options sadly
+# sqlx = { version = "*", features = [ "postgres", "offline", "time", "chrono" ] }
+sqlx = { version = "*", features = [ "postgres", "offline"] }
 
 [dev-dependencies]
 
