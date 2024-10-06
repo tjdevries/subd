@@ -39,7 +39,10 @@ async fn generate_scene_prompts(
     let instructor_client = from_openai(client);
 
     let prompt = format!(
-        "Describe 5 scenes for a Music Video about based on the following lyrics and song title and their corresponding camera moves: {}, Title: {}", lyrics, title);
+        "Describe 5 scenes for a Music Video: image_prompt and camera_move based on the following Lyrics: {} and Title: {}. They should be fun scenes that stick to an overall theme",
+        lyrics, title);
+
+    println!("\tUsing the Prompt: {}", prompt);
 
     let req = ChatCompletionRequest::new(
         GPT3_5_TURBO.to_string(),
@@ -65,20 +68,9 @@ pub async fn create_music_video_images(
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
-    // let ai_song = Arc::new(ai_song);
-
-    // let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
-    //     lyric
-    //         .lines()
-    //         .filter(|line| !line.trim().starts_with('['))
-    //         .collect::<Vec<_>>()
-    //         .join("\n")
-    // });
-    // let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
 
     let lyrics = ai_song.lyric.as_ref().unwrap();
     let title = &ai_song.title;
-    // let lyrics = ai_song.lyric.unwrap_or(ai_song.title);
     let scenes_prompts =
         generate_scene_prompts(lyrics.to_string(), title.to_string()).await?;
 
@@ -91,13 +83,6 @@ pub async fn create_music_video_images(
         Err(_) => return Ok(()),
     };
 
-    // we are creating a music video
-    // We want scenes based on the the lyrics
-    // we need a theme of some sort
-    // for lyric in lyric_chunks {
-    //     // What are base scenes to juice this prompt
-    // }
-    //
     let highest_number = image_files
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| {
