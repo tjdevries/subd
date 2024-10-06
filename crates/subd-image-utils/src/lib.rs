@@ -89,10 +89,10 @@ pub fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
 pub async fn get_image_bytes(url: &str) -> Result<Vec<u8>> {
     if url.starts_with("data:") {
         let (_mime_type, base64_data) = parse_data_url(url)
-            .with_context(|| format!("Invalid data URL for image"))?;
+            .with_context(|| "Invalid data URL for image".to_string())?;
         let image_bytes =
             general_purpose::STANDARD.decode(base64_data).with_context(
-                || format!("Failed to decode base64 data for image"),
+                || "Failed to decode base64 data for image".to_string(),
             )?;
         Ok(image_bytes)
     } else {

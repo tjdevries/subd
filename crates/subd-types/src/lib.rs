@@ -25,9 +25,9 @@ pub struct UserID(pub uuid::Uuid);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
-impl Into<uuid::Uuid> for UserID {
-    fn into(self) -> uuid::Uuid {
-        self.0
+impl From<UserID> for uuid::Uuid {
+    fn from(val: UserID) -> Self {
+        val.0
     }
 }
 

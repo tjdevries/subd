@@ -41,7 +41,7 @@ pub async fn generate_scene_prompts(
         GPT3_5_TURBO.to_string(),
         vec![chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
-            content: chat_completion::Content::Text(String::from(prompt)),
+            content: chat_completion::Content::Text(prompt),
             name: None,
         }],
     );

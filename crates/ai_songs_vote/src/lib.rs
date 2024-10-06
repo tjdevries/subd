@@ -1,8 +1,6 @@
 pub mod models;
-use ai_playlist;
 use anyhow::anyhow;
 use anyhow::Result;
-use sqlx;
 use sqlx::types::BigDecimal;
 
 use sqlx::{postgres::PgPool, FromRow};

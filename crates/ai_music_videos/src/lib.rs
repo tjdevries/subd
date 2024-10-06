@@ -132,7 +132,7 @@ async fn create_image_from_lyric(
         index.to_string(),
     )
     .await?;
-    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+    let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;
     Ok(first_image.to_string())
 }
 
@@ -144,15 +144,15 @@ async fn generate_runway_video_for_image(
 ) -> Result<String> {
     let folder = format!("./tmp/music_videos/{}", id);
     let images = fal_ai::create_from_fal_api_return_filename(
-        &image_prompt,
+        image_prompt,
         Some(folder.clone()),
         index.to_string(),
     )
     .await?;
-    let first_image = images.get(0).ok_or_else(|| anyhow!("No Image"))?;
+    let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;
     println!("Image: {}", first_image);
     let filename = fal_ai::create_runway_video_from_image(
-        &video_prompt,
+        video_prompt,
         first_image,
         Some(folder.clone()),
     )
@@ -246,7 +246,7 @@ fn create_video(song_id: &str) -> Result<String> {
     remove_small_images(song_id, 10_000)?;
 
     let status = std::process::Command::new("ffmpeg")
-        .args(&[
+        .args([
             "-y",
             "-framerate",
             "1/2",
@@ -282,7 +282,7 @@ fn combine_videos(video_chunks: Vec<String>, output_file: &str) -> Result<()> {
     std::fs::write(temp_file, input_files)?;
 
     let status = std::process::Command::new("ffmpeg")
-        .args(&[
+        .args([
             "-y",
             "-f",
             "concat",

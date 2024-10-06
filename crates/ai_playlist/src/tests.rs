@@ -9,7 +9,7 @@ use uuid::Uuid;
 async fn test_ai_song_functions() {
     // TODO: the fact we are using multiple DBs this is a problem
     let pool = subd_db::get_test_db_pool().await;
-    let _ = delete_all_ai_songs_and_playlist(&pool).await.unwrap();
+    delete_all_ai_songs_and_playlist(&pool).await.unwrap();
     let count = total_ai_songs(&pool).await.unwrap();
     assert_eq!(count, 0, "ok");
 
@@ -36,7 +36,7 @@ async fn test_ai_song_functions() {
 #[tag(database)]
 async fn test_ai_song_creation() {
     let pool = subd_db::get_test_db_pool().await;
-    let _ = delete_all_ai_songs_and_playlist(&pool).await.unwrap();
+    delete_all_ai_songs_and_playlist(&pool).await.unwrap();
 
     // This must not be working here
 

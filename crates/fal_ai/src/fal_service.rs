@@ -16,6 +16,12 @@ struct SavedImageResponse {
     image_bytes: Vec<u8>,
 }
 
+impl Default for FalService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FalService {
     pub fn new() -> Self {
         Self {
