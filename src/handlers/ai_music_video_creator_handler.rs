@@ -185,6 +185,6 @@ mod tests {
 
     #[test]
     fn test_music_video_path() {
-        println!("");
+        println!();
     }
 }

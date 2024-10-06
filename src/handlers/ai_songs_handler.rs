@@ -332,7 +332,7 @@ async fn handle_fake_play_command(
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
     // At this point it should be downloaded I think???
-    let song_id = Uuid::parse_str(&id)?;
+    let song_id = Uuid::parse_str(id)?;
     let new_song = ai_playlist::models::ai_songs::Model {
         song_id,
         title,

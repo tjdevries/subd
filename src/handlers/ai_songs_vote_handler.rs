@@ -121,7 +121,7 @@ pub async fn handle_telephone_requests(
                 .ok_or_else(|| anyhow!("No score provided"))?
                 .parse::<f64>()?;
 
-            if score < 0.0 || score > 10.0 {
+            if !(0.0..=10.0).contains(&score) {
                 let _ = send_message(
                     twitch_client,
                     "You must vote between 0.0 and 10.0",

@@ -14,7 +14,7 @@ use tower_http::{
     cors::{Any, CorsLayer},
     services::ServeDir,
 };
-use tracing_subscriber;
+
 
 #[derive(Clone, FromRef)]
 struct AppState {
@@ -212,8 +212,8 @@ async fn current_song_html(
         let music_directory =
             format!("./tmp/music_videos/{}/", current_song.song_id);
         let images =
-            get_files_by_ext(&music_directory, &vec!["png", "jpg", "jpeg"]);
-        let videos = get_files_by_ext(&music_directory, &vec!["mp4"]);
+            get_files_by_ext(&music_directory, &["png", "jpg", "jpeg"]);
+        let videos = get_files_by_ext(&music_directory, &["mp4"]);
         let mut html = String::new();
         let score =
             ai_songs_vote::get_average_score(pool, current_song.song_id)
@@ -226,7 +226,7 @@ async fn current_song_html(
         ));
 
         let image_scores = ai_playlist::models::get_all_image_votes_for_song(
-            &pool,
+            pool,
             current_song.song_id,
         )
         .await
@@ -255,7 +255,7 @@ fn _top_songs_html(songs: &[ai_songs_vote::AiSongRanking]) -> String {
 }
 
 fn lyrics_html(lyrics: &Option<String>) -> String {
-    let lyrics = lyrics.clone().unwrap_or_default().replace("\n", "<br />");
+    let lyrics = lyrics.clone().unwrap_or_default().replace('\n', "<br />");
     format!("<div>{}</div>", lyrics)
 }
 

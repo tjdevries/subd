@@ -383,7 +383,7 @@ async fn adjust_reward_cost<'a, C: twitch_api::HttpClient>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    
     use uuid::Uuid;
 
     #[test]
