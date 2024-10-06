@@ -66,10 +66,11 @@ pub async fn handle_requests(
         return Ok(());
     }
 
+    // These are named wrong right now
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            Ok(handle_create_music_video(obs_client, pool, id).await?)
+            Ok(handle_create_music_video_images(obs_client, pool, id).await?)
         }
         Command::CreateMusicVideoImages { id } => {
             Ok(handle_create_music_video_images(obs_client, pool, id).await?)
@@ -83,15 +84,6 @@ async fn handle_create_music_video_images(
     id: String,
 ) -> Result<()> {
     let filename = ai_music_videos::create_music_video_images(pool, id).await?;
-    update_obs_source(obs_client, &filename).await
-}
-
-async fn handle_create_music_video(
-    obs_client: &OBSClient,
-    pool: &sqlx::PgPool,
-    id: String,
-) -> Result<()> {
-    let filename = ai_music_videos::create_music_video_2(pool, id).await?;
     update_obs_source(obs_client, &filename).await
 }
 
