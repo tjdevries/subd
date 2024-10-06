@@ -11,11 +11,14 @@ use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(InstructMacro, Debug, Serialize, Deserialize)]
-struct UserInfo {
-    // This represents the name of the user
-    image_prompts: Vec<String>,
-    // This represents the age of the user
-    // age: u8,
+struct MusicVideoScenes {
+    scenes: Vec<MusicVideoScene>,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct MusicVideoScene {
+    image_prompt: String,
+    camera_move: String,
 }
 
 fn main() {
@@ -27,14 +30,14 @@ fn main() {
         vec![chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
             content: chat_completion::Content::Text(String::from(
-                "Describe 5 image_prompts for a Music Video about Programming in Rust",
+                "Describe 5 image_prompts for a Music Video about Programming in Rust and their corresponding camera moves",
             )),
             name: None,
         }],
     );
 
     let result = instructor_client
-        .chat_completion::<UserInfo>(req, 3)
+        .chat_completion::<MusicVideoScenes>(req, 3)
         .unwrap();
 
     println!("{:?}", result);
