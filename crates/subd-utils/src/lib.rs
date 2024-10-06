@@ -67,3 +67,27 @@ pub fn restore_stdout(backup: File) {
         libc::dup2(backup.as_raw_fd(), stdout_fd);
     }
 }
+
+pub fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
+    use std::fs;
+    match fs::read_dir(directory) {
+        Ok(entries) => entries
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(extension) = path.extension() {
+                        let ext = extension.to_string_lossy().to_lowercase();
+                        if extensions.contains(&ext.as_str()) {
+                            return path.file_name().map(|name| {
+                                name.to_string_lossy().into_owned()
+                            });
+                        }
+                    }
+                }
+                None
+            })
+            .collect(),
+        Err(_) => vec![],
+    }
+}

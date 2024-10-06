@@ -28,6 +28,13 @@ struct AppState {
     pool: Arc<PgPool>,
 }
 
+#[derive(Serialize)]
+struct Stats {
+    ai_songs_count: i64,
+    ai_votes_count: i64,
+    unplayed_songs_count: i64,
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -103,8 +110,9 @@ async fn show_ai_song(
 
     let music_directory =
         format!("./tmp/music_videos/{}/", current_song.song_id);
-    let images = get_files_by_ext(&music_directory, &["png", "jpg", "jpeg"]);
-    let videos = get_files_by_ext(&music_directory, &["mp4"]);
+    let images =
+        subd_utils::get_files_by_ext(&music_directory, &["png", "jpg", "jpeg"]);
+    let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
 
     let image_scores = ai_playlist::models::get_all_image_votes_for_song(
         pool,
@@ -144,35 +152,4 @@ async fn fetch_stats(pool: &PgPool) -> Result<Stats, (StatusCode, String)> {
         ai_votes_count,
         unplayed_songs_count,
     })
-}
-
-#[derive(Serialize)]
-struct Stats {
-    ai_songs_count: i64,
-    ai_votes_count: i64,
-    unplayed_songs_count: i64,
-}
-
-fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
-    use std::fs;
-    match fs::read_dir(directory) {
-        Ok(entries) => entries
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(extension) = path.extension() {
-                        let ext = extension.to_string_lossy().to_lowercase();
-                        if extensions.contains(&ext.as_str()) {
-                            return path.file_name().map(|name| {
-                                name.to_string_lossy().into_owned()
-                            });
-                        }
-                    }
-                }
-                None
-            })
-            .collect(),
-        Err(_) => vec![],
-    }
 }
