@@ -6,6 +6,7 @@ use axum::{
     routing::get,
     Router,
 };
+use std::fmt::Write as _;
 use std::fs;
 use std::sync::Arc;
 use subd_db::get_db_pool;
@@ -45,8 +46,6 @@ async fn create_app() -> Router {
                 .allow_methods([Method::GET]),
         )
 }
-
-use std::fmt::Write as _;
 
 async fn show_ai_song(
     State(pool): State<Arc<sqlx::PgPool>>,
@@ -111,7 +110,7 @@ async fn root(
 }
 
 async fn fetch_stats(
-    pool: &Arc<sqlx::PgPool>,
+    pool: &sqlx::PgPool,
 ) -> Result<Stats, (StatusCode, String)> {
     let ai_songs_count = ai_playlist::total_ai_songs(pool).await.unwrap();
     let ai_votes_count = ai_songs_vote::total_votes(pool).await.unwrap();
@@ -205,7 +204,7 @@ fn unplayed_songs_html(
 }
 
 async fn current_song_html(
-    pool: &Arc<sqlx::PgPool>,
+    pool: &sqlx::PgPool,
     current_song: Result<ai_playlist::models::ai_songs::Model, sqlx::Error>,
     current_songs_vote_count: i64,
 ) -> Result<String, (StatusCode, String)> {
