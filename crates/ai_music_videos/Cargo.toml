@@ -25,3 +25,11 @@ colored.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
 futures.workspace = true
+
+instructor-ai = "0.1.8"
+instruct-macros = "0.1.8"
+openai-api-rs = "4.1.0"
+instruct-macros-types = "0.1.8"
+
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true

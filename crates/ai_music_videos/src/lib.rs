@@ -6,6 +6,57 @@ use sqlx::PgPool;
 use std::path::Path;
 use std::sync::Arc;
 
+// ==============================================================
+use instruct_macros::InstructMacro;
+use instruct_macros_types::Parameter;
+use instruct_macros_types::{ParameterInfo, StructInfo};
+use instructor_ai::from_openai;
+use openai_api_rs::v1::{
+    api::Client,
+    chat_completion::{self, ChatCompletionRequest},
+    common::GPT3_5_TURBO,
+};
+use serde::{Deserialize, Serialize};
+use std::env;
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct MusicVideoScenes {
+    scenes: Vec<MusicVideoScene>,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct MusicVideoScene {
+    image_prompt: String,
+    camera_move: String,
+}
+// ==============================================================
+
+async fn generate_scene_prompts(
+    lyrics: String,
+    title: String,
+) -> Result<MusicVideoScenes> {
+    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let instructor_client = from_openai(client);
+
+    let prompt = format!(
+        "Describe 5 scenes for a Music Video about based on the following lyrics and song title and their corresponding camera moves: {}, Title: {}", lyrics, title);
+
+    let req = ChatCompletionRequest::new(
+        GPT3_5_TURBO.to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(String::from(prompt)),
+            name: None,
+        }],
+    );
+
+    let result = instructor_client
+        .chat_completion::<MusicVideoScenes>(req, 3)
+        .unwrap();
+
+    println!("{:?}", result);
+    Ok(result)
+}
 pub async fn create_music_video_images(
     pool: &PgPool,
     id: String,
@@ -14,15 +65,22 @@ pub async fn create_music_video_images(
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
+    // let ai_song = Arc::new(ai_song);
 
-    let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
-        lyric
-            .lines()
-            .filter(|line| !line.trim().starts_with('['))
-            .collect::<Vec<_>>()
-            .join("\n")
-    });
-    let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
+    // let filtered_lyric = ai_song.lyric.as_ref().map(|lyric| {
+    //     lyric
+    //         .lines()
+    //         .filter(|line| !line.trim().starts_with('['))
+    //         .collect::<Vec<_>>()
+    //         .join("\n")
+    // });
+    // let lyric_chunks = get_lyric_chunks(&filtered_lyric, 30)?;
+
+    let lyrics = ai_song.lyric.as_ref().unwrap();
+    let title = &ai_song.title;
+    // let lyrics = ai_song.lyric.unwrap_or(ai_song.title);
+    let scenes_prompts =
+        generate_scene_prompts(lyrics.to_string(), title.to_string()).await?;
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
@@ -57,15 +115,25 @@ pub async fn create_music_video_images(
 
     // Create a vector of futures for concurrent execution
     let futures =
-        lyric_chunks.into_iter().enumerate().map(|(index, lyric)| {
-            let ai_song = Arc::clone(&ai_song);
-            let id = id.clone();
+        scenes_prompts
+            .scenes
+            .iter()
+            .enumerate()
+            .map(|(index, scene)| {
+                let ai_song = Arc::clone(&ai_song);
+                let id = id.clone();
 
-            let file_index = highest_number + (index + 1);
-            async move {
-                create_image_from_lyric(ai_song, lyric, id, file_index).await
-            }
-        });
+                let file_index = highest_number + (index + 1);
+                async move {
+                    create_image_from_lyric(
+                        ai_song,
+                        scene.image_prompt.clone(),
+                        id,
+                        file_index,
+                    )
+                    .await
+                }
+            });
 
     // Run all futures concurrently and collect the results
     let _results: Vec<Result<String>> = join_all(futures).await;

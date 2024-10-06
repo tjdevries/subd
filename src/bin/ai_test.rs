@@ -25,13 +25,13 @@ fn main() {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
     let instructor_client = from_openai(client);
 
+    let prompt = "Describe 5 scenes for a Music Video about based on the following lyrics and their corresponding camera moves:";
+
     let req = ChatCompletionRequest::new(
         GPT3_5_TURBO.to_string(),
         vec![chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
-            content: chat_completion::Content::Text(String::from(
-                "Describe 5 image_prompts for a Music Video about Programming in Rust and their corresponding camera moves",
-            )),
+            content: chat_completion::Content::Text(String::from(prompt)),
             name: None,
         }],
     );
