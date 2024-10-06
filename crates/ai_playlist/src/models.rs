@@ -4,13 +4,46 @@ use serde::Serialize;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::PgPool;
 use subd_macros::database_model;
-// use time::serde;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
-struct Debate {
-    #[serde(skip_serializing)]
-    pub song_id: Uuid,
+pub async fn get_songs_for_user(
+    pool: &PgPool,
+    username: &str,
+) -> Result<Vec<ai_songs::Model>> {
+    let res = sqlx::query_as!(
+        ai_songs::Model,
+        r#"
+        SELECT *
+        FROM ai_songs
+        WHERE username = $1
+        ORDER BY created_at DESC
+        "#,
+        username
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res)
+}
+
+pub async fn get_users_with_song_count(
+    pool: &PgPool,
+) -> Result<Vec<(String, Option<i64>)>> {
+    let res = sqlx::query!(
+        r#"
+        SELECT username, COUNT(*) as song_count
+        FROM ai_songs
+        GROUP BY username
+        ORDER BY song_count DESC
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res
+        .into_iter()
+        .map(|row| (row.username, row.song_count))
+        .collect())
 }
 
 #[database_model]

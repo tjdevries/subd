@@ -16,7 +16,6 @@ pub async fn all_songs(pool: &PgPool) -> Result<Vec<models::ai_songs::Model>> {
     .await?;
     Ok(res)
 }
-
 pub async fn get_unplayed_songs(
     pool: &PgPool,
 ) -> Result<Vec<models::ai_songs::Model>> {
@@ -219,6 +218,25 @@ pub async fn mark_songs_as_stopped(pool: &PgPool) -> Result<(), Error> {
     Ok(())
 }
 
+pub async fn get_users_with_song_count(
+    pool: &PgPool,
+) -> Result<Vec<(String, Option<i64>)>> {
+    let res = sqlx::query!(
+        r#"
+        SELECT username, COUNT(*) as song_count
+        FROM ai_songs
+        GROUP BY username
+        ORDER BY song_count DESC
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res
+        .into_iter()
+        .map(|row| (row.username, row.song_count))
+        .collect())
+}
 // Gets the currently playing song, or the oldest unplayed song if none is playing.
 pub async fn get_current_song(
     pool: &PgPool,
