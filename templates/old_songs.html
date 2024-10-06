@@ -3,7 +3,7 @@
     <a class="button" href="javascript:window.history.back();">Back</a>
     <div class="grid-container">
         {% for song in songs %}
-            <div class="grid-item" style="border: 1px solid black;">
+            <div class="grid-item">
              {{ song.username }}
               <br />
              {{ song.title}}
@@ -16,7 +16,6 @@
                  <source src="/all_songs/{{ song.song_id }}.mp3" type="audio/mpeg">
                  Your browser does not support the audio element.
              </audio>
-            <br />
             <a href="/ai_songs/{{ song.song_id }}">{{ song.song_id }}</a>
             </div>
         {% endfor %}
