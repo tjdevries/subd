@@ -206,10 +206,57 @@ pub mod image_votes {
     }
 }
 
+pub async fn get_image_votes_or_default_with_extensions(
+    pool: &PgPool,
+    image_names: Vec<String>,
+) -> Result<Vec<(String, String, i64, i64)>, sqlx::Error> {
+    let image_names_without_ext: Vec<String> = image_names
+        .iter()
+        .map(|name| name.rsplit('.').next().unwrap_or(name).to_string())
+        .collect();
+
+    let res = sqlx::query!(
+        r#"
+        SELECT 
+            image_name,
+            COUNT(*) FILTER (WHERE vote_type = 'love') as love_count,
+            COUNT(*) FILTER (WHERE vote_type = 'hate') as hate_count
+        FROM image_votes
+        WHERE image_name = ANY($1)
+        GROUP BY image_name
+        "#,
+        &image_names_without_ext
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut result = Vec::new();
+    for (image_name, image_name_without_ext) in
+        image_names.into_iter().zip(image_names_without_ext)
+    {
+        let votes = res
+            .iter()
+            .find(|row| row.image_name == image_name_without_ext);
+        result.push((
+            image_name.clone(),
+            image_name
+                .split('.')
+                .next()
+                .unwrap_or(&image_name)
+                .to_string(),
+            votes.map_or(0, |v| v.love_count.unwrap_or(0)),
+            votes.map_or(0, |v| v.hate_count.unwrap_or(0)),
+        ));
+    }
+
+    Ok(result)
+}
+
+// Does this need to be a vec?
 pub async fn get_all_image_votes_for_song(
     pool: &PgPool,
     song_id: Uuid,
-) -> Result<Vec<(String, i64, i64)>, sqlx::Error> {
+) -> Result<Vec<(Uuid, String, i64, i64)>, sqlx::Error> {
     let res = sqlx::query!(
         r#"
             SELECT 
@@ -229,6 +276,7 @@ pub async fn get_all_image_votes_for_song(
         .into_iter()
         .map(|row| {
             (
+                song_id,
                 row.image_name,
                 row.love_count.unwrap_or(0),
                 row.hate_count.unwrap_or(0),

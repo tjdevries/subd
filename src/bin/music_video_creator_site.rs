@@ -83,34 +83,39 @@ async fn root(
     };
 
     // Only if this is something
-    let (images, videos, image_scores) = if let Some(song) = &current_song {
+    let (videos, image_scores) = if let Some(song) = &current_song {
         let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
-        let images = subd_utils::get_files_by_ext(
+
+        let ids = subd_utils::get_files_by_ext(
             &music_directory,
             &["png", "jpg", "jpeg"],
-        );
+        )
+        .iter()
+        .map(|path| path.to_string())
+        .collect::<Vec<String>>();
         let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
 
-        let image_scores = ai_playlist::models::get_all_image_votes_for_song(
-            pool,
-            song.song_id,
-        )
-        .await
-        .unwrap_or_default();
+        // We actually need the extension
+        // let image_scores = ai_playlist::models::get_all_image_votes_for_song(
+        let image_scores =
+            // ai_playlist::models::get_image_votes_or_default(pool, ids)
+            ai_playlist::models::get_image_votes_or_default_with_extensions(pool, ids)
+                .await
+                .unwrap_or_default();
+        // let image_scores = vec![];
 
-        (images, videos, image_scores)
+        (videos, image_scores)
     } else {
-        (Vec::new(), Vec::new(), Vec::new())
+        (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
     };
 
     // let base_path = format!("/images/{}", current_song.song_id);
     let users = ai_playlist::get_users_with_song_count(&pool).await.unwrap();
-
-    println!("Images: {:?}", images);
+    println!("Image scores: {:?}", image_scores);
+    // println!("Images: {:?}", images);
 
     // We can't use the current song here
     let context = context! {
-        images,
         videos,
         image_scores,
         users,

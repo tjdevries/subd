@@ -25,9 +25,12 @@
 
 
             <div class="grid-container">
-                {% for image in images %}
+                {% for image_score in image_scores %}
                     <div class="grid-item">
-                        <img src="/images/{{current_song.song_id}}/{{ image }}" alt="{{image}}" width="300px">
+                        <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}" alt="{{image_score[0]}}" width="300px">
+                        !love {{ image_score[1] }} | !hate {{ image_score[1] }}
+                        <br />
+                        Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
                     </div>
                 {% endfor %}
     
