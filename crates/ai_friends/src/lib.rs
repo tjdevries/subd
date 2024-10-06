@@ -126,7 +126,8 @@ async fn sync_lips_and_update(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
+    use test_tag::tag;
 
     #[test]
     #[tag(fal)]

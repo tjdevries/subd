@@ -163,8 +163,6 @@ impl EventHandler for TwitchEventSubHandler {
         Ok(())
     }
 }
-#[derive(Clone)]
-struct HttpClient {}
 
 async fn simple_post_request<'a, C: twitch_api::HttpClient>(
     State(obs_client): State<Arc<OBSClient>>,
