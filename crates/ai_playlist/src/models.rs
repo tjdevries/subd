@@ -158,6 +158,37 @@ pub mod image_votes {
     }
 }
 
+pub async fn get_all_image_votes_for_song(
+    pool: &PgPool,
+    song_id: Uuid,
+) -> Result<Vec<(String, i64, i64)>, sqlx::Error> {
+    let res = sqlx::query!(
+        r#"
+            SELECT 
+                image_name,
+                COUNT(*) FILTER (WHERE vote_type = 'love') as love_count,
+                COUNT(*) FILTER (WHERE vote_type = 'hate') as hate_count
+            FROM image_votes
+            WHERE song_id = $1
+            GROUP BY image_name
+            "#,
+        song_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res
+        .into_iter()
+        .map(|row| {
+            (
+                row.image_name,
+                row.love_count.unwrap_or(0),
+                row.hate_count.unwrap_or(0),
+            )
+        })
+        .collect())
+}
+
 impl image_votes::Model {
     /// Saves a vote (love or hate) for an image associated with a song.
     pub async fn save(&self, pool: &PgPool) -> Result<Self, sqlx::Error> {
@@ -187,7 +218,27 @@ impl image_votes::Model {
         Ok(res)
     }
 
-    /// Casts a "love" vote for the specified image.
+    pub async fn get_image_votes(
+        pool: &PgPool,
+        song_id: Uuid,
+        image_name: &str,
+    ) -> Result<(i64, i64), sqlx::Error> {
+        let res = sqlx::query!(
+            r#"
+        SELECT 
+            COUNT(*) FILTER (WHERE vote_type = 'love') as love_count,
+            COUNT(*) FILTER (WHERE vote_type = 'hate') as hate_count
+        FROM image_votes
+        WHERE song_id = $1 AND image_name = $2
+        "#,
+            song_id,
+            image_name
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok((res.love_count.unwrap_or(0), res.hate_count.unwrap_or(0)))
+    }
     pub async fn love_image(
         pool: &PgPool,
         user_id: Uuid,

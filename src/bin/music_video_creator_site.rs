@@ -52,8 +52,26 @@ async fn show_ai_song(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let stats = fetch_stats(&pool).await?;
     let mut html = header_html(&stats);
-    html.push_str(&format!("SONG ID: {}<br />", id));
+    html.push_str(&format!("SONG ID: {}<br /><br />", id));
     html.push_str(&back_button_html());
+
+    let current_song =
+        match ai_playlist::find_song_by_id(&pool, &id.to_string()).await {
+            Ok(song) => Ok(song),
+            Err(_) => Err(sqlx::Error::RowNotFound),
+        };
+    let current_song_votes_count = match &current_song {
+        Ok(song) => ai_songs_vote::total_votes_by_id(&pool, song.song_id)
+            .await
+            .unwrap_or(0),
+        Err(_) => 0,
+    };
+
+    html.push_str(
+        &current_song_html(&pool, current_song, current_song_votes_count)
+            .await?,
+    );
+
     Ok(Html(html))
 }
 
@@ -168,7 +186,8 @@ fn unplayed_songs_html(
     let mut html = String::from("<h2>Songs in Playlist</h2>");
     for song in unplayed_songs {
         html.push_str(&format!(
-            "<div class=\"grid-item\">@{}'s {} - {}<div>",
+            "<div class=\"grid-item\"><a href=\"/ai_songs/{}\"> @{}'s {} - {}</a><div>",
+            song.song_id,
             song.username, song.title, song.song_id
         ));
     }
@@ -198,9 +217,16 @@ async fn current_song_html(
             current_song.title, current_song.tags, current_song.username, current_song.song_id, score, current_songs_vote_count
         ));
 
+        let image_scores = ai_playlist::models::get_all_image_votes_for_song(
+            &pool,
+            current_song.song_id,
+        )
+        .await
+        .unwrap_or(vec![]);
+
         html.push_str("<div class=\"grid-container\">");
         let base_path = format!("/images/{}", current_song.song_id);
-        html.push_str(&images_html(&base_path, &images));
+        html.push_str(&images_html(&base_path, &images, image_scores));
         html.push_str(&videos_html(&base_path, &videos));
         html.push_str(&lyrics_html(&current_song.lyric));
         return Ok(html);
@@ -225,16 +251,27 @@ fn lyrics_html(lyrics: &Option<String>) -> String {
     format!("<div>{}</div>", lyrics)
 }
 
-fn images_html(base_path: &str, images: &Vec<String>) -> String {
-    images.iter().enumerate().map(|(index, image)| {
-       format! (
-           "<div class=\"grid-item\">
-               <img src=\"{}/{}\" alt=\"{}\" style=\"max-width:300px; max-height:300px;\" /><br/>
-               <h1><code>!like {} | !veto {}</code></h1>
-           </div>",
-           base_path, image, image, index, index
-       )
-   }).collect::<String>()
+fn images_html(
+    base_path: &str,
+    images: &Vec<String>,
+    image_scores: Vec<(String, i64, i64)>,
+) -> String {
+    images.iter().enumerate().map(|(_, image)| {
+        let image_score = image_scores.iter().find(|&score| score.0 == *image);
+        let (love, hate) = image_score.map(|&(_, l, h)| (l, h)).unwrap_or((0, 0));
+
+        // Should I be using a Path library?
+        let image_without_ext = image.split('.').next().unwrap_or(image);
+
+        format!(
+            "<div class=\"grid-item\">
+                <img src=\"{}/{}\" alt=\"{}\" style=\"max-width:300px; max-height:300px;\" /><br/>
+                <h1><code>!love {image_without_ext} | !hate {image_without_ext}</code></h1>
+                <p>Loves: {love} | Hates: {hate}</p>
+            </div>",
+            base_path, image, image
+        )
+    }).collect::<String>()
 }
 
 fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
