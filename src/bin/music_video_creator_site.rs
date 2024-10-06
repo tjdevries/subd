@@ -46,14 +46,17 @@ async fn create_app() -> Router {
         )
 }
 
+use std::fmt::Write as _;
+
 async fn show_ai_song(
     State(pool): State<Arc<sqlx::PgPool>>,
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let stats = fetch_stats(&pool).await?;
     let mut html = header_html(&stats);
-    html.push_str(&format!("SONG ID: {}<br /><br />", id));
-    html.push_str(&back_button_html());
+
+    write!(&mut html, "SONG ID: {}<br /><br />", id).unwrap();
+    write!(&mut html, "{}", back_button_html()).unwrap();
 
     let current_song =
         match ai_playlist::find_song_by_id(&pool, &id.to_string()).await {
@@ -67,10 +70,13 @@ async fn show_ai_song(
         Err(_) => 0,
     };
 
-    html.push_str(
-        &current_song_html(&pool, current_song, current_song_votes_count)
-            .await?,
-    );
+    write!(
+        &mut html,
+        "{}",
+        current_song_html(&pool, current_song, current_song_votes_count)
+            .await?
+    )
+    .unwrap();
 
     Ok(Html(html))
 }
@@ -80,7 +86,7 @@ async fn root(
 ) -> Result<Html<String>, (StatusCode, String)> {
     let stats = fetch_stats(&pool).await?;
     let unplayed_songs = ai_playlist::get_unplayed_songs(&pool).await.unwrap();
-    let top_songs = ai_songs_vote::get_top_songs(&pool, 5).await.unwrap();
+    // let top_songs = ai_songs_vote::get_top_songs(&pool, 5).await.unwrap();
     let current_song = ai_playlist::get_current_song(&pool).await;
     let current_song_votes_count = match &current_song {
         Ok(song) => ai_songs_vote::total_votes_by_id(&pool, song.song_id)
@@ -90,14 +96,17 @@ async fn root(
     };
 
     let mut html = header_html(&stats);
-    html.push_str(&unplayed_songs_html(&unplayed_songs));
-    html.push_str(
-        &current_song_html(&pool, current_song, current_song_votes_count)
-            .await?,
-    );
+    write!(&mut html, "{}", unplayed_songs_html(&unplayed_songs)).unwrap();
+    write!(
+        &mut html,
+        "{}",
+        current_song_html(&pool, current_song, current_song_votes_count)
+            .await?
+    )
+    .unwrap();
 
     // These are just annoying right now
-    // html.push_str(&top_songs_html(&top_songs));
+    // write!(&mut html, "{}", top_songs_html(&top_songs)).unwrap();
     Ok(Html(html))
 }
 
