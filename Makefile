@@ -29,6 +29,9 @@ test_fal:
 fix:
 	cargo fix --lib -p server
 
+populate:
+	cargo run --bin update_ai_song_info
+
 mv:
 	cargo run --bin music_video_creator_site
 	
