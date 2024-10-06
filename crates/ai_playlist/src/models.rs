@@ -147,7 +147,6 @@ pub enum VoteType {
 #[database_model]
 pub mod image_votes {
     use super::*;
-    use sqlx::Type;
 
     pub struct Model {
         pub user_id: Uuid,

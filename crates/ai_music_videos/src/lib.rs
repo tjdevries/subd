@@ -267,7 +267,7 @@ async fn create_images_for_lyrics(
     ai_song: &ai_playlist::models::ai_songs::Model,
     lyric_chunks: &[String],
 ) -> Result<()> {
-    for (index, lyric) in lyric_chunks.iter().enumerate() {
+    for lyric in lyric_chunks {
         println!(
             "{} - {}",
             "Creating Image for Lyric Chunk: {}".cyan(),
@@ -277,7 +277,6 @@ async fn create_images_for_lyrics(
         fal_ai::create_image_for_music_video(
             &ai_song.song_id.to_string(),
             &format!("{} {}", ai_song.title, lyric),
-            index + 1,
         )
         .await?;
     }

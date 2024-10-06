@@ -137,7 +137,6 @@ impl FalService {
 
         let image_responses = stream::iter(data.images.iter().enumerate())
             .then(|(_i, image)| async move {
-                // let filename = self.construct_filename(&save_dir, &name, i);
                 let extension = "png";
                 let filename = format!("{}/{}.{}", save_dir, name, extension);
 
@@ -152,16 +151,6 @@ impl FalService {
             .await?;
 
         Ok(image_responses)
-    }
-
-    fn construct_filename(
-        &self,
-        save_dir: &str,
-        name: &str,
-        i: usize,
-    ) -> String {
-        let extension = "png";
-        format!("{}/{}-{}.{}", save_dir, name, i, extension)
     }
 
     async fn save_image(

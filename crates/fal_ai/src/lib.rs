@@ -72,7 +72,6 @@ pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
 pub async fn create_image_for_music_video(
     id: &str,
     prompt: &str,
-    index: usize,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     let model = "fal-ai/fast-sdxl";

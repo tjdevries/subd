@@ -237,7 +237,10 @@ async fn handle_info_command(
 
 /// Handles the "!reverb" command to play audio with reverb
 async fn handle_reverb_command(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
     pool: &PgPool,
     sink: &Sink,
     splitmsg: &[String],
@@ -304,7 +307,10 @@ async fn handle_queue_command(
 
 /// Handles the "!play" command to play a song immediately
 async fn handle_fake_play_command(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
     pool: &PgPool,
     sink: &Sink,
     splitmsg: &[String],
@@ -351,7 +357,10 @@ async fn handle_fake_play_command(
 }
 /// Handles the "!play" command to play a song immediately
 async fn handle_play_command(
-    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    _twitch_client: &TwitchIRCClient<
+        SecureTCPTransport,
+        StaticLoginCredentials,
+    >,
     pool: &PgPool,
     sink: &Sink,
     splitmsg: &[String],

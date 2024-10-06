@@ -242,7 +242,7 @@ async fn current_song_html(
     Ok(String::new())
 }
 
-fn top_songs_html(songs: &[ai_songs_vote::AiSongRanking]) -> String {
+fn _top_songs_html(songs: &[ai_songs_vote::AiSongRanking]) -> String {
     songs
         .iter()
         .map(|song| {
@@ -264,22 +264,22 @@ fn images_html(
     images: &Vec<String>,
     image_scores: Vec<(String, i64, i64)>,
 ) -> String {
-    images.iter().enumerate().map(|(_, image)| {
-        let image_score = image_scores.iter().find(|&score| score.0 == *image);
-        let (love, hate) = image_score.map(|&(_, l, h)| (l, h)).unwrap_or((0, 0));
-
-        // Should I be using a Path library?
-        let image_without_ext = image.split('.').next().unwrap_or(image);
-
-        format!(
-            "<div class=\"grid-item\">
-                <img src=\"{}/{}\" alt=\"{}\" style=\"max-width:300px; max-height:300px;\" /><br/>
-                <h1><code>!love {image_without_ext} | !hate {image_without_ext}</code></h1>
-                <p>Loves: {love} | Hates: {hate}</p>
-            </div>",
-            base_path, image, image
-        )
-    }).collect::<String>()
+    images.iter().map(|image| {
+            let image_score = image_scores.iter().find(|&score| score.0 == *image);
+            let (love, hate) = image_score.map(|&(_, l, h)| (l, h)).unwrap_or((0, 0));
+    
+            // Should I be using a Path library?
+            let image_without_ext = image.split('.').next().unwrap_or(image);
+    
+            format!(
+                "<div class=\"grid-item\">
+                    <img src=\"{}/{}\" alt=\"{}\" style=\"max-width:300px; max-height:300px;\" /><br/>
+                    <h1><code>!love {image_without_ext} | !hate {image_without_ext}</code></h1>
+                    <p>Loves: {love} | Hates: {hate}</p>
+                </div>",
+                base_path, image, image
+            )
+        }).collect::<String>()
 }
 
 fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
@@ -306,13 +306,12 @@ fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
 }
 
 fn videos_html(base_path: &str, videos: &Vec<String>) -> String {
-    videos.iter().enumerate().map(|(index, video)| {
+    videos.iter().map(|video| {
        format! (
            "<div class=\"grid-item\">
                <video src=\"{}/{}\" alt=\"{}\" style=\"max-width:300px; max-height:300px;\" autoplay loop muted></video><br/>
-               <h1><code>!like {} | !veto {}</code></h1>
            </div>",
-           base_path, video, video, index, index
+           base_path, video, video
        )
    }).collect::<String>()
 }

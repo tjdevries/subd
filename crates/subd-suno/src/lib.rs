@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use bytes;
 use reqwest::Client;
 use rodio::{Decoder, Sink};
 use sqlx::types::Uuid;
@@ -144,12 +143,11 @@ pub async fn generate_audio_by_prompt(
 pub async fn download_and_play(
     pool: &sqlx::PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
-    tx: &broadcast::Sender<subd_types::Event>,
+    _tx: &broadcast::Sender<subd_types::Event>,
     user_name: String,
     id: &String,
 ) -> Result<()> {
     let id = id.clone();
-    let tx = tx.clone();
     let twitch_client = twitch_client.clone();
     let pool = pool.clone();
 
@@ -225,23 +223,6 @@ pub async fn download_and_play(
                     ai_playlist::add_song_to_playlist(&pool, uuid_id)
                         .await
                         .unwrap();
-
-                    // add_to_playlist_and_play_audio(
-                    //     &pool,
-                    //     sink,
-                    //     id,
-                    //     &msg.user_name,
-                    // )
-                    // .await?;
-                    // I should just add it to a playlist here!!!
-                    // Is this play the part that is fucking it up?????
-                    // let _ = tx.send(subd_types::Event::UserMessage(
-                    //     subd_types::UserMessage {
-                    //         user_name: "beginbot".to_string(),
-                    //         contents: format!("!play {}", id),
-                    //         ..Default::default()
-                    //     },
-                    // ));
 
                     let info = format!(
                         "@{}'s song {} added to the Queue.",
