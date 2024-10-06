@@ -35,6 +35,7 @@ struct Stats {
     unplayed_songs_count: i64,
 }
 
+// We need to figure this out
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -81,9 +82,37 @@ async fn root(
         0
     };
 
+    // Only if this is something
+    let (images, videos, image_scores) = if let Some(song) = &current_song {
+        let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
+        let images = subd_utils::get_files_by_ext(
+            &music_directory,
+            &["png", "jpg", "jpeg"],
+        );
+        let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
+
+        let image_scores = ai_playlist::models::get_all_image_votes_for_song(
+            pool,
+            song.song_id,
+        )
+        .await
+        .unwrap_or_default();
+
+        (images, videos, image_scores)
+    } else {
+        (Vec::new(), Vec::new(), Vec::new())
+    };
+
+    // let base_path = format!("/images/{}", current_song.song_id);
     let users = ai_playlist::get_users_with_song_count(&pool).await.unwrap();
 
+    println!("Images: {:?}", images);
+
+    // We can't use the current song here
     let context = context! {
+        images,
+        videos,
+        image_scores,
         users,
         stats,
         unplayed_songs,
@@ -91,7 +120,7 @@ async fn root(
         current_song_votes_count,
     };
 
-    let tmpl = ENV.get_template("base.html").unwrap();
+    let tmpl = ENV.get_template("home.html").unwrap();
 
     let body = tmpl
         .render(context)

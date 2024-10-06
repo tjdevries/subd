@@ -11,11 +11,7 @@
     <h3>Songs in Playlist: {{ stats.unplayed_songs_count }}</h3>
 
     <a href="/songs">All Songs</a>
-    </h4> Users</h4>
-    {% for user in users %}
-        <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}}</a>
         <br />
-    {% endfor %}
     {% block content %}{% endblock %}
 </body>
 </html>
