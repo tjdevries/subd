@@ -210,10 +210,10 @@ pub async fn get_image_votes_or_default_with_extensions(
     pool: &PgPool,
     image_names: Vec<String>,
 ) -> Result<Vec<(String, String, i64, i64)>, sqlx::Error> {
-    let image_names_without_ext: Vec<String> = image_names
-        .iter()
-        .map(|name| name.rsplit('.').next().unwrap_or(name).to_string())
-        .collect();
+    // let image_names_without_ext: Vec<String> = image_names
+    //     .iter()
+    //     .map(|name| name.rsplit('.').next().unwrap_or(name).to_string())
+    //     .collect();
 
     let res = sqlx::query!(
         r#"
@@ -225,18 +225,14 @@ pub async fn get_image_votes_or_default_with_extensions(
         WHERE image_name = ANY($1)
         GROUP BY image_name
         "#,
-        &image_names_without_ext
+        &image_names
     )
     .fetch_all(pool)
     .await?;
 
     let mut result = Vec::new();
-    for (image_name, image_name_without_ext) in
-        image_names.into_iter().zip(image_names_without_ext)
-    {
-        let votes = res
-            .iter()
-            .find(|row| row.image_name == image_name_without_ext);
+    for image_name in image_names {
+        let votes = res.iter().find(|row| row.image_name == image_name);
         result.push((
             image_name.clone(),
             image_name

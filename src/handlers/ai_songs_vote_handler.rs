@@ -155,6 +155,7 @@ async fn handle_love_or_hate(
     image_base_name: &str,
     image_vote_option: ImageVoteOption,
 ) -> Result<()> {
+    // We need to look up the image name!
     let image_name = format!("{}.png", image_base_name);
     let current_song = ai_playlist::get_current_song(pool).await?;
     let image_path =
