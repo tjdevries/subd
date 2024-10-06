@@ -53,7 +53,9 @@ async fn create_app() -> Router {
     Router::new()
         .route("/", get(root))
         .route("/ai_songs/:id", get(show_ai_song))
+        .route("/songs", get(show_ai_songs))
         .nest_service("/images", ServeDir::new("./tmp/music_videos"))
+        .nest_service("/all_songs", ServeDir::new("./ai_songs"))
         .nest_service("/static", ServeDir::new("./static"))
         .with_state(state)
         .layer(
@@ -86,6 +88,31 @@ async fn root(
     };
 
     let tmpl = ENV.get_template("base.html").unwrap();
+
+    let body = tmpl
+        .render(context)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Html(body))
+}
+
+async fn show_ai_songs(
+    State(state): State<AppState>,
+) -> Result<Html<String>, (StatusCode, String)> {
+    let pool = &state.pool;
+    let stats = fetch_stats(pool).await?;
+
+    // This must be failing
+    let songs = ai_playlist::all_songs(pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let context = context! {
+        songs,
+        stats,
+    };
+
+    let tmpl = ENV.get_template("songs.html").unwrap();
 
     let body = tmpl
         .render(context)

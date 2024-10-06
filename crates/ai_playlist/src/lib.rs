@@ -5,6 +5,18 @@ use uuid::Uuid;
 
 pub mod models;
 
+pub async fn all_songs(pool: &PgPool) -> Result<Vec<models::ai_songs::Model>> {
+    let res = sqlx::query_as!(
+        models::ai_songs::Model,
+        r#"
+        SELECT * FROM ai_songs
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(res)
+}
+
 pub async fn get_unplayed_songs(
     pool: &PgPool,
 ) -> Result<Vec<models::ai_songs::Model>> {

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="5" />
     <link rel="stylesheet" href="/static/styles.css" />
     <title>{{ title }}</title>
 </head>
@@ -10,6 +9,8 @@
     <h4 class="sub-header">Total AI Songs Created: {{ stats.ai_songs_count }}</h4>
     <h4 class="sub-header">Total AI Song Votes: {{ stats.ai_votes_count }}</h4>
     <h3>Songs in Playlist: {{ stats.unplayed_songs_count }}</h3>
+
+    <a href="/songs">All Songs</a>
     {% block content %}{% endblock %}
 </body>
 </html>
