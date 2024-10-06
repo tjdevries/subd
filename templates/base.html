@@ -13,7 +13,8 @@
     <a href="/songs">All Songs</a>
     </h4> Users</h4>
     {% for user in users %}
-        {{ user }}
+        <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}}</a>
+        <br />
     {% endfor %}
     {% block content %}{% endblock %}
 </body>

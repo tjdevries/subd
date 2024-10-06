@@ -53,6 +53,7 @@ async fn create_app() -> Router {
     Router::new()
         .route("/", get(root))
         .route("/ai_songs/:id", get(show_ai_song))
+        .route("/users/:username", get(show_ai_song_by_user))
         .route("/songs", get(show_ai_songs))
         .nest_service("/images", ServeDir::new("./tmp/music_videos"))
         .nest_service("/all_songs", ServeDir::new("./ai_songs"))
@@ -117,6 +118,58 @@ async fn show_ai_songs(
 
     let tmpl = ENV.get_template("songs.html").unwrap();
 
+    let body = tmpl
+        .render(context)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Html(body))
+}
+
+async fn show_ai_song_by_user(
+    State(state): State<AppState>,
+    Path(username): Path<String>,
+) -> Result<Html<String>, (StatusCode, String)> {
+    let pool = &state.pool;
+    let songs = ai_playlist::models::get_songs_for_user(&pool, &username)
+        .await
+        .unwrap();
+    let stats = fetch_stats(pool).await?;
+    //let current_song = ai_playlist::find_song_by_id(pool, &id.to_string())
+    //    .await
+    //    .map_err(|_| (StatusCode::NOT_FOUND, "Song not found".to_string()))?;
+    //let current_song_votes_count =
+    //    ai_songs_vote::total_votes_by_id(pool, current_song.song_id)
+    //        .await
+    //        .unwrap_or(0);
+    //
+    //let music_directory =
+    //    format!("./tmp/music_videos/{}/", current_song.song_id);
+    //let images =
+    //    subd_utils::get_files_by_ext(&music_directory, &["png", "jpg", "jpeg"]);
+    //let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
+    //
+    //let image_scores = ai_playlist::models::get_all_image_votes_for_song(
+    //    pool,
+    //    current_song.song_id,
+    //)
+    //.await
+    //.unwrap_or(vec![]);
+    //
+    //let base_path = format!("/images/{}", current_song.song_id);
+    //
+    //let context = context! {
+    //    stats,
+    //    current_song,
+    //    current_song_votes_count,
+    //    images,
+    //    videos,
+    //    image_scores,
+    //    base_path,
+    //};
+    //
+    let context = context! {stats, songs};
+    let tmpl = ENV.get_template("songs.html").unwrap();
+    //
     let body = tmpl
         .render(context)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
