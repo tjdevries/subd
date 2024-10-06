@@ -19,8 +19,8 @@
             Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | {{ current_song.song_id }} | AVG Score: {{ score }} | Total Votes: {{ current_song_votes_count }}
         </h2>
     {% endif %}
+    </h4> Users</h4>
     {% for user in users %}
         {{ user }}
     {% endfor %}
-{% endblock %}
 

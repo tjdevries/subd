@@ -83,6 +83,7 @@ async fn root(
     let users = ai_playlist::get_users_with_song_count(&pool).await.unwrap();
 
     let context = context! {
+        users,
         stats,
         unplayed_songs,
         current_song,
