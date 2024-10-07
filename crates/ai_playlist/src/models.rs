@@ -6,6 +6,24 @@ use sqlx::PgPool;
 use subd_macros::database_model;
 use uuid::Uuid;
 
+pub async fn find_random_instrumental(
+    pool: &PgPool,
+) -> Result<ai_songs::Model> {
+    let res = sqlx::query_as!(
+        ai_songs::Model,
+        r#"
+        SELECT *
+        FROM ai_songs
+        WHERE lyric = '[Instrumental]'
+        ORDER BY RANDOM()
+        LIMIT 1
+        "#
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(res)
+}
 pub async fn get_songs_for_user(
     pool: &PgPool,
     username: &str,

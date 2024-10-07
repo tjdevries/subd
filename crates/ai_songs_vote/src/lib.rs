@@ -30,6 +30,33 @@ pub async fn total_votes_by_id(pool: &PgPool, song_id: Uuid) -> Result<i64> {
         .ok_or(anyhow!("Error on ai_songs by song_id count"))
 }
 
+pub async fn get_random_high_rated_song(
+    pool: &PgPool,
+) -> Result<AiSongRanking> {
+    let song = sqlx::query_as::<_, AiSongRanking>(
+        r#"
+        SELECT
+            s.song_id,
+            s.title,
+            CAST(AVG(v.score) AS DOUBLE PRECISION) AS avg_score
+        FROM
+            ai_songs s
+        JOIN
+            ai_songs_vote v ON s.song_id = v.song_id
+        GROUP BY
+            s.song_id, s.title
+        HAVING
+            AVG(v.score) > 9.0
+        ORDER BY
+            RANDOM()
+        LIMIT 1
+        "#,
+    )
+    .fetch_one(pool)
+    .await?;
+    Ok(song)
+}
+
 pub async fn total_votes(pool: &PgPool) -> Result<i64> {
     let record = sqlx::query!(
         "

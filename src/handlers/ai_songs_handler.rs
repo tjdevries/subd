@@ -111,11 +111,30 @@ async fn handle_requests(
         }
 
         // Commands requiring admin privileges
-        "!reverb" | "!queue" | "!play" | "!play_fake_song" | "!pause"
-        | "!random_song" | "!last_song" | "!unpause" | "!skip" | "!stop"
-        | "!nightcore" | "!doom" | "!normal" | "!speedup" | "!slowdown"
-        | "!up" | "!down" | "!coding_volume" | "!quiet" | "!party_volume"
-        | "!delete_song" => {
+        "!reverb"
+        | "!queue"
+        | "!play"
+        | "!play_fake_song"
+        | "!pause"
+        | "!random_song"
+        | "!last_song"
+        | "!unpause"
+        | "!skip"
+        | "!stop"
+        | "!nightcore"
+        | "!doom"
+        | "!normal"
+        | "!speedup"
+        | "!slowdown"
+        | "!up"
+        | "!down"
+        | "!coding_volume"
+        | "!quiet"
+        | "!party_volume"
+        | "!delete_song"
+        | "!banger"
+        | "!random_instrumental"
+        | "!instrumental_jam" => {
             if !is_admin(msg) {
                 return Ok(());
             }
@@ -167,6 +186,37 @@ async fn handle_requests(
                     )
                     .await?
                 }
+
+                // This does actually work queueing the songs
+                "!banger" => {
+                    println!("Time for a Banger!");
+                    let song = ai_songs_vote::get_random_high_rated_song(&pool)
+                        .await?;
+                    let message = format!("!queue {}", song.song_id);
+                    let _ = send_message(twitch_client, message).await;
+                    let message =
+                        format!("!Added Song to Queue - {}", song.title);
+                    let _ = send_message(twitch_client, message).await;
+                    return Ok(());
+                }
+
+                // TODO: Confirm this works
+                "!random_instrumental" | "!instrumental_jam" => {
+                    println!("Random Instrumental Time!");
+                    let song =
+                        ai_playlist::models::find_random_instrumental(pool)
+                            .await?;
+
+                    let message = format!("!queue {}", song.song_id);
+                    let _ = send_message(twitch_client, message).await;
+                    let message = format!(
+                        "@{} Added Song to Queue - {} | {}",
+                        song.username, song.title, song.tags
+                    );
+                    let _ = send_message(twitch_client, message).await;
+                    return Ok(());
+                }
+
                 "!play" => {
                     handle_play_command(
                         twitch_client,
@@ -371,8 +421,8 @@ async fn handle_play_command(
         None => return Ok(()),
     };
 
+    // Do we need to do this everytime????
     // Fetch audio information
-    // How do we skip this?
     let audio_info = subd_suno::get_audio_information(id).await?;
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
@@ -397,6 +447,7 @@ async fn handle_play_command(
     // Save the song if it doesn't already exist
     let _ = new_song.save(pool).await;
 
+    // This is all we really need
     // Play the audio
     subd_suno::add_to_playlist_and_play_audio(pool, sink, id, &msg.user_name)
         .await?;
