@@ -91,7 +91,7 @@ async fn home(
     let current_song_info =
         get_current_song_info(pool)
             .await
-            .unwrap_or_else(|_| CurrentSongInfo {
+            .unwrap_or(CurrentSongInfo {
                 current_song: None,
                 votes_count: 0,
             });

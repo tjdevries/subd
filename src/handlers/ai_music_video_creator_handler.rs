@@ -79,11 +79,11 @@ pub async fn handle_requests(
 }
 
 async fn handle_create_music_video_images(
-    obs_client: &OBSClient,
+    _obs_client: &OBSClient,
     pool: &sqlx::PgPool,
     id: String,
 ) -> Result<()> {
-    let filename = ai_music_videos::create_music_video_images(pool, id).await?;
+    ai_music_videos::create_music_video_images(pool, id).await?;
     Ok(())
 }
 

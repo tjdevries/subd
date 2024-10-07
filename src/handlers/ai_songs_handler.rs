@@ -192,7 +192,7 @@ async fn handle_requests(
                     println!("Time for a Banger!");
                     // let song = ai_songs_vote::get_random_high_rated_song(&pool)
                     let song =
-                        ai_songs_vote::get_random_high_rated_recent_song(&pool)
+                        ai_songs_vote::get_random_high_rated_recent_song(pool)
                             .await?;
                     let message = format!("!queue {}", song.song_id);
                     let _ = send_message(twitch_client, message).await;

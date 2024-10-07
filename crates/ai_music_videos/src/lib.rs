@@ -75,7 +75,7 @@ pub async fn create_music_video_images(
             });
 
     // Run all futures concurrently and collect the results
-    let results: Vec<Result<String>> = join_all(futures).await;
+    let _results: Vec<Result<String>> = join_all(futures).await;
 
     Ok(())
 }

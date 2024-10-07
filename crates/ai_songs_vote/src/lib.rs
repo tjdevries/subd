@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use serde::Serialize;
 use sqlx::types::BigDecimal;
-use sqlx::{types::time::OffsetDateTime, Error};
+use sqlx::{Error};
 
 use sqlx::{postgres::PgPool, FromRow};
 use uuid::Uuid;
@@ -82,7 +82,8 @@ pub async fn get_random_high_rated_song(
 pub async fn get_random_high_rated_recent_song(
     pool: &PgPool,
 ) -> Result<AiSongRanking, Error> {
-    let song = sqlx::query_as::<_, AiSongRanking>(
+    
+    sqlx::query_as::<_, AiSongRanking>(
         r#"
         SELECT
             s.song_id,
@@ -107,8 +108,7 @@ pub async fn get_random_high_rated_recent_song(
     )
     .fetch_optional(pool)
     .await?
-    .ok_or(Error::RowNotFound);
-    song
+    .ok_or(Error::RowNotFound)
 }
 
 pub async fn total_votes(pool: &PgPool) -> Result<i64> {
