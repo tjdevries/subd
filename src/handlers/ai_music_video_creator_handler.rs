@@ -1,3 +1,4 @@
+use ai_playlist::models;
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -20,7 +21,7 @@ pub struct AIMusicVideoCreatorHandler {
 }
 
 enum Command {
-    CreateMusicVideoVideo { id: String },
+    CreateMusicVideoVideo { id: String, image_name: String },
     CreateMusicVideoImage { id: String },
     CreateMusicVideoImages { id: String },
     CreateMusicVideo { id: String },
@@ -54,34 +55,43 @@ impl EventHandler for AIMusicVideoCreatorHandler {
 }
 
 async fn find_image_filename(song_id: String, name: String) -> Result<String> {
-    let image_path =
-        match std::fs::read_dir(format!("./tmp/music_videos/{}/", song_id)) {
-            Ok(mut entries) => entries.find_map(|entry| {
-                entry.ok().and_then(|e| {
-                    let path = e.path();
-                    if path.is_file() {
-                        let extension = path.extension()?.to_str()?;
-                        if (extension == "png"
-                            || extension == "jpeg"
-                            || extension == "jpg")
-                            && path.file_stem()?.to_str()? == name
-                        {
-                            Some(path)
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                })
-            }),
-            Err(_) => None,
-        };
-    Ok(image_path
-        .ok_or_else(|| anyhow!("No image path found"))?
-        .to_str()
-        .ok_or_else(|| anyhow!("Failed to convert path to string"))?
-        .to_string())
+    println!("Finding Image for Filename: {}", name);
+    let dir_path = format!("./tmp/music_videos/{}/", song_id);
+    let entries = std::fs::read_dir(&dir_path)
+        .map_err(|_| anyhow!("Failed to read directory: {}", dir_path))?;
+
+    for entry in entries {
+        let entry = entry
+            .map_err(|e| anyhow!("Failed to read directory entry: {}", e))?;
+        let path = entry.path();
+
+        if !path.is_file() {
+            continue;
+        }
+
+        let extension = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .ok_or_else(|| anyhow!("Failed to get file extension"))?;
+
+        if !["png", "jpeg", "jpg"].contains(&extension) {
+            continue;
+        }
+
+        let file_stem = path
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .ok_or_else(|| anyhow!("Failed to get file stem"))?;
+
+        if file_stem == name {
+            return path
+                .to_str()
+                .ok_or_else(|| anyhow!("Failed to convert path to string"))
+                .map(String::from);
+        }
+    }
+
+    Err(anyhow!("No matching image found for: {}", name))
 }
 
 /// Handles incoming requests based on the parsed command.
@@ -96,42 +106,35 @@ pub async fn handle_requests(
     if ["nightbot"].contains(&msg.user_name.as_str()) {
         return Ok(());
     }
-    let words: Vec<&str> = msg.contents.split_whitespace().collect();
-    let image_name = words.get(2).map(|&s| s.to_string());
 
+    let _song_id = ai_playlist::get_current_song(pool)
+        .await?
+        .song_id
+        .to_string();
     // These are named wrong right now
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
-        Command::CreateMusicVideoVideo { id } => {
-            match image_name {
-                Some(name) => {
-                    let res = find_image_filename(id.clone(), name).await;
-                    match res {
-                        Ok(image_filename) => {
-                            let _filename =
-                                ai_music_videos::create_video_from_image(
-                                    &id,
-                                    &image_filename,
-                                )
-                                .await?;
-                        }
-                        Err(_e) => {
-                            let _ = send_message(
-                                twitch_client,
-                                "Error finding Image to create Video from",
-                            )
-                            .await;
-                        }
-                    };
+        Command::CreateMusicVideoVideo { id, image_name } => {
+            let res = find_image_filename(id.clone(), image_name).await;
+            match res {
+                Ok(image_filename) => {
+                    let _filename = ai_music_videos::create_video_from_image(
+                        &id,
+                        &image_filename,
+                    )
+                    .await?;
                 }
-                None => {
+                Err(e) => {
                     let _ = send_message(
                         twitch_client,
-                        "No file to create video passed in",
+                        format!(
+                            "Error finding Image to create Video from: {}",
+                            e
+                        ),
                     )
                     .await;
                 }
-            }
+            };
             Ok(())
         }
         Command::CreateMusicVideo { id } => {
@@ -202,14 +205,19 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
         }
 
         Some("!generate_video") => {
-            let id = match words.next() {
-                Some(id) => id.to_string(),
-                None => ai_playlist::get_current_song(pool)
-                    .await?
-                    .song_id
-                    .to_string(),
+            let image_name = match words.next() {
+                Some(name) => name.to_string(),
+                None => {
+                    return Err(anyhow!(
+                        "No image name provided for video generation"
+                    ))
+                }
             };
-            Ok(Command::CreateMusicVideoVideo { id })
+            let current_song = ai_playlist::get_current_song(pool).await?;
+            Ok(Command::CreateMusicVideoVideo {
+                id: current_song.song_id.to_string(),
+                image_name,
+            })
         }
 
         Some("!generate_image") => {

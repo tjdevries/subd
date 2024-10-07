@@ -15,7 +15,9 @@ pub async fn create_video_from_image(
     song_id: &str,
     image_name: &str,
 ) -> Result<()> {
-    let prompt = "a music video with a camera move".to_string();
+    // TODO: call out to GPT for response
+    // We need to actually call out to GPT
+    let prompt = "dramatic camera move".to_string();
     let _ =
         generate_runway_video_from_image(song_id, image_name, &prompt).await;
     Ok(())
