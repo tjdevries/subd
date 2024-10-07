@@ -1,10 +1,5 @@
 {% extends "base.html" %}
 
-<!--Not sure if this works-->
-<head>
-    <meta http-equiv="refresh" content="5" />
-</head>
-
 {% block content %}
 
     <h2 width="100%">Songs in Playlist</h2>
@@ -15,41 +10,38 @@
     {% endfor %}
 
     <hr />
-
         
-        {% if current_song %}
-            <h2 class="sub-header current-song">
-                Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | {{ current_song.song_id }} | AVG Score: {{ score }} | Total Votes: {{ current_song_votes_count }}
-            </h2>
+    {% if current_song %}
+        <h2 class="sub-header current-song">
+        Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | <a href="/ai_songs/{{ current_song.song_id }}">{{ current_song.song_id }}</a> | AVG Score: {{ score }} | Total Votes: {{ current_song_votes_count }}
+        </h2>
 
+        <div class="grid-container">
+            {% for image_score in image_scores %}
+                <div class="grid-item">
+                    <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}" alt="{{image_score[0]}}" width="300px">
+                    <br />
+                    !love {{ image_score[1] }} | !hate {{ image_score[1] }}
+                    <br />
+                    Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
+                </div>
+            {% endfor %}
 
-            <div class="grid-container">
-                {% for image_score in image_scores %}
-                    <div class="grid-item">
-                        <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}" alt="{{image_score[0]}}" width="300px">
-                        <br />
-                        !love {{ image_score[1] }} | !hate {{ image_score[1] }}
-                        <br />
-                        Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
-                    </div>
-                {% endfor %}
-    
-                {% for video in videos %}
-                    <div class="grid-item">
-                        <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted>
-                    </div>
-                {% endfor %}
+            {% for video in videos %}
+                <div class="grid-item">
+                    <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted>
+                </div>
+            {% endfor %}
 
-            </div>
-            
-        {% endif %}
+        </div>
+    {% endif %}
 
-        </h4> Users</h4>
-            <br />
-        {% for user in users %}
-            <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}}</a>
-            <br />
-        {% endfor %}
+    </h4> Users</h4>
+    <br />
+    {% for user in users %}
+        <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}}</a>
+        <br />
+    {% endfor %}
     
 {% endblock %}
     
