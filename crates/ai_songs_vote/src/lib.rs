@@ -28,6 +28,17 @@ pub struct CurrentSongInfo {
     pub votes_count: i64,
 }
 
+pub async fn get_current_song_info(pool: &PgPool) -> Result<CurrentSongInfo> {
+    let current_song = ai_playlist::get_current_song(pool).await.ok();
+    let current_song_votes_count = match current_song.as_ref() {
+        Some(song) => total_votes_by_id(pool, song.song_id).await.unwrap_or(0),
+        None => 0,
+    };
+    Ok(CurrentSongInfo {
+        current_song,
+        votes_count: current_song_votes_count,
+    })
+}
 pub async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
     let ai_songs_count = ai_playlist::total_ai_songs(pool).await.unwrap_or(0);
     let ai_votes_count = total_votes(pool).await.unwrap_or(0);

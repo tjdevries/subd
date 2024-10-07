@@ -1,4 +1,3 @@
-// use crate::ai_songs_vote;
 use anyhow::Result;
 use axum::{
     extract::{Path, State},
@@ -73,12 +72,12 @@ async fn home(
         .await
         .unwrap_or(vec![]);
 
-    let current_song_info = get_current_song_info(pool).await.unwrap_or(
-        ai_songs_vote::CurrentSongInfo {
+    let current_song_info = ai_songs_vote::get_current_song_info(pool)
+        .await
+        .unwrap_or(ai_songs_vote::CurrentSongInfo {
             current_song: None,
             votes_count: 0,
-        },
-    );
+        });
 
     let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
         pool,
@@ -221,22 +220,4 @@ async fn show_ai_song(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Html(body))
-}
-
-// ==============
-
-async fn get_current_song_info(
-    pool: &PgPool,
-) -> Result<ai_songs_vote::CurrentSongInfo> {
-    let current_song = ai_playlist::get_current_song(pool).await.ok();
-    let current_song_votes_count = match current_song.as_ref() {
-        Some(song) => ai_songs_vote::total_votes_by_id(pool, song.song_id)
-            .await
-            .unwrap_or(0),
-        None => 0,
-    };
-    Ok(ai_songs_vote::CurrentSongInfo {
-        current_song,
-        votes_count: current_song_votes_count,
-    })
 }
