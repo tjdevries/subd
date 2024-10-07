@@ -10,6 +10,12 @@
             <img src="/images/{{current_song.song_id}}/{{ image }}" alt="{{image}}" width="300px">
         </div>
     {% endfor %}
+        
+    {% for video in videos %}
+        <div class="grid-item">
+            <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted loop>
+        </div>
+    {% endfor %}
 
     </div>
     {% if current_song.lyric %}
