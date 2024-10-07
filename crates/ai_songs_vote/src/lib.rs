@@ -15,6 +15,31 @@ pub struct AiSongRanking {
     pub avg_score: f64,
 }
 
+#[derive(Serialize)]
+pub struct Stats {
+    pub ai_songs_count: i64,
+    pub ai_votes_count: i64,
+    pub unplayed_songs_count: i64,
+}
+
+#[derive(Serialize)]
+pub struct CurrentSongInfo {
+    pub current_song: Option<ai_playlist::models::ai_songs::Model>,
+    pub votes_count: i64,
+}
+
+pub async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
+    let ai_songs_count = ai_playlist::total_ai_songs(pool).await.unwrap_or(0);
+    let ai_votes_count = total_votes(pool).await.unwrap_or(0);
+    let unplayed_songs_count =
+        ai_playlist::count_unplayed_songs(pool).await.unwrap_or(0);
+    Ok(Stats {
+        ai_songs_count,
+        ai_votes_count,
+        unplayed_songs_count,
+    })
+}
+
 pub async fn get_users_with_song_count(
     pool: &PgPool,
 ) -> Result<Vec<(String, Option<i64>)>> {

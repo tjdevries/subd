@@ -1,3 +1,4 @@
+// use crate::ai_songs_vote;
 use anyhow::Result;
 use axum::{
     extract::{Path, State},
@@ -8,7 +9,6 @@ use axum::{
 };
 use minijinja::{context, path_loader, Environment};
 use once_cell::sync::Lazy;
-use serde::Serialize;
 use sqlx::PgPool;
 use std::sync::Arc;
 use subd_db::get_db_pool;
@@ -28,20 +28,6 @@ struct AppState {
     pool: Arc<PgPool>,
 }
 
-#[derive(Serialize)]
-struct Stats {
-    ai_songs_count: i64,
-    ai_votes_count: i64,
-    unplayed_songs_count: i64,
-}
-
-#[derive(Serialize)]
-struct CurrentSongInfo {
-    current_song: Option<ai_playlist::models::ai_songs::Model>,
-    votes_count: i64,
-}
-
-// We need to figure this out
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -57,7 +43,7 @@ async fn create_app() -> Router {
         pool: Arc::new(pool),
     };
 
-    // We need to rename the routes here
+    // TODO: We need to rename the routes here
     // We also need to unify all the good collecting data from the database
     Router::new()
         .route("/", get(home))
@@ -79,7 +65,7 @@ async fn home(
     State(state): State<AppState>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pool = &state.pool;
-    let stats = fetch_stats(pool)
+    let stats = ai_songs_vote::fetch_stats(pool)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
@@ -87,13 +73,12 @@ async fn home(
         .await
         .unwrap_or(vec![]);
 
-    let current_song_info =
-        get_current_song_info(pool)
-            .await
-            .unwrap_or(CurrentSongInfo {
-                current_song: None,
-                votes_count: 0,
-            });
+    let current_song_info = get_current_song_info(pool).await.unwrap_or(
+        ai_songs_vote::CurrentSongInfo {
+            current_song: None,
+            votes_count: 0,
+        },
+    );
 
     let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
         pool,
@@ -144,7 +129,7 @@ async fn show_ai_songs(
     State(state): State<AppState>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pool = &state.pool;
-    let stats = fetch_stats(pool)
+    let stats = ai_songs_vote::fetch_stats(pool)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
@@ -174,7 +159,7 @@ async fn show_ai_song_by_user(
     let songs = ai_playlist::models::get_songs_for_user(pool, &username)
         .await
         .unwrap();
-    let stats = fetch_stats(pool)
+    let stats = ai_songs_vote::fetch_stats(pool)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let context = context! {stats, songs};
@@ -192,7 +177,7 @@ async fn show_ai_song(
     Path(id): Path<uuid::Uuid>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pool = &state.pool;
-    let stats = fetch_stats(pool)
+    let stats = ai_songs_vote::fetch_stats(pool)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
@@ -238,7 +223,11 @@ async fn show_ai_song(
     Ok(Html(body))
 }
 
-async fn get_current_song_info(pool: &PgPool) -> Result<CurrentSongInfo> {
+// ==============
+
+async fn get_current_song_info(
+    pool: &PgPool,
+) -> Result<ai_songs_vote::CurrentSongInfo> {
     let current_song = ai_playlist::get_current_song(pool).await.ok();
     let current_song_votes_count = match current_song.as_ref() {
         Some(song) => ai_songs_vote::total_votes_by_id(pool, song.song_id)
@@ -246,20 +235,8 @@ async fn get_current_song_info(pool: &PgPool) -> Result<CurrentSongInfo> {
             .unwrap_or(0),
         None => 0,
     };
-    Ok(CurrentSongInfo {
+    Ok(ai_songs_vote::CurrentSongInfo {
         current_song,
         votes_count: current_song_votes_count,
-    })
-}
-
-async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
-    let ai_songs_count = ai_playlist::total_ai_songs(pool).await.unwrap_or(0);
-    let ai_votes_count = ai_songs_vote::total_votes(pool).await.unwrap_or(0);
-    let unplayed_songs_count =
-        ai_playlist::count_unplayed_songs(pool).await.unwrap_or(0);
-    Ok(Stats {
-        ai_songs_count,
-        ai_votes_count,
-        unplayed_songs_count,
     })
 }
