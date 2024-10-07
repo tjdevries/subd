@@ -1,6 +1,7 @@
 body {
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    text-align: center;
+    font-family: 'Papyrus';
+    /*font-family: 'Comic Sans MS', cursive, sans-serif;*/
+    /*text-align: center;*/
 }
 .button {
     background-color: #04AA6D; /* Green */
@@ -12,25 +13,36 @@ body {
     display: inline-block;
     font-size: 16px;
 }
-.sub-header {
-    font-size: 100%;
-}
+
+/*.sub-header {*/
+/*    font-size: 100%;*/
+/*}*/
+/*.header {*/
+/*    font-size: 200%;*/
+/*}*/
+
 .current-song {
     padding: 10px;
     border: 2px solid black;
     background: lightblue;
 }
-.header {
-    font-size: 200%;
+
+.header-container{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border: 1px solid black;
 }
+
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     grid-gap: 10px;
 }
+
 .grid-item {
     text-align: center;
 }
+
 .full-width {
     width: 100%;
     margin: 20px 0;

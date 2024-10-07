@@ -5,13 +5,17 @@
     <title>{{ title }}</title>
 </head>
 <body>
-    <h4 class="header">AI Top of the Pops</h4>
-    <h4 class="sub-header">Total AI Songs Created: {{ stats.ai_songs_count }}</h4>
-    <h4 class="sub-header">Total AI Song Votes: {{ stats.ai_votes_count }}</h4>
-    <h3>Songs in Playlist: {{ stats.unplayed_songs_count }}</h3>
+    <header class="header-container">
+        <h1 class="header"><a href="/">AI Top of the Pops</a></h1>
+        <h2 class="sub-header">Total AI Songs Created: {{ stats.ai_songs_count }}</h2>
+        <h2 class="sub-header">Total AI Song Votes: {{ stats.ai_votes_count }}</h2>
+        <h3 class="sub-header">Songs in Playlist: {{ stats.unplayed_songs_count }}</h3>
+    </header>
 
-    <a href="/all_songs">All Songs</a>
-        <br />
+    <nav class="nav-container">
+        <a href="/all_songs">All Songs</a>
+    </nav>
+
     {% block content %}{% endblock %}
 </body>
 </html>
