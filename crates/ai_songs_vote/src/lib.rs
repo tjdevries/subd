@@ -1,12 +1,13 @@
 pub mod models;
 use anyhow::anyhow;
 use anyhow::Result;
+use serde::Serialize;
 use sqlx::types::BigDecimal;
 
 use sqlx::{postgres::PgPool, FromRow};
 use uuid::Uuid;
 
-#[derive(Debug, FromRow)]
+#[derive(Serialize, Debug, FromRow)]
 pub struct AiSongRanking {
     pub song_id: Uuid,
     pub title: String,

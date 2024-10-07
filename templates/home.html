@@ -18,7 +18,6 @@
 
         
         {% if current_song %}
-            {% set score = current_song.avg_score | default("No Votes for Song") %}
             <h2 class="sub-header current-song">
                 Current Song: {{ current_song.title }} | Tags: {{ current_song.tags }} | Creator: @{{ current_song.username }} | {{ current_song.song_id }} | AVG Score: {{ score }} | Total Votes: {{ current_song_votes_count }}
             </h2>
@@ -28,6 +27,7 @@
                 {% for image_score in image_scores %}
                     <div class="grid-item">
                         <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}" alt="{{image_score[0]}}" width="300px">
+                        <br />
                         !love {{ image_score[1] }} | !hate {{ image_score[1] }}
                         <br />
                         Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}

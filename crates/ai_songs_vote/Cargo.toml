@@ -7,6 +7,7 @@ edition = "2021"
 anyhow.workspace = true
 sqlx.workspace = true
 
+serde = { version = "1.0", features = ["derive"] }
 subd-macros = { path = "../subd-macros/" }
 subd-db = { path = "../subd-db/" }
 ai_playlist = { path = "../ai_playlist/" }
