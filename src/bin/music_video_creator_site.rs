@@ -35,6 +35,12 @@ struct Stats {
     unplayed_songs_count: i64,
 }
 
+#[derive(Serialize)]
+struct CurrentSongInfo {
+    current_song: Option<ai_playlist::models::ai_songs::Model>,
+    votes_count: i64,
+}
+
 // We need to figure this out
 #[tokio::main]
 async fn main() {
@@ -82,18 +88,17 @@ async fn home(
         .await
         .unwrap_or(vec![]);
 
-    // Why do we want this to be an Option????
-    let current_song = ai_playlist::get_current_song(pool).await.ok();
-
-    let current_song_votes_count = match current_song.as_ref() {
-        Some(song) => ai_songs_vote::total_votes_by_id(pool, song.song_id)
+    let current_song_info =
+        get_current_song_info(pool)
             .await
-            .unwrap_or(0),
-        None => 0,
-    };
+            .unwrap_or_else(|_| CurrentSongInfo {
+                current_song: None,
+                votes_count: 0,
+            });
 
-    // This could be a method
-    let (videos, image_scores) = if let Some(song) = &current_song {
+    let (videos, image_scores) = if let Some(song) =
+        &current_song_info.current_song
+    {
         let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
 
         let ids = subd_utils::get_files_by_ext(
@@ -120,7 +125,7 @@ async fn home(
     let users = ai_playlist::get_users_with_song_count(pool).await.unwrap();
     println!("Image scores: {:?}", image_scores);
 
-    let score = match current_song {
+    let score = match current_song_info.current_song {
         Some(song) => {
             match ai_songs_vote::get_average_score(pool, song.song_id).await {
                 Ok(result) => result.avg_score.to_string(),
@@ -133,6 +138,7 @@ async fn home(
     // This is sooo stupid
     // we are getting the current_song as an option again, because it's consumed above
     let current_song = ai_playlist::get_current_song(pool).await.ok();
+    let votes_count = current_song_info.votes_count;
     let context = context! {
         score,
         videos,
@@ -141,7 +147,7 @@ async fn home(
         stats,
         unplayed_songs,
         current_song,
-        current_song_votes_count,
+        votes_count,
     };
 
     let tmpl = ENV.get_template("home.html").unwrap();
@@ -209,6 +215,7 @@ async fn show_ai_song(
     let stats = fetch_stats(pool)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
     let current_song = ai_playlist::find_song_by_id(pool, &id.to_string())
         .await
         .map_err(|_| (StatusCode::NOT_FOUND, "Song not found".to_string()))?;
@@ -249,6 +256,20 @@ async fn show_ai_song(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Html(body))
+}
+
+async fn get_current_song_info(pool: &PgPool) -> Result<CurrentSongInfo> {
+    let current_song = ai_playlist::get_current_song(pool).await.ok();
+    let current_song_votes_count = match current_song.as_ref() {
+        Some(song) => ai_songs_vote::total_votes_by_id(pool, song.song_id)
+            .await
+            .unwrap_or(0),
+        None => 0,
+    };
+    Ok(CurrentSongInfo {
+        current_song,
+        votes_count: current_song_votes_count,
+    })
 }
 
 async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
