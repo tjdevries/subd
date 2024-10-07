@@ -75,7 +75,6 @@ fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
     }
 }
 
-
 #[tokio::main]
 async fn main() -> Result<()> {
     println!("{}", "\n=== Starting AI Songs updater ===\n".cyan());
