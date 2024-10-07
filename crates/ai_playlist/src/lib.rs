@@ -5,6 +5,35 @@ use uuid::Uuid;
 
 pub mod models;
 
+pub async fn get_videos_and_image_scores(
+    pool: &PgPool,
+    current_song: &Option<models::ai_songs::Model>,
+) -> (Vec<String>, Vec<(String, String, i64, i64)>) {
+    if let Some(song) = current_song {
+        let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
+
+        let ids = subd_utils::get_files_by_ext(
+            &music_directory,
+            &["png", "jpg", "jpeg"],
+        )
+        .iter()
+        .map(|path| path.to_string())
+        .collect::<Vec<String>>();
+        let image_scores = models::get_image_votes_or_default_with_extensions(
+            pool,
+            song.song_id,
+            ids,
+        )
+        .await
+        .unwrap_or_default();
+
+        let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
+        (videos, image_scores)
+    } else {
+        (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
+    }
+}
+
 pub async fn all_songs(pool: &PgPool) -> Result<Vec<models::ai_songs::Model>> {
     let res = sqlx::query_as!(
         models::ai_songs::Model,

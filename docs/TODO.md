@@ -7,6 +7,7 @@
 
 ## Random TODOs
 
+- Build Current Song Banner for OBS Stream
 - Investigate offline mode (so you don't have to build w/ a DB connection):
   - https://github.com/launchbadge/sqlx/tree/HEAD/sqlx-cli#enable-building-in-offline-mode-with-query
 - Think about websockets for Axum Page

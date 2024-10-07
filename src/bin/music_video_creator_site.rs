@@ -95,9 +95,11 @@ async fn home(
                 votes_count: 0,
             });
 
-    let (videos, image_scores) =
-        get_videos_and_image_scores(pool, &current_song_info.current_song)
-            .await;
+    let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
+        pool,
+        &current_song_info.current_song,
+    )
+    .await;
 
     let users = ai_songs_vote::get_users_with_song_count_and_avg_score(pool)
         .await
@@ -260,34 +262,4 @@ async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
         ai_votes_count,
         unplayed_songs_count,
     })
-}
-
-async fn get_videos_and_image_scores(
-    pool: &PgPool,
-    current_song: &Option<ai_playlist::models::ai_songs::Model>,
-) -> (Vec<String>, Vec<(String, String, i64, i64)>) {
-    if let Some(song) = current_song {
-        let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
-
-        let ids = subd_utils::get_files_by_ext(
-            &music_directory,
-            &["png", "jpg", "jpeg"],
-        )
-        .iter()
-        .map(|path| path.to_string())
-        .collect::<Vec<String>>();
-        let image_scores =
-            ai_playlist::models::get_image_votes_or_default_with_extensions(
-                pool,
-                song.song_id,
-                ids,
-            )
-            .await
-            .unwrap_or_default();
-
-        let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
-        (videos, image_scores)
-    } else {
-        (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
-    }
 }
