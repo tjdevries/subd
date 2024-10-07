@@ -24,6 +24,42 @@ pub struct MusicVideoScene {
 }
 // ==============================================================
 
+// pub async fn
+
+pub async fn generate_scene_prompt(
+    lyrics: String,
+    title: String,
+) -> Result<MusicVideoScene> {
+    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let instructor_client = from_openai(client);
+
+    let prompt = format!(
+        "Describe 1 scene in vivid detail for a Music Video: image_prompt and camera_move based on the following Lyrics: {} and Title: {}. They should be fun scenes that stick to an overall theme based on the title.",
+        lyrics, title);
+
+    println!("\tUsing the Prompt: {}", prompt);
+
+    let req = ChatCompletionRequest::new(
+        GPT3_5_TURBO.to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(prompt),
+            name: None,
+        }],
+    );
+
+    let result =
+        match instructor_client.chat_completion::<MusicVideoScene>(req, 3) {
+            Ok(scenes) => scenes,
+            Err(e) => {
+                eprintln!("Error generating scene prompts: {:?}", e);
+                return Err(anyhow!("Failed to generate scene prompts"));
+            }
+        };
+
+    println!("{:?}", result);
+    Ok(result)
+}
 pub async fn generate_scene_prompts(
     lyrics: String,
     title: String,

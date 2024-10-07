@@ -70,31 +70,15 @@ pub async fn handle_requests(
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            Ok(handle_create_music_video(obs_client, pool, id).await?)
+            let filename =
+                ai_music_videos::create_music_video_images_and_video(pool, id)
+                    .await?;
+            update_obs_source(obs_client, &filename).await
         }
         Command::CreateMusicVideoImages { id } => {
-            Ok(handle_create_music_video_images(obs_client, pool, id).await?)
+            ai_music_videos::create_music_video_images(pool, id).await
         }
     }
-}
-
-async fn handle_create_music_video_images(
-    _obs_client: &OBSClient,
-    pool: &sqlx::PgPool,
-    id: String,
-) -> Result<()> {
-    ai_music_videos::create_music_video_images(pool, id).await?;
-    Ok(())
-}
-
-async fn handle_create_music_video(
-    obs_client: &OBSClient,
-    pool: &sqlx::PgPool,
-    id: String,
-) -> Result<()> {
-    let filename =
-        ai_music_videos::create_music_video_images_and_video(pool, id).await?;
-    update_obs_source(obs_client, &filename).await
 }
 
 async fn update_obs_source(

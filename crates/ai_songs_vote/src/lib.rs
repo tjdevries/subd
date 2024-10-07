@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use anyhow::Result;
 use serde::Serialize;
 use sqlx::types::BigDecimal;
-use sqlx::{Error};
+use sqlx::Error;
 
 use sqlx::{postgres::PgPool, FromRow};
 use uuid::Uuid;
@@ -82,7 +82,6 @@ pub async fn get_random_high_rated_song(
 pub async fn get_random_high_rated_recent_song(
     pool: &PgPool,
 ) -> Result<AiSongRanking, Error> {
-    
     sqlx::query_as::<_, AiSongRanking>(
         r#"
         SELECT
