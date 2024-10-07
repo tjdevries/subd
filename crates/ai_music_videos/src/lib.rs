@@ -11,6 +11,61 @@ pub mod scenes_builder;
 #[cfg(test)]
 mod tests;
 
+pub async fn create_video_from_image(
+    song_id: &str,
+    image_name: &str,
+) -> Result<()> {
+    let prompt = "a music video with a camera move".to_string();
+    let _ =
+        generate_runway_video_from_image(song_id, image_name, &prompt).await;
+    Ok(())
+}
+
+pub async fn create_music_video_image(
+    pool: &PgPool,
+    id: String,
+) -> Result<String> {
+    println!("\tStarting to create NEW Music Video!");
+
+    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
+    let ai_song = Arc::new(ai_song);
+
+    let lyrics = ai_song.lyric.as_ref().unwrap();
+    let title = &ai_song.title;
+    let scene = scenes_builder::generate_scene_prompt(
+        lyrics.to_string(),
+        title.to_string(),
+    )
+    .await?;
+
+    let music_video_folder = format!("./tmp/music_videos/{}", id);
+
+    std::fs::create_dir_all(&music_video_folder)?;
+
+    let image_files = std::fs::read_dir(&music_video_folder)?;
+
+    let highest_number = image_files
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            entry
+                .path()
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(String::from)
+        })
+        .filter_map(|name| name.parse::<usize>().ok())
+        .max()
+        .unwrap_or(0);
+
+    let file_index = highest_number + 1;
+    create_image_from_prompt(
+        ai_song,
+        scene.image_prompt.clone(),
+        id,
+        file_index,
+    )
+    .await
+}
 pub async fn create_music_video_images(
     pool: &PgPool,
     id: String,
@@ -64,7 +119,7 @@ pub async fn create_music_video_images(
 
                 let file_index = highest_number + (index + 1);
                 async move {
-                    create_image_from_lyric(
+                    create_image_from_prompt(
                         ai_song,
                         scene.image_prompt.clone(),
                         id,
@@ -132,7 +187,7 @@ pub async fn create_music_video_images_and_video(
 
                 let file_index = highest_number + (index + 1);
                 async move {
-                    create_image_from_lyric(
+                    create_image_from_prompt(
                         ai_song,
                         scene.image_prompt.clone(),
                         id,
@@ -152,7 +207,7 @@ pub async fn create_music_video_images_and_video(
                 println!("result: {}", filename);
                 let scene = &scenes_prompts.scenes[index];
 
-                let video_result = generate_runway_video_for_image(
+                let video_result = generate_runway_video_and_image(
                     &scene.image_prompt,
                     &scene.camera_move,
                     ai_song.song_id.to_string(),
@@ -179,21 +234,20 @@ pub async fn create_music_video_images_and_video(
     Ok(output_file)
 }
 
-async fn create_image_from_lyric(
+async fn create_image_from_prompt(
     ai_song: Arc<ai_playlist::models::ai_songs::Model>,
-    lyric: String,
+    prompt: String,
     id: String,
     index: usize,
 ) -> Result<String> {
     println!(
         "{} - {}",
         "Creating Image for Lyric Chunk: {}".cyan(),
-        lyric.green()
+        prompt.green()
     );
 
-    //
     let folder = format!("./tmp/music_videos/{}", id);
-    let prompt = format!("{} {}", ai_song.title, lyric);
+    let prompt = format!("{} {}", ai_song.title, prompt);
     let images = fal_ai::create_from_fal_api_return_filename(
         &prompt,
         Some(folder.clone()),
@@ -204,7 +258,22 @@ async fn create_image_from_lyric(
     Ok(first_image.to_string())
 }
 
-async fn generate_runway_video_for_image(
+async fn generate_runway_video_from_image(
+    song_id: &str,
+    image_name: &str,
+    video_prompt: &str,
+) -> Result<String> {
+    let folder = format!("./tmp/music_videos/{}", song_id);
+    let filename = fal_ai::create_runway_video_from_image(
+        video_prompt,
+        &image_name,
+        Some(folder.clone()),
+    )
+    .await?;
+    Ok(filename)
+}
+
+async fn generate_runway_video_and_image(
     image_prompt: &str,
     video_prompt: &str,
     id: String,

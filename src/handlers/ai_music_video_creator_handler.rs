@@ -7,6 +7,7 @@ use obws::Client as OBSClient;
 use sqlx::PgPool;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
+use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
@@ -19,6 +20,8 @@ pub struct AIMusicVideoCreatorHandler {
 }
 
 enum Command {
+    CreateMusicVideoVideo { id: String },
+    CreateMusicVideoImage { id: String },
     CreateMusicVideoImages { id: String },
     CreateMusicVideo { id: String },
     Unknown,
@@ -50,14 +53,42 @@ impl EventHandler for AIMusicVideoCreatorHandler {
     }
 }
 
+async fn find_image_filename(song_id: String, name: String) -> Result<String> {
+    let image_path =
+        match std::fs::read_dir(format!("./tmp/music_videos/{}/", song_id)) {
+            Ok(mut entries) => entries.find_map(|entry| {
+                entry.ok().and_then(|e| {
+                    let path = e.path();
+                    if path.is_file() {
+                        let extension = path.extension()?.to_str()?;
+                        if (extension == "png"
+                            || extension == "jpeg"
+                            || extension == "jpg")
+                            && path.file_stem()?.to_str()? == name
+                        {
+                            Some(path)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                })
+            }),
+            Err(_) => None,
+        };
+    Ok(image_path
+        .ok_or_else(|| anyhow!("No image path found"))?
+        .to_str()
+        .ok_or_else(|| anyhow!("Failed to convert path to string"))?
+        .to_string())
+}
+
 /// Handles incoming requests based on the parsed command.
 pub async fn handle_requests(
     _tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
-    _twitch_client: &TwitchIRCClient<
-        SecureTCPTransport,
-        StaticLoginCredentials,
-    >,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
     msg: UserMessage,
 ) -> Result<()> {
@@ -65,10 +96,44 @@ pub async fn handle_requests(
     if ["nightbot"].contains(&msg.user_name.as_str()) {
         return Ok(());
     }
+    let words: Vec<&str> = msg.contents.split_whitespace().collect();
+    let image_name = words.get(2).map(|&s| s.to_string());
 
     // These are named wrong right now
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
+        Command::CreateMusicVideoVideo { id } => {
+            match image_name {
+                Some(name) => {
+                    let res = find_image_filename(id.clone(), name).await;
+                    match res {
+                        Ok(image_filename) => {
+                            let _filename =
+                                ai_music_videos::create_video_from_image(
+                                    &id,
+                                    &image_filename,
+                                )
+                                .await?;
+                        }
+                        Err(_e) => {
+                            let _ = send_message(
+                                twitch_client,
+                                "Error finding Image to create Video from",
+                            )
+                            .await;
+                        }
+                    };
+                }
+                None => {
+                    let _ = send_message(
+                        twitch_client,
+                        "No file to create video passed in",
+                    )
+                    .await;
+                }
+            }
+            Ok(())
+        }
         Command::CreateMusicVideo { id } => {
             let filename =
                 ai_music_videos::create_music_video_images_and_video(pool, id)
@@ -77,6 +142,11 @@ pub async fn handle_requests(
         }
         Command::CreateMusicVideoImages { id } => {
             ai_music_videos::create_music_video_images(pool, id).await
+        }
+        Command::CreateMusicVideoImage { id } => {
+            let _res =
+                ai_music_videos::create_music_video_image(pool, id).await;
+            Ok(())
         }
     }
 }
@@ -129,6 +199,28 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
                     .to_string(),
             };
             Ok(Command::CreateMusicVideoImages { id })
+        }
+
+        Some("!generate_video") => {
+            let id = match words.next() {
+                Some(id) => id.to_string(),
+                None => ai_playlist::get_current_song(pool)
+                    .await?
+                    .song_id
+                    .to_string(),
+            };
+            Ok(Command::CreateMusicVideoVideo { id })
+        }
+
+        Some("!generate_image") => {
+            let id = match words.next() {
+                Some(id) => id.to_string(),
+                None => ai_playlist::get_current_song(pool)
+                    .await?
+                    .song_id
+                    .to_string(),
+            };
+            Ok(Command::CreateMusicVideoImage { id })
         }
         Some("!create_music_video") => {
             let id = match words.next() {
