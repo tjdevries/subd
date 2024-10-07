@@ -70,7 +70,7 @@ pub async fn handle_requests(
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideo { id } => {
-            Ok(handle_create_music_video_images(obs_client, pool, id).await?)
+            Ok(handle_create_music_video(obs_client, pool, id).await?)
         }
         Command::CreateMusicVideoImages { id } => {
             Ok(handle_create_music_video_images(obs_client, pool, id).await?)
@@ -84,6 +84,16 @@ async fn handle_create_music_video_images(
     id: String,
 ) -> Result<()> {
     let filename = ai_music_videos::create_music_video_images(pool, id).await?;
+    Ok(())
+}
+
+async fn handle_create_music_video(
+    obs_client: &OBSClient,
+    pool: &sqlx::PgPool,
+    id: String,
+) -> Result<()> {
+    let filename =
+        ai_music_videos::create_music_video_images_and_video(pool, id).await?;
     update_obs_source(obs_client, &filename).await
 }
 
@@ -126,7 +136,7 @@ async fn update_obs_source(
 async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
     let mut words = msg.contents.split_whitespace();
     match words.next() {
-        Some("!create_music_video_images") => {
+        Some("!create_music_video_images") | Some("!generate_images") => {
             let id = match words.next() {
                 Some(id) => id.to_string(),
                 None => ai_playlist::get_current_song(pool)
