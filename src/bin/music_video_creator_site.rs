@@ -75,7 +75,6 @@ async fn create_app() -> Router {
         )
 }
 
-// This needs to have all the code to grab values abstracted
 async fn home(
     State(state): State<AppState>,
 ) -> Result<Html<String>, (StatusCode, String)> {
@@ -96,31 +95,9 @@ async fn home(
                 votes_count: 0,
             });
 
-    let (videos, image_scores) = if let Some(song) =
-        &current_song_info.current_song
-    {
-        let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
-
-        let ids = subd_utils::get_files_by_ext(
-            &music_directory,
-            &["png", "jpg", "jpeg"],
-        )
-        .iter()
-        .map(|path| path.to_string())
-        .collect::<Vec<String>>();
-        let image_scores =
-            ai_playlist::models::get_image_votes_or_default_with_extensions(
-                pool, ids,
-            )
-            .await
-            .unwrap_or_default();
-
-        let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
-        (videos, image_scores)
-    } else {
-        // TODO: this feels wrong
-        (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
-    };
+    let (videos, image_scores) =
+        get_videos_and_image_scores(pool, &current_song_info.current_song)
+            .await;
 
     let users = ai_playlist::get_users_with_song_count(pool).await.unwrap();
     println!("Image scores: {:?}", image_scores);
@@ -167,7 +144,6 @@ async fn show_ai_songs(
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    // This must be failing
     let songs = ai_playlist::all_songs(pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -282,4 +258,32 @@ async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
         ai_votes_count,
         unplayed_songs_count,
     })
+}
+
+async fn get_videos_and_image_scores(
+    pool: &PgPool,
+    current_song: &Option<ai_playlist::models::ai_songs::Model>,
+) -> (Vec<String>, Vec<(String, String, i64, i64)>) {
+    if let Some(song) = current_song {
+        let music_directory = format!("./tmp/music_videos/{}/", song.song_id);
+
+        let ids = subd_utils::get_files_by_ext(
+            &music_directory,
+            &["png", "jpg", "jpeg"],
+        )
+        .iter()
+        .map(|path| path.to_string())
+        .collect::<Vec<String>>();
+        let image_scores =
+            ai_playlist::models::get_image_votes_or_default_with_extensions(
+                pool, ids,
+            )
+            .await
+            .unwrap_or_default();
+
+        let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
+        (videos, image_scores)
+    } else {
+        (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
+    }
 }
