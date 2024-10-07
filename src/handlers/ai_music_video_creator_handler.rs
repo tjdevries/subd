@@ -22,7 +22,7 @@ pub struct AIMusicVideoCreatorHandler {
 
 enum Command {
     CreateMusicVideoVideo { id: String, image_name: String },
-    CreateMusicVideoImage { id: String },
+    CreateMusicVideoImage { id: String, prompt: Option<String> },
     CreateMusicVideoImages { id: String },
     CreateMusicVideo { id: String },
     Unknown,
@@ -151,9 +151,10 @@ pub async fn handle_requests(
         Command::CreateMusicVideoImages { id } => {
             ai_music_videos::create_music_video_images(pool, id).await
         }
-        Command::CreateMusicVideoImage { id } => {
+        Command::CreateMusicVideoImage { id, prompt } => {
             let _res =
-                ai_music_videos::create_music_video_image(pool, id).await;
+                ai_music_videos::create_music_video_image(pool, id, prompt)
+                    .await;
             Ok(())
         }
     }
@@ -226,14 +227,22 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
         }
 
         Some("!generate_image") => {
-            let id = match words.next() {
-                Some(id) => id.to_string(),
-                None => ai_playlist::get_current_song(pool)
-                    .await?
-                    .song_id
-                    .to_string(),
+            let current_song = ai_playlist::get_current_song(pool).await?;
+
+            let splitmsg = msg
+                .contents
+                .split(' ')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+            let prompt = if splitmsg.len() > 1 {
+                Some(splitmsg[1..].join(" "))
+            } else {
+                None
             };
-            Ok(Command::CreateMusicVideoImage { id })
+            Ok(Command::CreateMusicVideoImage {
+                id: current_song.song_id.to_string(),
+                prompt,
+            })
         }
         Some("!create_music_video") => {
             let id = match words.next() {

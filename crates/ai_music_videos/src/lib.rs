@@ -38,19 +38,32 @@ pub async fn create_video_from_image(
 pub async fn create_music_video_image(
     pool: &PgPool,
     id: String,
+    prompt: Option<String>,
 ) -> Result<String> {
     println!("\tStarting to create NEW Music Video!");
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
 
-    let lyrics = ai_song.lyric.as_ref().unwrap();
-    let title = &ai_song.title;
-    let scene = scenes_builder::generate_scene_prompt(
-        lyrics.to_string(),
-        title.to_string(),
-    )
-    .await?;
+    // I need to ask for a better prompt
+    let image_prompt = match prompt {
+        Some(p) => {
+            format!(
+                "{} in the context of a music video titled: {}",
+                p, ai_song.title
+            )
+        }
+        None => {
+            let lyrics = ai_song.lyric.as_ref().unwrap();
+            let title = &ai_song.title;
+            let scene = scenes_builder::generate_scene_prompt(
+                lyrics.to_string(),
+                title.to_string(),
+            )
+            .await?;
+            scene.image_prompt.clone()
+        }
+    };
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
@@ -72,13 +85,7 @@ pub async fn create_music_video_image(
         .unwrap_or(0);
 
     let file_index = highest_number + 1;
-    create_image_from_prompt(
-        ai_song,
-        scene.image_prompt.clone(),
-        id,
-        file_index,
-    )
-    .await
+    create_image_from_prompt(ai_song, image_prompt, id, file_index).await
 }
 pub async fn create_music_video_images(
     pool: &PgPool,
