@@ -2,8 +2,9 @@
 
 {% block content %}
 
-    <h2 width="100%">Songs in Playlist</h2>
+    <h2>Songs in Playlist ({{ unplayed_songs|length }})</h2>
     {% for song in unplayed_songs %}
+
         <div class="">
             <a href="/ai_songs/{{ song.song_id }}">@{{ song.username }}'s {{ song.title }} - {{ song.song_id }}</a>
         </div>
