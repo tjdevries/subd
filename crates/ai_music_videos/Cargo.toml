@@ -17,6 +17,7 @@ twitch_chat = { path = "../twitch_chat/" }
 obs_service = { path = "../obs_service/" }
 ai_playlist = { path = "../ai_playlist/" }
 subd-db = { path = "../subd-db/" }
+subd-openai = { path = "../subd-openai/" }
 subd-image-utils = { path = "../subd-image-utils/" }
 chrono.workspace = true
 anyhow.workspace = true

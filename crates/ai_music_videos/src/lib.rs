@@ -14,12 +14,24 @@ mod tests;
 pub async fn create_video_from_image(
     song_id: &str,
     image_name: &str,
+    path_string: &str,
 ) -> Result<()> {
-    // TODO: call out to GPT for response
-    // We need to actually call out to GPT
-    let prompt = "dramatic camera move".to_string();
+    // I can pass that in
+    // Do I have the exact filepath here???
+    println!("Describing the Image_name: {}", path_string);
+    let description = subd_openai::ask_gpt_vision2(&path_string, None).await?;
+    println!("Description: {}", description);
+
+    let prompt = format!("Create a prompt to instruct an image-to-video generation AI to make a video for a music video that is fun, funny, action-packed, use the description of the image passed in, to describe a scene in detail and include very detailed camera moving instructions as well. Description: {}", description);
+    let scene = scenes_builder::generate_scene_from_prompt(prompt).await?;
+    let video_prompt =
+        format!("{} {}", scene.scene_description, scene.camera_move);
+
+    println!("Video Prompt: {}", video_prompt);
+
     let _ =
-        generate_runway_video_from_image(song_id, image_name, &prompt).await;
+        generate_runway_video_from_image(song_id, image_name, &video_prompt)
+            .await;
     Ok(())
 }
 

@@ -54,7 +54,10 @@ impl EventHandler for AIMusicVideoCreatorHandler {
     }
 }
 
-async fn find_image_filename(song_id: String, name: String) -> Result<String> {
+async fn find_image_filename(
+    song_id: String,
+    name: String,
+) -> Result<(String, String, std::path::PathBuf)> {
     println!("Finding Image for Filename: {}", name);
     let dir_path = format!("./tmp/music_videos/{}/", song_id);
     let entries = std::fs::read_dir(&dir_path)
@@ -84,10 +87,11 @@ async fn find_image_filename(song_id: String, name: String) -> Result<String> {
             .ok_or_else(|| anyhow!("Failed to get file stem"))?;
 
         if file_stem == name {
-            return path
+            let p = path
                 .to_str()
                 .ok_or_else(|| anyhow!("Failed to convert path to string"))
-                .map(String::from);
+                .map(String::from)?;
+            return Ok((p, path.to_string_lossy().into_owned(), path));
         }
     }
 
@@ -115,12 +119,13 @@ pub async fn handle_requests(
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideoVideo { id, image_name } => {
-            let res = find_image_filename(id.clone(), image_name).await;
-            match res {
-                Ok(image_filename) => {
+            let result = find_image_filename(id.clone(), image_name).await;
+            match result {
+                Ok((image_filename, path_string, path)) => {
                     let _filename = ai_music_videos::create_video_from_image(
                         &id,
                         &image_filename,
+                        &path_string,
                     )
                     .await?;
                 }

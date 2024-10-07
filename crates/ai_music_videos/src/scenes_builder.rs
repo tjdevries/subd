@@ -22,9 +22,42 @@ pub struct MusicVideoScene {
     pub camera_move: String,
     pub image_name: Option<String>,
 }
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+pub struct RunwayPrompt {
+    pub scene_description: String,
+    pub camera_move: String,
+}
+
 // ==============================================================
 
-// pub async fn
+pub async fn generate_scene_from_prompt(
+    prompt: String,
+) -> Result<RunwayPrompt> {
+    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let instructor_client = from_openai(client);
+
+    let req = ChatCompletionRequest::new(
+        GPT3_5_TURBO.to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(prompt),
+            name: None,
+        }],
+    );
+
+    let result = match instructor_client.chat_completion::<RunwayPrompt>(req, 3)
+    {
+        Ok(scenes) => scenes,
+        Err(e) => {
+            eprintln!("Error generating Runway Prompts: {:?}", e);
+            return Err(anyhow!("Failed to generate Runway prompts"));
+        }
+    };
+
+    println!("{:?}", result);
+    Ok(result)
+}
 
 pub async fn generate_scene_prompt(
     lyrics: String,

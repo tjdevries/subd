@@ -117,7 +117,7 @@ pub async fn ask_gpt_vision2(
     let headers = reqwest::header::HeaderMap::from_iter(h);
 
     let payload = json!({
-        "model": "gpt-4-vision-preview",
+        "model": "gpt-4o-mini",
         "messages": [
         {
                 "role": "user",

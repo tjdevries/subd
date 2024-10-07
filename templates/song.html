@@ -13,7 +13,7 @@
 
     </div>
     {% if current_song.lyric %}
-        <div>{{ current_song.lyric | replace("\n", "<br />") | safe }}</div>
+        <div>{{ current_song.lyric | replace("\n", "<br />") | replace("]", "]<br/>") | replace("[", "<br />[") | safe }}</div>
     {% endif %}
 {% endblock %}
 

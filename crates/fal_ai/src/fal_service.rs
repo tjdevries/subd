@@ -82,11 +82,12 @@ impl FalService {
         let model = "fal-ai/runway-gen3/turbo/image-to-video";
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
-
         let parameters = serde_json::json!({
             "image_url": image_data_uri,
             "prompt": prompt,
         });
+
+        println!("\tAttempting to Generate Video w/ Runway");
         let json = self.run_model_and_get_json(model, parameters).await?;
 
         println!("Create Video From Image Raw JSON: {:?}", json);
