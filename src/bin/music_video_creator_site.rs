@@ -117,12 +117,12 @@ async fn home(
         (vec![], vec![("".to_string(), "".to_string(), 0, 0)])
     };
 
-    let users = ai_playlist::get_users_with_song_count(&pool).await.unwrap();
+    let users = ai_playlist::get_users_with_song_count(pool).await.unwrap();
     println!("Image scores: {:?}", image_scores);
 
     let score = match current_song {
         Some(song) => {
-            match ai_songs_vote::get_average_score(&pool, song.song_id).await {
+            match ai_songs_vote::get_average_score(pool, song.song_id).await {
                 Ok(result) => result.avg_score.to_string(),
                 Err(_) => "No Votes".to_string(),
             }
@@ -185,7 +185,7 @@ async fn show_ai_song_by_user(
     Path(username): Path<String>,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let pool = &state.pool;
-    let songs = ai_playlist::models::get_songs_for_user(&pool, &username)
+    let songs = ai_playlist::models::get_songs_for_user(pool, &username)
         .await
         .unwrap();
     let stats = fetch_stats(pool)

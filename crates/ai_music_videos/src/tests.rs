@@ -7,7 +7,7 @@ async fn test_highest_file_number() {
     let uuid_str = "0833d255-607f-4b74-bea9-4818f032140a";
     let id = Uuid::parse_str(uuid_str).unwrap();
     let music_video_folder = format!("../../tmp/music_videos/{}", id);
-    let highest_number = std::fs::read_dir(&music_video_folder)
+    let highest_number = std::fs::read_dir(music_video_folder)
         .unwrap()
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| {
@@ -46,6 +46,6 @@ async fn test_create_music_video() {
 
     ai_song.save(&pool).await.unwrap();
     let id = format!("{}", fake_uuid);
-    let res = create_music_video(&pool, id).await.unwrap();
+    let _res = create_music_video(&pool, id).await.unwrap();
     // OK
 }

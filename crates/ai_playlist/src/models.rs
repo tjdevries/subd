@@ -1,5 +1,5 @@
 use anyhow::Result;
-use serde::Deserialize;
+
 use serde::Serialize;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::PgPool;

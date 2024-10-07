@@ -74,7 +74,7 @@ fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
         Err(_) => vec![],
     }
 }
-use std::{thread, time};
+
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -102,10 +102,10 @@ async fn main() -> Result<()> {
         //let delay = time::Duration::from_millis(50);
         //thread::sleep(delay);
 
-        let song_id = Uuid::parse_str(&id).unwrap();
+        let song_id = Uuid::parse_str(id).unwrap();
         let db_record = ai_playlist::models::find_by_id(&pool, song_id).await;
         // If we have a DB record move on
-        if let Ok(_) = db_record {
+        if db_record.is_ok() {
             continue;
         };
 
