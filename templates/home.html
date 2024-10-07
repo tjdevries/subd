@@ -44,7 +44,7 @@
     </h4> Users</h4>
     <br />
     {% for user in users %}
-        <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}}</a>
+    <a href="/users/{{user[0]}}"> {{user[0]}} - Total Songs {{user[1]}} | AVG Scong Score: {{ user[2] }}</a>
         <br />
     {% endfor %}
     

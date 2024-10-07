@@ -15,6 +15,59 @@ pub struct AiSongRanking {
     pub avg_score: f64,
 }
 
+pub async fn get_users_with_song_count(
+    pool: &PgPool,
+) -> Result<Vec<(String, Option<i64>)>> {
+    let res = sqlx::query!(
+        r#"
+        SELECT username, COUNT(*) as song_count
+        FROM ai_songs
+        GROUP BY username
+        ORDER BY song_count DESC
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res
+        .into_iter()
+        .map(|row| (row.username, row.song_count))
+        .collect())
+}
+
+pub async fn get_users_with_song_count_and_avg_score(
+    pool: &PgPool,
+) -> Result<Vec<(String, i64, f64)>> {
+    let res = sqlx::query!(
+        r#"
+        SELECT 
+            a.username, 
+            COUNT(*) as song_count, 
+            CAST(AVG(v.avg_score) AS DOUBLE PRECISION) AS avg_score
+        FROM ai_songs a
+        LEFT JOIN (
+            SELECT song_id, AVG(score) as avg_score
+            FROM ai_songs_vote
+            GROUP BY song_id
+        ) v ON a.song_id = v.song_id
+            GROUP BY a.username
+            ORDER BY song_count DESC, avg_score DESC
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(res
+        .into_iter()
+        .map(|row| {
+            (
+                row.username,
+                row.song_count.unwrap_or(0),
+                row.avg_score.unwrap_or(0.0),
+            )
+        })
+        .collect())
+}
 pub async fn total_votes_by_id(pool: &PgPool, song_id: Uuid) -> Result<i64> {
     let record = sqlx::query!(
         "

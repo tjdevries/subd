@@ -22,7 +22,7 @@ pub async fn create_video_from_image(
     let description = subd_openai::ask_gpt_vision2(&path_string, None).await?;
     println!("Description: {}", description);
 
-    let prompt = format!("Create a prompt to instruct an image-to-video generation AI to make a video for a music video that is fun, funny, action-packed, use the description of the image passed in, to describe a scene in detail and include very detailed camera moving instructions as well. Description: {}", description);
+    let prompt = format!("Describe how this scene could transform based on the following description, add random fun transitions. Description: {}", description);
     let scene = scenes_builder::generate_scene_from_prompt(prompt).await?;
     let video_prompt =
         format!("{} {}", scene.scene_description, scene.camera_move);

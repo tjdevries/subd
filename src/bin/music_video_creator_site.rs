@@ -99,7 +99,9 @@ async fn home(
         get_videos_and_image_scores(pool, &current_song_info.current_song)
             .await;
 
-    let users = ai_playlist::get_users_with_song_count(pool).await.unwrap();
+    let users = ai_songs_vote::get_users_with_song_count_and_avg_score(pool)
+        .await
+        .unwrap();
     println!("Image scores: {:?}", image_scores);
 
     let score = match current_song_info.current_song {

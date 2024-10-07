@@ -218,6 +218,7 @@ pub async fn mark_songs_as_stopped(pool: &PgPool) -> Result<(), Error> {
     Ok(())
 }
 
+// We need a new prompt
 pub async fn get_users_with_song_count(
     pool: &PgPool,
 ) -> Result<Vec<(String, Option<i64>)>> {
