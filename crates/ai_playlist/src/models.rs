@@ -226,6 +226,7 @@ pub mod image_votes {
 
 pub async fn get_image_votes_or_default_with_extensions(
     pool: &PgPool,
+    song_id: Uuid,
     image_names: Vec<String>,
 ) -> Result<Vec<(String, String, i64, i64)>, sqlx::Error> {
     // let image_names_without_ext: Vec<String> = image_names
@@ -240,10 +241,11 @@ pub async fn get_image_votes_or_default_with_extensions(
             COUNT(*) FILTER (WHERE vote_type = 'love') as love_count,
             COUNT(*) FILTER (WHERE vote_type = 'hate') as hate_count
         FROM image_votes
-        WHERE image_name = ANY($1)
+        WHERE image_name = ANY($1) AND song_id = $2
         GROUP BY image_name
         "#,
-        &image_names
+        &image_names,
+        &song_id,
     )
     .fetch_all(pool)
     .await?;

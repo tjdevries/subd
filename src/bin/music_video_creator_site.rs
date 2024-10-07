@@ -115,7 +115,7 @@ async fn home(
     // This is sooo stupid
     // we are getting the current_song as an option again, because it's consumed above
     let current_song = ai_playlist::get_current_song(pool).await.ok();
-    let votes_count = current_song_info.votes_count;
+    // let votes_count = current_song_info.votes_count;
     let context = context! {
         score,
         videos,
@@ -124,7 +124,7 @@ async fn home(
         stats,
         unplayed_songs,
         current_song,
-        votes_count,
+        // votes_count,
     };
 
     let tmpl = ENV.get_template("home.html").unwrap();
@@ -276,7 +276,9 @@ async fn get_videos_and_image_scores(
         .collect::<Vec<String>>();
         let image_scores =
             ai_playlist::models::get_image_votes_or_default_with_extensions(
-                pool, ids,
+                pool,
+                song.song_id,
+                ids,
             )
             .await
             .unwrap_or_default();
