@@ -1,0 +1,192 @@
+/* Import fonts for bold uniqueness */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Pacifico&family=Montserrat:wght@400;500;800&display=swap');
+
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  color: #fff;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.header-container {
+  text-align: center;
+  padding: 20px;
+  background: conic-gradient(from 180deg, #ff6f61, #de1738, #c51162);
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%);
+}
+
+.header a {
+  text-decoration: none;
+  color: white;
+  font-size: 2.5em;
+  font-family: 'Pacifico', cursive;
+  transition: all 0.3s ease-in-out;
+  display: inline-block;
+}
+
+.header a:hover {
+  color: #ffefba;
+  transform: rotate(360deg);
+  animation: color-change 2s infinite;
+}
+
+@keyframes color-change {
+  0% { color: #ff6f61; }
+  50% { color: #de1738; }
+  100% { color: #c51162; }
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+  background: #de3163;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  animation: slide-down 1s ease-out;
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.nav-link {
+  margin: 0 15px;
+  color: white;
+  font-size: 1.2em;
+  font-weight: 500;
+  transition: transform 0.3s, color 0.3s;
+  mix-blend-mode: difference;
+  position: relative;
+}
+
+.nav-link:hover {
+  color: #feb47b;
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.unplayed_songs h2 {
+  font-size: 2em;
+  margin: 20px;
+  text-align: center;
+  text-shadow: 3px 3px #ff6f61;
+}
+
+.unplayed_song a {
+  display: block;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 10px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 1.1em;
+  transition: background-color 0.3s, transform 0.3s;
+  position: relative;
+}
+
+.unplayed_song a:hover {
+  background-color: #ffefd5;
+  transform: translateX(10px);
+  color: #c51162;
+}
+
+.current-song-info h3 {
+  font-size: 1.8em;
+  margin-bottom: 10px;
+}
+
+.current-song-info div {
+  margin: 5px 0;
+}
+
+.image_scores {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto;
+}
+
+.ai_song_image img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.5s ease;
+  border-radius: 10px;
+}
+
+.ai_song_image img:hover {
+  transform: scale(1.2) rotate(15deg);
+}
+
+.image_voting {
+  text-align: center;
+  padding: 5px 0;
+  font-weight: bold;
+  font-variant: small-caps;
+}
+
+.videos video {
+  margin: 10px;
+  border: 2px solid #ffffff70;
+  border-radius: 10px;
+  transition: transform 0.5s, filter 0.3s;
+}
+
+.videos video:hover {
+  transform: scale(1.1) rotate(-5deg);
+  filter: brightness(1.2);
+}
+
+.song-container {
+  background: linear-gradient(145deg, #ffe1ed, #ffb3c1);
+  padding: 15px;
+  margin: 10px auto;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  text-align: center;
+  transition: transform 0.4s;
+}
+
+.song-container:hover {
+  transform: translateY(-10px);
+}
+
+.song-link a {
+  text-decoration: none;
+  color: #ff6f61;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.song-link a:hover {
+  color: #c51162;
+  text-shadow: 2px 2px #ffefba;
+}
+
+/* Adjust grid */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-gap: 20px;
+  padding: 0 10px;
+  justify-items: center;
+}
+
+.song {
+  border: 1px solid #fff;
+  border-radius: 10px;
+  padding: 15px;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  background: #de3163;
+}
+
+.song:hover {
+  transform: rotate(3deg) translate(10px, -10px);
+  background-color: #ffb6c1;
+}

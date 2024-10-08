@@ -1,111 +1,71 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const header = document.querySelector('.header-container h1 a');
-    header.style.transition = 'color 0.5s';
-    header.addEventListener('mouseenter', function() {
-        this.style.color = '#ff4081';
-    });
-    header.addEventListener('mouseleave', function() {
-        this.style.color = '#fff';
-    });
-    
-    const subHeaders = document.querySelectorAll('.sub-header');
-    subHeaders.forEach(subHeader => {
-        subHeader.style.transition = 'transform 0.3s ease-in-out';
-        subHeader.addEventListener('mouseover', function() {
-            this.style.transform = 'scale(1.1)';
-        });
-        subHeader.addEventListener('mouseout', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    // Animate header
+    const headerText = document.querySelector('.header a');
+    headerText.style.animation = 'fadeIn 3s infinite alternate';
 
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.style.transition = 'color 0.3s';
-        link.addEventListener('mouseenter', function() {
-            this.style.color = '#ff4081';
-        });
-        link.addEventListener('mouseleave', function() {
-            this.style.color = '#ffffff';
-        });
-    });
-    
-    const songTitles = document.querySelectorAll('.grid-container .title, .songs-container .title');
-    songTitles.forEach(title => {
-        title.style.transition = 'opacity 0.5s';
-        title.addEventListener('mouseenter', function() {
-            this.style.opacity = '0.6';
-        });
-        title.addEventListener('mouseleave', function() {
-            this.style.opacity = '1';
-        });
-    });
-    
-    const images = document.querySelectorAll('.ai_song_image img');
-    images.forEach(image => {
-        image.style.transition = 'transform 0.3s ease';
-        image.addEventListener('mouseover', function() {
-            this.style.transform = 'scale(1.1)';
-        });
-        image.addEventListener('mouseout', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
-
-    // Animation on scrolling
-    const animateOnScroll = () => {
-        const sections = document.querySelectorAll('section');
-        const appearOptions = {
-            threshold: 0.5,
-            rootMargin: "0px 0px -50px 0px"
-        };
-
-        const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) {
-                    return;
-                } else {
-                    entry.target.classList.add('appear');
-                    appearOnScroll.unobserve(entry.target);
-                }
-            });
-        }, appearOptions);
-
-        sections.forEach(section => {
-            appearOnScroll.observe(section);
-        });
+    // Header animation
+    const style = document.createElement('style');
+    style.innerHTML = `
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
-    animateOnScroll();
-    
-    const saveButton = document.createElement('button');
-    saveButton.textContent = 'Save Styles';
-    saveButton.style.position = 'fixed';
-    saveButton.style.bottom = '10px';
-    saveButton.style.right = '10px';
-    saveButton.style.padding = '10px 20px';
-    saveButton.style.backgroundColor = '#ff4081';
-    saveButton.style.border = 'none';
-    saveButton.style.color = 'white';
-    saveButton.style.cursor = 'pointer';
-    saveButton.addEventListener('click', function() {
-        const styles = `
-            /* Styles for Animations */
-            .appear {
-                opacity: 1;
-                transition: opacity 0.6s, transform 0.6s;
-                transform: translateY(0);
-            }
-            section {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-        `;
-        const blob = new Blob([styles], { type: 'text/css' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'styles.css';
-        link.click();
-    });
-    document.body.appendChild(saveButton);
+    .nav-link {
+        transition: color 0.3s, transform 0.3s;
+    }
+    .nav-link:hover {
+        color: #ff5733;
+        transform: translateY(-5px);
+    }
+    .unplayed_song a {
+        display: block;
+        padding: 5px;
+        transition: background-color 0.3s;
+    }
+    .unplayed_song a:hover {
+        background-color: #f0e68c;
+        border-radius: 5px;
+    }
+    .current-song-info {
+        animation: slideUp 2s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(50px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .ai_song_image img {
+        width: 100px;
+        transition: transform 0.3s;
+    }
+    .ai_song_image img:hover {
+        transform: scale(1.2);
+    }
+    .video video {
+        border: 2px solid #ccc;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    `;
+    document.head.append(style);
 
+    // Fun animations
+    const songsInPlaylist = document.querySelectorAll('.unplayed_song');
+    songsInPlaylist.forEach((song, index) => {
+        song.style.animation = `bounceIn ${(index + 1) * 0.5}s forwards`;
+    });
+
+    document.querySelector('.current-song').style.animation = 'highlight 3s infinite alternate';
+
+    const highlightStyle = document.createElement('style');
+    highlightStyle.innerHTML = `
+    @keyframes bounceIn {
+        from { transform: scale(0); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    @keyframes highlight {
+        from { background-color: #ffe4b5; }
+        to { background-color: #ffa07a; }
+    }
+    `;
+    document.head.append(highlightStyle);
 });

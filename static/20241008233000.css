@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Rubik&display=swap');
+
+body {
+    font-family: 'Rubik', sans-serif;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: #333;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
+
+.header-container {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 20px;
+    border-bottom: 3px solid #fda085;
+    mix-blend-mode: multiply;
+}
+
+.header a {
+    font-family: 'Lobster', cursive;
+    font-size: 3rem;
+    color: #0066cc;
+    text-decoration: none;
+    text-shadow: 2px 2px #fda085;
+    transition: color 0.2s ease-in-out;
+}
+
+.header a:hover {
+    color: #cc0066;
+    transform: rotate(5deg);
+}
+
+.sub-header {
+    font-size: 1.2rem;
+    color: #444;
+    font-variant: small-caps;
+    text-transform: uppercase;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 10px 0;
+    background: rgba(255, 255, 255, 0.5);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.nav-link {
+    font-size: 1.2rem;
+    color: #333;
+    text-decoration: none;
+    border: 2px solid transparent;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    border-color: #f6d365;
+    background: #fff;
+    color: #ff6633;
+    transform: scale(1.1);
+}
+
+.unplayed_songs, .grid-container, .users-container, .songs-container {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.song, .unplayed_song, .song-container, .username {
+    border: 2px solid #fda085;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    background: #fff;
+    transition: transform 0.3s;
+}
+
+.song:hover, .unplayed_song:hover, .song-container:hover, .username:hover {
+    transform: translateY(-10px) rotate(-2deg);
+}
+
+.song_link a, .unplayed_song a, .song-container a {
+    color: #0066cc;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.2s, transform 0.3s;
+}
+
+.song_link a:hover, .unplayed_song a:hover, .song-container a:hover {
+    color: #cc0066;
+    transform: translateX(10px);
+    animation: shake 0.5s;
+    animation-timing-function: ease-out;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+.image_scores, .videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 10px;
+}
+
+.image_voting, .image_votes {
+    text-align: center;
+    font-variant: small-caps;
+    background-color: #fef9c3;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.video {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+video {
+    width: 100%;
+}
+
+video:hover {
+    transform: scale(1.05);
+    transition: transform 0.5s ease;
+}
+
+.lyrics {
+    font-style: italic;
+    color: #666;
+    text-align: center;
+}

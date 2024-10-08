@@ -1,0 +1,155 @@
+/* Importing some unique and bold fonts */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+/* Global Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(145deg, #f3ec78, #af4261);
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    scroll-behavior: smooth;
+    perspective: 1000px;
+}
+a {
+    text-decoration: none;
+    color: #ffeb3b;
+    transition: color 0.3s ease-in-out;
+}
+a:hover {
+    color: #f44336;
+    text-shadow: 0px 0px 10px #f44336;
+
+    transform: rotate(360deg);
+    transition: transform 0.5s ease-in-out;
+}
+
+/* Header Styles */
+.header-container {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    text-align: center;
+    position: relative;
+}
+.header a {
+    font-family: 'Pacifico', cursive;
+    font-size: 48px;
+    color: #e57373;
+}
+.sub-header {
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+/* Navigation Styles */
+.nav-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: rgba(255, 255, 255, 0.15);
+    padding: 10px 0;
+}
+.nav-link {
+    font-size: 20px;
+    padding: 10px;
+    text-align: center;
+    transition: background 0.3s ease-in-out;
+}
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.3);
+    mix-blend-mode: difference;
+}
+
+/* Section Styles */
+.current-song, .unplayed_songs {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid #fff;
+    filter: drop-shadow(2px 4px 6px black);
+}
+.current-song-info, .unplayed_song {
+    margin: 10px 0;
+}
+.unplayed_song a {
+    display: block;
+    transition: transform 0.3s ease-in-out;
+}
+.unplayed_song a:hover {
+    transform: scale(1.1);
+}
+
+.image_scores img {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+    transition: transform 0.5s ease;
+}
+.image_scores img:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.video video {
+    border-radius: 15px;
+    width: 300px;
+    filter: hue-rotate(20deg);
+    transition: filter 0.3s;
+}
+.video video:hover {
+    filter: hue-rotate(360deg);
+}
+
+.lyrics {
+    font-size: 18px;
+    font-variant: small-caps;
+    hyphens: auto;
+    column-count: 2;
+}
+
+/* Songs and Users Styles */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 20px;
+    padding: 10px;
+}
+.song, .users-container {
+    border-radius: 10px;
+    background-color: #212121;
+    padding: 15px;
+    color: #76ff03;
+    transform: scale(1);
+    transition: transform 0.3s, background-color 0.3s;
+}
+.song:hover, .users-container:hover {
+    transform: scale(1.05);
+    background-color: #333;
+}
+
+/* Extra styles for interactivity */
+.song audio {
+    width: 100%;
+    border-radius: 5px;
+}
+.song_link a:hover {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    background: conic-gradient(from 90deg, rgba(255,255,255,0.2), rgba(0, 0, 0, 0.7));
+    padding: 5px;
+}
+
+.username a {
+    font-weight: bold;
+    text-stroke: 1px #fff;
+    transition: color 0.3s;
+}
+.username a:hover {
+    color: #ffeb3b;
+}
+
+.average-score, .total-songs {
+    font-variant: small-caps;
+}
