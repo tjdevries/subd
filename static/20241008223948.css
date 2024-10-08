@@ -1,0 +1,116 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(45deg, #3b6978, #204051);
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+.header-container, .nav-container, .unplayed_songs, .current-song {
+    padding: 20px;
+    margin: 10px auto;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.header a {
+    text-decoration: none;
+    color: #e6d5b8;
+    text-shadow: 2px 2px 4px #000000;
+    transition: all 0.3s ease-in-out;
+}
+
+.header a:hover {
+    transform: rotate(360deg);
+    text-shadow: 4px 4px 8px #ffffff;
+}
+
+.nav-link {
+    margin: 0 15px;
+    color: #a3d2ca;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.nav-link:hover {
+    color: #f6f5f5;
+    transform: scale(1.1);
+}
+
+.grid-container, .users-container, .songs-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.song, .video, .ai_song_image, .song-container, .username {
+    background: #3aafa9;
+    padding: 10px;
+    border-radius: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.song:hover, .video:hover, .ai_song_image:hover, .song-container:hover, .username:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+h1, h2, h3, h4 {
+    margin: 10px 0;
+    text-transform: uppercase;
+}
+h1 {
+    font-size: 3em;
+}
+h2 {
+    font-size: 2.5em;
+}
+
+.video {
+   position: relative;
+   overflow: hidden;
+   padding-top: 56.25%;
+}
+
+video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+a {
+    color: #ff5722;
+    text-decoration: none;
+    position: relative;
+}
+a::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #ff5722;
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+}
+a:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}

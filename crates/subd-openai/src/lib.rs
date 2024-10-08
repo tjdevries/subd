@@ -77,25 +77,25 @@ struct AIStylesResponse {
 }
 
 fn html_file_contents() -> Result<String> {
-    let filepath = "../../static/home.html";
+    let filepath = "./static/home.html";
     let mut file = File::open(filepath).expect("Failed to open HTML file");
     let mut home_contents = String::new();
     file.read_to_string(&mut home_contents)
         .expect("Failed to read HTML file");
 
-    let filepath = "../../static/songs.html";
+    let filepath = "./static/songs.html";
     let mut file = File::open(filepath).expect("Failed to open HTML file");
     let mut song_contents = String::new();
     file.read_to_string(&mut song_contents)
         .expect("Failed to read HTML file");
 
-    let filepath = "../../static/users.html";
+    let filepath = "./static/users.html";
     let mut file = File::open(filepath).expect("Failed to open HTML file");
     let mut users_contents = String::new();
     file.read_to_string(&mut users_contents)
         .expect("Failed to read HTML file");
 
-    let filepath = "../../static/charts.html";
+    let filepath = "./static/charts.html";
     let mut file = File::open(filepath).expect("Failed to open HTML file");
     let mut charts_contents = String::new();
     file.read_to_string(&mut charts_contents)
@@ -108,8 +108,7 @@ fn html_file_contents() -> Result<String> {
     Ok(contents)
 }
 
-#[allow(dead_code)]
-fn get_music_video_scene() {
+pub async fn generate_ai_css() -> Result<()> {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
 
@@ -154,6 +153,7 @@ fn get_music_video_scene() {
         }],
     );
 
+    println!("\tGenerating new CSS");
     let result = instructor_client
         .chat_completion::<AIStylesResponse>(req, 3)
         .expect("Failed to get chat completion");
@@ -163,9 +163,9 @@ fn get_music_video_scene() {
     // Backup the existing styles.css file
     let now = Utc::now();
     let timestamp = now.format("%Y%m%d%H%M%S").to_string();
-    let backup_filename = format!("../../static/{}.css", timestamp);
+    let backup_filename = format!("./static/{}.css", timestamp);
 
-    let src = "../../static/styles.css";
+    let src = "./static/styles.css";
     let dest = &backup_filename;
 
     fs::copy(src, dest).expect("Failed to backup the styles.css file");
@@ -173,10 +173,11 @@ fn get_music_video_scene() {
     // Save the new CSS to styles.css
     let content = &result.css;
 
-    let mut file = File::create("../../static/styles.css")
+    let mut file = File::create("./static/styles.css")
         .expect("Failed to create styles.css file");
     file.write_all(content.as_bytes())
         .expect("Failed to write to styles.css file");
+    Ok(())
 }
 
 // I want this to exist somewhere else
@@ -435,6 +436,6 @@ mod tests {
         //)
         //.await;
         //println!("{:?}", res);
-        get_music_video_scene();
+        generate_ai_css();
     }
 }

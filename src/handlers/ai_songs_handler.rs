@@ -45,6 +45,12 @@ impl EventHandler for AISongsHandler {
                         let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
                         if let Ok(song) = next_song {
 
+
+                            // Do we have to await
+                            let _ = tokio::spawn(subd_openai::generate_ai_css());
+                            // We are playing a new song here!
+                            // We should Genenerate new CSS here!
+
                             // is there a better way?
                             let id = format!("{}", song.song_id);
 
