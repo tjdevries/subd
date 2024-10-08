@@ -1,0 +1,34 @@
+body {
+    font-family: 'Papyrus';
+    /*font-family: 'Comic Sans MS', cursive, sans-serif;*/
+}
+
+.current-song {
+    /*padding: 10px;*/
+    /*border: 2px solid black;*/
+    /*background: lightblue;*/
+}
+
+.nav-container {
+    /*display: grid;*/
+    /*grid-template-columns: 1fr 1fr 1fr;*/
+    /*padding: 10px;*/
+    /*border: 1px solid black;*/
+}
+
+.header-container{
+    /*display: grid;*/
+    /*grid-template-columns: 1fr 1fr 1fr;*/
+    /*border: 1px solid black;*/
+}
+
+// Do we want to usea Grid?
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-gap: 10px;
+}
+
+.grid-item {
+    text-align: center;
+}

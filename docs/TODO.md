@@ -1,5 +1,9 @@
 # TODO
 
+A browser extension that changes the websites CSS based on AI
+
+A very simple JS library you can include on a site, that queries for new styles on refresh
+
 ## Top TODO
 
 - Websockets
