@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css?family=Caveat|Comfortaa|Concert+One|Gaegu|Indie+Flower|Press+Start+2P&display=swap');
+
+body {
+    font-family: 'Comfortaa', sans-serif;
+    background: linear-gradient(to right, #f7fd04, #f0a500);
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.header-container {
+    background: conic-gradient(from 180deg at 50% 50%, #ff007f, #1e3c72);
+    text-align: center;
+    padding: 20px;
+    animation: backgroundAnimation 10s infinite alternate;
+    border-bottom: 5px solid #000;
+}
+
+.header {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 4em;
+    overflow: hidden;
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 3px 3px 0 #333;
+    animation: textGlow 1s infinite alternate;
+
+    transition: transform 0.5s ease;
+}
+
+.header a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.header:hover {
+    transform: scale(1.1);
+}
+
+.sub-header {
+    font-family: 'Indie Flower', cursive;
+    font-size: 2em;
+    color: #eee;
+}
+
+.nav-container {
+    background: radial-gradient(circle, #1e3c72, #2a5298);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    gap: 10px;
+}
+
+.nav-link {
+    font-family: 'Concert One', cursive;
+    font-size: 1.5em;
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover, .nav-link:focus {
+    color: #f0a500;
+    transform: scale(1.2);
+    text-shadow: 0px 0px 10px #fff;
+}
+
+.nav-link:after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: #f0a500;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+}
+
+.nav-link:hover:after {
+    width: 0;
+}
+
+.unplayed_songs {
+    background: linear-gradient(to bottom, #a1c4fd, #c2e9fb);
+    padding: 40px;
+    font-family: 'Gaegu', cursive;
+    border: 4px dotted #ff6394;
+    margin-top: 20px;
+    scroll-snap-type: y mandatory;
+}
+
+.unplayed_song {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.unplayed_song a {
+    font-family: 'Caveat', cursive;
+    color: #333;
+    text-decoration: none;
+    display: block;
+    transform: perspective(500px) rotateX(10deg);
+    transition: transform 0.3s;
+}
+
+.unplayed_song a:hover {
+    transform: perspective(500px) rotateX(0deg) scale(1.05);
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.4);
+}
+
+.current-song {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    background: linear-gradient(to top, #fddb92, #d1fdff);
+    padding: 40px;
+    align-items: start;
+}
+
+.current-song-info {
+    background: rgba(255, 255, 255, 0.8);
+    border: 3px solid #f0a500;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+}
+
+.current-song-info div {
+    font-family: 'Indie Flower', cursive;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+}
+
+.current-song-info a {
+    font-family: 'Concert One', cursive;
+    color: #333;
+    text-decoration: underline;
+    transition: all 0.3s ease-in-out;
+}
+.current-song-info a:hover {
+    color: #ff007f;
+    background: #ffeb3b;
+    border-radius: 5px;
+    text-shadow: 0px 0px 10px #1e3c72;
+    mix-blend-mode: multiply;
+}
+
+.image_scores {
+    background: linear-gradient(to bottom left, #330867, #30cfd0);
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.videos, .lyrics {
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px dashed #ff6394;
+    padding: 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    font-family: 'Caveat', cursive;
+    color: #444;
+}
+
+.videos {
+    min-height: 200px;
+}
+
+.lyrics {
+    white-space: pre-line;
+}
+
+@keyframes textGlow {
+    from {
+        text-shadow: 3px 3px 10px #333;
+    }
+    to {
+        text-shadow: 3px 3px 20px #ff69b4;
+    }
+}
+
+@keyframes backgroundAnimation {
+    from {
+        background-position: 0% 50%;
+    }
+    to {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+::selection {
+    background: #ffb3b3;
+    color: #000;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #f0a500;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #c2e9fb;
+}

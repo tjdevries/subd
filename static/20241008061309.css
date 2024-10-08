@@ -1,0 +1,111 @@
+/* Header Styles */
+.header-container {
+  background-color: #1c1c1c;
+  text-align: center;
+  padding: 20px;
+  color: #f8f8f8;
+  font-family: 'Century Gothic', sans-serif;
+}
+
+.header {
+  font-size: 2rem;
+  transition: transform 0.3s ease-in-out;
+}
+
+.header a {
+  color: #d8b6ff;
+  text-decoration: none;
+}
+
+.header a:hover {
+  transform: scale(1.1);
+}
+
+.sub-header {
+  font-size: 1.2rem;
+  color: #a892ff;
+}
+
+/* Nav Styles */
+.nav-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.nav-link {
+  margin: 0 15px;
+  color: #d8b6ff;
+  font-size: 1.1rem;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s ease-in-out;  
+}
+
+.nav-link:hover {
+  color: #f8f8f8;
+}
+
+/* Section: Unplayed Songs */
+.unplayed_songs {
+  background-color: #2d2d2d;
+  margin: 20px;
+  padding: 20px;
+  color: #fff;
+  border-radius: 10px;
+}
+
+.unplayed_songs h2 {
+  color: #a892ff;
+}
+
+.unplayed_song {
+  margin: 10px 0;
+}
+
+.unplayed_song a {
+  color: #d8b6ff;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+.unplayed_song a:hover {
+  color: #f8f8f8;
+}
+
+/* Section: Current Song */
+.current-song {
+  margin: 20px;
+  padding: 20px;
+  background-color: #3d3d3d;
+  color: #fff;
+  border-radius: 10px;
+}
+
+.current-song h3 {
+  color: #a892ff;
+}
+
+.current-song-info {
+  margin-bottom: 20px;
+}
+
+.title, .tags, .creator, .average_score, .total_votes {
+  color: #d8b6ff;
+}
+
+.song_id a {
+  color: #f8f8f8;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+.song_id a:hover {
+  color: #d8b6ff;
+}
+
+/* Lyrics and Videos Sections */
+.lyrics {
+  font-family: 'Gothic A1', sans-serif;
+  white-space: pre-wrap;
+  color: #f8f8f8;
+}

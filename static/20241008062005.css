@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Knewave&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Knewave', cursive;
+  background: linear-gradient(270deg, #ff8a00, #e52e71, #9a2eff);
+  background-size: 600% 600%;
+
+  -webkit-animation: gradientBG 15s ease infinite;
+  -moz-animation: gradientBG 15s ease infinite;
+  -o-animation: gradientBG 15s ease infinite;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.header-container,
+.nav-container {
+  text-align: center;
+  padding: 20px;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.header {
+  font-size: 4rem;
+  transition: all 0.3s ease;
+}
+
+.header:hover,
+.nav-link:hover {
+  text-decoration: none;
+  letter-spacing: 3px;
+  color: #ffdd00;
+}
+
+.sub-header {
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  margin: 0 10px;
+  font-size: 1.5rem;
+}
+
+.unplayed_songs,
+.current-song {
+  margin: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.unplayed_song a {
+  display: block;
+  color: #333;
+  text-decoration: none;
+  padding: 10px;
+  font-size: 1.2rem;
+  transition-duration: 0.4s;
+}
+
+.unplayed_song a:hover {
+  transform: scale(1.05);
+  background-color: #ffdd00;
+  color: black;
+}
+
+.current-song-info {
+  border: 2px solid #ffdd00;
+  padding: 15px;
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+}
+
+.image_scores {
+  display: flex;
+  margin-top: 20px;
+}
+
+.videos,
+.lyrics {
+  flex: 1;
+}
+
+.lyrics {
+  white-space: pre-line;
+  color: #444;
+}

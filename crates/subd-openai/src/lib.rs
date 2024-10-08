@@ -82,20 +82,44 @@ fn get_music_video_scene() {
     let instructor_client = from_openai(client);
 
     let filepath = "../../tmp/music_video_creator.html";
+    // let filepath = "../../tmp/songs.html";
     let mut file = File::open(filepath).expect("Failed to open HTML file");
     let mut contents = String::new();
     file.read_to_string(&mut contents)
         .expect("Failed to read HTML file");
 
+    let css_base_prompt =
+        "Generate excellent high-quality detailed CSS for the provided HTML. Provide as many CSS properties as possible.";
+    let css_style_tips = "Make the overall style consistent, with a color theme and font-selection that cohesive but fun.";
+    let css_properties_prompt = "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, clip-path, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, scroll-snap-type, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, will-change, overflow-anchor, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, scroll-behavior, pointer-events, scroll-margin, scroll-padding, gap, align-self, justify-items, object-position, word-wrap, hyphens, resize, appearance, backface-visibility, scrollbar-color, scrollbar-width, font-feature-settings, text-orientation, column-count, column-gap, column-rule, blend-mode, background-origin, font-display, grid-auto-flow, grid-template-rows etc.";
+    let css_interactions =
+        "Include as many interactive changes as possible, like on:hover. Make all links do something bold and dynamic on hover.";
+    let css_layouts = "Also feel free to try different layouts using things like display: grid.";
+    let css_fonts = "Use a wide variety of bold unique fonts, which you need to specify to import.";
+    let css_animations = "Use as many animations and transitions as possible.";
+    let css_final_prompt =
+        "Make it all savaveable as a styles.css file, for the following HTML: ";
+    let spinner_css =
+        "Make sure you use things like transform: rotate(360deg); Prioritize movement with transform.";
+
     let prompt = format!(
-        "Generate really dynamic, modern, Interesting CSS, that utilizes new creative techniques, dynamic colors and transitions, use cutting-edge techniques and bold unique fonts and colors that is savable as a styles.css file, for the following HTML: {}",
+        "{} {} {} {} {} {} {} {} {} {}",
+        css_base_prompt,
+        css_properties_prompt,
+        css_interactions,
+        css_layouts,
+        css_fonts,
+        css_final_prompt,
+        css_style_tips,
+        css_animations,
+        spinner_css,
         contents
     );
 
     let req = ChatCompletionRequest::new(
-        //GPT3_5_TURBO.to_string(),
-        //GPT4_O.to_string(),
-        GPT4_1106_PREVIEW.to_string(),
+        // GPT3_5_TURBO.to_string(),
+        GPT4_O.to_string(),
+        // GPT4_1106_PREVIEW.to_string(),
         vec![chat_completion::ChatCompletionMessage {
             role: chat_completion::MessageRole::user,
             content: chat_completion::Content::Text(prompt),

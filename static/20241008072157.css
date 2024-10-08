@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Fjalla+One&family=Monoton&display=swap');
+
+body {
+  font-family: 'Caveat', cursive;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  background: linear-gradient(to right top, #ff7e5f, #feb47b);
+  color: #ffffff;
+  scroll-behavior: smooth;
+}
+
+.header-container {
+  display: grid;
+  text-align: center;
+  background-color: #282c34;
+  padding: 1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  animation: slide-in 2s ease-out;
+}
+
+.header a {
+  font-family: 'Monoton', cursive;
+  font-size: 2.5rem;
+  text-decoration: none;
+  color: #ff6f61;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.header a:hover {
+  color: #42a5f5;
+  transform: scale(1.1);
+  text-shadow: 2px 2px #000000;
+}
+
+.sub-header {
+  font-family: 'Fjalla One', sans-serif;
+  color: #ffdd57;
+  margin: 5px 0;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  background-color: #3d4060;
+  padding: 0.8rem 0;
+}
+
+.nav-link {
+  margin: 0 15px;
+  color: #ffffff;
+  font-size: 1.2rem;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  border-bottom: 2px solid #ff6f61;
+  color: #42a5f5;
+}
+
+.unplayed_songs {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  width: 80%;
+}
+
+.unplayed_song {
+  margin: 10px 0;
+  font-size: 1.1rem;
+  animation: fade-in 1.5s both;
+}
+
+.unplayed_song a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.unplayed_song a:hover {
+  color: #ff6f61;
+  transform: skewX(-10deg);
+  zoom: 1.1;
+}
+
+.current-song {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  background-color: #ffffff;
+  color: #282c34;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  mix-blend-mode: normal;
+  margin: 20px;
+  overflow: hidden;
+}
+
+.current-song-info h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Fjalla One', sans-serif;
+}
+
+.current-song-info div {
+  margin: 8px 0;
+}
+
+.lyrics {
+  height: 300px;
+  overflow: auto;
+  padding: 15px;
+  shade-outside: margin-box;
+  scroll-snap-type: y mandatory;
+  backdrop-filter: blur(5px);
+  font-variant: small-caps;
+}
+
+@keyframes slide-in {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

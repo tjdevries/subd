@@ -1,0 +1,124 @@
+/* Importing unique fonts */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300&family=Fjalla+One&family=Zilla+Slab:wght@500&display=swap');
+
+body {
+    font-family: 'Comfortaa', cursive;
+    background: linear-gradient(to right, #e66465, #9198e5);
+    color: #ffffff;
+    animation: backgroundAnimation 10s infinite alternate;
+    scroll-behavior: smooth;
+}
+
+.header-container, .nav-container, .unplayed_songs, .current-song {
+    display: grid;
+    gap: 20px;
+    place-items: center;
+    padding: 20px;
+    grid-template-columns: 1fr;
+}
+
+.header {
+    font-family: 'Fjalla One', sans-serif;
+    font-size: 3em;
+    text-shadow: 3px 3px #332288;
+}
+
+.sub-header {
+    font-family: 'Zilla Slab', serif;
+    font-size: 1.5em;
+    letter-spacing: 2px;
+}
+
+.nav-link {
+    color: #ffffff;
+    font-size: 1.2em;
+    text-decoration: none;
+    position: relative;
+    display: inline-block;
+}
+
+.nav-link:hover {
+    animation: textAnimation 1s infinite alternate;
+    color: #ffdd57;
+    transform: scale(1.2);
+}
+
+.unplayed_song {
+    font-size: 1.2em;
+}
+
+.unplayed_song a {
+    text-decoration: none;
+    color: #ffffff;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.unplayed_song a:hover {
+    color: #ffdd57;
+    text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.current-song-info, .image_scores {
+    display: grid;
+    grid-template-areas: 
+    "info info"
+    "scores lyrics";
+    gap: 10px;
+}
+
+.title {
+    grid-area: info;
+    font-weight: bold;
+    font-size: 2em;
+    text-align: center;
+}
+
+.videos, .lyrics {
+    grid-area: lyrics;
+    font-size: 1.1em;
+}
+
+@keyframes backgroundAnimation {
+    0% { background: linear-gradient(to right, #e66465, #9198e5); }
+    100% { background: linear-gradient(to left, #e66465, #9198e5); }
+}
+
+@keyframes textAnimation {
+    0% { text-shadow: 2px 2px rgba(0,0,0,0.2); }
+    100% { text-shadow: 4px 4px rgba(0,0,0,0.5); }
+}
+
+.current-song-info div {
+    padding: 5px 0;
+    font-family: 'Zilla Slab', serif;
+}
+
+/* Interactive hover effect for all links */
+a:hover {
+    animation: linkHover 0.5s ease-in-out;
+    color: #aaff00;
+}
+
+@keyframes linkHover {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; transform: scale(1.1); filter: brightness(1.2); }
+    100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+}
+
+/* Miscellaneous CSS Properties for detailed enhancements */
+.unplayed_song a:active, .nav-link:active {
+    background: #ff57b9;
+    border-radius: 10px;
+}
+
+.header-container {
+    border-bottom: 3px solid #ffffff;
+    backdrop-filter: blur(5px);
+    clip-path: polygon(0 0, 100% 0%, 100% 85%, 0 100%);
+}
+
+.unplayed_songs {
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    max-height: 300px;
+}

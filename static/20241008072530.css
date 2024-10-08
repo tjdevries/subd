@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&family=Dancing+Script:wght@700&family=Press+Start+2P&family=Raleway:wght@300;900&display=swap');
+
+body {
+    margin: 0;
+    font-family: 'Raleway', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    color: #333;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+.header-container {
+    background: conic-gradient(from 180deg, #ff9a9e, #fad0c4);
+    text-align: center;
+    animation: gradientShift 3s infinite alternate;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.header a {
+    font-size: 3em;
+    color: #fff;
+    text-decoration: none;
+    font-family: 'Dancing Script', cursive;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+.header a:hover {
+    color: #ff6f61;
+    transform: scale(1.1);
+}
+
+.sub-header {
+    color: #444;
+    font-size: 1.2em;
+    margin-top: 10px;
+}
+
+.nav-container {
+    background: #ff6f61;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+}
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 1.2em;
+    font-family: 'Press Start 2P', cursive;
+    filter: drop-shadow(2px 2px 0 #333);
+    transition: filter 0.2s;
+}
+
+.nav-link:hover {
+    filter: hue-rotate(90deg) drop-shadow(2px 2px 4px #333);
+}
+
+.unplayed_songs, .current-song {
+    margin: 20px;
+    padding: 10px;
+    background: #ffffffba;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.unplayed_song a, .song_id a {
+    text-decoration: none;
+    color: #ff6f61;
+    font-weight: bold;
+    font-size: 1.1em;
+    font-family: 'Amatic SC', cursive;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.unplayed_song a:hover, .song_id a:hover {
+    color: #d43f3a;
+    transform: rotate(-2deg) scale(1.05);
+}
+
+.current-song-info {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-row-gap: 10px;
+    padding: 20px;
+    background-clip: content-box;
+}
+
+h2, h3, .title {
+    font-family: 'Press Start 2P', cursive;
+    color: #2c3e50;
+}
+
+.videos, .lyrics {
+    padding: 10px;
+    background: radial-gradient(circle, #ffffff, #eaeaea);
+    border-radius: 8px;
+    margin-top: 15px;
+    isolation: isolate;
+    mix-blend-mode: multiply;
+}
+
+.lyrics {
+    font-family: 'Amatic SC', cursive;
+    font-size: 1.5em;
+    white-space: pre-line;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}

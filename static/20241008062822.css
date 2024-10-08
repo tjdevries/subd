@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto+Mono:wght@300;500&family=Space+Grotesk:wght@500;700&display=swap');
+
+/* Resetting default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0a192f;
+  color: #64ffda;
+  font-family: 'Roboto Mono', monospace;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-container {
+  text-align: center;
+}
+
+.header {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.5rem;
+  animation: scaleIn 0.5s ease-in-out;
+}
+
+.sub-header {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.2rem;
+  margin-top: 10px;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.nav-link {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1rem;
+  color: #64ffda;
+  text-decoration: none;
+  margin: 0 15px;
+}
+
+.nav-link:hover {
+  animation: linkHover 0.5s ease-in-out 1;
+}
+
+@keyframes linkHover {
+  0%, 100% {
+    color: #64ffda;
+  }
+  50% {
+    color: #f8e9a1;
+  }
+}
+
+.section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2rem;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.unplayed_song, .current-song-info {
+  background-color: #112240;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  transition: transform 0.3s;
+}
+
+.unplayed_song:hover, .current-song-info:hover {
+  transform: scale(1.05);
+}
+
+.unplayed_song a, .current-song-info a {
+  color: #64ffda;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.unplayed_song a:hover, .current-song-info a:hover {
+  color: #f8e9a1;
+}
+
+.image_scores {
+  display: flex;
+  justify-content: space-around;
+  margin: 40px;
+}
+
+.videos, .lyrics {
+  width: 50%;
+}
+
+.lyrics {
+  white-space: pre-wrap;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.lyrics:hover {
+  background-color: #112240;
+  border-radius: 10px;
+  padding: 20px;
+}

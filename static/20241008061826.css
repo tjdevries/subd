@@ -1,0 +1,96 @@
+/* Dynamic and modern styled CSS for AI Top of the Pops website. */
+
+/* Gradient background animation */
+@keyframes gradientBG {
+  0% { background: linear-gradient(135deg, #00B4DB, #0083B0); }
+  50% { background: linear-gradient(135deg, #ff758c, #ff7eb3); }
+  100% { background: linear-gradient(135deg, #00B4DB, #0083B0); }
+}
+
+body {
+  animation: gradientBG 15s ease infinite;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  background-size: 300% 300%;
+}
+
+/* Google Font import for 'Poppins' */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Header styles */
+.header-container {
+  text-align: center;
+  margin: 50px 0;
+}
+
+.header {
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sub-header {
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
+/* Navigation link styles */
+.nav-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.nav-link {
+  color: #fff;
+  text-decoration: none;
+  padding: 0 20px;
+  font-size: 1.2rem;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.nav-link:hover, .nav-link:focus {
+  color: #000;
+  background: #fff;
+  border-radius: 5px;
+}
+
+/* Styles for songs list */
+.unplayed_songs {
+  margin: 30px auto;
+  width: 85%;
+  text-align: center;
+}
+
+.unplayed_song a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 0;
+  transition: transform 0.3s;
+}
+
+.unplayed_song a:hover {
+  transform: scale(1.05);
+}
+
+/* Styles for current song section */
+.current-song {
+  margin: 30px auto;
+  width: 85%;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+}
+
+.current-song-info h3, .current-song-info .title, .current-song-info .tags, .current-song-info .creator, .current-song-info .song_id, .current-song-info .average_score, .current-song-info .total_votes {
+  margin: 10px 0;
+}
+
+/* Lyrics and videos section styles */
+.lyrics, .videos {
+  margin-top: 20px;
+}

@@ -1,81 +1,183 @@
-/* Dynamic, Modern & Creative CSS Stylesheet */
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
 
-/* Global Styles and Variables */
-:root {
-    --primary-color: hsl(200, 80%, 50%);
-    --accent-color: hsl(340, 100%, 60%);
-    --background-color: #111827;
-    --text-color: #fff;
-    --font-family-header: 'Orbitron', sans-serif;
-    --font-family-body: 'Roboto', sans-serif;
-}
-
-* {
+/* Global styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.6;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    color: #333;
 }
 
-body {
-    font-family: var(--font-family-body);
-    color: var(--text-color);
-    background-color: var(--background-color);
+h1, h2, h3 {
+    font-family: 'Playfair Display', serif;
+    color: #222;
 }
 
 .header-container {
-    background-color: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    padding: 20px;
     text-align: center;
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid #ddd;
 }
 
-.header {
-    font-family: var(--font-family-header);
+.header a {
+    text-decoration: none;
+    color: #ff6f61;
+    font-weight: bold;
     font-size: 2.5rem;
-    color: var(--primary-color);
-    text-transform: uppercase;
+    transition: all 0.4s ease;
+}
+
+.header a:hover {
+    color: #222;
+    transform: rotate(360deg);
 }
 
 .nav-container {
     display: flex;
-    justify-content: space-between;
-    padding: 1rem;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
 }
 
 .nav-link {
-    color: var(--accent-color);
-    font-weight: bold;
-    transition: color 0.3s;
+    color: #555;
+    font-size: 1.2rem;
+    text-decoration: none;
+    position: relative;
+    padding: 10px 20px;
+    transition: color 0.3s ease;
+    will-change: color;
+}
+
+.nav-link:after {
+    content: '';
+    display: block;
+    height: 3px;
+    background: #ff6f61;
+    width: 0;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .nav-link:hover {
-    color: var(--primary-color);
+    color: #222;
+    background-clip: text;
 }
 
-.unplayed_songs, .current-song {
-    margin: 2rem;
+.nav-link:hover:after {
+    width: 100%;
 }
 
-.unplayed_song a, .current-song-info div, .average_score, .total_votes {
-    display: inline-block;
-    margin: 0.5rem 0;
-    color: var(--text-color);
-    transition: color 0.3s;
+.unplayed_songs {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
 }
 
-.unplayed_song a:hover, .current-song-info div:hover {
-    color: var(--accent-color);
+.unplayed_songs h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+}
+
+.unplayed_song a {
+    display: block;
+    padding: 10px;
+    margin: 5px 0;
+    transition: transform 0.3s, box-shadow 0.3s;
+    color: #555;
+    border: 2px solid #ff6f61;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.unplayed_song a:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    color: #000;
+}
+
+.current-song {
+    background-color: #f0fbfc;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+    max-width: 800px;
+    margin: 30px auto;
+}
+
+.current-song-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.current-song-info .title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.current-song-info .tags,
+.current-song-info .creator,
+.current-song-info .average_score,
+.current-song-info .total_votes {
+    font-size: 1rem;
+}
+
+.current-song-info .song_id a {
+    color: #ff6f61;
     text-decoration: none;
+    transition: all 0.3s ease;
 }
 
-.image_scores, .lyrics {
-    background-color: rgba(255, 255, 255, 0.1);
-    margin: 1rem 0;
-    padding: 1rem;
-    border-radius: 0.5rem;
+.current-song-info .song_id a:hover {
+    text-decoration: underline;
+    background: linear-gradient(90deg, rgba(255,111,97,0.3), rgba(255,111,97,0));
 }
 
 .lyrics {
-    white-space: pre-wrap;
-    font-family: 'Courier New', monospace;
+    padding: 15px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 10px;
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.videos {
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.lyrics br {
+    content: "";
+    margin: 10px 0;
+    display: block;
+}
+
+/* Interactive animations */
+.unplayed_song:hover {
+    animation: shake 0.5s;
+    animation-iteration-count: 1;
+}
+
+@keyframes shake {
+    0%, 100% {transform: translateX(0);}
+    25% {transform: translateX(-5px);}
+    75% {transform: translateX(5px);}
 }

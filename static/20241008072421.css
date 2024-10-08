@@ -1,0 +1,176 @@
+/* Importing fonts */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Roboto+Mono:wght@300&family=Raleway:wght@200;400;800&display=swap');
+
+/* General Styles */
+body {
+    font-family: 'Raleway', sans-serif;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+h1, h2, h3 {
+    font-family: 'Caveat', cursive;
+    margin: 0;
+}
+
+/* Header Styling */
+.header-container {
+    background: #f7f1e3;
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 3px solid #ff7e5f;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: relative;
+    background-clip: padding-box;
+    animation: drift 5s infinite alternate;
+}
+
+.header a {
+    color: #475577;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.header a:hover {
+    color: #ff6b81;
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+/* Navigation Styling */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background: #fff;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.nav-link {
+    margin: 0 15px;
+    color: #2f3542;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative;
+    transition: color 0.2s ease-in-out, transform 0.2s;
+}
+
+.nav-link:hover {
+    color: #ff4757;
+    transform: translateY(-5px);
+    text-shadow: 1px 1px 2px rgba(255, 71, 87, 0.8);
+}
+
+/* Songs Section Styling */
+.unplayed_songs {
+    padding: 20px;
+    background: #f4f6ff;
+    border-top: 2px solid #dfe4ea;
+}
+
+.unplayed_song {
+    margin-bottom: 10px;
+    font-family: 'Roboto Mono', monospace;
+    transition: transform 0.3s ease;
+}
+
+.unplayed_song a {
+    color: #1e90ff;
+    transition: color 0.2s, transform 0.3s ease;
+}
+
+.unplayed_song a:hover {
+    color: #3742fa;
+    transform: scale(1.05);
+    text-shadow: 2px 2px 4px rgba(30, 144, 255, 0.8);
+}
+
+/* Current Song Section */
+.current-song {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 20px;
+    background: #ffffff;
+    border-top: 2px solid #dfe4ea;
+    padding: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+
+.current-song-info {
+    padding: 10px;
+    background: #f1f2f6;
+    border-left: 4px solid #70a1ff;
+    animation: fadeIn 1s ease-in-out both;
+    transition: background 0.3s ease;
+}
+
+.current-song-info:hover {
+    background: #e9ecef;
+}
+
+.current-song-info .title {
+    font-size: 1.2em;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.current-song-info a {
+    color: #2ed573;
+    text-decoration: underline;
+    transition: color 0.2s ease, background 0.3s ease;
+}
+
+.current-song-info a:hover {
+    color: #ff6348;
+    background: rgba(255, 99, 72, 0.1);
+    border-radius: 4px;
+    padding: 3px;
+}
+
+.lyrics {
+    overflow-y: auto;
+    height: 200px;
+    padding: 20px;
+    background: #fff4e6;
+    border: 1px solid #ffd9ec;
+    border-radius: 8px;
+    box-shadow: inset 0 6px 12px rgba(0,0,0,0.1);
+}
+
+@keyframes drift {
+    0% {transform: translateX(0);}
+    100% {transform: translateX(10px);}
+}
+
+@keyframes fadeIn {
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+}
+
+/* Miscellaneous Styles */
+a:active {
+    transform: scale(0.95);
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+ 
+::-webkit-scrollbar-thumb {
+    background: #888; 
+    border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555; 
+}

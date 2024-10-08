@@ -1,0 +1,127 @@
+/* Intense, dynamic, and interesting CSS */
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Robotonmons&display=swap');
+
+/* Keyframes for animations */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    background-color: #ff0040;
+  }
+  50% {
+    transform: scale(1.1);
+    background-color: #40ff00;
+  }
+  100% {
+    transform: scale(1);
+    background-color: #ff0040;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background: linear-gradient(45deg, #4b6cb7, #182848);
+  color: #ffffff;
+  animation: fade 2s ease-in-out;
+}
+
+.header-container {
+  text-align: center;
+  padding: 20px;
+  animation: slideIn 1s ease-out;
+}
+
+.header {
+  font-family: 'Permanent Marker', cursive;
+  font-size: 3em;
+  color: #ffcc00;
+  animation: pulse 2s infinite;
+}
+
+.sub-header {
+  font-size: 1.5em;
+  color: #40e0d0;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  background-color: #2c3e50;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #ecf0f1;
+  font-weight: bold;
+  animation: fade 3s ease-in-out;
+}
+
+.unplayed_songs {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.unplayed_song a {
+  font-family: 'Roboto', sans-serif;
+  color: #e74c3c;
+  text-decoration: none;
+  animation: pulse 5s infinite;
+}
+
+.current-song {
+  padding: 20px;
+  margin: 20px;
+  border: 2px solid #3498db;
+  border-radius: 15px;
+  background: rgba(52, 152, 219, 0.2);
+}
+
+.current-song-info {
+  margin-bottom: 10px;
+}
+
+.current-song-info h3 {
+  font-family: 'Permanent Marker', cursive;
+  color: #8e44ad;
+}
+
+.image_scores {
+  display: flex;
+  justify-content: space-between;
+}
+
+.videos, .lyrics {
+  flex: 1;
+  margin: 5px;
+  padding: 10px;
+  background-color: #34495e;
+  color: white;
+  animation: fade 2s forwards;
+}

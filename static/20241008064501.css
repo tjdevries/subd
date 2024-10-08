@@ -1,0 +1,136 @@
+/* Importing unique bold fonts */
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+body {
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(120deg, #000428, #004e92);
+    color: #fff;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+.header-container {
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    text-align: center;
+}
+
+.header {
+    font-family: 'Lobster', cursive;
+    font-size: 3em;
+    background: -webkit-linear-gradient(#eee, #333);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    mix-blend-mode: difference;
+    animation: headerAnimation 5s infinite alternate;
+}
+
+.sub-header {
+    font-family: 'Rock Salt', cursive;
+    font-variant: small-caps;
+    animation: subHeaderAnimation 3s infinite ease-in-out;
+}
+
+@keyframes headerAnimation {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(10deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes subHeaderAnimation {
+    0% { letter-spacing: normal; }
+    50% { letter-spacing: 10px; }
+    100% { letter-spacing: normal; }
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.nav-link {
+    color: #ffdd00;
+    text-decoration: none;
+    font-weight: bold;
+    margin: 0 10px;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.nav-link:hover {
+    color: #ff5722;
+    transform: scale(1.1);
+    text-shadow: 2px 2px 4px #000;
+}
+
+.unplayed_songs {
+    padding: 20px;
+    background: radial-gradient(circle, #333, #000);
+    clip-path: polygon(0 0, 100% 5%, 100% 95%, 0 100%);
+}
+
+.unplayed_song a {
+    color: #82ff9e;
+    display: block;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.unplayed_song a:hover {
+    backdrop-filter: brightness(1.2);
+    filter: hue-rotate(20deg);
+}
+
+.current-song {
+    padding: 30px;
+    border: 2px solid #82ff9e;
+    background: conic-gradient(from 180deg at 50% 50%, #ffdd00, #ff5722, #ee0979, #00c6ff, #ffdd00);
+}
+
+.current-song h3 {
+    font-family: 'Rock Salt', cursive;
+    font-variant: small-caps;
+    text-shadow: 2px 2px #000;
+}
+
+.current-song-info {
+    margin-bottom: 20px;
+}
+
+.title, .tags, .creator, .song_id, .average_score, .total_votes {
+    margin: 5px 0;
+}
+
+.average_score, .total_votes {
+    font-variant: small-caps;
+}
+
+.lyrics {
+    border: 1px dashed #82ff9e;
+    padding: 15px;
+    font-style: italic;
+    max-height: 200px;
+    overflow: auto;
+    animation: lyricsScroll 15s linear infinite;
+}
+
+@keyframes lyricsScroll {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100%); }
+}
+
+/* Utility Classes */
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}

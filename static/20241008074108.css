@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300&display=swap');
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    transition: all 0.3s ease-in-out;
+    scroll-behavior: smooth;
+}
+
+body {
+    background: radial-gradient(circle, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%);
+    color: #444;
+    line-height: 1.6;
+    height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+}
+
+.header-container {
+    text-align: center;
+    margin: 2rem 0;
+    animation: slideInFromLeft 1s ease-in-out forwards;
+}
+
+.header a {
+    font-family: 'Lobster', cursive;
+    font-size: 3rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    color: #fff;
+    mix-blend-mode: difference;
+    text-decoration: none;
+    animation: grow 1.5s infinite alternate;
+}
+
+.sub-header {
+    font-size: 1.2rem;
+    color: #f3f3f3;
+    opacity: 0.8;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    animation: slideInFromRight 1s ease-in-out forwards;
+}
+
+.nav-link {
+    color: #f0e68c;
+    font-weight: bold;
+    text-decoration: none;
+    position: relative;
+    display: inline-block;
+    padding: 0.5rem 0;
+    background-clip: text;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: linear-gradient(to right, #ff416c, #ff4b2b);
+    transition: width 0.4s;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.nav-link:hover {
+    transform: scale(1.1) rotate(5deg);
+    color: #fff;
+}
+
+.unplayed_songs {
+    margin: 2rem 0;
+    width: 90%;
+    max-width: 800px;
+    padding: 2rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+.unplayed_songs h2 {
+    color: #ffdfba;
+    font-family: 'Lobster', cursive;
+}
+
+.unplayed_song a {
+    display: block;
+    margin-top: 1rem;
+    color: #b8c3d8;
+    text-decoration: none;
+    border-bottom: 1px dashed #b8c3d8;
+}
+
+.unplayed_song a:hover {
+    color: #fff;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    border-bottom: 1px solid #ffdfba;
+    transform: rotate(-3deg);
+    scale: 1.05;
+}
+
+.current-song {
+    margin: 2rem 0;
+    width: 90%;
+    max-width: 800px;
+    display: grid;
+    grid-template-areas: "info image";
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    padding: 2rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    animation: fadeIn 2s forwards;
+}
+
+.current-song-info {
+    grid-area: info;
+    color: #e0e0e0;
+}
+
+.current-song-info h3 {
+    font-style: italic;
+    color: #ffdfba;
+    margin-bottom: 0.5rem;
+}
+
+.current-song-info .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.current-song-info a {
+    color: #ffdfba;
+    text-decoration: underline;
+}
+
+.current-song-info a:hover {
+    color: #fff;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    transform: translateY(-2px);
+}
+
+@keyframes grow {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
+
+@keyframes slideInFromLeft {
+    from { transform: translateX(-100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.videos, .lyrics {
+    grid-area: image;
+    color: #e0e0e0;
+    max-width: 400px;
+    overflow: hidden;
+}
+
+.videos {
+    height: 100px;
+    background: url('video-placeholder.jpg') center/cover no-repeat;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    animation: videoPop 1s alternate infinite;
+}
+
+.lyrics {
+    margin-top: 0.5rem;
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    font-variant: small-caps;
+}
+
+@keyframes videoPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+

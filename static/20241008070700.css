@@ -1,0 +1,159 @@
+/* Global Styles */
+body {
+    font-family: 'Fugaz One', cursive;
+    color: #4B0082;
+    background: linear-gradient(-45deg, #FFB6C1, #48D1CC, #FFD700, #4B0082);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+header {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    box-shadow: 0px 4px 10px 0px rgba(0,0,0,0.2);
+    animation: fadeIn 2s forwards;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+.header a {
+    color: #ff6347;
+    text-shadow: 2px 2px #ffa500;
+    text-decoration: none;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.header a:hover {
+    color: #ffa500;
+    text-shadow: 4px 4px #ff6347;
+    transform: scale(1.1);
+}
+
+/* Navigation Styles */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.nav-link {
+    font-size: 1.2rem;
+    color: #00ced1;
+    margin: 0 15px;
+    padding: 10px 15px;
+    text-decoration: none;
+    position: relative;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #ff6347;
+    background: rgba(255,255,255,0.5);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transform: translateY(-3px);
+}
+
+/* Playlist and Songs Styles */
+.unplayed_songs {
+    display: grid;
+    grid-template-areas: "list";
+    gap: 10px;
+    padding: 20px;
+}
+
+.unplayed_song {
+    background: rgba(75,0,130,0.2);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.unplayed_song a {
+    color: #4B0082;
+    text-decoration: none;
+    display: block;
+    padding: 5px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.unplayed_song:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.unplayed_song a:hover {
+    color: #ffa500;
+}
+
+/* Current Song Styles */
+.current-song {
+    background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+    padding: 30px;
+    border-radius: 15px;
+    margin: 20px;
+    animation: slideIn 1s ease-out forwards;
+}
+
+@keyframes slideIn { 
+    from {transform: translateX(-100%);}
+    to {transform: translateX(0);}
+}
+
+.current-song-info {
+    color: #4B0082;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.current-song-info a {
+    color: #ff6347;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.current-song-info a:hover {
+    color: #ffa500;
+    text-shadow: 1px 1px 2px #000;
+    transform: scale(1.03);
+}
+
+.image_scores .lyrics {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    mix-blend-mode: multiply;
+}
+
+/* Responsiveness */
+@media only screen and (max-width: 768px) {
+    header, .nav-container, .unplayed_songs, .current-song {
+        padding: 10px;
+    }
+    .nav-link {
+        margin: 0 8px;
+        padding: 8px 10px;
+        font-size: 1rem;
+    }
+}
+
+/* Import Font */
+@import url('https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap');

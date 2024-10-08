@@ -1,0 +1,108 @@
+/* Base styling first */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif;
+  background-color: #0a0f0d;
+  color: #f0f0f0;
+}
+
+a {
+  color: #21c7a8;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #e2b007;
+}
+
+.header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #123524;
+  padding: 20px 0;
+}
+
+.header {
+  font-family: 'Raleway', sans-serif;
+  font-size: 2.5em;
+  font-weight: 800;
+  color: #21c7a8;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 2px 2px #0d1a14;
+}
+
+.sub-header {
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #e2b007;
+}
+
+.nav-container {
+  display: flex;
+  justify-content: center;
+  background-color: #0d7b71;
+  padding: 10px 0;
+}
+
+.nav-link {
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1em;
+  font-weight: 700;
+  margin: 0 15px;
+}
+
+/* Unique Animations and Styling for each section */
+
+/* General Intro Animation */
+@keyframes fadeIn {
+  0% { 
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% { 
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply the animation to each section */
+.header-container, .nav-container, .unplayed_songs, .current-song {
+  animation-name: fadeIn;
+  animation-duration: 1s;
+  animation-fill-mode: both;
+  animation-delay: 0.5s;
+}
+
+.unplayed_songs {
+  padding: 20px;
+  border-left: 3px solid #21c7a8;
+  animation-delay: 1s;
+}
+
+.unplayed_song {
+  background-color: #16433d;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.current-song {
+  background-color: #123524;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 5px;
+  animation-delay: 1.5s;
+}
+
+/* Add some interesting hover transitions for interactive elements */
+
+.unplayed_song:hover, .nav-link:hover {
+  background-color: #21c7a8;
+  color: #0a0f0d;
+}

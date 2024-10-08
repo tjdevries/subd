@@ -1,0 +1,115 @@
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Global Styles */
+body {
+    font-family: 'Chakra Petch', sans-serif;
+    margin: 0;
+    background-color: #f0f8ff;
+    color: #333;
+    scroll-snap-type: y mandatory;
+    overflow-y: scroll;
+    scrollbar-color: #6a5acd #f0f8ff;
+    scrollbar-width: thin;
+}
+
+a {
+    color: #008080;
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease;
+    will-change: transform, color;
+}
+a:hover {
+    color: #ff4500;
+    transform: scale(1.1) rotate(-3deg);
+    text-shadow: 1px 1px 2px #000;
+}
+
+/* Header Styles */
+.header-container {
+    background: linear-gradient(135deg, #ff69b4, #ff4500);
+    padding: 20px;
+    text-align: center;
+    color: white;
+    clip-path: polygon(50% 0%, 100% 0%, 75% 100%, 25% 100%, 0% 0%);
+}
+.header a {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 2rem;
+    color: white;
+    animation: glow 1s infinite alternate;
+}
+.sub-header {
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 1.2rem;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #ff4500, 0 0 20px #ff69b4, 0 0 30px #ff69b4, 0 0 40px #ff69b4, 0 0 50px #ff69b4, 0 0 60px #ff69b4, 0 0 70px #ff69b4;
+    }
+    to {
+        text-shadow: 0 0 20px #ff4500, 0 0 30px #ff4500, 0 0 40px #ff4500, 0 0 50px #ff4500, 0 0 60px #ff4500, 0 0 70px #ff4500, 0 0 80px #ff4500;
+    }
+}
+
+/* Navigation Styles */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: #6a5acd;
+    gap: 20px;
+    padding: 15px;
+    font-variant: all-small-caps;
+    isolation: isolate;
+}
+.nav-link {
+    font-size: 1.2rem;
+    color: white;
+    transition: transform 0.5s;
+}
+.nav-link:hover {
+    transform: skewY(-5deg);
+    color: #ff69b4;
+}
+
+/* Sections */
+.unplayed_songs, .current-song {
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    margin: 20px;
+    animation: fadeIn 2s ease-in;
+}
+.unplayed_song a:hover {
+    font-variant: small-caps;
+    background-clip: text;
+    transform: translateX(10px);
+    mix-blend-mode: multiply;
+}
+
+/* Song Info */
+.current-song-info, .image_scores {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    background-origin: border-box;
+}
+.title, .creator, .average_score, .total_votes {
+    font-size: 1.1rem;
+    appearance: initial;
+}
+
+/* Responsive Layout */
+@media (min-width: 768px) {
+    .current-song-info, .image_scores {
+        grid-template-columns: 2fr 1fr;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

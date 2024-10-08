@@ -1,0 +1,139 @@
+/* Importing Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* Keyframes for Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+body {
+    background: linear-gradient(135deg, #2b5876, #4e4376);
+    font-family: 'Press Start 2P', cursive;
+    color: #ffffff;
+    margin: 0;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.header-container {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    animation: slideIn 1s ease-out;
+}
+
+.header a {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 2.5rem;
+    color: #FFD700;
+    text-decoration: none;
+    animation: fadeIn 3s ease-in;
+    transition: color 0.3s;
+}
+
+.header a:hover {
+    color: #FF4500;
+}
+
+.sub-header {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.5rem;
+    color: #FFA07A;
+    margin-top: 10px;
+    animation: fadeIn 4s ease-in;
+}
+
+.nav-container {
+    background-color: #333333;
+    padding: 15px;
+}
+
+.nav-link {
+    font-family: 'Press Start 2P', cursive;
+    color: #FFD700;
+    text-decoration: none;
+    margin: 0 15px;
+    font-size: 1.2rem;
+    animation: fadeIn 2s ease-in-out;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.nav-link:hover {
+    color: #1E90FF;
+    transform: scale(1.1);
+}
+
+.unplayed_songs {
+    margin: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    animation: fadeIn 2.5s ease-in-out;
+}
+
+.unplayed_song a {
+    display: block;
+    color: #ADFF2F;
+    font-size: 1.1rem;
+    margin: 10px 0;
+    text-decoration: none;
+    font-family: 'Press Start 2P', cursive;
+    animation: slideIn 3s ease-in-out;
+}
+
+.unplayed_song a:hover {
+    color: #FF69B4;
+}
+
+.current-song {
+    margin: 20px;
+    background: rgba(255, 160, 122, 0.2);
+    padding: 20px;
+    border-radius: 10px;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.current-song-info h3 {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.5rem;
+    color: #32CD32;
+    margin-bottom: 10px;
+}
+
+.current-song-info div {
+    font-size: 1.1rem;
+    color: #FFD700;
+    margin: 5px 0;
+    animation: slideIn 2s forwards;
+}
+
+.current-song-info .song_id a {
+    color: #1E90FF;
+    text-decoration: underline;
+}
+
+.videos, .lyrics {
+    margin-top: 20px;
+}
+
+.lyrics {
+    font-family: 'Roboto', sans-serif;
+    color: #00CED1;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Adding media query for responsiveness */
+@media (max-width: 800px) {
+    .header a {
+        font-size: 2rem;
+    }
+    .nav-link {
+        display: block;
+        margin: 10px 0;
+    }
+}
