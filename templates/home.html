@@ -1,26 +1,24 @@
 {% extends "base.html" %}
-
 {% block content %}
-
+<section class="unplayed_songs">
     <h2>Songs in Playlist ({{ unplayed_songs|length }})</h2>
     {% for song in unplayed_songs %}
-        <div class="">
-            <a href="/ai_songs/{{ song.song_id }}">
-                @{{ song.username }}'s {{ song.title }} - {{ song.song_id }}
-            </a>
-        </div>
+    <div class="unplayed_song">
+        <a href="/ai_songs/{{ song.song_id }}">
+            @{{ song.username }}'s {{ song.title }} - {{ song.song_id }}
+        </a>
+    </div>
     {% endfor %}
-
-    {% if current_song %}
-        {% extends "current_song.html" %}
-    {% endif %}
-
-    <aside class="users">
-        </h4> Users</h4>
-        {% for user in users %}
-            <a href="/users/{{user[0]}}">
-                {{user[0]}} - Total Songs {{user[1]}} | Average Song Score: {{ user[2] }}
-            </a>
-        {% endfor %}
-    </aside>
+</section>
+{% if current_song %}
+    {% extends "current_song.html" %}
+{% endif %}
+<aside class="users">
+    </h4> Users</h4>
+    {% for user in users %}
+    <a href="/users/{{user[0]}}">
+        {{user[0]}} - Total Songs {{user[1]}} | Average Song Score: {{ user[2] }}
+    </a>
+    {% endfor %}
+</aside>
 {% endblock %}

@@ -1,45 +1,28 @@
 body {
-    /*font-family: 'Papyrus';*/
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    /*text-align: center;*/
+    font-family: 'Papyrus';
+    /*font-family: 'Comic Sans MS', cursive, sans-serif;*/
 }
-.button {
-    background-color: #04AA6D; /* Green */
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-}
-
-/*.sub-header {*/
-/*    font-size: 100%;*/
-/*}*/
-/*.header {*/
-/*    font-size: 200%;*/
-/*}*/
 
 .current-song {
-    padding: 10px;
-    border: 2px solid black;
-    background: lightblue;
+    /*padding: 10px;*/
+    /*border: 2px solid black;*/
+    /*background: lightblue;*/
 }
 
 .nav-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    padding: 10px;
-    border: 1px solid black;
+    /*display: grid;*/
+    /*grid-template-columns: 1fr 1fr 1fr;*/
+    /*padding: 10px;*/
+    /*border: 1px solid black;*/
 }
 
 .header-container{
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    border: 1px solid black;
+    /*display: grid;*/
+    /*grid-template-columns: 1fr 1fr 1fr;*/
+    /*border: 1px solid black;*/
 }
 
+// Do we want to usea Grid?
 .grid-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -48,11 +31,4 @@ body {
 
 .grid-item {
     text-align: center;
-}
-
-.full-width {
-    width: 100%;
-    margin: 20px 0;
-    border: 0;
-    border-top: 1px solid #ccc;
 }

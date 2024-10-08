@@ -1,37 +1,45 @@
 <section class="current-song">
     <div class="current-song-info">
-        Current Song:
-        Title {{ current_song.title }}
-        Tags: {{ current_song.tags }}
-        Creator: @{{ current_song.username }}
-        <a href="/ai_songs/{{ current_song.song_id }}">
-            {{ current_song.song_id }}
-        </a> 
-        AVG Score: {{ score }}
-        Total Votes: {{ votes_count }}
+        <h3>Current Song</h3>
+        <div class="title">Title {{ current_song.title }}</div>
+        <div class="tags">Tags: {{ current_song.tags }}</div>
+        <div class="creator">Creator: @{{ current_song.username }}</div>
+        <div class="song_id">
+            <a href="/ai_songs/{{ current_song.song_id }}">
+                {{ current_song.song_id }}
+            </a> 
+        </div>
+        <div class="average_score">AVG Score: {{ score }}</div>
+        <div class="total_votes">Total Votes: {{ votes_count }}</div>
     </div>
-
-    <div class="grid-container">
+    <div class="image_scores">
         {% for image_score in image_scores %}
-            <div class="grid-item">
-                <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}" alt="{{image_score[0]}}" width="300px">
-                <br />
-                !love {{ image_score[1] }} | !hate {{ image_score[1] }}
-                <br />
-                Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
-            </div>
+        <div class="ai_song_image">
+            <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}"
+                alt="{{image_score[0]}}">
+        </div>
+        <div class="image_voting">
+            !love {{ image_score[1] }} | !hate {{ image_score[1] }}
+        </div>
+        <div class="image_votes">
+            Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
+        </div>
         {% endfor %}
-
-        {% for video in videos %}
-            <div class="grid-item">
+        <section class="videos">
+            {% for video in videos %}
+            <div class="video">
                 <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted loop>
             </div>
-        {% endfor %}
-
-        <code>
-            <div>
-                {{ current_song.lyric | replace("\n", "<br />") | replace("]", "]<br/>") | replace("[", "<br />[") | safe }}
-            </div>
-        </code>
+            {% endfor %}
+        </section>
+        <section class="lyrics">
+            {{
+                current_song.lyric |
+                replace("\n", "<br />") |
+                replace("]", "]<br/>") |
+                replace("[", "<br />[") |
+                safe
+            }}
+        </section>
     </div>
 </section>
