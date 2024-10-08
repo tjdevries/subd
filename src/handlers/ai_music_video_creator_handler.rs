@@ -1,4 +1,4 @@
-use ai_playlist::models;
+
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -121,8 +121,8 @@ pub async fn handle_requests(
         Command::CreateMusicVideoVideo { id, image_name } => {
             let result = find_image_filename(id.clone(), image_name).await;
             match result {
-                Ok((image_filename, path_string, path)) => {
-                    let _filename = ai_music_videos::create_video_from_image(
+                Ok((image_filename, path_string, _path)) => {
+                    ai_music_videos::create_video_from_image(
                         &id,
                         &image_filename,
                         &path_string,

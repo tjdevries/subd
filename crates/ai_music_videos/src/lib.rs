@@ -19,7 +19,7 @@ pub async fn create_video_from_image(
     // I can pass that in
     // Do I have the exact filepath here???
     println!("Describing the Image_name: {}", path_string);
-    let description = subd_openai::ask_gpt_vision2(&path_string, None).await?;
+    let description = subd_openai::ask_gpt_vision2(path_string, None).await?;
     println!("Description: {}", description);
 
     let prompt = format!("Describe how this scene could transform based on the following description, add random fun transitions. Description: {}", description);
@@ -287,7 +287,7 @@ async fn generate_runway_video_from_image(
     let folder = format!("./tmp/music_videos/{}", song_id);
     let filename = fal_ai::create_runway_video_from_image(
         video_prompt,
-        &image_name,
+        image_name,
         Some(folder.clone()),
     )
     .await?;
