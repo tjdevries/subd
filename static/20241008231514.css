@@ -1,0 +1,140 @@
+/* Importing google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --color-primary: #1B1F3B;
+    --color-secondary: #626EB2;
+    --color-accent: #7D91FA;
+    --font-primary: 'Orbitron', sans-serif;
+    --font-secondary: 'Roboto', sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-secondary);
+    background: linear-gradient(160deg, #2B2D42, #8D99AE);
+    color: #EDF2F4;
+    overflow-x: hidden;
+}
+
+.header-container {
+    background-color: var(--color-primary);
+    color: #fff;
+    text-align: center;
+    padding: 1rem;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.header a, .sub-header {
+    margin: 0;
+    animation: text-glow 2s infinite alternate;
+}
+
+@keyframes text-glow {
+    from {
+        text-shadow: 0 0 10px var(--color-accent), 0 0 20px var(--color-accent), 0 0 30px var(--color-accent);
+    }
+    to {
+        text-shadow: 0 0 20px var(--color-accent), 0 0 30px var(--color-accent), 0 0 40px var(--color-accent);
+    }
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-secondary);
+    padding: 1rem;
+}
+
+.nav-link {
+    margin: 0 1rem;
+    padding: 0.5rem 1rem;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: #fff;
+    text-decoration: none;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.nav-link:hover {
+    transform: rotate(15deg) scale(1.1);
+    background-color: var(--color-accent);
+}
+
+.unplayed_songs, .current-song {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.current-song h3, .songs-container h2 {
+    font-family: var(--font-primary);
+    color: var(--color-accent);
+    text-align: center;
+    animation: emerge 1.5s both;
+}
+
+@keyframes emerge {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.ai_song_image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.ai_song_image img:hover {
+    transform: scale(1.05);
+}
+
+.song-link a {
+    color: var(--color-accent);
+    text-decoration: none;
+    position: relative;
+    display: inline-block;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.song-link a:hover {
+    color: #fff;
+    text-shadow: 0 2px 5px rgba(125, 145, 250, 0.75);
+    transform: rotate(360deg);
+}
+
+.div.video video {
+    border: 2px solid var(--color-accent);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.users-container, .songs-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 1rem;
+}
+
+/* Scrollbar Styles */
+body::-webkit-scrollbar {
+    width: 0.25rem;
+    background: #8D99AE;
+}
+
+body::-webkit-scrollbar-thumb {
+    background: var(--color-accent);
+}
+
+.video video {
+    width: 100%;
+    height: auto;
+}

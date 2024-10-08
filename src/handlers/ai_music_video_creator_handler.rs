@@ -1,4 +1,3 @@
-
 use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -6,6 +5,7 @@ use events::EventHandler;
 use obs_service;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
+use std::sync::Arc;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_chat::client::send_message;
@@ -23,7 +23,7 @@ pub struct AIMusicVideoCreatorHandler {
 enum Command {
     CreateMusicVideoVideo { id: String, image_name: String },
     CreateMusicVideoImage { id: String, prompt: Option<String> },
-    CreateMusicVideoImages { id: String },
+    CreateMusicVideoImages { id: String, count: i64 },
     CreateMusicVideo { id: String },
     Unknown,
 }
@@ -148,8 +148,19 @@ pub async fn handle_requests(
                     .await?;
             update_obs_source(obs_client, &filename).await
         }
-        Command::CreateMusicVideoImages { id } => {
-            ai_music_videos::create_music_video_images(pool, id).await
+        Command::CreateMusicVideoImages { id, count } => {
+            for _ in 0..count {
+                let pool_clone = pool.clone();
+                let id_clone = id.clone();
+                tokio::spawn(async move {
+                    let _ = ai_music_videos::create_music_video_images(
+                        &pool_clone,
+                        id_clone,
+                    )
+                    .await;
+                });
+            }
+            Ok(())
         }
         Command::CreateMusicVideoImage { id, prompt } => {
             let _res =
@@ -207,7 +218,18 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
                     .song_id
                     .to_string(),
             };
-            Ok(Command::CreateMusicVideoImages { id })
+            let splitmsg = msg
+                .contents
+                .split(' ')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>();
+
+            let count = if splitmsg.len() > 1 {
+                splitmsg[1].parse::<i64>().unwrap_or(1)
+            } else {
+                1
+            };
+            Ok(Command::CreateMusicVideoImages { id, count })
         }
 
         Some("!generate_video") => {
@@ -234,6 +256,7 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
                 .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
+
             let prompt = if splitmsg.len() > 1 {
                 Some(splitmsg[1..].join(" "))
             } else {
