@@ -60,7 +60,7 @@ pub const VOICE_TO_MUSIC: &[(&str, NewVoiceScene)] = &[
     (
         "!streamer",
         NewVoiceScene {
-            voice: "pokimane",
+            voice: "ethan",
             music: "Lofi-HipHop-BG-Music",
             playlist_folder: Some("LofiHipHop"),
         },
