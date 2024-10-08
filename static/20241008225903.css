@@ -1,0 +1,105 @@
+/* Global Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    background-color: #f4f4f9;
+    font-variant: small-caps;
+    scroll-behavior: smooth;
+    overflow-anchor: none;
+    transition: all 0.3s ease-in-out;
+}
+a {
+    color: #0077cc;
+    text-decoration: none;
+    transition: color 0.3s ease, transform 0.3s ease;
+    transform: rotate(0deg);
+}
+a:hover {
+    color: #ff5722;
+    transform: scale(1.1) rotate(360deg);
+}
+header {
+    background-color: #0077cc;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0% 100%);
+}
+.header .header-container a:hover {
+    color: #ffcc00;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Lobster', cursive;
+    text-shadow: 2px 2px #f0f0f0;
+}
+nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    background-color: #333;
+    color: white;
+    padding: 10px;
+}
+.nav-link {
+    color: white;
+    padding: 10px;
+    transition: background-color 0.3s ease;
+}
+.nav-link:hover {
+    background-color: #ff5722;
+    text-shadow: 2px 2px #333;
+}
+.section {
+    padding: 20px;
+}
+.unplayed_songs, .current-song, .songs-container {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: 
+        "title info"
+        "content content";
+}
+.unplayed_songs h2, .current-song h2, .songs-container h2 {
+    grid-area: title;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.song-container, .song, .video {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+.song:hover, .video:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.song a, .song-container a {
+    display: block;
+    color: #333;
+    margin-bottom: 8px;
+    
+}
+.song a:hover, .song-container a:hover {
+    color: #0077cc;
+}
+.ai_song_image img {
+    width: 100%;
+    border-radius: 8px;
+    filter: grayscale(50%);
+}
+.ai_song_image img:hover {
+    filter: none;
+    transform: scale(1.1);
+}
+.video video {
+    width: 100%;
+    border-radius: 8px;
+}
+.video video:hover {
+    filter: brightness(1.2);
+}
+/* Adding Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@400;500;700&display=swap');

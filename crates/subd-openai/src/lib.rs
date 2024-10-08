@@ -72,6 +72,11 @@ struct MusicVideoScene {
 }
 
 #[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct AIJavascriptResponse {
+    javascript: String,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
 struct AIStylesResponse {
     css: String,
 }
@@ -108,6 +113,57 @@ fn html_file_contents() -> Result<String> {
     Ok(contents)
 }
 
+pub async fn generate_ai_js() -> Result<()> {
+    let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
+    let instructor_client = from_openai(client);
+
+    let contents = html_file_contents().unwrap();
+
+    let js_base_prompt =
+        "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible.";
+    let js_final_prompt =
+        "Make it all savaveable as a styles.css file, for the following HTML: ";
+
+    let prompt = format!("{} {} {}", js_base_prompt, js_final_prompt, contents);
+
+    let req = ChatCompletionRequest::new(
+        // GPT3_5_TURBO.to_string(),
+        GPT4_O.to_string(),
+        // GPT4_1106_PREVIEW.to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(prompt),
+            name: None,
+        }],
+    );
+
+    println!("\tGenerating new JS");
+    let result = instructor_client
+        .chat_completion::<AIJavascriptResponse>(req, 3)
+        .expect("Failed to get chat completion");
+
+    println!("{:?}", result);
+
+    // Backup the existing styles.css file
+    let now = Utc::now();
+    let timestamp = now.format("%Y%m%d%H%M%S").to_string();
+    let backup_filename = format!("./static/{}.js", timestamp);
+
+    let src = "./static/styles.js";
+    let dest = &backup_filename;
+
+    fs::copy(src, dest).expect("Failed to backup the styles.js file");
+
+    // Save the new CSS to styles.css
+    let content = &result.javascript;
+
+    let mut file = File::create("./static/styles.js")
+        .expect("Failed to create styles.js file");
+    file.write_all(content.as_bytes())
+        .expect("Failed to write to styles.js file");
+    Ok(())
+}
+
 pub async fn generate_ai_css() -> Result<()> {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
@@ -115,9 +171,9 @@ pub async fn generate_ai_css() -> Result<()> {
     let contents = html_file_contents().unwrap();
 
     let css_base_prompt =
-        "Generate excellent high-quality detailed CSS for the provided HTML. Provide as many CSS properties as possible.";
+        "Generate excellent high-quality detailed CSS for the provided HTML. Use as many CSS properties as possible.";
     let css_style_tips = "Make the overall style consistent, with a color theme and font-selection that cohesive but fun.";
-    let css_properties_prompt = "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, clip-path, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, scroll-snap-type, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, will-change, overflow-anchor, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, scroll-behavior, pointer-events, scroll-margin, scroll-padding, gap, align-self, justify-items, object-position, word-wrap, hyphens, resize, appearance, backface-visibility, scrollbar-color, scrollbar-width, font-feature-settings, text-orientation, column-count, column-gap, column-rule, blend-mode, background-origin, font-display, grid-auto-flow, grid-template-rows etc.";
+    let css_properties_prompt = "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, clip-path, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, scroll-snap-type, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, will-change, overflow-anchor, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, scroll-behavior, pointer-events, scroll-margin, scroll-padding, gap, align-self, justify-items, object-position, word-wrap, hyphens, resize, appearance, backface-visibility, scrollbar-color, scrollbar-width, font-feature-settings, text-orientation, blend-mode, background-origin, font-display, grid-auto-flow, grid-template-rows etc.";
     let css_interactions =
         "Include as many interactive changes as possible, like on:hover. Make all links do something bold and dynamic on hover.";
     let css_layouts = "Also feel free to try different layouts using things like display: grid.";
@@ -424,18 +480,6 @@ mod tests {
     // We might want to try more structured version
     #[tokio::test]
     async fn test_generating_css() {
-        //let filepath = "../../tmp/music_video_creator.html";
-        //let mut file = File::open(filepath).unwrap();
-        //let mut contents = String::new();
-        //let _ = file.read_to_string(&mut contents);
-        //// Now we need to generate CSS for styles
-        //assert!(true);
-        //let res = ask_chat_gpt(
-        //    "Generate FUN Interesting CSS that is savable as a styles.css file, for the following HTML: ".to_string(),
-        //    contents,
-        //)
-        //.await;
-        //println!("{:?}", res);
         generate_ai_css();
     }
 }

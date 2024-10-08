@@ -1,160 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Baloo+Thambi+2:wght@400;700&family=Roboto:wght@400;700&display=swap');
-
-body {
-    font-family: 'Roboto', sans-serif;
-    color: #444;
-    background: linear-gradient(to right, #ffecd2 0%, #fcb69f 100%);
+* {
+    font-family: 'Nunito', sans-serif;
+    transition: all 0.5s ease-in-out;
     scroll-behavior: smooth;
 }
-
+body {
+    background: linear-gradient(135deg, #ff9a9e 10%, #fad0c4 100%);
+    color: #333;
+    margin: 0;
+    overflow-x: hidden;
+    font-feature-settings: 'liga', 'kern';
+}
 .header-container {
     text-align: center;
     padding: 20px;
-    background-color: #ff6f61;
-    color: white;
-    animation: headerAnimation 5s infinite alternate;
-}
-
-.header {
-    font-family: 'Baloo Thambi 2', cursive;
-    font-size: 3em;
-    transition: transform 0.5s;
-}
-
-.header:hover {
-    transform: rotate(360deg);
-}
-
-.sub-header {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 700;
-}
-
-.nav-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 20px;
-    background: #feb47b;
-    mix-blend-mode: darken;
-}
-
-.nav-link {
-    text-align: center;
-    padding: 15px 0;
-    color: white;
-    background: #ff7e5f;
-    font-size: 1.2em;
-    text-transform: uppercase;
-    transition: background 0.3s, transform 0.3s;
-}
-
-.nav-link:hover {
-    background: #ff758c;
-    transform: scale(1.1);
-}
-
-.unplayed_songs {
-    margin: 20px;
-    padding: 15px;
-    background: white;
-    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    animation: fadeIn 3s ease-in-out;
 }
-
-.unplayed_song {
-    padding: 10px 0;
-    font-size: 1.1em;
-    border-bottom: 1px solid #ddd;
-    overflow: hidden;
-    word-wrap: break-word;
-}
-
-.unplayed_song:hover {
+.header a {
     color: #ff6f61;
+    text-decoration: none;
 }
-
-.current-song-info, .image_scores, .videos {
-    font-size: 1.1em;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(5px);
+.header a:hover {
+    animation: logoHover 1s infinite alternate;
+    text-shadow: 0 0 8px #ff6f61, 4px 4px 16px #fff;
 }
-
-.ai_song_image img {
-    width: 100%;
-    border-radius: 10px;
-    transition: transform 0.5s;
+.sub-header {
+    font-size: 1.2em;
 }
-
-.image_voting, .image_votes {
-    margin-top: 10px;
-    font-size: 0.9em;
-    font-weight: bold;
-    color: #ff6f61;
+.nav-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #343a40;
+    gap: 15px;
+    padding: 8px 0;
 }
-
-.ai_song_image img:hover {
-    transform: scale(1.05);
+.nav-link {
+    color: #ffffff;
+    padding: 10px 20px;
+    text-transform: uppercase;
+    background: #ff6f61;
+    border-radius: 50px;
 }
-
-.video {
-    display: inline-block;
-    margin: 10px;
-    transition: all 0.3s ease;
+.nav-link:hover {
+    transform: scale(1.1) rotate(10deg);
+    backdrop-filter: brightness(1.2);
 }
-
-.video video {
-    border-radius: 15px;
-}
-
-.video:hover video {
-    transform: scale(1.05);
-    filter: brightness(1.2);
-}
-
-.lyrics {
-    font-family: 'Roboto', sans-serif;
-    font-style: italic;
-    color: #555;
-    margin: 15px 0;
-}
-
-.grid-container {
+.unplayed_songs, .current-song {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    grid-gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px;
 }
-
-.song {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+.unplayed_song, .song-container, .video, .users-container {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s, box-shadow 0.3s;
 }
-
-.song:hover {
-    transform: translateY(-5px);
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 8px 28px 0px;
+.unplayed_song:hover, .song-container:hover, .video:hover, .users-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
-
+.song a {
+    transition: color 0.3s;
+}
 .song a:hover {
     color: #ff6f61;
-    text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 0 8px #ff6f61, 4px 4px 16px #fff;
 }
-
-@media screen and (max-width: 600px) {
-    .nav-container {
-        grid-template-columns: 1fr;
-    }
-    .header {
-        font-size: 2em;
-    }
+button, .nav-link {
+    cursor: pointer;
 }
-
-@keyframes headerAnimation {
-  from {background-color: #ff6f61;}
-  to {background-color: #fcb69f;}
+.ai_song_image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+a {
+    animation: linkPulse 1.5s infinite;
+}
+@keyframes linkPulse {
+    0% {text-shadow: 0 0 5px #ff6f61, 0 0 10px #ff6f61;}
+    100% {text-shadow: 0 0 20px #ff6f61, 0 0 30px #fff;}
+}
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+@keyframes logoHover {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-5px); }
 }
