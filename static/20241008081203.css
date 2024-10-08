@@ -1,0 +1,130 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&family=Major+Mono+Display&display=swap');
+
+body {
+    font-family: 'Kanit', sans-serif;
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.header-container {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+.header a {
+    font-family: 'Major Mono Display', monospace;
+    font-size: 2.5em;
+    text-decoration: none;
+    color: white;
+    transition: color 0.4s ease, transform 0.4s ease;
+}
+
+.header a:hover {
+    color: #ff007a;
+    transform: rotate(360deg);
+}
+
+.sub-header {
+    font-size: 1.2em;
+    opacity: 0.8;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 15px 0;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.nav-link {
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    position: relative;
+    transition: color 0.4s ease, background-color 0.4s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    bottom: -3px;
+    left: 0;
+    transform: scaleX(0);
+    transition: transform 0.4s ease;
+}
+
+.nav-link:hover {
+    color: #00d6ff;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+.unplayed_songs {
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.unplayed_song a {
+    color: white;
+    display: block;
+    padding: 10px;
+    transition: background-color 0.3s, transform 0.3s;
+    text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+.unplayed_song a:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.current-song-info {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px;
+    backdrop-filter: blur(5px);
+}
+
+.current-song-info h3 {
+    font-size: 1.8em;
+    margin-bottom: 10px;
+}
+
+.current-song-info .song_id a {
+    color: #ff007a;
+    text-decoration: underline;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.current-song-info .song_id a:hover {
+    color: white;
+    transform: scale(1.1);
+}
+
+.videos, .lyrics {
+    margin-top: 10px;
+    padding: 15px;
+}
+
+.lyrics {
+    background-color: rgba(255, 255, 255, 0.05);
+    font-size: 1em;
+    line-height: 1.5em;
+    border-radius: 10px;
+}

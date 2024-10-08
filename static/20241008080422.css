@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    background-color: #f3f4f6;
+    line-height: 1.6;
+    margin: 0;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+.header-container {
+    text-align: center;
+    background: linear-gradient(120deg, #89f7fe, #66a6ff);
+    padding: 2rem;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 85%);
+    animation: headerAnimation 5s infinite alternate;
+}
+
+.header a {
+    font-family: 'Pacifico', cursive;
+    color: #fff;
+    font-size: 3rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-decoration: none;
+    transition: color 0.3s ease-in-out;
+}
+
+.header a:hover {
+    color: #ff6f61;
+    transform: rotate(360deg);
+}
+
+.sub-header {
+    font-size: 1.25rem;
+    color: #f4f4f9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    background-color: #5e60ce;
+    padding: 1rem 0;
+}
+
+.nav-link {
+    color: #f4f4f9;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+    color: #ff7b7b;
+    transform: scale(1.2) rotate(-5deg);
+}
+
+.unplayed_songs {
+    background-color: #e0fbfc;
+    border-radius: 10px;
+    margin: 2rem;
+    padding: 1rem;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
+}
+
+.unplayed_song a {
+    display: block;
+    color: #111;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #ddd;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.unplayed_song a:hover {
+    background-color: #caf0f8;
+    transform: translateX(10px);
+}
+
+.current-song {
+    margin: 2rem;
+    padding: 1.5rem;
+    background-color: #efedf5;
+    border-radius: 12px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+    overflow-anchor: none;
+}
+
+.current-song-info h3 {
+    margin-top: 0;
+}
+
+.image_scores, .videos, .lyrics {
+    padding: 1rem;
+}
+
+.lyrics {
+    font-style: italic;
+    hyphens: auto;
+    column-count: 2;
+    column-gap: 20px;
+}
+
+@keyframes headerAnimation {
+    0% {
+        background: linear-gradient(120deg, #89f7fe, #66a6ff);
+    }
+    100% {
+        background: linear-gradient(120deg, #ff9a9e, #fecfef);
+    }
+}

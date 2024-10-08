@@ -1,12 +1,12 @@
-pub mod models;
 use anyhow::anyhow;
 use anyhow::Result;
 use serde::Serialize;
 use sqlx::types::BigDecimal;
 use sqlx::Error;
-
 use sqlx::{postgres::PgPool, FromRow};
 use uuid::Uuid;
+
+pub mod models;
 
 #[derive(Serialize, Debug, FromRow)]
 pub struct AiSongRanking {
@@ -30,13 +30,13 @@ pub struct CurrentSongInfo {
 
 pub async fn get_current_song_info(pool: &PgPool) -> Result<CurrentSongInfo> {
     let current_song = ai_playlist::get_current_song(pool).await.ok();
-    let current_song_votes_count = match current_song.as_ref() {
+    let votes_count = match current_song.as_ref() {
         Some(song) => total_votes_by_id(pool, song.song_id).await.unwrap_or(0),
         None => 0,
     };
     Ok(CurrentSongInfo {
         current_song,
-        votes_count: current_song_votes_count,
+        votes_count,
     })
 }
 pub async fn fetch_stats(pool: &PgPool) -> Result<Stats> {
@@ -264,23 +264,6 @@ pub async fn get_top_songs(
     .bind(limit)
     .fetch_all(pool)
     .await?;
-    //
-    //    SELECT
-    //            s.song_id,
-    //            s.title,
-    //            CAST(AVG(v.score) AS DOUBLE PRECISION) AS avg_score,
-    //            CAST(SUM(v.score) AS DOUBLE PRECISION) AS total_score,
-    //            (COUNT(*) / 10) AS multipler
-    //        FROM
-    //            ai_songs s
-    //        JOIN
-    //            ai_songs_vote v ON s.song_id = v.song_id
-    //        GROUP BY
-    //            s.song_id, s.title
-    //        ORDER BY
-    //            avg_score DESC
-    //;
-
     Ok(songs)
 }
 

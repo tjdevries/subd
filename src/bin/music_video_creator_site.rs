@@ -136,8 +136,11 @@ async fn charts(State(state): State<AppState>) -> WebResult<Html<String>> {
     let songs = ai_playlist::all_songs(&state.pool)
         .await
         .map_err(internal_error)?;
+    let top_songs = ai_songs_vote::get_top_songs(&state.pool, 20)
+        .await
+        .unwrap_or(vec![]);
 
-    let context = context! { songs, stats };
+    let context = context! { songs, stats, top_songs };
 
     render_template("charts.html", context)
 }

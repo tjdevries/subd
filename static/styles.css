@@ -1,183 +1,145 @@
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+/* Importing bold and fun fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 
-/* Global styles */
+/* Setting global styles */
 body {
-    font-family: 'Roboto', sans-serif;
-    line-height: 1.6;
     margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
-    overflow-x: hidden;
-    scroll-behavior: smooth;
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
     color: #333;
-}
-
-h1, h2, h3 {
-    font-family: 'Playfair Display', serif;
-    color: #222;
+    overflow-x: hidden;
 }
 
 .header-container {
-    padding: 20px;
     text-align: center;
-    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-bottom: 4px solid #fff;
     backdrop-filter: blur(10px);
-    border-bottom: 2px solid #ddd;
 }
 
-.header a {
-    text-decoration: none;
-    color: #ff6f61;
-    font-weight: bold;
-    font-size: 2.5rem;
-    transition: all 0.4s ease;
+.header {
+    font-size: 3em;
+    font-family: 'Permanent Marker', cursive;
+    margin: 0;
+    animation: header-anim 3s ease-in-out infinite alternate;
 }
 
-.header a:hover {
-    color: #222;
-    transform: rotate(360deg);
+.sub-header {
+    font-size: 1.5em;
+    color: #666;
+    margin: 10px 0;
+}
+
+@keyframes header-anim {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-10px); }
 }
 
 .nav-container {
     display: flex;
     justify-content: center;
-    gap: 15px;
-    margin: 20px 0;
+    gap: 20px;
+    padding: 15px;
+    background-color: #333;
 }
 
 .nav-link {
-    color: #555;
-    font-size: 1.2rem;
+    color: #fff;
     text-decoration: none;
-    position: relative;
-    padding: 10px 20px;
-    transition: color 0.3s ease;
-    will-change: color;
-}
-
-.nav-link:after {
-    content: '';
-    display: block;
-    height: 3px;
-    background: #ff6f61;
-    width: 0;
-    transition: width 0.3s;
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    font-weight: bold;
+    transition: color 0.3s, transform 0.3s;
 }
 
 .nav-link:hover {
-    color: #222;
-    background-clip: text;
-}
-
-.nav-link:hover:after {
-    width: 100%;
+    color: #ffcc00;
+    transform: rotate(-10deg) scale(1.2);
 }
 
 .unplayed_songs {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-}
-
-.unplayed_songs h2 {
-    text-align: center;
-    font-size: 1.8rem;
-    margin-bottom: 15px;
-    text-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    background-color: #eee;
+    transition: background-color 1s;
 }
 
 .unplayed_song a {
     display: block;
-    padding: 10px;
-    margin: 5px 0;
-    transition: transform 0.3s, box-shadow 0.3s;
-    color: #555;
-    border: 2px solid #ff6f61;
-    border-radius: 5px;
-    text-align: center;
-}
-
-.unplayed_song a:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-    color: #000;
-}
-
-.current-song {
-    background-color: #f0fbfc;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-    max-width: 800px;
-    margin: 30px auto;
-}
-
-.current-song-info {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.current-song-info .title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 10px 0;
-}
-
-.current-song-info .tags,
-.current-song-info .creator,
-.current-song-info .average_score,
-.current-song-info .total_votes {
-    font-size: 1rem;
-}
-
-.current-song-info .song_id a {
-    color: #ff6f61;
+    padding: 10px 0;
+    color: #444;
     text-decoration: none;
     transition: all 0.3s ease;
 }
 
-.current-song-info .song_id a:hover {
-    text-decoration: underline;
-    background: linear-gradient(90deg, rgba(255,111,97,0.3), rgba(255,111,97,0));
+.unplayed_song a:hover {
+    color: #000;
+    background-color: #ddd;
+    text-shadow: 2px 2px 5px #ffff99;
+    transform: translateX(20px);
+}
+
+.current-song {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    padding: 50px;
+    background-color: #fdfdfd;
+    border-top: solid 5px #333;
+    transition: all 0.5s ease-in-out;
+}
+
+.current-song-info {
+    padding: 20px;
+    background-color: #f4f4f9;
+    box-shadow: 4px 4px 10px #bbb;
+    border-radius: 12px;
+}
+
+.current-song .title {
+    font-size: 1.8em;
+    margin: 10px 0;
+    color: #444;
+    transform: rotate(360deg);
+    animation: rotator 10s infinite linear;
+}
+
+@keyframes rotator {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.average_score, .total_votes, .tags, .creator {
+    margin: 5px 0;
+    color: #666;
+    font-variant: small-caps;
 }
 
 .lyrics {
-    padding: 15px;
-    background: rgba(255,255,255,0.8);
-    border-radius: 10px;
     font-family: 'Roboto', sans-serif;
-    font-size: 1rem;
-    line-height: 1.8;
-}
-
-.videos {
-    margin-top: 20px;
+    font-size: 1.2em;
+    line-height: 1.6;
+    column-count: 2;
+    column-gap: 40px;
     padding: 20px;
+    background-color: #e6e9f0;
+    text-shadow: 1px 1px 2px #ccc;
 }
 
-.lyrics br {
-    content: "";
-    margin: 10px 0;
-    display: block;
+.song_id a {
+    color: #008cba;
+    text-decoration: underline;
+    border-bottom: 1px dashed #008cba;
+    transition: color 0.3s, border-bottom-color 0.3s;
 }
 
-/* Interactive animations */
-.unplayed_song:hover {
-    animation: shake 0.5s;
-    animation-iteration-count: 1;
+.song_id a:hover {
+    color: #005f5f;
+    border-bottom-color: #005f5f;
+    animation: bounce 1s;
 }
 
-@keyframes shake {
-    0%, 100% {transform: translateX(0);}
-    25% {transform: translateX(-5px);}
-    75% {transform: translateX(5px);}
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-30px); }
+    60% { transform: translateY(-15px); }
 }
