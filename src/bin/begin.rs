@@ -7,6 +7,7 @@ use obws::Client;
 use serde::{Deserialize, Serialize};
 use server::handlers;
 use std::collections::HashMap;
+use std::env;
 use subd_db::get_db_pool;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::{ClientConfig, SecureTCPTransport, TwitchIRCClient};
@@ -120,15 +121,21 @@ async fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    // Redirect the stdout to cleanup bootup logs
-    let fe = subd_utils::redirect_stderr()?;
-    let fo = subd_utils::redirect_stdout()?;
-    let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
-        .expect("Failed to get audio output stream");
-    subd_utils::restore_stderr(fe);
-    subd_utils::restore_stdout(fo);
-
-    // let (_stream, stream_handle) = rodio::OutputStream::try_default().unwrap();
+    // Create a stream_handle to play audio
+    let (_stream, stream_handle) = match env::consts::OS {
+        "macos" => rodio::OutputStream::try_default().unwrap(),
+        _ => {
+            // Redirect the stdout to cleanup bootup logs
+            let fe = subd_utils::redirect_stderr()?;
+            let fo = subd_utils::redirect_stdout()?;
+            let (_stream, stream_handle) =
+                subd_audio::get_output_stream("pulse")
+                    .expect("Failed to get audio output stream");
+            subd_utils::restore_stderr(fe);
+            subd_utils::restore_stdout(fo);
+            (_stream, stream_handle)
+        }
+    };
 
     // Determine which features to enable
     let features = if args.enable_all {

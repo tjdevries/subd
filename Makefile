@@ -90,7 +90,9 @@ update_tags:
 	
 small:
 	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving twitch_eventsub obs explicit_soundeffects channel_rewards ai_songs fal
-	# cargo run --bin begin -- --enable ai_scenes twitch_chat_saving ai_songs
+
+mac:
+	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving ai_songs
 
 begin:
 	cargo run --bin begin -- --enable-all
