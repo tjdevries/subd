@@ -53,6 +53,9 @@ async fn create_app() -> Router {
         .route("/ai_songs/:id", get(show_ai_song))
         .route("/users/:username", get(show_ai_song_by_user))
         .route("/all_songs", get(show_ai_songs))
+        .route("/all_users", get(show_users))
+        .route("/charts", get(charts))
+        .route("/music_videos", get(music_videos))
         .nest_service("/images", ServeDir::new("./tmp/music_videos"))
         .nest_service("/songs", ServeDir::new("./ai_songs"))
         .nest_service("/static", ServeDir::new("./static"))
@@ -107,6 +110,51 @@ async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
     };
 
     render_template("home.html", context)
+}
+
+async fn show_users(State(state): State<AppState>) -> WebResult<Html<String>> {
+    let stats = ai_songs_vote::fetch_stats(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let songs = ai_playlist::all_songs(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let users =
+        ai_songs_vote::get_users_with_song_count_and_avg_score(&state.pool)
+            .await
+            .unwrap_or_default();
+
+    let context = context! { songs, stats, users };
+
+    render_template("users.html", context)
+}
+
+async fn charts(State(state): State<AppState>) -> WebResult<Html<String>> {
+    let stats = ai_songs_vote::fetch_stats(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let songs = ai_playlist::all_songs(&state.pool)
+        .await
+        .map_err(internal_error)?;
+
+    let context = context! { songs, stats };
+
+    render_template("charts.html", context)
+}
+
+async fn music_videos(
+    State(state): State<AppState>,
+) -> WebResult<Html<String>> {
+    let stats = ai_songs_vote::fetch_stats(&state.pool)
+        .await
+        .map_err(internal_error)?;
+    let songs = ai_playlist::all_songs(&state.pool)
+        .await
+        .map_err(internal_error)?;
+
+    let context = context! { songs, stats };
+
+    render_template("music_videos.html", context)
 }
 
 async fn show_ai_songs(
