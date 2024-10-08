@@ -1,0 +1,164 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f6d365 10%, #fda085 100%);
+    color: #333;
+    overflow-x: hidden;
+}
+
+header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid #f9ad3d;
+    padding: 20px;
+}
+
+header .header a {
+    text-decoration: none;
+    color: #494949;
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: color 0.3s ease, transform 0.5s ease;
+}
+
+header .header a:hover {
+    color: #d94f04;
+    transform: scale(1.05) rotate(-2deg);
+}
+
+header .sub-header {
+    color: #666;
+    font-size: 1.5rem;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    border-bottom: 1px solid #f6a35c;
+}
+
+.nav-link {
+    color: #333;
+    text-decoration: none;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    transition: background 0.3s ease, color 0.3s ease;
+    border-radius: 5px;
+}
+
+.nav-link:hover {
+    background: #f6a35c;
+    color: #fff;
+}
+
+.unplayed_songs, .current-song, .songs-container, .users-container, .grid-container {
+    margin: 30px auto;
+    padding: 20px;
+    max-width: 1000px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(5px);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.unplayed_song, .song, .song-container, .username {
+    border-bottom: 1px solid #f6a35c;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.unplayed_song:last-child, .song:last-child, .song-container:last-child, .username:last-child {
+    border-bottom: none;
+}
+
+.unplayed_song a, .song_link a, .song-container .song-link a, .username a {
+    color: #d94f04;
+    text-decoration: underline;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.unplayed_song a:hover, .song_link a:hover, .song-container .song-link a:hover, .username a:hover {
+    color: #333;
+    transform: scale(1.1) skew(-5deg);
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Fredoka One', cursive;
+    color: #d94f04;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2.subtitle {
+    font-size: 1.8rem;
+}
+
+h3 {
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.current-song-info {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    column-gap: 20px;
+}
+
+.image_scores, .videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.ai_song_image img, .video video {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    height: auto;
+    transition: transform 0.5s ease;
+}
+
+.ai_song_image img:hover, .video video:hover {
+    transform: scale(1.05) rotate(-2deg);
+}
+
+image_voting {
+    display: flex;
+    justify-content: center;
+    font-size: 1rem;
+    margin-top: 5px;
+    gap: 10px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+song_source > audio {
+    width: 100%;
+}
+
+footer {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-top: 2px solid #f6d365;
+}
+
+@keyframes colorchange {
+    0% { background: #f6d365; }
+    50% { background: #fda085; }
+    100% { background: #f6d365; }
+}
+
+.song:hover {
+    animation: colorchange 4s infinite;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@300;400;500;600;700&display=swap');

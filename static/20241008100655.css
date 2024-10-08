@@ -1,0 +1,153 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+    color: #333;
+    margin: 0;
+    perspective: 1000px;
+    overflow-x: hidden;
+}
+
+.header-container, .nav-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+}
+
+.header-container {
+    animation: moveInTop 2s ease-out;
+}
+
+.nav-link {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    position: relative;
+    display: inline-block;
+}
+
+.nav-link:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: #66a6ff;
+    left: 0;
+    bottom: -3px;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.nav-link:hover:after {
+    transform: scaleX(1);
+}
+
+.unplayed_songs, .current-song, .grid-container, .users-container, .songs-container {
+    padding: 20px;
+    margin: 20px auto;
+    width: 90%;
+    background: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    transition: transform 0.2s;
+}
+
+.unplayed_songs:hover, .current-song:hover, .grid-container:hover, .users-container:hover, .songs-container:hover {
+    transform: translateY(-10px);
+}
+
+.unplayed_song a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    display: block;
+    font-family: 'Roboto Mono', monospace;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.unplayed_song a:hover {
+    color: #66a6ff;
+    transform: rotate(2deg) scale(1.05);
+}
+
+.current-song-info {
+    display: grid;
+    grid-template-areas:
+        'title title'
+        'creator tags'
+        'song_id avg_score'
+        'total_votes total_votes';
+    gap: 10px;
+}
+
+.current-song-info div {
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.ai_song_image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.image_scores, .videos, .lyrics {
+    margin-top: 20px;
+}
+
+.video {
+    display: inline-block;
+    margin: 10px;
+    transform: rotateZ(1deg);
+    transition: transform 0.3s ease;
+}
+
+.video:hover {
+    transform: rotateZ(3deg) scale(1.02);
+}
+
+.song_container, .song {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 10px 0;
+    padding: 10px;
+    background: #fafafa;
+}
+
+.song_link a {
+    text-decoration: none;
+    color: darkcyan;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.song_link a:hover {
+    color: #333;
+    text-shadow: 0 0 10px #66a6ff;
+    transform: translateY(-2px);
+}
+
+.song_source audio {
+    width: 100%;
+}
+
+@keyframes moveInTop {
+    0% {
+        opacity: 0;
+        transform: translateY(-100px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::selection {
+    background: #66a6ff;
+    color: white;
+}
