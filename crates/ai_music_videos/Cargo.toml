@@ -6,22 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
-twitch-irc.workspace = true
 tokio.workspace = true
 
 fal_ai = { path = "../fal_ai/" }
-obws = "0.10"
-subd-types = { path = "../subd-types/" }
-twitch_chat = { path = "../twitch_chat/" }
-obs_service = { path = "../obs_service/" }
 ai_playlist = { path = "../ai_playlist/" }
 subd-db = { path = "../subd-db/" }
 subd-openai = { path = "../subd-openai/" }
-subd-image-utils = { path = "../subd-image-utils/" }
 chrono.workspace = true
 anyhow.workspace = true
-bytes = "1.7.1"
 colored.workspace = true
 sqlx.workspace = true
 uuid.workspace = true
@@ -33,4 +25,3 @@ openai-api-rs = "4.1.0"
 instruct-macros-types = "0.1.8"
 
 serde = { workspace = true, features = ["derive"] }
-serde_json.workspace = true
