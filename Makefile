@@ -4,6 +4,13 @@ default:
 good:
 	RUSTFLAGS=-Awarnings cargo build --bin begin
 	
+wc-client:
+	cargo run -p example-websockets --bin example-client
+
+wc-server:
+	cargo run -p example-websockets --bin example-websockets
+	# --source crates/websockets/ 
+
 ff:
 	cargo test test_fal -- --nocapture
 	

@@ -7,7 +7,7 @@
 //!
 //! Run a browser client with
 //! ```not_rust
-//! firefox http://localhost:3000
+//! firefox http://localhost:5000
 //! ```
 //!
 //! Alternatively you can run the rust client (showing two
@@ -73,7 +73,7 @@ async fn main() {
         );
 
     // run it with hyper
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3002")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:5000")
         .await
         .unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
