@@ -1,0 +1,215 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #ffcc33, #ff6699);
+    color: #333;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+.header-container {
+    text-align: center;
+    padding: 20px;
+    background: radial-gradient(circle, #ffffff, #ffcc33);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header a {
+    text-decoration: none;
+    font-family: 'Pacifico', cursive;
+    font-size: 2.5em;
+    color: #ff6699;
+    text-shadow: 2px 2px #ffcc33;
+    transition: transform 0.2s;
+}
+
+.header a:hover {
+    transform: rotate(360deg);
+    color: #ffffff;
+}
+
+.sub-header {
+    font-weight: 300;
+    font-size: 1.2em;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background: linear-gradient(45deg, #ff6699, #ffcc33);
+}
+
+.nav-link {
+    color: #ffffff;
+    font-size: 1.1em;
+    margin: 0 15px;
+    text-transform: uppercase;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.nav-link:hover {
+    color: #333;
+    transform: scale(1.1);
+}
+
+.unplayed_songs h2 {
+    text-align: center;
+    margin-top: 40px;
+}
+
+.unplayed_song a {
+    display: block;
+    font-size: 1.5em;
+    color: #ff6699;
+    padding: 20px;
+    background: #ffffff;
+    margin: 10px auto;
+    width: fit-content;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background 0.3s, transform 0.3s;
+    animation: fadeInUp 1s ease-in-out;
+}
+
+.unplayed_song a:hover {
+    background: #ffcc33;
+    transform: translateY(-5px);
+}
+
+.current-song-info {
+    padding: 30px;
+    background: linear-gradient(to right, #ffcc33, #ff6699);
+    color: #fff;
+    border-radius: 15px;
+    margin: 40px auto;
+    max-width: 500px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.current-song-info div {
+    margin: 10px 0;
+}
+
+.current-song-info .song_id a {
+    color: #ffcc33;
+    text-decoration: underline;
+}
+
+.image_scores {
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    max-width: 800px;
+}
+
+.ai_song_image img {
+    width: 100px;
+    height: auto;
+    margin: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: 10px;
+}
+
+.ai_song_image img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.image_voting {
+    text-align: center;
+    font-weight: bold;
+    color: #ff6699;
+}
+
+.videos video {
+    margin: 20px;
+    width: 300px;
+    border: 5px solid #ffcc33;
+    border-radius: 10px;
+}
+
+.lyrics {
+    text-align: center;
+    font-style: italic;
+    color: #333;
+}
+
+.users-container {
+    padding: 20px;
+    max-width: 500px;
+    background: linear-gradient(to right, #ff6699, #ffcc33);
+    color: #fff;
+    border-radius: 10px;
+    margin: 20px auto;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.username a {
+    font-weight: bold;
+    color: #ffffff;
+    text-decoration: underline;
+    transition: color 0.3s;
+}
+
+.username a:hover {
+    color: #333;
+}
+
+.songs-container {
+    margin: 40px auto;
+    max-width: 1000px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.song-container {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+}
+
+.song-container .title {
+    font-weight: bold;
+    color: #ff6699;
+}
+
+.song-container .song-link a {
+    color: #ff6699;
+    transition: color 0.3s ease-in-out;
+}
+
+.song-container .song-link a:hover {
+    color: #ffcc33;
+    text-decoration: underline;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffcc33, #ff6699);
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+@keyframes fadeInUp {
+    from {
+        transform: translate3d(0, 40px, 0);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate3d(0, 0, 0);
+        opacity: 1;
+    }
+}
+

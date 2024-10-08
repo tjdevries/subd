@@ -113,7 +113,7 @@ fn html_file_contents() -> Result<String> {
     Ok(contents)
 }
 
-pub async fn generate_ai_js() -> Result<()> {
+pub async fn generate_ai_js(content: String) -> Result<()> {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
 
@@ -121,10 +121,20 @@ pub async fn generate_ai_js() -> Result<()> {
 
     let js_base_prompt =
         "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible.";
+    let js_animation_prompt = "Use libraries like three.js, phaser.js, 3D.js";
+    let js_content_prompt =
+        format!("Summarize the following content and use it to influence the animation and javascript. Be Creative.: {}", content);
     let js_final_prompt =
         "Make it all savaveable as a styles.css file, for the following HTML: ";
 
-    let prompt = format!("{} {} {}", js_base_prompt, js_final_prompt, contents);
+    let prompt = format!(
+        "{} {} {} {} {}",
+        js_base_prompt,
+        js_animation_prompt,
+        js_content_prompt,
+        js_final_prompt,
+        contents
+    );
 
     let req = ChatCompletionRequest::new(
         // GPT3_5_TURBO.to_string(),
@@ -164,7 +174,7 @@ pub async fn generate_ai_js() -> Result<()> {
     Ok(())
 }
 
-pub async fn generate_ai_css() -> Result<()> {
+pub async fn generate_ai_css(content: String) -> Result<()> {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
 
@@ -179,22 +189,25 @@ pub async fn generate_ai_css() -> Result<()> {
     let css_layouts = "Also feel free to try different layouts using things like display: grid.";
     let css_fonts = "Use a wide variety of bold unique fonts, which you need to specify to import.";
     let css_animations = "Use as many animations and transitions as possible.";
-    let css_final_prompt =
-        "Make it all savaveable as a styles.css file, for the following HTML: ";
     let spinner_css =
         "Make sure you use things like transform: rotate(360deg); Prioritize movement with transform.";
+    let css_content_prompt =
+        format!("Summarize the following content and use it to influence the styling: {}", content);
+    let css_final_prompt =
+        "Make it all savaveable as a styles.css file, for the following HTML: ";
 
     let prompt = format!(
-        "{} {} {} {} {} {} {} {} {} {}",
+        "{} {} {} {} {} {} {} {} {} {} {}",
         css_base_prompt,
         css_properties_prompt,
         css_interactions,
         css_layouts,
         css_fonts,
-        css_final_prompt,
         css_style_tips,
         css_animations,
         spinner_css,
+        css_final_prompt,
+        css_content_prompt,
         contents
     );
 

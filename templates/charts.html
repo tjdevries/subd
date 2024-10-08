@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Charts</h2>
-<section class="songs-container">
+<section class="charts-container">
     {% for song in top_songs %}
-    <div class="song-container">
+    <div class="chart-container">
         <div class="title">{{ song.title }}</div>
         <div class="average-score">{{ song.avg_score }}</div>
         <div class="song-link">
