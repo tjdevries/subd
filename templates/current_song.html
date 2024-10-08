@@ -13,6 +13,7 @@
         <div class="total_votes">Total Votes: {{ votes_count }}</div>
     </div>
     <div class="image_scores">
+        <h4>Images</h4>
         {% for image_score in image_scores %}
         <div class="ai_song_image">
             <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}"
@@ -26,6 +27,7 @@
         </div>
         {% endfor %}
         <section class="videos">
+            <h4>Videos</h4>
             {% for video in videos %}
             <div class="video">
                 <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted loop>

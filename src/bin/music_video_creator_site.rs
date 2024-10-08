@@ -166,7 +166,10 @@ async fn show_ai_songs(
     let stats = ai_songs_vote::fetch_stats(&state.pool)
         .await
         .map_err(internal_error)?;
-    let songs = ai_playlist::all_songs(&state.pool)
+    //let songs = ai_playlist::all_songs(&state.pool)
+    //    .await
+    //    .map_err(internal_error)?;
+    let songs = ai_playlist::all_songs_with_limit(&state.pool, 10)
         .await
         .map_err(internal_error)?;
 

@@ -77,16 +77,43 @@ struct AIStylesResponse {
     css: String,
 }
 
+fn html_file_contents() -> Result<String> {
+    let filepath = "../../static/home.html";
+    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let mut home_contents = String::new();
+    file.read_to_string(&mut home_contents)
+        .expect("Failed to read HTML file");
+
+    let filepath = "../../static/songs.html";
+    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let mut song_contents = String::new();
+    file.read_to_string(&mut song_contents)
+        .expect("Failed to read HTML file");
+
+    let filepath = "../../static/users.html";
+    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let mut users_contents = String::new();
+    file.read_to_string(&mut users_contents)
+        .expect("Failed to read HTML file");
+
+    let filepath = "../../static/charts.html";
+    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let mut charts_contents = String::new();
+    file.read_to_string(&mut charts_contents)
+        .expect("Failed to read HTML file");
+
+    let contents = format!(
+        "{} {} {} {}",
+        home_contents, song_contents, users_contents, charts_contents
+    );
+    Ok(contents)
+}
+
 fn get_music_video_scene() {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
 
-    let filepath = "../../tmp/music_video_creator.html";
-    // let filepath = "../../tmp/songs.html";
-    let mut file = File::open(filepath).expect("Failed to open HTML file");
-    let mut contents = String::new();
-    file.read_to_string(&mut contents)
-        .expect("Failed to read HTML file");
+    let contents = html_file_contents().unwrap();
 
     let css_base_prompt =
         "Generate excellent high-quality detailed CSS for the provided HTML. Provide as many CSS properties as possible.";

@@ -34,6 +34,23 @@ pub async fn get_videos_and_image_scores(
     }
 }
 
+pub async fn all_songs_with_limit(
+    pool: &PgPool,
+    limit: i64,
+) -> Result<Vec<models::ai_songs::Model>> {
+    let res = sqlx::query_as!(
+        models::ai_songs::Model,
+        r#"
+        SELECT * FROM ai_songs
+        LIMIT $1
+        "#,
+        limit
+    )
+    .fetch_all(pool)
+    .await?;
+    Ok(res)
+}
+
 pub async fn all_songs(pool: &PgPool) -> Result<Vec<models::ai_songs::Model>> {
     let res = sqlx::query_as!(
         models::ai_songs::Model,
