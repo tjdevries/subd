@@ -1,0 +1,105 @@
+/* Styles for the HTML structure provided */
+
+/* Global styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header styles */
+.header-container {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+}
+
+.header {
+    font-size: 24px;
+}
+
+.sub-header {
+    font-size: 18px;
+}
+
+/* Navigation styles */
+.nav-container {
+    background-color: #444;
+    padding: 10px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    margin-right: 10px;
+}
+
+/* Section styles */
+.unplayed_songs {
+    margin-top: 20px;
+}
+
+.current-song {
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding: 10px;
+}
+
+.current-song-info {
+    padding: 10px;
+}
+
+.title {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+tags {
+    font-style: italic;
+    font-size: 14px;
+}
+
+.creator {
+    font-size: 16px;
+}
+
+.song_id {
+    font-size: 14px;
+}
+
+.average_score {
+    font-size: 14px;
+}
+
+total_votes {
+    font-size: 14px;
+}
+
+/* Song list styles */
+.unplayed_song {
+    background-color: #f5f5f5;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.unplayed_song a {
+    color: #333;
+    text-decoration: none;
+}
+
+/* Video and Lyrics styles */
+.videos, .lyrics {
+    margin-top: 20px;
+}
+
+.lyrics {
+    font-size: 16px;
+}
+
+.lyrics br {
+    margin-top: 10px;
+}
+
+.lyrics p {
+    margin-top: 10px;
+}

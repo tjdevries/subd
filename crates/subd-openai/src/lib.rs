@@ -1,10 +1,25 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use instruct_macros::InstructMacro;
+use instruct_macros_types::Parameter;
+use instruct_macros_types::{ParameterInfo, StructInfo};
+use instructor_ai::from_openai;
+
+use chrono::prelude::*;
+use std::env;
+use std::fs::{self, File};
+use std::io::{Read, Write};
+
+// We need a different common here
+use openai_api_rs::v1::{
+    api::Client,
+    chat_completion::{self, ChatCompletionRequest},
+    common::GPT3_5_TURBO,
+    common::GPT4_1106_PREVIEW,
+    common::GPT4_O,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::env;
-use std::fs::File;
-use std::io::Write;
 
 pub mod dalle;
 
@@ -44,6 +59,73 @@ struct VisionChoice {
 struct VisionChoiceContent {
     content: String,
     role: String,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct MusicVideoScenes {
+    scenes: Vec<MusicVideoScene>,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct MusicVideoScene {
+    image_prompt: String,
+    camera_move: String,
+}
+
+#[derive(InstructMacro, Debug, Serialize, Deserialize)]
+struct AIStylesResponse {
+    css: String,
+}
+
+fn get_music_video_scene() {
+    let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
+    let instructor_client = from_openai(client);
+
+    let filepath = "../../tmp/music_video_creator.html";
+    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)
+        .expect("Failed to read HTML file");
+
+    let prompt = format!(
+        "Generate really dynamic, modern, Interesting CSS, that utilizes new creative techniques, dynamic colors and transitions, use cutting-edge techniques and bold unique fonts and colors that is savable as a styles.css file, for the following HTML: {}",
+        contents
+    );
+
+    let req = ChatCompletionRequest::new(
+        //GPT3_5_TURBO.to_string(),
+        //GPT4_O.to_string(),
+        GPT4_1106_PREVIEW.to_string(),
+        vec![chat_completion::ChatCompletionMessage {
+            role: chat_completion::MessageRole::user,
+            content: chat_completion::Content::Text(prompt),
+            name: None,
+        }],
+    );
+
+    let result = instructor_client
+        .chat_completion::<AIStylesResponse>(req, 3)
+        .expect("Failed to get chat completion");
+
+    println!("{:?}", result);
+
+    // Backup the existing styles.css file
+    let now = Utc::now();
+    let timestamp = now.format("%Y%m%d%H%M%S").to_string();
+    let backup_filename = format!("../../static/{}.css", timestamp);
+
+    let src = "../../static/styles.css";
+    let dest = &backup_filename;
+
+    fs::copy(src, dest).expect("Failed to backup the styles.css file");
+
+    // Save the new CSS to styles.css
+    let content = &result.css;
+
+    let mut file = File::create("../../static/styles.css")
+        .expect("Failed to create styles.css file");
+    file.write_all(content.as_bytes())
+        .expect("Failed to write to styles.css file");
 }
 
 // I want this to exist somewhere else
@@ -283,5 +365,23 @@ mod tests {
         // dbg!(&res);
 
         // assert_eq!("", content);
+    }
+
+    // We might want to try more structured version
+    #[tokio::test]
+    async fn test_generating_css() {
+        //let filepath = "../../tmp/music_video_creator.html";
+        //let mut file = File::open(filepath).unwrap();
+        //let mut contents = String::new();
+        //let _ = file.read_to_string(&mut contents);
+        //// Now we need to generate CSS for styles
+        //assert!(true);
+        //let res = ask_chat_gpt(
+        //    "Generate FUN Interesting CSS that is savable as a styles.css file, for the following HTML: ".to_string(),
+        //    contents,
+        //)
+        //.await;
+        //println!("{:?}", res);
+        get_music_video_scene();
     }
 }

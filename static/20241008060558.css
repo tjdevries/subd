@@ -1,0 +1,100 @@
+/* Header styles */
+.header-container {
+  background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+  color: #282828;
+  padding: 20px 0;
+  text-align: center;
+}
+
+.header a {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #282828;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.header a:hover,
+.sub-header {
+  color: #f06292;
+}
+
+/* Navigation styles */
+.nav-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.nav-link {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px;
+  margin: 0 10px;
+  color: #6a1b9a;
+  text-decoration: none;
+  padding-bottom: 5px;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+  color: #ba68c8;
+  border-bottom: 2px solid #ba68c8;
+}
+
+/* Songs section styles */
+.unplayed_songs {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.unplayed_song a {
+  display: block;
+  margin: 15px auto;
+  max-width: 300px;
+  background: #eeeeee;
+  color: #424242;
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  text-decoration: none;
+  transition: background 0.3s, color 0.3s;
+}
+
+.unplayed_song a:hover {
+  background: #ffc107;
+  color: #212121;
+}
+
+/* Current song styles */
+.current-song {
+  margin-top: 50px;
+  padding: 20px;
+  background: #fff8e1;
+  border-left: 3px solid #f9a825;
+}
+
+.current-song-info h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 24px;
+  color: #424242;
+}
+
+.title,
+.tags,
+.creator,
+.song_id,
+.average_score,
+.total_votes {
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  color: #424242;
+}
+
+.lyrics {
+  font-family: 'Roboto', sans-serif;
+  white-space: pre-wrap;
+  margin-top: 20px;
+  background: #ffecb3;
+  padding: 15px;
+  border-radius: 4px;
+}

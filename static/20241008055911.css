@@ -1,0 +1,99 @@
+body {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    background: linear-gradient(to right, #f06, #ffe);
+    color: #333;
+}
+
+.header-container {
+    background-color: #4CAF50;
+    padding: 20px;
+    text-align: center;
+    font-size: 2em;
+    color: white;
+}
+
+.header a {
+    text-decoration: none;
+    color: white;
+}
+
+.sub-header {
+    color: #ddd;
+    margin: 5px 0;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: #333;
+    padding: 10px 0;
+}
+
+.nav-link {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #f2f2f2;
+    font-weight: bold;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+    color: #ff6347;
+}
+
+.unplayed_songs {
+    margin: 20px;
+    padding: 10px;
+    border: 2px dashed #4CAF50;
+    background-color: #fffbea;
+}
+
+.unplayed_song {
+    margin-bottom: 10px;
+}
+
+.unplayed_song a {
+    text-decoration: none;
+    color: #333;
+}
+
+.unplayed_song:hover a {
+    color: #4CAF50;
+}
+
+.current-song {
+    background-color: #e0ffe0;
+    border: 2px solid #4CAF50;
+    padding: 15px;
+    margin: 20px;
+}
+
+.current-song-info {
+    margin-bottom: 20px;
+}
+
+.current-song-info h3 {
+    margin-top: 0;
+}
+
+.title {
+    font-weight: bold;
+    font-size: 1.5em;
+    margin: 10px 0;
+}
+
+.tags, .creator, .song_id, .average_score, .total_votes {
+    margin: 5px 0;
+}
+
+.lyrics {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.lyrics br {
+    line-height: 1.5;
+}

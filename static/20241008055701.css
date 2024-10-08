@@ -1,0 +1,110 @@
+/* FUN Interesting CSS for the HTML provided */
+
+/* Global styles */
+body {
+  font-family: 'Helvetica', sans-serif;
+  background-color: #f0f0f0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  padding: 10px 0;
+}
+
+.nav-container {
+  background-color: #222;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-around;
+}
+
+h1, h2, h3 {
+  font-family: 'Arial', sans-serif;
+}
+
+/* Specific styles for elements */
+.header-container {
+  text-align: center;
+}
+.header {
+  font-size: 24px;
+}
+.sub-header {
+  font-size: 18px;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: white;
+  padding: 5px;
+}
+
+.unplayed_songs {
+  margin-top: 20px;
+}
+
+.unplayed_song {
+  margin: 10px 0;
+}
+
+.current-song {
+  margin-top: 20px;
+}
+
+.current-song-info {
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.tags {
+  font-style: italic;
+}
+
+.creator {
+  margin-top: 5px;
+}
+
+.song_id a {
+  text-decoration: none;
+  color: blue;
+}
+
+.average_score, .total_votes {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.image_scores {
+  margin-top: 20px;
+  display: flex;
+}
+
+.videos, .lyrics {
+  flex: 1;
+  padding: 10px;
+}
+
+.lyrics {
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-top: 10px;
+  white-space: pre-line;
+}
+
+/* Additional styling can be added as needed */

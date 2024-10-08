@@ -1,279 +1,81 @@
+/* Dynamic, Modern & Creative CSS Stylesheet */
 
-/* Import spooky Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&display=swap');
+/* Global Styles and Variables */
+:root {
+    --primary-color: hsl(200, 80%, 50%);
+    --accent-color: hsl(340, 100%, 60%);
+    --background-color: #111827;
+    --text-color: #fff;
+    --font-family-header: 'Orbitron', sans-serif;
+    --font-family-body: 'Roboto', sans-serif;
+}
 
-body {
-    background-color: #0d0d0d;
-    color: #e6e6e6;
-    font-family: 'Creepster', cursive;
+* {
     margin: 0;
     padding: 0;
-    overflow-x: hidden; /* Prevent horizontal scrollbar */
-    cursor: url('https://example.com/ghost_cursor.png'), auto; /* Replace with actual cursor image URL */
+    box-sizing: border-box;
 }
 
-/* Spooky background image */
-body::before {
-    content: '';
-    background: url('https://example.com/spooky-background.jpg') no-repeat center center fixed;
-    background-size: cover;
-    opacity: 0.2;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -2;
+body {
+    font-family: var(--font-family-body);
+    color: var(--text-color);
+    background-color: var(--background-color);
 }
 
-/* Fog overlay */
-.fog {
-    position: fixed;
-    top: 0;
-    left: -100%;
-    width: 200%;
-    height: 100%;
-    background: url('https://example.com/fog.png') repeat-x;
-    opacity: 0.4;
-    animation: animateFog 60s linear infinite;
-    z-index: -1;
-}
-
-@keyframes animateFog {
-    from {
-        transform: translateX(0);
-    }
-    to {
-        transform: translateX(-50%);
-    }
-}
-
-/* Flying bats */
-.bat {
-    position: absolute;
-    top: 10%;
-    left: -10%;
-    width: 100px;
-    height: auto;
-    background: url('https://example.com/bat.png') no-repeat;
-    background-size: contain;
-    animation: flyBat 15s linear infinite;
-}
-
-@keyframes flyBat {
-    0% {
-        transform: translateX(0) translateY(0) scale(0.5);
-    }
-    25% {
-        transform: translateX(25vw) translateY(-10vh) scale(0.7);
-    }
-    50% {
-        transform: translateX(50vw) translateY(0vh) scale(1);
-    }
-    75% {
-        transform: translateX(75vw) translateY(10vh) scale(0.7);
-    }
-    100% {
-        transform: translateX(100vw) translateY(0) scale(0.5);
-    }
-}
-
-/* Header styling */
 .header-container {
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     text-align: center;
-    padding: 50px 0;
-    background: linear-gradient(45deg, #1a1a1a, #333333);
+    padding: 1rem;
 }
 
-.header-container h1, .header-container h2 {
-    margin: 10px 0;
-    color: #ff4d4d;
-    text-shadow: 2px 2px #000000;
+.header {
+    font-family: var(--font-family-header);
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
 }
 
-.header-container h1 {
-    font-family: 'Nosifer', cursive;
-    animation: flicker 3s infinite;
-}
-
-/* Navigation styling */
 .nav-container {
     display: flex;
-    justify-content: center;
-    background-color: #262626;
-    padding: 10px 0;
+    justify-content: space-between;
+    padding: 1rem;
 }
 
 .nav-link {
-    color: #b3b3b3;
-    margin: 0 15px;
-    text-decoration: none;
-    position: relative;
+    color: var(--accent-color);
+    font-weight: bold;
     transition: color 0.3s;
 }
 
-.nav-link::after {
-    content: '';
-    display: block;
-    width: 0;
-    height: 2px;
-    background: #ff4d4d;
-    transition: width 0.3s;
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-}
-
 .nav-link:hover {
-    color: #ff4d4d;
+    color: var(--primary-color);
 }
 
-.nav-link:hover::after {
-    width: 100%;
+.unplayed_songs, .current-song {
+    margin: 2rem;
 }
 
-/* Unplayed songs section */
-.unplayed_songs {
-    padding: 20px;
-    background-color: #1a1a1a;
+.unplayed_song a, .current-song-info div, .average_score, .total_votes {
+    display: inline-block;
+    margin: 0.5rem 0;
+    color: var(--text-color);
+    transition: color 0.3s;
 }
 
-.unplayed_songs h2 {
-    color: #ff4d4d;
-    text-shadow: 1px 1px #000000;
-}
-
-.unplayed_song a {
-    color: #e6e6e6;
-    text-decoration: none;
-    display: block;
-    padding: 10px;
-    background-color: #262626;
-    margin: 10px 0;
-    border-left: 5px solid #ff4d4d;
-    transition: background-color 0.3s;
-    position: relative;
-}
-
-.unplayed_song a:hover {
-    background-color: #333333;
-}
-
-/* Ghost hover effect on song links */
-.unplayed_song a::before {
-    content: '';
-    position: absolute;
-    left: -50px;
-    top: 50%;
-    width: 40px;
-    height: 40px;
-    background: url('https://example.com/ghost.png') no-repeat;
-    background-size: contain;
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.unplayed_song a:hover::before {
-    opacity: 1;
-}
-
-/* Current song section */
-.current-song {
-    padding: 20px;
-    background-color: #1a1a1a;
-}
-
-.current-song h3 {
-    color: #ff4d4d;
-    text-shadow: 1px 1px #000000;
-}
-
-.current-song-info {
-    margin-bottom: 20px;
-}
-
-.current-song-info div {
-    margin: 5px 0;
-}
-
-.current-song-info a {
-    color: #ff4d4d;
+.unplayed_song a:hover, .current-song-info div:hover {
+    color: var(--accent-color);
     text-decoration: none;
 }
 
-.current-song-info a:hover {
-    text-decoration: underline;
+.image_scores, .lyrics {
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 0.5rem;
 }
 
-/* Lyrics styling */
 .lyrics {
-    background-color: #262626;
-    padding: 20px;
-    border: 1px solid #333333;
-    color: #e6e6e6;
-    line-height: 1.6;
-    font-style: italic;
-    position: relative;
-}
-
-/* Dripping blood effect on lyrics */
-.lyrics::after {
-    content: '';
-    position: absolute;
-    bottom: -20px;
-    left: 0;
-    width: 100%;
-    height: 20px;
-    background: url('https://example.com/blood-drip.png') repeat-x;
-    background-size: contain;
-}
-
-/* Animations */
-@keyframes flicker {
-    0%, 18%, 22%, 25%, 53%, 57%, 100% {
-        text-shadow:
-            0 0 4px #ff4d4d,
-            0 0 11px #ff4d4d,
-            0 0 19px #ff4d4d,
-            0 0 40px #ff4d4d,
-            0 0 80px #ff4d4d,
-            0 0 90px #ff4d4d,
-            0 0 100px #ff4d4d,
-            0 0 150px #ff4d4d;
-    }
-    20%, 24%, 55% {
-        text-shadow: none;
-    }
-}
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-    width: 12px;
-}
-
-::-webkit-scrollbar-track {
-    background: #1a1a1a;
-}
-
-::-webkit-scrollbar-thumb {
-    background-color: #ff4d4d;
-    border-radius: 6px;
-    border: 3px solid #1a1a1a;
-}
-
-/* Link hover effect */
-a:hover {
-    color: #ff4d4d;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .nav-container {
-        flex-direction: column;
-    }
-
-    .nav-link {
-        margin: 10px 0;
-    }
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
 }
