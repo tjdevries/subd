@@ -89,12 +89,6 @@ pub async fn handle_telephone_requests(
     };
 
     match command {
-        "!old_telephone" => {
-            // we need to take an ID
-            let id = splitmsg.get(1).unwrap();
-            let _ = ai_telephone::old_obs_telephone_scene(obs_client, id).await;
-            Ok(())
-        }
         "!carlphone" => {
             let (_, unique_identifier) =
                 image_generation::unique_archive_filepath(0, msg.user_name)?;
