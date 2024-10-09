@@ -92,8 +92,8 @@ pub async fn create_runway_video_from_image(
 ) -> Result<String> {
     let fal_service = fal_service::FalService::new();
     let video_dir = match save_dir {
-        Some(dir) => dir,
-        None => &subd_types::consts::get_ai_videos_dir(),
+        Some(dir) => dir.to_string(),
+        None => subd_types::consts::get_ai_videos_dir(),
     };
     fal_service
         .create_runway_video_from_image(prompt, image_file_path, &video_dir)
@@ -107,8 +107,8 @@ pub async fn create_video_from_image(
 ) -> Result<String> {
     let fal_service = fal_service::FalService::new();
     let video_dir = match save_dir {
-        Some(dir) => dir,
-        None => &subd_types::consts::get_ai_videos_dir(),
+        Some(dir) => dir.to_string(),
+        None => subd_types::consts::get_ai_videos_dir(),
     };
     fal_service
         .create_video_from_image(image_file_path, &video_dir)
