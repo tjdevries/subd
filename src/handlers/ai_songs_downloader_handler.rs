@@ -64,16 +64,22 @@ pub async fn handle_requests(
 
     match parse_command(&msg) {
         Command::Download { id } => {
-            handle_download_command(pool, twitch_client, tx, msg.user_name, id)
-                .await
+            handle_download_command(
+                pool,
+                twitch_client,
+                tx,
+                &msg.user_name,
+                &id,
+            )
+            .await
         }
         Command::CreateSong { prompt } => {
             handle_create_song_command(
                 twitch_client,
                 pool,
                 tx,
-                msg.user_name,
-                prompt,
+                &msg.user_name,
+                &prompt,
                 false,
             )
             .await
@@ -83,8 +89,8 @@ pub async fn handle_requests(
                 twitch_client,
                 pool,
                 tx,
-                msg.user_name,
-                prompt,
+                &msg.user_name,
+                &prompt,
                 true,
             )
             .await
@@ -120,23 +126,23 @@ async fn handle_download_command(
     pool: &PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     tx: &broadcast::Sender<Event>,
-    user_name: String,
-    id: String,
+    username: &str,
+    id: &str,
 ) -> Result<()> {
-    subd_suno::download_and_play(pool, twitch_client, tx, &user_name, &id).await
+    subd_suno::download_and_play(pool, twitch_client, tx, &username, &id).await
 }
 
 async fn handle_create_song_command(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
     tx: &broadcast::Sender<Event>,
-    user_name: String,
-    prompt: String,
+    user_name: &str,
+    prompt: &str,
     instrumental: bool,
 ) -> Result<()> {
     println!("\tIt's Song time!");
     let data = subd_suno::AudioGenerationData {
-        prompt,
+        prompt: prompt.to_string(),
         make_instrumental: instrumental,
         wait_audio: true,
     };

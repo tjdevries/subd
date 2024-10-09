@@ -145,9 +145,9 @@ pub async fn download_and_play(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     _tx: &broadcast::Sender<subd_types::Event>,
     username: &str,
-    id: &String,
+    id: &str,
 ) -> Result<()> {
-    let id = id.clone();
+    let id = id.to_string().clone();
     let twitch_client = twitch_client.clone();
     let pool = pool.clone();
     let username = username.to_string().clone();
