@@ -15,16 +15,16 @@ pub async fn trigger_ai_friend(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     ai_scene_req: &AiScenesRequest,
-    image_file_path: String,
-    local_audio_path: String,
-    friend_name: String,
+    image_file_path: &str,
+    local_audio_path: &str,
+    friend_name: &str,
 ) -> Result<()> {
     println!("Syncing Lips and Voice for Image: {:?}", image_file_path);
 
     match sync_lips_and_update(
-        &image_file_path,
-        &local_audio_path,
         obs_client,
+        image_file_path,
+        local_audio_path,
         friend_name,
     )
     .await
@@ -77,10 +77,10 @@ pub async fn sync_lips_to_voice(
 }
 
 async fn sync_lips_and_update(
+    obs_client: &OBSClient,
     fal_image_file_path: &str,
     fal_audio_file_path: &str,
-    obs_client: &OBSClient,
-    friend_name: String,
+    friend_name: &str,
 ) -> Result<()> {
     let video_bytes =
         sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;

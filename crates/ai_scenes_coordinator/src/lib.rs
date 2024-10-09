@@ -59,9 +59,9 @@ pub async fn run_ai_scene(
             obs_client,
             twitch_client,
             ai_scene_req,
-            image_file_path,
-            local_audio_path,
-            final_voice,
+            &image_file_path,
+            &local_audio_path,
+            &final_voice,
         )
         .await?;
     } else {
@@ -113,6 +113,8 @@ fn generate_and_save_tts_audio(
     subd_audio::add_voice_modifiers(ai_scenes_request, voice, &local_audio_path)
 }
 
+// We use a String for the determine voice to use for a dumb reason
+// but our program doesn't work otherwise
 async fn determine_voice_to_use(
     username: &str,
     voice_override: Option<String>,
