@@ -38,14 +38,15 @@ pub struct Voice {
     pub name: String,
 }
 
-pub fn twitch_chat_filename(username: String, voice: String) -> String {
+pub fn twitch_chat_filename(username: &str, voice: &str) -> String {
     let now: DateTime<Utc> = Utc::now();
 
     format!("{}_{}_{}", now.timestamp(), username, voice)
 }
 
-pub fn chop_text(starting_text: String) -> String {
-    let mut seal_text = starting_text.clone();
+pub fn chop_text(starting_text: &str) -> String {
+    // TODO: Is it possible to remove this?
+    let mut seal_text = starting_text.to_string();
 
     let spaces: Vec<_> = starting_text.match_indices(' ').collect();
     let line_length_modifier = 20;
@@ -91,7 +92,7 @@ pub async fn talk_in_voice(
         return Ok(());
     }
 
-    let seal_text = chop_text(spoken_string.clone());
+    let seal_text = chop_text(&spoken_string);
 
     let voice_text = spoken_string.clone();
     let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
@@ -116,7 +117,7 @@ pub async fn use_random_voice(
     let random_voice = &voices[random_index];
 
     let spoken_string = contents.clone().replace("!random", "");
-    let speech_bubble_text = chop_text(spoken_string.clone());
+    let speech_bubble_text = chop_text(&spoken_string);
     let voice_text = spoken_string.clone();
 
     let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {

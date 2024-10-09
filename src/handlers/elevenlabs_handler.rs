@@ -227,10 +227,8 @@ impl ElevenLabsHandler {
         chat_message: &str,
         msg: &ElevenLabsRequest,
     ) -> Result<String> {
-        let filename = subd_elevenlabs::twitch_chat_filename(
-            msg.username.clone(),
-            final_voice.to_string(),
-        );
+        let filename =
+            subd_elevenlabs::twitch_chat_filename(&msg.username, final_voice);
         let voice_data = subd_elevenlabs::find_voice_id_by_name(final_voice)
             .unwrap_or_else(subd_elevenlabs::find_random_voice);
         let (voice_id, _voice_name) = voice_data;

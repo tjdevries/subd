@@ -63,7 +63,7 @@ impl EventHandler for ImplicitSoundHandler {
 
             let spoken_string = msg.contents.clone();
             let voice_text = msg.contents.to_string();
-            let speech_bubble_text = subd_elevenlabs::chop_text(spoken_string);
+            let speech_bubble_text = subd_elevenlabs::chop_text(&spoken_string);
 
             // Anything less than 2 words we don't use
             let split = voice_text.split(' ');
