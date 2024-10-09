@@ -571,9 +571,9 @@ pub async fn update_obs_source_defaults(
     position_x: f32,
     position_y: f32,
 ) -> Result<PgQueryResult> {
-    let scale = BigDecimal::from_f32(scale).unwrap();
-    let position_x = BigDecimal::from_f32(position_x).unwrap();
-    let position_y = BigDecimal::from_f32(position_y).unwrap();
+    let scale = BigDecimal::from_f32(scale).unwrap_or_default();
+    let position_x = BigDecimal::from_f32(position_x).unwrap_or_default();
+    let position_y = BigDecimal::from_f32(position_y).unwrap_or_default();
     sqlx::query!(
         r#"UPDATE obs_sources
         SET scale = $1,
@@ -596,8 +596,8 @@ pub async fn update_obs_source_position(
     position_x: f32,
     position_y: f32,
 ) -> Result<PgQueryResult> {
-    let position_x = BigDecimal::from_f32(position_x).unwrap();
-    let position_y = BigDecimal::from_f32(position_y).unwrap();
+    let position_x = BigDecimal::from_f32(position_x).unwrap_or_default();
+    let position_y = BigDecimal::from_f32(position_y).unwrap_or_default();
     sqlx::query!(
         r#"UPDATE obs_sources
         SET position_x = $1,
