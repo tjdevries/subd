@@ -128,11 +128,17 @@ async fn handle_commands(
                             .list(background_scene)
                             .await?;
                         for item in items {
-                            let enabled = obs_client
+                            let enabled = match obs_client
                                 .scene_items()
                                 .enabled(background_scene, item.id)
                                 .await
-                                .unwrap();
+                            {
+                                Ok(enabled) => enabled,
+                                Err(err) => {
+                                    eprintln!("Error getting scene item enabled status: {}", err);
+                                    continue;
+                                }
+                            };
 
                             if enabled && item.source_name == details.music {
                                 println!("We are just changing the music!");
@@ -291,14 +297,23 @@ fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
         return None;
     }
 
+    // TODO: this might not be the best idea
     let mut rng = rand::thread_rng();
-    let selected_file = mp3_files.choose(&mut rng).unwrap();
+    let selected_file = match mp3_files.choose(&mut rng) {
+        Some(file) => file,
+        None => {
+            eprintln!("Error: Failed to choose a random MP3 file");
+            return None;
+        }
+    };
 
-    let new_music = selected_file
-        .file_name()
-        .to_str()
-        .map(String::from)
-        .unwrap();
+    let new_music = match selected_file.file_name().to_str().map(String::from) {
+        Some(name) => name,
+        None => {
+            eprintln!("Error: Failed to convert file name to string");
+            return None;
+        }
+    };
     let full_path = format!(
         "/home/begin/stream/Stream/BackgroundMusic/{}/{}",
         folder_path, new_music

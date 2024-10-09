@@ -111,11 +111,7 @@ fn generate_and_save_tts_audio(
     fs::write(&local_audio_path, bytes)?;
 
     // Apply any voice modifiers
-    subd_audio::add_voice_modifiers(
-        ai_scenes_request,
-        voice.to_string(),
-        local_audio_path,
-    )
+    subd_audio::add_voice_modifiers(ai_scenes_request, voice, &local_audio_path)
 }
 
 async fn determine_voice_to_use(

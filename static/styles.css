@@ -1,153 +1,182 @@
-/* Basic Reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Neon&display=swap');
 
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #0F0E17;
-    color: #FFFFFE;
-    line-height: 1.6;
+    font-family: 'Press Start 2P', cursive;
+    background: black;
+    color: #39FF14;
     overflow-x: hidden;
 }
 
-/* Typekit Font Import for Variety */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Pacifico&display=swap');
-
-.header-container {
-    padding: 20px;
-    background-color: #FF8906;
-    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+header.header-container {
+    text-align: center;
+    padding: 50px 0;
+    background: linear-gradient(180deg, #0f0c29, #302b63, #24243e);
+    color: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: neon-glow 1.5s ease-in-out infinite alternate;
+    border-bottom: 3px solid #39FF14;
 }
 
 .header {
-    font-size: 3rem;
-    transition: transform 0.5s ease;
+    font-size: 3em;
+    font-family: 'Neon', sans-serif;
+    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 30px #39ff14;
 }
 
 .header a {
-    color: #F25F4C;
     text-decoration: none;
+    color: inherit;
+    transition: 0.5s;
 }
 
-.header:hover {
+.header a:hover {
+    color: #f35626;
+    text-shadow: 0 0 5px #f35626, 0 0 10px #f35626, 0 0 15px #f35626;
     transform: scale(1.1);
-    letter-spacing: 3px;
 }
 
-.sub-header {
-    font-family: 'Pacifico', cursive;
-    font-size: 1.5rem;
-    font-variant: small-caps;
-    margin-top: 10px;
-}
-
-.nav-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, #FF8906, #F25F4C);
+nav.nav-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    justify-items: center;
+    background: #333;
+    padding: 10px;
+    border-bottom: 2px solid #39ff14;
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .nav-link {
-    padding: 15px 20px;
-    font-size: 1rem;
-    color: #FFFFFE;
-    text-decoration: none;
-    transition: background-color 0.3s ease, transform 0.3s ease;
+    color: white;
+    font-size: 1.1em;
+    font-family: 'Luckiest Guy', cursive;
+    text-shadow: 0 0 5px #39ff14;
+    transition: all 0.3s ease-in-out;
 }
 
 .nav-link:hover {
-    background-color: #E53170;
-    transform: translateY(-5px) rotate(5deg);
-    box-shadow: 0 5px 15px rgba(229, 49, 112, 0.6);
+    color: #f35626;
+    text-shadow: 0 0 10px #f35626;
+    transform: rotate(360deg);
 }
 
-section.songs, section.users, section.charts, section.unplayed-songs {
-    max-width: 1000px;
-    margin: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+.unplayed-songs, .songs, .users, .top-songs {
     padding: 20px;
+    margin: 20px auto;
+    max-width: 1000px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,255,0,0.5);
+    border: 3px solid #39ff14;
 }
 
-.song, .user, .unplayed-song, .top-song {
-    background-color: #16161A;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 10px rgba(255, 137, 6, 0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+.song-title, .sub-header {
+    color: #39FF14;
+    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 30px #39ff14;
 }
 
-.song:hover, .user:hover, .unplayed-song:hover, .top-song:hover {
-    transform: scale(1.05) rotate(-2deg);
-    box-shadow: 0 6px 15px rgba(255, 137, 6, 0.8);
-}
-
-.song-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 10px;
+.sub-header {
+    animation: fadeInUp 2s;
 }
 
 .song-title a {
-    color: #A7A9BE;
+    color: inherit;
     text-decoration: none;
+    transition: color 0.3s ease-in-out;
 }
 
 .song-title a:hover {
-    color: #D4A5A5;
-    text-shadow: 1px 1px 5px rgba(212, 165, 165, 0.6);
+    color: #f35626;
+    text-shadow: 0 0 10px #f35626;
+}
+
+.song {
+    border-bottom: 2px solid #333;
+    padding: 10px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.song:hover {
+    background: rgba(57, 255, 20, 0.1);
+    transform: scale(1.02);
 }
 
 .song-audio audio {
     width: 100%;
-    outline: none;
-    margin-top: 15px;
 }
 
-.song-images img {
-    width: 100%;
-    border-radius: 8px;
-    transition: transform 0.4s ease;
+.song-audio audio::-webkit-media-controls-panel {
+    background-color: #39ff14;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #39ff14;
 }
 
-.song-images img:hover {
+.image img {
+    max-width: 100%;
+    border: 3px solid #39ff14;
+    transition: transform 0.5s ease;
+}
+
+.image:hover img {
     transform: scale(1.1);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.image-voting {
+    font-size: 0.8em;
+    text-align: center;
+    color: #ffffff;
+}
+
+.image-votes {
+    font-size: 0.8em;
+    text-align: center;
+    color: #ffffff;
 }
 
 .video {
-    border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    transition: transform 0.4s ease;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #39ff14;
+    transition: transform 0.5s;
 }
 
 .video:hover {
-    transform: rotate(3deg);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform: scale(1.1);
 }
 
-.song-lyrics {
-    background-color: #F25F4C;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: inset 0 0 10px rgba(255, 137, 6, 0.5);
-    font-family: 'Pacifico', cursive;
-    color: #16161A;
+@keyframes neon-glow {
+    from {
+        text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14;
+    }
+
+    to {
+        text-shadow: 0 0 10px #f35626, 0 0 20px #f35626, 0 0 30px #f35626, 0 0 40px #f35626;
+    }
 }
 
-.song-tags, .song-description, .song-id, .song-average-score, .song-total-votes, .song-creator {
-    margin-bottom: 10px;
-    font-size: 0.9rem;
-    color: #A7A9BE;
-    line-height: 1.4;
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-svg {
-    mix-blend-mode: multiply;
-    backdrop-filter: blur(5px);
+@media (max-width: 768px) {
+    nav.nav-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .header {
+        font-size: 2em;
+    }
 }

@@ -106,13 +106,16 @@ pub async fn generate_ai_js(
     html_to_animate_folder: Option<&str>,
 ) -> Result<()> {
     let client = openai_api_rs::v1::api::Client::new(
-        env::var("OPENAI_API_KEY").unwrap(),
+        env::var("OPENAI_API_KEY").map_err(|e| {
+            eprintln!("Error retrieving OPENAI_API_KEY: {}", e);
+            anyhow::anyhow!("Failed to retrieve OPENAI_API_KEY: {}", e)
+        })?,
     );
     let instructor_client = from_openai(client);
     let contents = html_file_contents(html_to_animate_folder)?;
 
     let prompt = format!(
-        "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible. Use libraries like three.js, phaser.js, 3D.js, aframe.io, charts.js, P5.js, zimjs and more. Summarize the following content and use it to influence the animation and JavaScript. Be Creative.: {} Make it all savable as a styles.js file, for the following HTML: {}",
+        "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible. Use libraries like three.js, D3.js, mermaid.js. Create some Charts with mermaid.js | Print whats happening to console.log as often as possible. Summarize the following content and use it to influence the animation and JavaScript and be creative : {}. Make it all savable as a styles.js file, for the following HTML: {}",
         content, contents
     );
 
@@ -377,14 +380,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_generating_css() {
-        //let css_file = "../../static/styles.css";
-        //let res = generate_ai_css(
-        //    css_file,
-        //    "Neon".to_string(),
-        //    Some("../../templates"),
-        //)
-        //.await;
-        //assert!(res.is_ok(), "{:?}", res);
+        let css_file = "../../static/styles.css";
+        let res = generate_ai_css(
+            css_file,
+            "Neon".to_string(),
+            Some("../../templates"),
+        )
+        .await;
+        assert!(res.is_ok(), "{:?}", res);
 
         let js_file = "../../static/styles.js";
         let res = generate_ai_js(

@@ -40,7 +40,9 @@ impl EventHandler for ImplicitSoundHandler {
         let soundeffect_files = fs::read_dir("./MP3s").unwrap();
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for soundeffect_file in soundeffect_files {
-            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
+            if let Ok(file) = soundeffect_file {
+                mp3s.insert(file.path().display().to_string());
+            }
         }
 
         loop {
@@ -157,17 +159,37 @@ impl EventHandler for ImplicitSoundHandler {
                         },
                     ));
 
-                    let file = BufReader::new(
-                        File::open(format!("./MP3s/{}.mp3", sanitized_word))
-                            .unwrap(),
-                    );
+                    let file = match File::open(format!(
+                        "./MP3s/{}.mp3",
+                        sanitized_word
+                    )) {
+                        Ok(file) => BufReader::new(file),
+                        Err(e) => {
+                            println!("Error opening file: {}", e);
+                            continue;
+                        }
+                    };
 
                     let (_stream, stream_handle) =
                         subd_audio::get_output_stream("pulse")
                             .expect("stream handle");
-                    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
 
-                    sink.append(Decoder::new(BufReader::new(file)).unwrap());
+                    // TODO: We shouldn't be creating more and more handlers
+                    let sink = match rodio::Sink::try_new(&stream_handle) {
+                        Ok(sink) => sink,
+                        Err(e) => {
+                            println!("Error creating sink: {}", e);
+                            continue;
+                        }
+                    };
+
+                    match Decoder::new(BufReader::new(file)) {
+                        Ok(source) => sink.append(source),
+                        Err(e) => {
+                            println!("Error decoding file: {}", e);
+                            continue;
+                        }
+                    };
 
                     sink.sleep_until_end();
 
