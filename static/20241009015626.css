@@ -1,0 +1,153 @@
+/* Importing bold, unique fonts */
+@import url('https://fonts.googleapis.com/css2?family=Acme&family=Bungee+Shade&family=Fugaz+One&family=Lobster&display=swap');
+
+/* Base styles for body */
+body {
+    font-family: 'Lobster', cursive;
+    background: linear-gradient(to right, #f1c40f, #f39c12);
+    color: #2c3e50;
+    line-height: 1.8;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+/* Animate links to do something bold and dynamic on hover */
+a {
+    color: #e74c3c;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+a:hover {
+    color: #c0392b;
+    text-shadow: 4px 4px #000000;
+    transform: rotate(360deg) scale(1.1);
+}
+
+/* Header styling */
+.header-container {
+    background: linear-gradient(to right, #9b59b6, #8e44ad);
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    backdrop-filter: blur(5px);
+}
+
+.header {
+    font-family: 'Bungee Shade', sans-serif;
+    animation: titleSwing 2s infinite alternate;
+}
+
+.sub-header {
+    font-family: 'Acme', sans-serif;
+}
+
+@keyframes titleSwing {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(10deg); }
+}
+
+/* Navigation styling */
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nav-link {
+    font-family: 'Fugaz One', cursive;
+    padding: 8px 16px;
+    border-radius: 10px;
+    transition: background 0.3s ease-in-out;
+}
+
+.nav-link:hover {
+    background: rgba(231, 76, 60, 0.7);
+}
+
+/* Interactive styles for song section */
+.unplayed_songs, .current-song, .songs {
+    padding: 20px;
+    margin Top: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background: radial-gradient(circle, #e66465, #9198e5);
+}
+
+.unplayed_song {
+    background: rgba(255, 255, 255, 0.5);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.unplayed_song:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+/* Current song styling */
+.current-song-info {
+    animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Interactive styles for users section */
+.user {
+    padding: 20px;
+    margin: 10px 0;
+    background: rgba(236, 240, 241, 0.85);
+    border-radius: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.3s, background 0.3s;
+}
+
+.user:hover {
+    background: rgba(236, 240, 241, 1);
+    transform: scale(1.05);
+}
+
+/* Charts Section */
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: rgba(189, 195, 199, 0.8);
+}
+
+.chart-container {
+    padding: 10px;
+    background: #ecf0f1;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease-in;
+    font-family: 'Fugaz One', cursive;
+    color: #2c3e50;
+}
+
+.chart-container:hover {
+    transform: scale(1.05) translateY(-10px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+/* Images and videos styling for interactivity */
+.ai_song_image img, .video video {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+}
+
+.ai_song_image img:hover, .video video:hover {
+    transform: scale(1.05) rotate(-1deg);
+}

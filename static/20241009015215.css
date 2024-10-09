@@ -1,0 +1,165 @@
+/* Importing a variety of bold, fun fonts for a cohesive theme */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&family=Texturina:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Texturina', serif;
+    color: #073b4c;
+    background: linear-gradient(135deg, #ef476f, #ffd166, #06d6a0, #118ab2);
+    background-size: 400% 400%;
+    animation: GradientShift 15s ease infinite;
+}
+
+@keyframes GradientShift {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+.header-container {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+}
+
+.header-container h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    text-shadow: 2px 2px #06d6a0;
+}
+
+.header-container h2 {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.5rem;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 15px;
+    border-bottom: 3px solid #118ab2;
+}
+
+.nav-link {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    text-decoration: none;
+    color: #118ab2;
+    padding: 10px;
+    transition: all 0.3s ease-in-out;
+    transform-origin: center bottom;
+}
+
+.nav-link:hover {
+    color: #ef476f;
+    transform: rotate(-5deg) scale(1.1);
+    text-shadow: 2px 2px #ffd166;
+}
+
+.unplayed_songs {
+    padding: 20px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.unplayed_song a {
+    display: block;
+    padding: 10px;
+    border-bottom: 1px solid #ef476f;
+    font-family: 'Texturina', serif;
+    color: #073b4c;
+    text-decoration: none;
+    filter: brightness(90%);
+    transition: filter 0.3s, transform 0.3s ease-in-out;
+}
+
+.unplayed_song a:hover {
+    filter: brightness(110%);
+    transform: translateX(10px);
+}
+
+.current-song {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 20px;
+    padding: 30px;
+    background: rgba(255,255,255,0.9);
+}
+
+.current-song-info {
+    padding: 20px;
+    background-color: #ef476f22;
+    border-radius: 10px;
+}
+
+.current-song-info h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    color: #ef476f;
+}
+
+.current-song-info div {
+    margin-bottom: 10px;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.video {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+    transform: scale(0.98);
+    transition: transform 0.5s;
+}
+
+.video:hover {
+    transform: scale(1);
+}
+
+.video video {
+    display: block;
+    width: 100%;
+}
+
+.videos h4 {
+    font-family: 'Orbitron', sans-serif;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.song {
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.song:hover {
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    transform: translateY(-10px);
+}
+
+.song a {
+    color: #118ab2;
+    text-decoration: none;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+}

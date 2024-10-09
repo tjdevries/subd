@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;700&family=Caveat:wght@700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    margin: 0;
+    padding: 0;
+    color: #ffffff;
+    overflow-x: hidden;
+}
+
+.header-container {
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    animation: fadeIn 3s ease-in-out infinite alternate;
+}
+
+.header-container h1, .header-container h2 {
+    margin: 0;
+    color: #ffa726;
+    font-family: 'Caveat', cursive;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.nav-link {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #ffffff;
+    font-weight: bold;
+    transform: rotate(0deg);
+    transition: transform 0.5s, color 0.5s;
+}
+
+.nav-link:hover {
+    color: #ff4081;
+    transform: rotate(360deg) scale(1.1);
+}
+
+.unplayed_songs, .current-song, .lyrics, .videos, .users-container, .charts-container, .grid-container {
+    padding: 20px;
+    margin: 20px auto;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+}
+
+.unplayed_song a, .current-song-info a, .song_link a, .user-link a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.unplayed_song a:hover, .current-song-info a:hover, .song_link a:hover, .user-link a:hover {
+    color: #ff4081;
+    text-shadow: 2px 2px 8px #ffaa56;
+    animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.current-song-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    align-items: center;
+}
+
+.image_scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.image_votes, .image_voting {
+    font-size: 14px;
+    color: #e1bee7;
+    text-align: center;
+}
+
+.ai_song_image img {
+    width: 100%;
+    border-radius: 10px;
+    transition: transform 0.5s, filter 0.5s;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+.ai_song_image img:hover {
+    transform: scale(1.1);
+    filter: brightness(110%);
+}
+
+.video {
+    perspective: 1000px;
+}
+
+video {
+    width: 100%;
+    transition: transform 0.5s, filter 0.5s;
+}
+
+video:hover {
+    transform: rotateY(10deg) rotateX(10deg);
+    filter: saturate(1.5);
+}
+
+.users-container, .charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.user, .chart-container {
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    will-change: transform;
+}
+
+.user:hover, .chart-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    overflow-anchor: none;
+}
+
+.title {
+    font-size: 1.5em;
+    color: #ffca28;
+    margin-bottom: 5px;
+}
+
+@keyframes fadeIn {
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+}
+
+@keyframes float {
+    0% { transform: translatey(0px); }
+    50% { transform: translatey(-10px); }
+    100% { transform: translatey(0px); }
+}
+
+.grid-container {
+    display: grid;
+    grid-template-areas: 'song';
+    gap: 20px;
+}
+
+.song {
+    font-variant: small-caps;
+    background: rgba(69, 90, 100, 0.7);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    transition: transform 0.5s, box-shadow 0.5s;
+}
+
+.song:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.7);
+}

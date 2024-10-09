@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to right, #8360c3, #2ebf91);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+header {
+    text-align: center;
+    color: #fff;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+header .header {
+    font-size: 2.5em;
+    text-shadow: 2px 2px 5px #000;
+}
+header .sub-header {
+    font-size: 1.5em;
+}
+nav {
+    display: flex;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px);
+}
+nav .nav-link {
+    text-decoration: none;
+    color: #fff;
+    padding: 15px 25px;
+    transition: all 0.3s ease-in-out;
+    font-weight: 600;
+    display: block;
+    transition: transform 0.5s...
+}
+nav .nav-link:hover {
+    color: #ff4081;
+    transform: scale(1.1);
+}
+.unplayed_songs {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    margin: 20px;
+    transform: rotate(1deg);
+}
+.unplayed_songs h2 {
+    font-size: 2em;
+    color: #333;
+}
+.unplayed_song a {
+    font-weight: bold;
+    color: #5793e6;
+    transition: color 0.5s, transform 0.3s;
+}
+.unplayed_song a:hover {
+    color: #ff4081;
+    transform: translateX(10px);
+}
+.current-song {
+    background: #fafafa;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    margin: 20px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+.image_scores {
+    text-align: center;
+    transition: all 0.3s;
+}
+.image_scores:hover {
+    transform: scale(1.05);
+}
+.ai_song_image img {
+    max-width: 100%;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+.ai_song_image img:hover {
+    transform: rotate(10deg);
+}
+.videos video {
+    max-width: 100%;
+    border-radius: 15px;
+    transition: all 0.5s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+.videos video:hover {
+    transform: scale(1.1);
+}

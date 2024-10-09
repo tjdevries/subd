@@ -39,6 +39,7 @@ pub async fn create_music_video_image(
     pool: &PgPool,
     id: String,
     prompt: Option<String>,
+    index_offset: Option<i64>,
 ) -> Result<String> {
     println!("\tAttempting to create Music Video Image!");
 
@@ -111,7 +112,10 @@ pub async fn create_music_video_image(
         .max()
         .unwrap_or(0);
 
-    let file_index = highest_number + 1;
+    let file_index = match index_offset {
+        Some(offset) => highest_number + offset as usize,
+        None => highest_number + 1,
+    };
     create_image_from_prompt(ai_song, image_prompt, id, file_index).await
 }
 
@@ -223,7 +227,7 @@ async fn create_image_from_prompt(
 ) -> Result<String> {
     println!(
         "{} - {}",
-        "Creating Image for Lyric Chunk: {}".cyan(),
+        "Creating Image for Prompt: {}".cyan(),
         prompt.green()
     );
 

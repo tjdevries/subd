@@ -114,19 +114,25 @@ pub async fn handle_requests(
         .await?
         .song_id
         .to_string();
-    // These are named wrong right now
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideoVideo { id, image_name } => {
             let result = find_image_filename(id.clone(), image_name).await;
             match result {
                 Ok((image_filename, path_string, _path)) => {
-                    ai_music_videos::create_video_from_image(
-                        &id,
-                        &image_filename,
-                        &path_string,
-                    )
-                    .await?;
+                    let id_clone = id.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) =
+                            ai_music_videos::create_video_from_image(
+                                &id_clone,
+                                &image_filename,
+                                &path_string,
+                            )
+                            .await
+                        {
+                            eprintln!("Error creating video from image: {}", e);
+                        }
+                    });
                 }
                 Err(e) => {
                     let _ = send_message(
@@ -148,7 +154,8 @@ pub async fn handle_requests(
             update_obs_source(obs_client, &filename).await
         }
         Command::CreateMusicVideoImages { id, count } => {
-            for _ in 0..count {
+            for index in 0..count {
+                println!("Creating Image for Index: {}", index);
                 // Do we need sleep a little before calling this so fast again??
                 let pool_clone = pool.clone();
                 let id_clone = id.clone();
@@ -157,6 +164,7 @@ pub async fn handle_requests(
                         &pool_clone,
                         id_clone,
                         None,
+                        Some(index + 1),
                     )
                     .await;
                     if let Err(e) = res {
@@ -167,9 +175,10 @@ pub async fn handle_requests(
             Ok(())
         }
         Command::CreateMusicVideoImage { id, prompt } => {
-            let _res =
-                ai_music_videos::create_music_video_image(pool, id, prompt)
-                    .await;
+            let _res = ai_music_videos::create_music_video_image(
+                pool, id, prompt, None,
+            )
+            .await;
             Ok(())
         }
     }
@@ -239,6 +248,7 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
                     ))
                 }
             };
+            // We need an async move
             let current_song = ai_playlist::get_current_song(pool).await?;
             Ok(Command::CreateMusicVideoVideo {
                 id: current_song.song_id.to_string(),
