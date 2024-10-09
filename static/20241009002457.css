@@ -1,0 +1,113 @@
+body {
+    background-color: #1a1a1d;
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    line-height: 1.6;
+    scroll-behavior: smooth;
+}
+
+.header-container h1 {
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(to right, #ff416c, #ff4b2b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 3em;
+    margin-bottom: 0;
+}
+
+.header-container h2 {
+    text-align: center;
+    color: #ff4b2b;
+    font-size: 1.5em;
+    margin-top: 0;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.2em;
+    margin: 0 15px;
+    transition: transform 0.3s;
+}
+
+.nav-link:hover {
+    color: #ff4b2b;
+    transform: scale(1.1) rotate(20deg);
+}
+
+.unplayed_songs, .current-song, .users-container, .charts-container {
+    margin: 40px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.unplayed_song a {
+    color: #ff4b2b;
+    text-decoration: none;
+    transition: text-shadow 0.3s;
+}
+
+.unplayed_song a:hover {
+    text-shadow: 2px 2px 8px #ff4b2b;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.song, .chart-container {
+    padding: 20px;
+    background: #2a2a2d;
+    border-radius: 10px;
+    transition: transform 0.3s, background 0.3s;
+}
+
+.song:hover, .chart-container:hover {
+    transform: scale(1.05);
+    background: #3a3a3d;
+}
+
+.song a, .chart-container a {
+    color: #ff4b2b;
+}
+
+.song a:hover, .chart-container a:hover {
+    text-shadow: 0 0 10px #ff4b2b;
+}
+
+.song_source audio {
+    width: 100%;
+}
+
+.video video {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.user-link a {
+    color: #ff4b2b;
+    text-decoration: none;
+    font-size: 1.2em;
+}
+
+.user {
+    padding: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.user:hover {
+    background-color: #3a3a3d;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;700&display=swap');

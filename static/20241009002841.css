@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700;900&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to right, #1F1C2C, #928DAB);
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    transition: background-color 0.5s;
+}
+
+.header-container {
+    text-align: center;
+    padding: 2rem;
+    background-color: rgba(31, 28, 44, 0.7);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header a {
+    text-decoration: none;
+    color: #FFFFFF;
+    transition: color 0.3s;
+}
+
+.header a:hover {
+    color: #FF4081;
+    transform: rotate(10deg);
+}
+
+h1, h2 {
+    font-family: 'Playfair Display', serif;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+}
+
+.nav-link {
+    color: #FFFFFF;
+    margin: 0 1rem;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.nav-link:hover {
+    color: #FF4081;
+    transform: scale(1.1) rotate(-5deg);
+}
+
+.unplayed_songs {
+    padding: 3rem 2rem;
+    background: radial-gradient(circle, #2B2B4A, #1F1C2C);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-gap: 20px;
+}
+
+.unplayed_song a {
+    display: block;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #FFFFFF;
+    padding: 1rem;
+    border-radius: 10px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.unplayed_song a:hover {
+    background-color: #FF4081;
+    transform: translateY(-10px);
+}
+
+.current-song-info {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(248, 248, 255, 0.1);
+    border: 1px solid #444;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.image_scores, .videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    padding: 0 2rem;
+}
+
+.ai_song_image, .video {
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.ai_song_image img, .video video {
+    width: 100%;
+    height: auto;
+}
+
+.ai_song_image:hover, .video:hover {
+    transform: scale(1.05) rotate(-2deg);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.users-container {
+    padding: 2rem;
+    background: linear-gradient(to bottom, #2B2B4A, #1F1C2C);
+}
+
+.user {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+}
+
+.user:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.user-link a {
+    font-size: 1.1rem;
+    text-decoration: none;
+    color: #FF4081;
+    transition: color 0.3s;
+}
+
+.user-link a:hover {
+    color: #FFFFFF;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 2rem;
+    background: conic-gradient(from 180deg, #1F1C2C, #928DAB, #1F1C2C);
+}
+
+.chart-container {
+    background-color: rgba(31, 28, 44, 0.8);
+    color: #FFFFFF;
+    padding: 1rem;
+    border-radius: 10px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.chart-container:hover {
+    background-color: #FF4081;
+    transform: scale(1.05);
+}
+
+.chart-container .title, .chart-container .song-link a {
+    font-family: 'Playfair Display', serif;
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+.song-link a:hover {
+    text-shadow: 0 0 10px #FF4081;
+    transform: rotate(15deg);
+}

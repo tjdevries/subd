@@ -1,0 +1,95 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;900&family=Lobster&display=swap');
+
+/* Global styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #2c3e50, #bdc3c7);
+    color: #f5f6fa;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+a {
+    color: #e74c3c;
+    text-decoration: none;
+    transition: color 0.3s ease, box-shadow 0.3s ease;
+}
+a:hover {
+    color: #9b59b6;
+    box-shadow: 0 0 2px 2px #9b59b6;
+    text-shadow: 1px 1px #34495e;
+    transform: rotateY(360deg);
+}
+
+.header-container {
+    text-align: center;
+    margin: 20px 0;
+    animation: fadeIn 2s ease-in;
+}
+.header {
+    font-family: 'Lobster', cursive;
+    font-size: 3em;
+    margin: 0;
+    color: #f39c12;
+    text-shadow: 2px 2px #34495e;
+}
+.sub-header {
+    font-size: 1.5em;
+    margin: 5px 0;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    background-color: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-bottom: 3px solid #f39c12;
+}
+.nav-link {
+    font-weight: bold;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+.nav-link:hover {
+    color: #f39c12;
+    transform: scale(1.1);
+}
+
+.unplayed_songs, .users-container, .charts-container {
+    padding: 20px;
+    animation: slideInFromLeft 1.5s ease-out;
+}
+.unplayed_song, .song, .chart-container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    transition: background 0.3s ease;
+}
+.unplayed_song:hover, .song:hover, .chart-container:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+}
+
+.video, .ai_song_image {
+    margin: 10px auto;
+    width: fit-content;
+    transition: transform 0.3s ease;
+}
+.video:hover, .ai_song_image:hover {
+    transform: rotate(10deg);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideInFromLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}

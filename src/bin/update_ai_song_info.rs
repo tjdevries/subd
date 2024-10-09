@@ -131,11 +131,11 @@ async fn main() -> Result<()> {
             created_at: Some(created_at),
             downloaded: true,
         };
-        println!("Result: {:?}", new_song);
+        println!("Result: {:?}", new_song.gpt_description_prompt);
 
         //
         //// Save the song if it doesn't already exist
-        let _ = new_song.save(&pool).await;
+        // let _ = new_song.save(&pool).await;
 
         // We need to now call out and create a new ai_song
 
