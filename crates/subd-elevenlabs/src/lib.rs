@@ -117,17 +117,17 @@ pub async fn use_random_voice(
 
     let spoken_string = contents.replace("!random", "");
     let speech_bubble_text = chop_text(&spoken_string);
-    let voice_text = spoken_string.clone();
+    let voice_text = spoken_string;
 
     let _ = tx.send(Event::TransformOBSTextRequest(TransformOBSTextRequest {
-        message: random_voice.name.clone(),
+        message: random_voice.name.to_string(),
 
         // TODO: This should probably be a different Text Source
         text_source: "Soundboard-Text".to_string(),
     }));
 
     let _ = tx.send(Event::ElevenLabsRequest(ElevenLabsRequest {
-        voice: Some(random_voice.name.clone()),
+        voice: Some(random_voice.name.to_string()),
         message: speech_bubble_text,
         voice_text,
         username: username.to_string(),

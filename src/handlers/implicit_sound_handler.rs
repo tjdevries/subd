@@ -61,12 +61,11 @@ impl EventHandler for ImplicitSoundHandler {
                 _ => continue,
             };
 
-            let spoken_string = msg.contents.clone();
-            let voice_text = msg.contents.to_string();
-            let speech_bubble_text = subd_elevenlabs::chop_text(&spoken_string);
+            let spoken_string = &msg.contents;
+            let speech_bubble_text = subd_elevenlabs::chop_text(spoken_string);
 
             // Anything less than 2 words we don't use
-            let split = voice_text.split(' ');
+            let split = spoken_string.split(' ');
             let vec = split.collect::<Vec<&str>>();
             if vec.len() < 2 {
                 continue;
@@ -116,6 +115,9 @@ impl EventHandler for ImplicitSoundHandler {
             } else if msg.roles.is_twitch_sub() || !state.sub_only_tts {
                 character.voice = Some(voice);
             }
+
+            //-            let spoken_string = msg.contents.clone();
+            let voice_text = msg.contents.to_string();
 
             // If the character
             // If we have a voice assigned, then we fire off an elevenlabs Request
