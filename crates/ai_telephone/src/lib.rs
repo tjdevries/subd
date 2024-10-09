@@ -18,8 +18,8 @@ pub enum ImageRequestType {
 pub async fn telephone(
     obs_client: &OBSClient,
     sink: &Sink,
-    url: String,
-    prompt: String,
+    url: &str,
+    prompt: &str,
     num_connections: u8,
     request_type: &ImageRequestType,
 ) -> Result<String, anyhow::Error> {
@@ -30,11 +30,8 @@ pub async fn telephone(
 
     // This shouldn't download an image always
     let og_file = format!("./archive/{}/original.png", folder);
-    if let Err(e) = subd_image_utils::download_image_to_vec(
-        url.clone(),
-        Some(og_file.clone()),
-    )
-    .await
+    if let Err(e) =
+        subd_image_utils::download_image_to_vec(url, Some(&og_file)).await
     {
         println!("Error Downloading Image: {} | {:?}", og_file.clone(), e);
     }
@@ -107,7 +104,7 @@ pub async fn telephone(
 
     // We take in an ID
     let _ =
-        update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
+        update_obs_telephone_scene(obs_client, &og_file, dalle_path_bufs).await;
     let _ = subd_audio::play_sound(sink, "8bitmackintro").await;
 
     Ok(dalle_path)
@@ -116,10 +113,10 @@ pub async fn telephone(
 // TODO: I don't like the name
 pub async fn create_screenshot_img2img(
     obs_client: &OBSClient,
-    filename: String,
+    filename: &str,
     ai_image_req: &impl GenerateImage,
-    prompt: String,
-    source: String,
+    prompt: &str,
+    source: &str,
     archive_dir: Option<String>,
 ) -> Result<String> {
     obs_source::save_screenshot(obs_client, &source, &filename).await?;
@@ -144,10 +141,10 @@ pub async fn create_screenshot_img2img(
 pub async fn create_screenshot_variation(
     _sink: &Sink,
     obs_client: &OBSClient,
-    filename: String,
+    filename: &str,
     request_type: ImageRequestType,
-    prompt: String,
-    source: String,
+    prompt: &str,
+    source: &str,
     archive_dir: Option<String>,
 ) -> Result<String> {
     // let _ = subd_audio::play_sound(&sink).await;
@@ -184,7 +181,7 @@ pub async fn create_screenshot_variation(
 // Exclude the
 pub async fn update_obs_telephone_scene(
     obs_client: &OBSClient,
-    og_image: String,
+    og_image: &str,
     image_variations: Vec<PathBuf>,
 ) -> Result<()> {
     let mut files: Vec<SlideshowFile> = vec![];
@@ -206,9 +203,12 @@ pub async fn update_obs_telephone_scene(
     let _ = obs_source::set_enabled(&scene, &source, true, obs_client).await;
 
     let source = "OGTelephoneImage".to_string();
-    let _ =
-        obs_source::update_image_source(obs_client, source.clone(), og_image)
-            .await;
+    let _ = obs_source::update_image_source(
+        obs_client,
+        source.clone(),
+        og_image.to_string(),
+    )
+    .await;
     let _ = obs_source::set_enabled(&scene, &source, true, obs_client).await;
 
     Ok(())
@@ -216,7 +216,7 @@ pub async fn update_obs_telephone_scene(
 
 pub async fn old_obs_telephone_scene(
     obs_client: &OBSClient,
-    id: String,
+    id: &str,
 ) -> Result<()> {
     let image_path = format!("/home/begin/code/subd/archive/telephone/{}/", id);
     let og_image = format!(

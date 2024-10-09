@@ -91,7 +91,7 @@ impl ElevenLabsHandler {
             local_audio_path = subd_elevenlabs::add_reverb(&local_audio_path)
                 .unwrap_or_else(|err| {
                     eprintln!("Error adding reverb: {:?}", err);
-                    local_audio_path.clone()
+                    local_audio_path
                 });
         }
 
@@ -100,7 +100,7 @@ impl ElevenLabsHandler {
                 subd_elevenlabs::stretch_audio(&local_audio_path, &stretch)
                     .unwrap_or_else(|err| {
                         eprintln!("Error stretching audio: {:?}", err);
-                        local_audio_path.clone()
+                        local_audio_path
                     });
         }
 
@@ -109,7 +109,7 @@ impl ElevenLabsHandler {
                 subd_elevenlabs::change_pitch(&local_audio_path, pitch)
                     .unwrap_or_else(|err| {
                         eprintln!("Error changing pitch: {:?}", err);
-                        local_audio_path.clone()
+                        local_audio_path
                     });
         }
 
@@ -125,7 +125,7 @@ impl ElevenLabsHandler {
                                 "Error processing 'god' voice: {:?}",
                                 err
                             );
-                            local_audio_path.clone()
+                            local_audio_path
                         });
             }
             _ => {}

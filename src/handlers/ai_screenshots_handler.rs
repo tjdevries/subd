@@ -174,10 +174,10 @@ async fn screenshot_routing(
         ai_telephone::create_screenshot_variation(
             sink,
             obs_client,
-            filename,
+            &filename,
             ai_telephone::ImageRequestType::Dalle(req),
-            prompt,
-            source,
+            &prompt,
+            &source,
             None,
         )
         .await?

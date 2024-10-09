@@ -80,10 +80,10 @@ pub async fn handle_ai_screenshots(
     ai_telephone::create_screenshot_variation(
         sink,
         obs_client,
-        filename,
+        &filename,
         ai_telephone::ImageRequestType::Dalle(req),
-        random_prompt,
-        "begin".to_string(),
+        &random_prompt,
+        "begin",
         Some("timelapse".to_string()),
     )
     .await

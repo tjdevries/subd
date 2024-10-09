@@ -92,11 +92,7 @@ pub async fn handle_telephone_requests(
         "!old_telephone" => {
             // we need to take an ID
             let id = splitmsg.get(1).unwrap();
-            let _ = ai_telephone::old_obs_telephone_scene(
-                obs_client,
-                id.to_string(),
-            )
-            .await;
+            let _ = ai_telephone::old_obs_telephone_scene(obs_client, id).await;
             Ok(())
         }
         "!carlphone" => {
@@ -113,8 +109,8 @@ pub async fn handle_telephone_requests(
             match ai_telephone::telephone(
                 obs_client,
                 sink,
-                image_url.to_string(),
-                prompt.clone(),
+                image_url,
+                &prompt,
                 5,
                 &ai_telephone::ImageRequestType::StableDiffusion(req),
             )
@@ -138,8 +134,8 @@ pub async fn handle_telephone_requests(
             match ai_telephone::telephone(
                 obs_client,
                 sink,
-                image_url.to_string(),
-                prompt.clone(),
+                &image_url,
+                &prompt,
                 5,
                 &ai_telephone::ImageRequestType::Dalle(req),
             )

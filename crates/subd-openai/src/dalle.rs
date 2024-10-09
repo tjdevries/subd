@@ -83,8 +83,8 @@ async fn process_dalle_request(
         .ok_or("error converting archive path to str")?;
 
     let mut image_data = match subd_image_utils::download_image_to_vec(
-        download_resp.url.clone(),
-        Some(f.to_string()),
+        &download_resp.url.clone(),
+        Some(&f),
     )
     .await
     {

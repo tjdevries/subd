@@ -24,8 +24,8 @@ pub async fn download_video(url: &str) -> Result<Bytes> {
 }
 
 pub async fn download_image_to_vec(
-    url: String,
-    download_path: Option<String>,
+    url: &str,
+    download_path: Option<&str>,
 ) -> Result<Vec<u8>> {
     let client = reqwest::Client::builder()
         .redirect(Policy::default())
@@ -96,7 +96,7 @@ pub async fn get_image_bytes(url: &str) -> Result<Vec<u8>> {
             )?;
         Ok(image_bytes)
     } else {
-        let image_bytes = download_image_to_vec(url.to_string(), None).await?;
+        let image_bytes = download_image_to_vec(url, None).await?;
         Ok(image_bytes)
     }
 }
