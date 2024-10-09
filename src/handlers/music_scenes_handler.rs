@@ -261,12 +261,8 @@ async fn handle_commands(
             }
 
             // Set the Voice for Begin, which is the source of the global voice
-            let _ = subd_elevenlabs::set_voice(
-                details.voice.to_string(),
-                "beginbot".to_string(),
-                pool,
-            )
-            .await;
+            let _ = subd_elevenlabs::set_voice(details.voice, "beginbot", pool)
+                .await;
 
             // Enable Global Voice Mode
             if set_global_voice {

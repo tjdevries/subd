@@ -57,8 +57,7 @@ impl ElevenLabsHandler {
         }
 
         let voice = self.determine_final_voice(&msg).await?;
-        let chat_message =
-            subd_elevenlabs::sanitize_chat_message(msg.message.clone());
+        let chat_message = subd_elevenlabs::sanitize_chat_message(&msg.message);
         let audio_path =
             self.process_audio(&voice, &chat_message, &msg).await?;
 
@@ -78,7 +77,7 @@ impl ElevenLabsHandler {
     ) -> Result<String> {
         // Normalize the audio once
         let mut local_audio_path =
-            match subd_elevenlabs::normalize_tts_file(audio_path.clone()) {
+            match subd_elevenlabs::normalize_tts_file(&audio_path) {
                 Ok(path) => path,
                 Err(err) => {
                     eprintln!("Error normalizing tts file: {:?}", err);
@@ -89,66 +88,38 @@ impl ElevenLabsHandler {
 
         // Apply user-specified effects
         if msg.reverb {
+            local_audio_path = subd_elevenlabs::add_reverb(&local_audio_path)
+                .unwrap_or_else(|err| {
+                    eprintln!("Error adding reverb: {:?}", err);
+                    local_audio_path.clone()
+                });
+        }
+
+        if let Some(stretch) = &msg.stretch {
             local_audio_path =
-                subd_elevenlabs::add_reverb(local_audio_path.clone())
+                subd_elevenlabs::stretch_audio(&local_audio_path, &stretch)
                     .unwrap_or_else(|err| {
-                        eprintln!("Error adding reverb: {:?}", err);
+                        eprintln!("Error stretching audio: {:?}", err);
                         local_audio_path.clone()
                     });
         }
 
-        if let Some(stretch) = &msg.stretch {
-            local_audio_path = subd_elevenlabs::stretch_audio(
-                local_audio_path.clone(),
-                stretch.clone(),
-            )
-            .unwrap_or_else(|err| {
-                eprintln!("Error stretching audio: {:?}", err);
-                local_audio_path.clone()
-            });
+        if let Some(pitch) = &msg.pitch {
+            local_audio_path =
+                subd_elevenlabs::change_pitch(&local_audio_path, pitch)
+                    .unwrap_or_else(|err| {
+                        eprintln!("Error changing pitch: {:?}", err);
+                        local_audio_path.clone()
+                    });
         }
 
-        if let Some(pitch) = &msg.pitch {
-            local_audio_path = subd_elevenlabs::change_pitch(
-                local_audio_path.clone(),
-                pitch.clone(),
-            )
-            .unwrap_or_else(|err| {
-                eprintln!("Error changing pitch: {:?}", err);
-                local_audio_path.clone()
-            });
-        }
+        // TODO: Readd satan
 
         // Apply special voice effects
         match final_voice {
-            "evil_pokimane" => {
-                local_audio_path = subd_elevenlabs::change_pitch(
-                    local_audio_path.clone(),
-                    "-200".to_string(),
-                )
-                .and_then(subd_elevenlabs::add_reverb)
-                .unwrap_or_else(|err| {
-                    eprintln!(
-                        "Error processing 'evil_pokimane' voice: {:?}",
-                        err
-                    );
-                    local_audio_path.clone()
-                });
-            }
-            "satan" => {
-                local_audio_path = subd_elevenlabs::change_pitch(
-                    local_audio_path.clone(),
-                    "-350".to_string(),
-                )
-                .and_then(subd_elevenlabs::add_reverb)
-                .unwrap_or_else(|err| {
-                    eprintln!("Error processing 'satan' voice: {:?}", err);
-                    local_audio_path.clone()
-                });
-            }
             "god" => {
                 local_audio_path =
-                    subd_elevenlabs::add_reverb(local_audio_path.clone())
+                    subd_elevenlabs::add_reverb(&local_audio_path)
                         .unwrap_or_else(|err| {
                             eprintln!(
                                 "Error processing 'god' voice: {:?}",

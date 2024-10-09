@@ -225,21 +225,16 @@ pub async fn handle_voices_commands(
         "!set_voice" | "!setvoice" | "!set_name" | "!setname" => {
             let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
-            subd_elevenlabs::set_voice(
-                voice.to_string(),
-                msg.user_name.to_string(),
-                pool,
-            )
-            .await
+            subd_elevenlabs::set_voice(voice, &msg.user_name, pool).await
         }
 
         "!voice" => {
             let default_voice = subd_types::consts::get_twitch_default_source();
             let voice: &str = splitmsg.get(1).unwrap_or(&default_voice);
             subd_elevenlabs::talk_in_voice(
-                msg.contents.clone(),
-                voice.to_string(),
-                msg.user_name,
+                &msg.contents,
+                voice,
+                &msg.user_name,
                 tx,
             )
             .await
@@ -390,7 +385,7 @@ pub async fn handle_voices_commands(
                 let voice_id = result?;
                 println!("Result: {:?}", voice_id);
 
-                save_voice_id_to_voices_json(name, voice_id).await?;
+                save_voice_id_to_voices_json(name, &voice_id).await?;
             }
 
             Ok(())
@@ -432,7 +427,7 @@ pub async fn handle_voices_commands(
                 clone_voice_with_elevenlabs(name, &split_mp3_folder).await?;
             println!("Voice ID: {}", voice_id);
 
-            save_voice_id_to_voices_json(name, voice_id).await?;
+            save_voice_id_to_voices_json(name, &voice_id).await?;
 
             Ok(())
         }
@@ -564,7 +559,7 @@ async fn from_clone(
 
 async fn save_voice_id_to_voices_json(
     name: &str,
-    voice_id: String,
+    voice_id: &str,
 ) -> Result<()> {
     let filename = "./data/voices.json".to_string();
     let mut file = fs::File::open(filename.clone())?;
@@ -573,7 +568,7 @@ async fn save_voice_id_to_voices_json(
 
     let mut root: VoiceRoot = serde_json::from_str(&data)?;
     let new_voice = Voice {
-        voice_id,
+        voice_id: voice_id.to_string(),
         name: name.to_string(),
     };
     root.voices.push(new_voice);

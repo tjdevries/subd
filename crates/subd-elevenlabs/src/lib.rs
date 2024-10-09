@@ -62,12 +62,12 @@ pub fn chop_text(starting_text: &str) -> String {
 }
 
 pub async fn set_voice(
-    voice: String,
-    username: String,
+    voice: &str,
+    username: &str,
     pool: &sqlx::PgPool,
 ) -> Result<()> {
     let model = stream_character::user_stream_character_information::Model {
-        username: username.clone(),
+        username: username.to_string(),
         voice: voice.to_string().to_lowercase(),
         obs_character: subd_types::consts::get_default_stream_character_source(
         ),
@@ -80,13 +80,12 @@ pub async fn set_voice(
 }
 
 pub async fn talk_in_voice(
-    contents: String,
-    voice: String,
-    username: String,
+    contents: &str,
+    voice: &str,
+    username: &str,
     tx: &broadcast::Sender<Event>,
 ) -> Result<()> {
-    let spoken_string =
-        contents.clone().replace(&format!("!voice {}", &voice), "");
+    let spoken_string = contents.replace(&format!("!voice {}", &voice), "");
 
     if spoken_string.is_empty() {
         return Ok(());
@@ -99,15 +98,15 @@ pub async fn talk_in_voice(
         voice: Some(voice.to_string()),
         message: seal_text,
         voice_text,
-        username,
+        username: username.to_string(),
         ..Default::default()
     }));
     Ok(())
 }
 
 pub async fn use_random_voice(
-    contents: String,
-    username: String,
+    contents: &str,
+    username: &str,
     tx: &broadcast::Sender<Event>,
 ) -> Result<()> {
     let voices_contents = fs::read_to_string("data/voices.json").unwrap();
@@ -116,7 +115,7 @@ pub async fn use_random_voice(
     let random_index = rng.gen_range(0..voices.len());
     let random_voice = &voices[random_index];
 
-    let spoken_string = contents.clone().replace("!random", "");
+    let spoken_string = contents.replace("!random", "");
     let speech_bubble_text = chop_text(&spoken_string);
     let voice_text = spoken_string.clone();
 
@@ -131,7 +130,7 @@ pub async fn use_random_voice(
         voice: Some(random_voice.name.clone()),
         message: speech_bubble_text,
         voice_text,
-        username,
+        username: username.to_string(),
         ..Default::default()
     }));
     Ok(())
@@ -172,20 +171,19 @@ pub async fn build_stream_character(
 // Audio Effects //
 // ============= //
 
-fn add_postfix_to_filepath(filepath: String, postfix: String) -> String {
+fn add_postfix_to_filepath(filepath: &str, postfix: &str) -> String {
     match filepath.rfind('.') {
         Some(index) => {
             let path = filepath[..index].to_string();
             let filename = filepath[index..].to_string();
             format!("{}{}{}", path, postfix, filename)
         }
-        None => filepath,
+        None => filepath.to_string(),
     }
 }
 
-pub fn normalize_tts_file(local_audio_path: String) -> Result<String> {
-    let audio_dest_path =
-        add_postfix_to_filepath(local_audio_path.clone(), "_norm".to_string());
+pub fn normalize_tts_file(local_audio_path: &str) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_norm");
     let ffmpeg_status = Command::new("ffmpeg")
         .args(["-i", &local_audio_path, &audio_dest_path])
         .status()
@@ -195,18 +193,12 @@ pub fn normalize_tts_file(local_audio_path: String) -> Result<String> {
         Ok(audio_dest_path)
     } else {
         println!("Failed to normalize audio");
-        Ok(local_audio_path)
+        Ok(local_audio_path.to_string())
     }
 }
 
-pub fn stretch_audio(
-    local_audio_path: String,
-    stretch: String,
-) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(
-        local_audio_path.clone(),
-        "_stretch".to_string(),
-    );
+pub fn stretch_audio(local_audio_path: &str, stretch: &str) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_stretch");
     Command::new("sox")
         .args([
             "-t",
@@ -221,10 +213,9 @@ pub fn stretch_audio(
     Ok(audio_dest_path)
 }
 
-pub fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
+pub fn change_pitch(local_audio_path: &str, pitch: &str) -> Result<String> {
     let postfix = format!("{}_{}", "_pitch", pitch);
-    let audio_dest_path =
-        add_postfix_to_filepath(local_audio_path.clone(), postfix);
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, &postfix);
     Command::new("sox")
         .args([
             "-t",
@@ -240,11 +231,8 @@ pub fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
     Ok(audio_dest_path)
 }
 
-pub fn add_reverb(local_audio_path: String) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(
-        local_audio_path.clone(),
-        "_reverb".to_string(),
-    );
+pub fn add_reverb(local_audio_path: &str) -> Result<String> {
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_reverb");
     Command::new("sox")
         .args([
             "-t",
@@ -292,7 +280,7 @@ pub fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
     None
 }
 
-pub fn sanitize_chat_message(raw_msg: String) -> String {
+pub fn sanitize_chat_message(raw_msg: &str) -> String {
     // Let's replace any word longer than 50 characters
     raw_msg
         .split_whitespace()
