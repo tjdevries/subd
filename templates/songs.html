@@ -1,24 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Songs</h2>
-    <div class="grid-container">
+<section class="songs">
+    <h2>Songs</h2>
     {% for song in songs %}
-        <div class="song">
-            <div class="title">{{ song.title }}</div>
-            <div class="tags">{{ song.tags }}</div>
-            <div class="gpt_description">{{ song.gpt_description_prompt }}</div>
-            <div class="song_link">
-                <a href="/ai_songs/{{ song.song_id }}">
-                    {{ song.song_id }}
-                </a>
-            </div>
-            <div class="song-source">
-                 <audio controls>
-                     <source src="/songs/{{ song.song_id }}.mp3" type="audio/mpeg">
-                     Your browser does not support the audio element.
-                 </audio>
-            </div>
+    <article class="song">
+        <h3 class="song-title"><a href="/ai_songs/{{ song.song_id }}">{{ song.title }}</a></h3>
+        <p class="song-id">Song ID: {{ song.song_id }}</p>
+        <p class="song-tags">Tags: {{ song.tags }}</p>
+        <p class="song-description">{{ song.gpt_description_prompt }}</p>
+        <div class="song-audio">
+            <audio controls>
+                <source src="/songs/{{ song.song_id }}.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
         </div>
+    </article>
     {% endfor %}
-</div>
+</section>
 {% endblock %}

@@ -81,30 +81,36 @@ struct AIStylesResponse {
     css: String,
 }
 
-fn html_file_contents() -> Result<String> {
-    let filepath = "./static/home.html";
-    let mut file = File::open(filepath).expect("Failed to open HTML file");
+fn html_file_contents(base_path: Option<&str>) -> Result<String> {
+    let base_path = base_path.unwrap_or("./static");
+    let filepath = format!("{}/home.html", base_path);
+    let mut file = File::open(&filepath)
+        .map_err(|e| anyhow::anyhow!("Failed to open home.html: {}", e))?;
     let mut home_contents = String::new();
     file.read_to_string(&mut home_contents)
-        .expect("Failed to read HTML file");
+        .map_err(|e| anyhow::anyhow!("Failed to read home.html: {}", e))?;
 
-    let filepath = "./static/songs.html";
-    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    // We need the individual song
+    let filepath = format!("{}/songs.html", base_path);
+    let mut file = File::open(&filepath)
+        .map_err(|e| anyhow::anyhow!("Failed to open songs.html: {}", e))?;
     let mut song_contents = String::new();
     file.read_to_string(&mut song_contents)
-        .expect("Failed to read HTML file");
+        .map_err(|e| anyhow::anyhow!("Failed to read songs.html: {}", e))?;
 
-    let filepath = "./static/users.html";
-    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let filepath = format!("{}/users.html", base_path);
+    let mut file = File::open(&filepath)
+        .map_err(|e| anyhow::anyhow!("Failed to open users.html: {}", e))?;
     let mut users_contents = String::new();
     file.read_to_string(&mut users_contents)
-        .expect("Failed to read HTML file");
+        .map_err(|e| anyhow::anyhow!("Failed to read users.html: {}", e))?;
 
-    let filepath = "./static/charts.html";
-    let mut file = File::open(filepath).expect("Failed to open HTML file");
+    let filepath = format!("{}/charts.html", base_path);
+    let mut file = File::open(&filepath)
+        .map_err(|e| anyhow::anyhow!("Failed to open charts.html: {}", e))?;
     let mut charts_contents = String::new();
     file.read_to_string(&mut charts_contents)
-        .expect("Failed to read HTML file");
+        .map_err(|e| anyhow::anyhow!("Failed to read charts.html: {}", e))?;
 
     let contents = format!(
         "{} {} {} {}",
@@ -113,11 +119,12 @@ fn html_file_contents() -> Result<String> {
     Ok(contents)
 }
 
+// fn html_file_contents(base_path: Option<&str>) -> Result<String> {
 pub async fn generate_ai_js(content: String) -> Result<()> {
     let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
     let instructor_client = from_openai(client);
 
-    let contents = html_file_contents().unwrap();
+    let contents = html_file_contents(None).unwrap();
 
     let js_base_prompt =
         "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible.";
@@ -198,16 +205,25 @@ pub async fn generate_ai_js(content: String) -> Result<()> {
     Ok(())
 }
 
-pub async fn generate_ai_css(content: String) -> Result<()> {
-    let client = Client::new(env::var("OPENAI_API_KEY").unwrap());
+// fn html_file_contents(base_path: Option<&str>) -> Result<String> {
+pub async fn generate_ai_css(
+    content: String,
+    base_path: Option<&str>,
+) -> Result<()> {
+    let client = Client::new(
+        env::var("OPENAI_API_KEY")
+            .map_err(|e| anyhow::anyhow!("OPENAI_API_KEY not set: {}", e))?,
+    );
     let instructor_client = from_openai(client);
 
-    let contents = html_file_contents().unwrap();
+    let contents = html_file_contents(base_path).map_err(|e| {
+        anyhow::anyhow!("Failed to read HTML file contents: {}", e)
+    })?;
 
     let css_base_prompt =
         "Generate excellent high-quality detailed CSS for the provided HTML. Use as many CSS properties as possible.";
     let css_style_tips = "Make the overall style consistent, with a color theme and font-selection that cohesive but fun.";
-    let css_properties_prompt = "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, clip-path, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, scroll-snap-type, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, will-change, overflow-anchor, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, scroll-behavior, pointer-events, scroll-margin, scroll-padding, gap, align-self, justify-items, object-position, word-wrap, hyphens, resize, appearance, backface-visibility, scrollbar-color, scrollbar-width, font-feature-settings, text-orientation, blend-mode, background-origin, font-display, grid-auto-flow, grid-template-rows etc.";
+    let css_properties_prompt = "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, align-self, object-position, word-wrap, resize, appearance, backface-visibility, blend-mode, font-display etc.";
     let css_interactions =
         "Include as many interactive changes as possible, like on:hover. Make all links do something bold and dynamic on hover.";
     let css_layouts = "Also feel free to try different layouts using things like display: grid.";
@@ -270,30 +286,35 @@ pub async fn generate_ai_css(content: String) -> Result<()> {
         }
     }
 
+    // TODO: This don't make no sense to me
     let result = result.expect(
         "This should not happen as we either break the loop or return an error",
     );
 
     println!("{:?}", result);
+    let css_file = format!("{}/styles.css", base_path.unwrap_or("./static"));
 
+    // let src = "./static/styles.css";
+    // This should be somewhere else
+    // probably based on the id of the current song
     // Backup the existing styles.css file
     let now = Utc::now();
     let timestamp = now.format("%Y%m%d%H%M%S").to_string();
     let backup_filename = format!("./static/{}.css", timestamp);
-
-    let src = "./static/styles.css";
     let dest = &backup_filename;
-
-    fs::copy(src, dest).expect("Failed to backup the styles.css file");
+    match fs::copy(css_file.clone(), dest) {
+        Ok(_) => println!("Successfully backed up the styles.css file"),
+        Err(e) => println!("Failed to backup the styles.css file: {}", e),
+    }
 
     // Save the new CSS to styles.css
     let content = &result.css;
 
-    let mut file = File::create("./static/styles.css")
-        .expect("Failed to create styles.css file");
-    file.write_all(content.as_bytes())
-        .expect("Failed to write to styles.css file");
-    Ok(())
+    let mut file =
+        File::create(css_file).expect("Failed to create styles.css file");
+    file.write_all(content.as_bytes()).map_err(|e| {
+        anyhow::anyhow!("Failed to write to styles.css file: {}", e)
+    })
 }
 
 // I want this to exist somewhere else
@@ -540,6 +561,8 @@ mod tests {
     // We might want to try more structured version
     #[tokio::test]
     async fn test_generating_css() {
-        generate_ai_css();
+        let res =
+            generate_ai_css("Goth".to_string(), Some("../../static")).await;
+        assert!(res.is_ok(), "{:?}", res);
     }
 }

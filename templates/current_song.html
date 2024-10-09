@@ -1,40 +1,42 @@
-<section class="current-song">
-    <div class="current-song-info">
-        <h3>Current Song</h3>
-        <div class="title">Title {{ current_song.title }}</div>
-        <div class="tags">Tags: {{ current_song.tags }}</div>
-        <div class="creator">Creator: @{{ current_song.username }}</div>
-        <div class="song_id">
-            <a href="/ai_songs/{{ current_song.song_id }}">
-                {{ current_song.song_id }}
-            </a> 
-        </div>
-        <div class="average_score">AVG Score: {{ score }}</div>
-        <div class="total_votes">Total Votes: {{ votes_count }}</div>
-    </div>
-    <div class="image_scores">
-        <h4>Images</h4>
+<article class="song">
+    <header class="song-header">
+        <h2>Current Song</h2>
+        <h3 class="song-title">{{ current_song.title }}</h3>
+        <p class="song-tags">Tags: {{ current_song.tags }}</p>
+        <p class="song-creator">Creator: @{{ current_song.username }}</p>
+        <p class="song-id">
+            <a href="/ai_songs/{{ current_song.song_id }}">Song ID: {{ current_song.song_id }}</a>
+        </p>
+        <p class="song-average-score">Average Score: {{ score }}</p>
+        <p class="song-total-votes">Total Votes: {{ votes_count }}</p>
+    </header>
+
+    <section class="song-images">
+        <h3>Images</h3>
         {% for image_score in image_scores %}
-        <div class="ai_song_image">
-            <img src="/images/{{current_song.song_id}}/{{ image_score[0] }}"
-                alt="{{image_score[0]}}">
-        </div>
-        <div class="image_voting">
-            !love {{ image_score[1] }} | !hate {{ image_score[1] }}
-        </div>
-        <div class="image_votes">
-            Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}
-        </div>
+        <figure class="image">
+            <img src="/images/{{ current_song.song_id }}/{{ image_score[0] }}" alt="{{ image_score[0] }}">
+            <figcaption>
+                <p class="image-voting">!love {{ image_score[1] }} | !hate {{ image_score[1] }}</p>
+                <p class="image-votes">Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}</p>
+            </figcaption>
+        </figure>
         {% endfor %}
-        <section class="videos">
-            <h4>Videos</h4>
-            {% for video in videos %}
-            <div class="video">
-                <video src="/images/{{current_song.song_id}}/{{ video }}" alt="{{video}}" width="300px" src="movie.mp4" type="video/mp4" autoplay muted loop>
-            </div>
-            {% endfor %}
-        </section>
-        <section class="lyrics">
+    </section>
+
+    <section class="song-videos">
+        <h3>Videos</h3>
+        {% for video in videos %}
+        <video class="video" width="300" autoplay muted loop>
+            <source src="/images/{{ current_song.song_id }}/{{ video }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        {% endfor %}
+    </section>
+
+    <section class="song-lyrics">
+        <h3>Lyrics</h3>
+        <p>
             {{
                 current_song.lyric |
                 replace("\n", "<br />") |
@@ -42,6 +44,6 @@
                 replace("[", "<br />[") |
                 safe
             }}
-        </section>
-    </div>
-</section>
+        </p>
+    </section>
+</article>
