@@ -32,19 +32,12 @@ pub async fn download_image_to_vec(
         .build()
         .expect("Failed to create client");
 
-    println!("\tCall out to URL {} to download image to", url.clone());
-    let image_data = client
-        .get(url.clone())
-        .send()
-        .await?
-        .bytes()
-        .await?
-        .to_vec();
+    println!("\tCall out to URL {} to download image to", url);
+    let image_data = client.get(url).send().await?.bytes().await?.to_vec();
 
     if let Some(path) = download_path {
         println!("\tSaving File: {}", path);
-        File::create(path.clone())
-            .and_then(|mut f| f.write_all(&image_data))?;
+        File::create(path).and_then(|mut f| f.write_all(&image_data))?;
     }
     Ok(image_data)
 }
