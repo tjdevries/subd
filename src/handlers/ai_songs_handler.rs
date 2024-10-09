@@ -45,12 +45,10 @@ impl EventHandler for AISongsHandler {
                         let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
                         if let Ok(song) = next_song {
 
-
                             let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or("".to_string()));
 
-                            // I can pass in the title and lyrics here
-                            let _ = tokio::spawn(subd_openai::generate_ai_css(custom_prompt.clone()));
-                            let _ = tokio::spawn(subd_openai::generate_ai_js(custom_prompt.clone()));
+                            let _ = tokio::spawn(subd_openai::generate_ai_css("./static/styles.css", custom_prompt.clone(), None));
+                            let _ = tokio::spawn(subd_openai::generate_ai_js("./static/styles.js", custom_prompt.clone(), None));
 
                             // is there a better way?
                             let id = format!("{}", song.song_id);

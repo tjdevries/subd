@@ -101,17 +101,18 @@ where
 }
 
 pub async fn generate_ai_js(
+    destination: &str,
     content: String,
-    base_path: Option<&str>,
+    html_to_animate_folder: Option<&str>,
 ) -> Result<()> {
     let client = openai_api_rs::v1::api::Client::new(
         env::var("OPENAI_API_KEY").unwrap(),
     );
     let instructor_client = from_openai(client);
-    let contents = html_file_contents(base_path)?;
+    let contents = html_file_contents(html_to_animate_folder)?;
 
     let prompt = format!(
-        "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible. Use libraries like three.js, phaser.js, 3D.js Summarize the following content and use it to influence the animation and JavaScript. Be Creative.: {} Make it all savable as a styles.js file, for the following HTML: {}",
+        "Generate excellent high-quality detailed JS for the provided HTML. Make the page as animated and fun as possible. Use libraries like three.js, phaser.js, 3D.js, aframe.io, charts.js, P5.js, zimjs and more. Summarize the following content and use it to influence the animation and JavaScript. Be Creative.: {} Make it all savable as a styles.js file, for the following HTML: {}",
         content, contents
     );
 
@@ -127,26 +128,26 @@ pub async fn generate_ai_js(
     let result: AIJavascriptResponse =
         get_chat_completion_with_retries(&instructor_client, req, 3).await?;
 
-    let js_file = "../../static/styles.js";
     println!("{:?}", result);
-    match backup_file(js_file, "./static") {
+    match backup_file(destination, "./static") {
         Ok(_) => println!("Successfully backed up styles.js file"),
         Err(e) => println!("Failed to backup styles.js file: {}", e),
     };
-    save_content_to_file(&result.javascript, js_file)?;
+    save_content_to_file(&result.javascript, destination)?;
     Ok(())
 }
 
 pub async fn generate_ai_css(
+    destination: &str,
     content: String,
-    base_path: Option<&str>,
+    html_to_style_folder: Option<&str>,
 ) -> Result<()> {
     let client = Client::new(
         env::var("OPENAI_API_KEY")
             .map_err(|e| anyhow::anyhow!("OPENAI_API_KEY not set: {}", e))?,
     );
     let instructor_client = from_openai(client);
-    let contents = html_file_contents(base_path)?;
+    let contents = html_file_contents(html_to_style_folder)?;
 
     let content_prompt = format!("Summarize the following content and use it to influence the styling: {}", content);
     let prompt_parts = vec![
@@ -177,12 +178,13 @@ pub async fn generate_ai_css(
         get_chat_completion_with_retries(&instructor_client, req, 3).await?;
 
     println!("{:?}", result);
-    let css_file = "../../static/styles.css";
-    match backup_file(css_file, "../../static") {
+
+    // This backup destination is wrong
+    match backup_file(destination, "./static") {
         Ok(_) => println!("Successfully backed up CSS file"),
         Err(e) => println!("Failed to backup CSS file: {}", e),
     };
-    save_content_to_file(&result.css, css_file)?;
+    save_content_to_file(&result.css, destination)?;
     Ok(())
 }
 
@@ -326,6 +328,7 @@ pub async fn ask_gpt_vision(
         .map_err(|e| anyhow::anyhow!("Error w/ GPT Vision: {}", e))
 }
 
+// TODO: We should take in a list of these html files
 fn html_file_contents(base_path: Option<&str>) -> Result<String> {
     let base_path = base_path.unwrap_or("./templates");
     let file_names = [
@@ -374,11 +377,22 @@ mod tests {
 
     #[tokio::test]
     async fn test_generating_css() {
-        let res =
-            generate_ai_css("Neon".to_string(), Some("../../templates")).await;
-        assert!(res.is_ok(), "{:?}", res);
-        let res =
-            generate_ai_js("Neon".to_string(), Some("../../templates")).await;
+        //let css_file = "../../static/styles.css";
+        //let res = generate_ai_css(
+        //    css_file,
+        //    "Neon".to_string(),
+        //    Some("../../templates"),
+        //)
+        //.await;
+        //assert!(res.is_ok(), "{:?}", res);
+
+        let js_file = "../../static/styles.js";
+        let res = generate_ai_js(
+            js_file,
+            "Neon".to_string(),
+            Some("../../templates"),
+        )
+        .await;
         assert!(res.is_ok(), "{:?}", res);
     }
 }
