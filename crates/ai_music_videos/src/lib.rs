@@ -235,7 +235,7 @@ async fn create_image_from_prompt(
     let prompt = format!("{} {}", ai_song.title, prompt);
     let images = fal_ai::create_from_fal_api_return_filename(
         &prompt,
-        Some(folder.clone()),
+        Some(&folder.clone()),
         &index.to_string(),
     )
     .await?;
@@ -267,7 +267,7 @@ async fn generate_runway_video_and_image(
     let folder = format!("./tmp/music_videos/{}", id);
     let images = fal_ai::create_from_fal_api_return_filename(
         image_prompt,
-        Some(folder.clone()),
+        Some(&folder.clone()),
         &index.to_string(),
     )
     .await?;

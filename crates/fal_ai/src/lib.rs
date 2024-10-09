@@ -25,7 +25,7 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
 /// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
 pub async fn create_from_fal_api_return_filename(
     prompt: &str,
-    save_dir: Option<String>,
+    save_dir: Option<&str>,
     filename: &str,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
@@ -35,7 +35,7 @@ pub async fn create_from_fal_api_return_filename(
 
     let dir = match save_dir {
         Some(d) => d,
-        None => "./tmp/fal_images".to_string(),
+        None => "./tmp/fal_images",
     };
     let files = fal_service
         .create_image(
@@ -103,12 +103,12 @@ pub async fn create_runway_video_from_image(
 /// Creates a video from the given image file path.
 pub async fn create_video_from_image(
     image_file_path: &str,
-    save_dir: Option<String>,
+    save_dir: Option<&str>,
 ) -> Result<String> {
     let fal_service = fal_service::FalService::new();
     let video_dir = match save_dir {
         Some(dir) => dir,
-        None => subd_types::consts::get_ai_videos_dir(),
+        None => &subd_types::consts::get_ai_videos_dir(),
     };
     fal_service
         .create_video_from_image(image_file_path, &video_dir)
