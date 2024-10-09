@@ -8,7 +8,12 @@ CREATE TABLE users (
 CREATE TABLE twitch_stream_state(
   sub_only_tts boolean NOT NULL DEFAULT false,
   explicit_soundeffects boolean NOT NULL DEFAULT false,
-  implicit_soundeffects boolean NOT NULL DEFAULT false
+  implicit_soundeffects boolean NOT NULL DEFAULT false,
+  global_voice boolean NOT NULL DEFAULT false,
+  
+  dalle_model TEXT NOT NULL DEFAULT "dalle-3",
+  dalle_mode boolean NOT NULL DEFAULT true
+  enable_stable_diffusion boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE user_stream_character_information(
@@ -72,3 +77,39 @@ CREATE TABLE twitch_users (
   login           TEXT UNIQUE NOT NULL,
   display_name    TEXT NOT NULL
 );
+
+CREATE TABLE redemptions (
+title      TEXT NOT NULL ,
+
+  twitch_id  UUID NOT NULL,
+  
+  -- TODO: Add NOT NULL, after we populate/delete redemptions
+  redemptions ADD COLUMN twitch_id UUID;
+  reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
+  user_name  TEXT NOT NULL,
+  cost       INT NOT NULL,
+  user_input TEXT
+  
+  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE skybox_requests (
+  blockade_id INT NOT NULL,
+  prompt TEXT NOT NULL,
+  skybox_style_id INT NOT NULL,
+  file_url TEXT, 
+  username  TEXT NOT NULL,
+  
+  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  completed_at  TIMESTAMPTZ
+);
+
+
+CREATE TABLE obs_sources (
+  source TEXT UNIQUE NOT NULL,
+  scene TEXT NOT NULL,
+  position_x DECIMAL NOT NULL,
+  position_y DECIMAL NOT NULL,
+  scale      DECIMAL NOT NULL
+);
+

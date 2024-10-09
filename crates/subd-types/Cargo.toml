@@ -20,7 +20,8 @@ uuid.workspace = true
 twitch-irc = { version = "4.0.0", default-features = false, features = [
     "with-serde",
 ] }
-twitch_api2 = { version = "0.6.1", features = [ "pubsub", "twitch_oauth2" ]}
+twitch_api = { version = "0.7.0-rc.7", features = ["pubsub"] }
+twitch_oauth2 = "0.12.7"
 
 [features]
 default = ["sql"]

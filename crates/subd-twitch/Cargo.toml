@@ -11,7 +11,8 @@ serde_json.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 reqwest.workspace = true
-twitch_api2 = { workspace = true, features = [ "helix", "twitch_oauth2", "reqwest" ]}
 tokio = { workspace = true, features = [ "rt-multi-thread", "macros", "rt" ] }
 
 irc = { version = "0.15.0", features = [ "serde", "serde_derive", "json", "serde_json" ] }
+twitch_api = { version = "0.7.0-rc.7" , features = [ "helix", "twitch_oauth2", "reqwest", "pubsub", "tmi" ]}
+sqlx.workspace = true

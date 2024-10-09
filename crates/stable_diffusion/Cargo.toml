@@ -1,0 +1,17 @@
+[package]
+name = "stable_diffusion"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+anyhow.workspace = true
+base64 = "0.21.5"
+chrono = { version = "0.4.19", features = [ "serde" ] }
+reqwest = { workspace = true, features = ["stream", "multipart", "json", "blocking"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tokio.workspace = true
+warp = "0.3.6"

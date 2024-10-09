@@ -1,0 +1,62 @@
+
+// This is what you see from asking for Filter Details
+// SourceFilter {
+//     enabled: false,
+//     index: 0,
+//     kind: "move_value_filter",
+//     name: "",
+//     settings: Object {"value_type": Number(0)}
+// }
+
+// SourceFilter {
+//     enabled: false,
+//     index: 1,
+//     kind: "move_action_filter",
+//     name: "",
+//     settings: Object {
+//         "action": Number(1),
+//         "easing_function_match": Number(1)
+//     }
+// }
+
+// Move Source
+// SourceFilter {
+//     enabled: false,
+//     index: 0,
+//     kind: "move_source_filter",
+//     name: "",
+//     settings: Object {
+//         "bounds": Object {
+//             "x": Number(0.0),
+//             "x_sign": String(" "),
+//             "y": Number(0.0),
+//             "y_sign": String(" ")
+//         },
+//         "crop": Object {
+//             "bottom": Number(0.0),
+//             "bottom_sign": String(" "),
+//             "left": Number(0.0),
+//             "left_sign": String(" "),
+//             "right": Number(0.0),
+//             "right_sign": String(" "),
+//             "top": Number(0.0),
+//             "top_sign": String(" ")
+//         },
+//         "pos": Object {
+//             "x": Number(0.0),
+//             "x_sign": String(" "),
+//             "y": Number(0.0),
+//             "y_sign": String(" ")
+//         },
+//         "rot": Number(0.0),
+//         "rot_sign": String(" "),
+//         "scale": Object {
+//         "x": Number(1.0),
+//         "x_sign": String(" "),
+//         "y": Number(1.0),
+//         "y_sign": String(" ")
+//     },
+//     "source": String("test-source"),
+//     "transform_text": String("pos: x 0.0 y 0.0 rot: 0.0 scale: x 1.000 y 1.000 crop: l 0 t 0 r 0 b 0")
+//     }
+// }

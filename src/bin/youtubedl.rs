@@ -1,4 +1,3 @@
-
 use subd_db::get_db_pool;
 
 #[tokio::main]
