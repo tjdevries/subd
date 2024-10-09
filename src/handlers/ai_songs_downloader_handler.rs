@@ -129,7 +129,7 @@ async fn handle_download_command(
     username: &str,
     id: &str,
 ) -> Result<()> {
-    subd_suno::download_and_play(pool, twitch_client, tx, &username, &id).await
+    subd_suno::download_and_play(pool, twitch_client, tx, username, id).await
 }
 
 async fn handle_create_song_command(
@@ -155,7 +155,7 @@ async fn handle_create_song_command(
                 tx,
                 json_response.clone(),
                 0,
-                &user_name,
+                user_name,
             )
             .await?;
             subd_suno::parse_suno_response_download_and_play(
@@ -164,7 +164,7 @@ async fn handle_create_song_command(
                 tx,
                 json_response,
                 1,
-                &user_name,
+                user_name,
             )
             .await
         }

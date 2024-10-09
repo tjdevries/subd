@@ -134,7 +134,7 @@ pub async fn handle_telephone_requests(
             match ai_telephone::telephone(
                 obs_client,
                 sink,
-                &image_url,
+                image_url,
                 &prompt,
                 5,
                 &ai_telephone::ImageRequestType::Dalle(req),

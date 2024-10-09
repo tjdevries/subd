@@ -206,7 +206,7 @@ async fn process_ai_scene(
     enable_stable_diffusion: bool,
 ) -> Result<()> {
     println!("{} {}", "Asking Chat GPT:".green(), user_input);
-    let content = ask_chat_gpt(&user_input, &scene.base_prompt).await?;
+    let content = ask_chat_gpt(user_input, &scene.base_prompt).await?;
     println!("\n{} {}", "Chat GPT response: ".green(), content);
 
     let dalle_prompt = if enable_dalle || enable_stable_diffusion {

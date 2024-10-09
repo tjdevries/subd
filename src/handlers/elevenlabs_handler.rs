@@ -97,7 +97,7 @@ impl ElevenLabsHandler {
 
         if let Some(stretch) = &msg.stretch {
             local_audio_path =
-                subd_elevenlabs::stretch_audio(&local_audio_path, &stretch)
+                subd_elevenlabs::stretch_audio(&local_audio_path, stretch)
                     .unwrap_or_else(|err| {
                         eprintln!("Error stretching audio: {:?}", err);
                         local_audio_path
@@ -116,19 +116,16 @@ impl ElevenLabsHandler {
         // TODO: Readd satan
 
         // Apply special voice effects
-        match final_voice {
-            "god" => {
-                local_audio_path =
-                    subd_elevenlabs::add_reverb(&local_audio_path)
-                        .unwrap_or_else(|err| {
-                            eprintln!(
-                                "Error processing 'god' voice: {:?}",
-                                err
-                            );
-                            local_audio_path
-                        });
-            }
-            _ => {}
+        if final_voice == "god" {
+            local_audio_path =
+                subd_elevenlabs::add_reverb(&local_audio_path)
+                    .unwrap_or_else(|err| {
+                        eprintln!(
+                            "Error processing 'god' voice: {:?}",
+                            err
+                        );
+                        local_audio_path
+                    });
         }
 
         Ok(local_audio_path)
