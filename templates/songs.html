@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Songs</h2>
-<div class="grid-container">
+    <div class="grid-container">
     {% for song in songs %}
         <div class="song">
             <div class="title">{{ song.title }}</div>
@@ -12,7 +12,7 @@
                     {{ song.song_id }}
                 </a>
             </div>
-            <div class="song_source">
+            <div class="song-source">
                  <audio controls>
                      <source src="/songs/{{ song.song_id }}.mp3" type="audio/mpeg">
                      Your browser does not support the audio element.

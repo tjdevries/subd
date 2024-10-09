@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Users</h2>
 <div class="users-container">
+    <h2>Users</h2>
     {% for user in users %}
-    <div class="username">
-        <a href="/users/{{user[0]}}">{{ user[0] }}</a>
-    </div>
-    <div class="total-songs">Total Songs {{ user[1] }}</div>
-    <div class="average-score">Average Song Score: {{ user[2] }}</div>
+    <section class="user">
+        <div class="user-link">
+            <a href="/users/{{user[0]}}">{{ user[0] }}</a>
+        </div>
+        <div class="total-songs">Total Songs {{ user[1] }}</div>
+        <div class="average-score">Average Song Score: {{ user[2] }}</div>
+    </section>
     {% endfor %}
 </div>
 {% endblock %}

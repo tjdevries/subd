@@ -1,0 +1,179 @@
+/* Apply a creative and bold visual style to the page, using themes inspired by the song "Type Set Tight" and the dynamic nature of typography and music. */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+
+/* Base Style */
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(45deg, #e0eafc, #cfdef3);
+    color: #333;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    overflow-anchor: none;
+}
+
+.header-container {
+    background: #333;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: sticky;
+    top: 0;
+}
+
+.header-container a {
+    color: #ffca28;
+    text-decoration: none;
+    font-weight: 700;
+    font-family: 'Cinzel', serif;
+    transition: text-shadow 0.3s, color 0.3s;
+}
+
+.header-container a:hover {
+    color: #fff;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background: #444;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.nav-link {
+    padding: 15px 30px;
+    color: #eee;
+    text-decoration: none;
+    transition: transform 0.3s, background 0.3s;
+    font-weight: 600;
+}
+
+.nav-link:hover {
+    background: #555;
+    transform: scale(1.1);
+}
+
+.unplayed_songs, .current-song {
+    padding: 20px;
+    margin: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.unplayed_songs:hover, .current-song:hover {
+    transform: scale(1.02);
+}
+
+.unplayed_song a {
+    display: block;
+    background: #f5f5f5;
+    margin: 5px 0;
+    padding: 10px;
+    border-left: 4px solid #ffca28;
+    font-weight: 500;
+    color: #333;
+    transition: background 0.3s, padding-left 0.3s, color 0.3s;
+}
+
+.unplayed_song a:hover {
+    background: #ffca28;
+    padding-left: 20px;
+    color: #333;
+}
+
+.current-song-info {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: center;
+    gap: 20px;
+}
+
+.current-song-info h3 {
+    font-family: 'Cinzel', serif;
+    color: #555;
+}
+
+.image_scores, .videos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.ai_song_image img, .video video {
+    width: 100%;
+    border-radius: 10px;
+    transition: transform 0.3s;
+}
+
+.ai_song_image img:hover, .video video:hover {
+    transform: rotate(2deg) scale(1.05);
+}
+
+.lyrics {
+    font-family: 'Cinzel', serif;
+    background: #fff;
+    padding: 10px;
+    border-left: 4px solid #333;
+    margin-bottom: 20px;
+}
+
+.users-container, .charts-container {
+    padding: 20px;
+    margin: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.users-container:hover, .charts-container:hover {
+    transform: scale(1.02);
+}
+
+.user a, .song-link a {
+    color: #333;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.user a:hover, .song-link a:hover {
+    color: #ffca28;
+    transform: translateX(5px);
+}
+
+/*. Experimental blend and clip */
+.song_link a, .nav-link {
+    mix-blend-mode: overlay;
+    background-clip: padding-box;
+}
+
+.average-score, .total-songs, .tags {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+}
+
+.song {
+    border-bottom: 2px solid #eee;
+    padding: 10px;
+}
+
+.chart-container {
+    background: rgba(255, 250, 232, 0.8);
+    border-left: 4px solid #ffca28;
+    margin: 10px 0;
+    padding: 10px;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.chart-container:hover {
+    transform: translateX(10px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

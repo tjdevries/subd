@@ -1,0 +1,145 @@
+/* Basic style reset and font imports */
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,500&display=swap');
+
+body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #1a1a2e;
+    color: #eaeaea;
+
+    transition: all 0.3s ease-in-out;
+}
+
+a {
+    color: #f9c74f;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #f94144;
+    transform: rotate(10deg) scale(1.2);
+    transition: all 0.3s ease-in-out;
+}
+
+.header-container {
+    text-align: center;
+    padding: 1em;
+    background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
+    box-shadow: 0px 4px 2px -2px gray;
+    clip-path: polygon(0 0, 100% 0, 100% 80%, 0% 100%);
+}
+
+.header {
+    font-family: 'Lobster', cursive;
+    color: #ffffff;
+    font-size: 2.5rem;
+    -webkit-text-stroke: 1px #f94144;
+    margin: 0;
+}
+
+.sub-header {
+    font-size: 1.2rem;
+    color: #fede00;
+    font-style: italic;
+    margin-top: 0.5em;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #16213e;
+    padding: 0.5em 0;
+}
+
+.nav-link {
+    font-weight: bold;
+    padding: 0.5em 1em;
+    border-radius: 20px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.nav-link:hover {
+    background-color: #e94560;
+    transform: rotate(-5deg) scale(1.1);
+}
+
+.grid-container {
+    display: grid;
+    gap: 1em;
+    padding: 1em;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    align-items: stretch;
+    background: conic-gradient(from 180deg at 50% 50%, #5e35b1, #1e3c72);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+
+.song {
+    background-color: #0f3460;
+    border-radius: 10px;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.3s, background-color 0.3s;
+}
+
+.song:hover {
+    background-color: #16213e;
+    transform: translateY(-10px) rotate(2deg);
+}
+
+.title {
+    font-size: 1.5rem;
+    color: #e94560;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+}
+
+.song_source audio {
+    width: 100%;
+    outline: none;
+    border-radius: 5px;
+}
+
+.users-container {
+    padding: 2em 1em;
+}
+
+h2 {
+    font-size: 1.8rem;
+    margin-top: 1em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #f94144;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.user-link a {
+    font-size: 1.2rem;
+    transition: all 0.3s;
+}
+
+.user-link a:hover {
+    color: #3ac9c9;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    transform: rotate(-5deg);
+}
+
+.charts-container .chart-container {
+    background: linear-gradient(150deg, #3a0ca3, #7209b7);
+    border-radius: 8px;
+    padding: 1em;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    transform: rotate(-2deg) translateY(-5px);
+    background: linear-gradient(150deg, #7209b7, #3a0ca3);
+}

@@ -147,10 +147,34 @@ pub async fn generate_ai_js(content: String) -> Result<()> {
         }],
     );
 
-    println!("\tGenerating new JS");
-    let result = instructor_client
-        .chat_completion::<AIJavascriptResponse>(req, 3)
-        .expect("Failed to get chat completion");
+    // I should do this on CSS as well
+    let mut attempts = 0;
+    let max_attempts = 3;
+    let mut result = None;
+    while attempts < max_attempts {
+        match instructor_client
+            .chat_completion::<AIJavascriptResponse>(req.clone(), 3)
+        {
+            Ok(response) => {
+                result = Some(response);
+                break;
+            }
+            Err(e) => {
+                println!("Attempt {} failed: {}", attempts + 1, e);
+                attempts += 1;
+                if attempts == max_attempts {
+                    return Err(anyhow::anyhow!(
+                        "Failed to get chat completion after {} attempts",
+                        max_attempts
+                    ));
+                }
+            }
+        }
+    }
+
+    let result = result.expect(
+        "This should not happen as we either break the loop or return an error",
+    );
 
     println!("{:?}", result);
 
@@ -222,10 +246,33 @@ pub async fn generate_ai_css(content: String) -> Result<()> {
         }],
     );
 
-    println!("\tGenerating new CSS");
-    let result = instructor_client
-        .chat_completion::<AIStylesResponse>(req, 3)
-        .expect("Failed to get chat completion");
+    let mut attempts = 0;
+    let max_attempts = 3;
+    let mut result = None;
+    while attempts < max_attempts {
+        match instructor_client
+            .chat_completion::<AIStylesResponse>(req.clone(), 3)
+        {
+            Ok(response) => {
+                result = Some(response);
+                break;
+            }
+            Err(e) => {
+                println!("Attempt {} failed: {}", attempts + 1, e);
+                attempts += 1;
+                if attempts == max_attempts {
+                    return Err(anyhow::anyhow!(
+                        "Failed to get chat completion after {} attempts",
+                        max_attempts
+                    ));
+                }
+            }
+        }
+    }
+
+    let result = result.expect(
+        "This should not happen as we either break the loop or return an error",
+    );
 
     println!("{:?}", result);
 

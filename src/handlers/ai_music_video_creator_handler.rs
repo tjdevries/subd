@@ -5,7 +5,6 @@ use events::EventHandler;
 use obs_service;
 use obws::Client as OBSClient;
 use sqlx::PgPool;
-use std::sync::Arc;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
 use twitch_chat::client::send_message;
@@ -153,9 +152,10 @@ pub async fn handle_requests(
                 let pool_clone = pool.clone();
                 let id_clone = id.clone();
                 tokio::spawn(async move {
-                    let _ = ai_music_videos::create_music_video_images(
+                    let _ = ai_music_videos::create_music_video_image(
                         &pool_clone,
                         id_clone,
+                        None,
                     )
                     .await;
                 });

@@ -1,95 +1,68 @@
-// JavaScript code to add animations and fun effects to the HTML page
+// Import Three.js
+import * as THREE from 'three';
 
-// Check if the document is fully loaded
-window.addEventListener('DOMContentLoaded', (event) => {
-    // Add Three.js Scene
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
+// Import the Animation libaries
+import { TweenMax } from 'gsap';
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+// Setup a basic WebGL renderer, scene, and camera
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    // Create a cube
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+// Add a spinning cube
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
 
-    camera.position.z = 5;
+camera.position.z = 5;
 
-    // Animation loop for the cube
-    function animate() {
-        requestAnimationFrame(animate);
+const animate = function () {
+  requestAnimationFrame(animate);
 
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+  cube.rotation.x += 0.01;
+  cube.rotation.y += 0.01;
 
-        renderer.render(scene, camera);
-    }
-    animate();
+  renderer.render(scene, camera);
+};
 
-    // Add some fun animations to the header text
-    const header = document.querySelector('.header');
-    header.style.position = 'relative';
-    header.style.animation = 'bounce 2s infinite';
+animate();
 
-    // Define keyframes for the bounce animation
-    const style = document.createElement('style');
-    style.type = 'text/css';
-    style.innerHTML = `
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-30px);
-            }
-            60% {
-                transform: translateY(-15px);
-            }
-        }
-    `;
-    document.getElementsByTagName('head')[0].appendChild(style);
+// Adding fun animations using TweenMax
+function bounceElement(selector) {
+  let element = document.querySelector(selector);
+  TweenMax.to(element, 2, {y:60, ease:Bounce.easeOut, repeat:-1, yoyo:true});
+}
 
-    // Adding hover effect on navigation links
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.addEventListener('mouseover', () => {
-            link.style.color = 'red';
-            link.style.transition = 'color 0.3s';
-            link.style.textShadow = '0 0 5px rgba(255, 255, 255, 0.9)';
-        });
-        link.addEventListener('mouseout', () => {
-            link.style.color = '';
-            link.style.textShadow = '';
-        });
-    });
+// Select elements and animate them
+bounceElement('.header-container h1');
+bounceElement('.sub-header');
+bounceElement('.nav-link');
 
-    // Add parallax scrolling
-    window.addEventListener('scroll', () => {
-        const offset = window.pageYOffset;
-        scene.position.y = offset * -0.1;
-    });
+// Function to create starry background
+function createStarField() {
+  for (let i = 0; i < 1000; i++) {
+    const starGeometry = new THREE.SphereGeometry(0.1);
+    const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const starMesh = new THREE.Mesh(starGeometry, starMaterial);
+    starMesh.position.set(
+      Math.random() * 100 - 50,
+      Math.random() * 100 - 50,
+      Math.random() * 100 - 50
+    );
+    scene.add(starMesh);
+  }
+}
 
-    // Phaser game initialization
-    const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        scene: {
-            preload: preload,
-            create: create
-        }
-    };
+createStarField();
 
-    const game = new Phaser.Game(config);
+// Add event listeners to images for animations
+document.querySelectorAll('.ai_song_image img').forEach(img => {
+  img.addEventListener('mouseover', () => TweenMax.to(img, 0.5, { rotation: 360 }));
+});
 
-    function preload() {
-        this.load.image('star', '/path/to/star.png');
-    }
-
-    function create() {
-        this.add.image(400, 300, 'star');
-    }
+document.querySelectorAll('.ai_song_image img').forEach(img => {
+  img.addEventListener('mouseout', () => TweenMax.to(img, 0.5, { rotation: 0 }));
 });

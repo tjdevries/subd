@@ -1,0 +1,141 @@
+/* Global styles with bold, vibrant theme */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    background: linear-gradient(45deg, #1d1f2f, #3b003b);
+    color: white;
+    padding: 0 15px;
+    scroll-behavior: smooth;
+}
+
+a {
+    text-decoration: none;
+    color: #ff69b4;
+    transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+a:hover {
+    color: #1e90ff;
+    transform: scale(1.1) rotate(10deg);
+}
+
+.header-container {
+    background: rgba(0, 0, 0, 0.5);
+    border-bottom: 3px solid #ff69b4;
+    padding: 20px 0;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header {
+    font-size: 2.5em;
+    font-variant: small-caps;
+    text-shadow: 2px 2px #000;
+}
+
+.sub-header {
+    font-size: 1.2em;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.nav-link {
+    padding: 10px 20px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.3s ease-in-out;
+}
+
+.nav-link:hover {
+    background: #ff69b4;
+    color: #000;
+}
+
+.unplayed_songs, .current-song, .users-container, .charts-container {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.unplayed_song, .song {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    transition: transform 0.3s ease-in-out;
+    position: relative;
+}
+
+.unplayed_song:hover, .song:hover {
+    transform: translateY(-5px);
+}
+
+.image_scores img {
+    width: 80px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease-in-out;
+}
+
+.image_scores img:hover {
+    transform: scale(1.1);
+}
+
+.video video {
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.image_voting, .image_votes {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+.section {
+    margin-top: 30px;
+    padding: 15px;
+}
+
+.chart-container {
+    background: rgba(30, 30, 60, 0.5);
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+}
+
+.chart-container .title {
+    font-weight: bold;
+    color: #ff69b4;
+}
+
+.chart-container .average-score {
+    justify-self: center;
+    font-size: 0.9em;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.chart-container .song-link a {
+    color: #1e90ff;
+}
+
+.chart-container .song-link a:hover {
+    color: #ff69b4;
+    transform: translateX(5px);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;400;700&display=swap');
