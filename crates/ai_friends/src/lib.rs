@@ -104,7 +104,7 @@ async fn sync_lips_and_update(
     // let source = friend_name;
     let _ = obs_service::obs_source::set_enabled(
         scene,
-        &friend_name,
+        friend_name,
         false,
         obs_client,
     )
@@ -115,7 +115,7 @@ async fn sync_lips_and_update(
 
     let _ = obs_service::obs_source::set_enabled(
         scene,
-        &friend_name,
+        friend_name,
         true,
         obs_client,
     )

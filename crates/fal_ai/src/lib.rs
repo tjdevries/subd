@@ -33,18 +33,15 @@ pub async fn create_from_fal_api_return_filename(
     // let model = "fal-ai/stable-cascade";
     let model = "fal-ai/flux/dev";
 
-    let dir = match save_dir {
-        Some(d) => d,
-        None => "./tmp/fal_images",
-    };
+    let dir = save_dir.unwrap_or("./tmp/fal_images");
     let files = fal_service
         .create_image(
             model,
             prompt,
             "landscape_16_9",
-            &dir,
+            dir,
             None,
-            Some(&filename),
+            Some(filename),
         )
         .await?;
     Ok(files)

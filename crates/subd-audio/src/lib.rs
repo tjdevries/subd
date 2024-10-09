@@ -98,7 +98,7 @@ pub fn add_voice_modifiers(
     voice: &str,
     local_audio_path: &str,
 ) -> Result<String> {
-    let mut local_audio_path = normalize_tts_file(&local_audio_path)?;
+    let mut local_audio_path = normalize_tts_file(local_audio_path)?;
     if req.reverb {
         local_audio_path = add_reverb(&local_audio_path)?;
     }
@@ -131,7 +131,7 @@ pub fn add_voice_modifiers(
 fn normalize_tts_file(local_audio_path: &str) -> Result<String> {
     let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_norm");
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(["-i", &local_audio_path, &audio_dest_path])
+        .args(["-i", local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 
@@ -149,10 +149,10 @@ fn stretch_audio(local_audio_path: &str, stretch: &str) -> Result<String> {
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "stretch",
-            &stretch,
+            stretch,
         ])
         .status()
         .expect("Failed to execute sox");
@@ -161,15 +161,15 @@ fn stretch_audio(local_audio_path: &str, stretch: &str) -> Result<String> {
 
 fn change_pitch(local_audio_path: &str, pitch: &str) -> Result<String> {
     let postfix = format!("{}_{}", "_pitch", pitch);
-    let audio_dest_path = add_postfix_to_filepath(&local_audio_path, &postfix);
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, &postfix);
     Command::new("sox")
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "pitch",
-            &pitch,
+            pitch,
         ])
         .status()
         .expect("Failed to execute sox");
@@ -178,12 +178,12 @@ fn change_pitch(local_audio_path: &str, pitch: &str) -> Result<String> {
 }
 
 fn add_reverb(local_audio_path: &str) -> Result<String> {
-    let audio_dest_path = add_postfix_to_filepath(&local_audio_path, "_reverb");
+    let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_reverb");
     Command::new("sox")
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "gain",
             "-2",

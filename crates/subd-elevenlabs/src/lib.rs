@@ -185,7 +185,7 @@ fn add_postfix_to_filepath(filepath: &str, postfix: &str) -> String {
 pub fn normalize_tts_file(local_audio_path: &str) -> Result<String> {
     let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_norm");
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(["-i", &local_audio_path, &audio_dest_path])
+        .args(["-i", local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 
@@ -203,10 +203,10 @@ pub fn stretch_audio(local_audio_path: &str, stretch: &str) -> Result<String> {
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "stretch",
-            &stretch,
+            stretch,
         ])
         .status()
         .expect("Failed to execute sox");
@@ -220,10 +220,10 @@ pub fn change_pitch(local_audio_path: &str, pitch: &str) -> Result<String> {
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "pitch",
-            &pitch,
+            pitch,
         ])
         .status()
         .expect("Failed to execute sox");
@@ -237,7 +237,7 @@ pub fn add_reverb(local_audio_path: &str) -> Result<String> {
         .args([
             "-t",
             "wav",
-            &local_audio_path,
+            local_audio_path,
             &audio_dest_path,
             "gain",
             "-2",

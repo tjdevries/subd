@@ -153,8 +153,7 @@ pub async fn generate_ai_css(
     let contents = html_file_contents(html_to_style_folder)?;
 
     let content_prompt = format!("Summarize the following content and use it to influence the styling: {}", content);
-    let prompt_parts = vec![
-        "Generate excellent high-quality detailed CSS for the provided HTML. Use as many CSS properties as possible.",
+    let prompt_parts = ["Generate excellent high-quality detailed CSS for the provided HTML. Use as many CSS properties as possible.",
         "Make the overall style consistent, with a color theme and font-selection that is cohesive but fun.",
         "Use as many CSS properties as possible, for example: animation-duration, animation-delay, animation-direction, animation-fill-mode, animation, mix-blend-mode, backdrop-filter, filter, text-shadow, box-shadow, border-image, mask, background-clip, transform, perspective, isolation, object-fit, object-position, animation, transition, shape-outside, conic-gradient, linear-gradient, radial-gradient, font-variant, text-stroke, aspect-ratio, grid-template-areas, align-self, object-position, word-wrap, resize, appearance, backface-visibility, blend-mode, font-display etc.",
         "Include as many interactive changes as possible, like on:hover. Make all links do something bold and dynamic on hover.",
@@ -163,8 +162,7 @@ pub async fn generate_ai_css(
         "Use as many animations and transitions as possible.",
         "Make sure you use things like transform: rotate(360deg); Prioritize movement with transform.",
         &content_prompt,
-        "Make it all savable as a styles.css file, for the following HTML:",
-    ];
+        "Make it all savable as a styles.css file, for the following HTML:"];
 
     let prompt = format!("{} {}", prompt_parts.join(" "), contents);
 
@@ -216,7 +214,7 @@ pub async fn ask_chat_gpt(
         },
     ];
 
-    let chat_completion = ChatCompletion::builder(&GPT4_O, messages.clone())
+    let chat_completion = ChatCompletion::builder(GPT4_O, messages.clone())
         .create()
         .await
         .map_err(|e| {

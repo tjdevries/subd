@@ -37,7 +37,7 @@ pub async fn telephone(
     }
 
     let first_description =
-        subd_openai::ask_gpt_vision2("", Some(&url)).await?;
+        subd_openai::ask_gpt_vision2("", Some(url)).await?;
 
     let description = format!("{} {}", first_description, prompt);
     println!("First GPT Vision Description: {}", description);
@@ -119,7 +119,7 @@ pub async fn create_screenshot_img2img(
     source: &str,
     archive_dir: Option<String>,
 ) -> Result<String> {
-    obs_source::save_screenshot(obs_client, &source, &filename).await?;
+    obs_source::save_screenshot(obs_client, source, filename).await?;
 
     // Do we want to add more???
     let new_description = prompt.to_string();
@@ -149,9 +149,9 @@ pub async fn create_screenshot_variation(
 ) -> Result<String> {
     // let _ = subd_audio::play_sound(&sink).await;
 
-    let _ = obs_source::save_screenshot(obs_client, &source, &filename).await;
+    let _ = obs_source::save_screenshot(obs_client, source, filename).await;
 
-    let description = subd_openai::ask_gpt_vision2(&filename, None).await?;
+    let description = subd_openai::ask_gpt_vision2(filename, None).await?;
 
     let new_description = format!(
         "{} {} . The most important thing to focus on is: {}",
