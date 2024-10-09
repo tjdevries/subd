@@ -12,7 +12,7 @@ use std::time;
 
 // This also has a pause in it,
 // we might want to take that in as a variable
-pub async fn play_sound(sink: &Sink, soundname: String) -> Result<()> {
+pub async fn play_sound(sink: &Sink, soundname: &str) -> Result<()> {
     let file = match File::open(format!("./MP3s/{}.mp3", soundname)) {
         Ok(file) => BufReader::new(file),
         Err(e) => {

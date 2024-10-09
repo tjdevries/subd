@@ -108,7 +108,7 @@ pub async fn telephone(
     // We take in an ID
     let _ =
         update_obs_telephone_scene(obs_client, og_file, dalle_path_bufs).await;
-    let _ = subd_audio::play_sound(sink, "8bitmackintro".to_string()).await;
+    let _ = subd_audio::play_sound(sink, "8bitmackintro").await;
 
     Ok(dalle_path)
 }
