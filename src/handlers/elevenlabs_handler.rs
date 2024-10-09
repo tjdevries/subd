@@ -162,7 +162,7 @@ impl ElevenLabsHandler {
         .unwrap_or_else(|_| global_voice.clone());
 
         let final_voice = if is_global_voice_enabled {
-            global_voice.clone()
+            global_voice
         } else {
             msg.voice.as_ref().unwrap_or(&user_voice).clone()
         };
