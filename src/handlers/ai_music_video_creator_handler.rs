@@ -54,8 +54,8 @@ impl EventHandler for AIMusicVideoCreatorHandler {
 }
 
 async fn find_image_filename(
-    song_id: String,
-    name: String,
+    song_id: &str,
+    name: &str,
 ) -> Result<(String, String, std::path::PathBuf)> {
     println!("Finding Image for Filename: {}", name);
     let dir_path = format!("./tmp/music_videos/{}/", song_id);
@@ -117,7 +117,7 @@ pub async fn handle_requests(
     match parse_command(&msg, pool).await? {
         Command::Unknown => Ok(()),
         Command::CreateMusicVideoVideo { id, image_name } => {
-            let result = find_image_filename(id.clone(), image_name).await;
+            let result = find_image_filename(&id, &image_name).await;
             match result {
                 Ok((image_filename, path_string, _path)) => {
                     let id_clone = id.clone();

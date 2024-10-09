@@ -430,43 +430,7 @@ crates/fal_ai/src/fal_service.rs:81:    ) -> Result<String> {
 crates/fal_ai/src/fal_service.rs:112:    ) -> Result<String> {
 crates/fal_ai/src/fal_service.rs:139:    ) -> Result<String> {
 crates/fal_ai/src/fal_service.rs:249:    ) -> Result<String> {
-crates/fal_ai/src/lib.rs:8:pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
-crates/fal_ai/src/lib.rs:28:    save_dir: Option<String>,
-crates/fal_ai/src/lib.rs:29:    filename: String,
-crates/fal_ai/src/lib.rs:30:) -> Result<Vec<String>> {
-crates/fal_ai/src/lib.rs:54:pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
-crates/fal_ai/src/lib.rs:75:) -> Result<Vec<String>> {
-crates/fal_ai/src/lib.rs:91:    save_dir: Option<String>,
-crates/fal_ai/src/lib.rs:92:) -> Result<String> {
-crates/fal_ai/src/lib.rs:106:    save_dir: Option<String>,
-crates/fal_ai/src/lib.rs:107:) -> Result<String> {
-crates/fal_ai/src/lib.rs:122:) -> Result<String> {
 crates/obs_3d_filter/src/corner_pin.rs:7:    fn filter_name(&self) -> String {
-crates/skybox/src/lib.rs:28:    pub name: String,
-crates/skybox/src/lib.rs:33:    pub image: Option<String>,
-crates/skybox/src/lib.rs:47:    pub obfuscated_id: String,
-crates/skybox/src/lib.rs:50:    pub title: String,
-crates/skybox/src/lib.rs:52:    pub negative_text: Option<String>,
-crates/skybox/src/lib.rs:53:    pub prompt: String,
-crates/skybox/src/lib.rs:54:    pub username: String,
-crates/skybox/src/lib.rs:55:    pub status: String,
-crates/skybox/src/lib.rs:57:    pub file_url: String,
-crates/skybox/src/lib.rs:58:    pub thumb_url: String,
-crates/skybox/src/lib.rs:59:    pub depth_map_url: String,
-crates/skybox/src/lib.rs:61:    pub remix_obfuscated_id: Option<String>,
-crates/skybox/src/lib.rs:65:    pub created_at: String,
-crates/skybox/src/lib.rs:67:    pub updated_at: String,
-crates/skybox/src/lib.rs:68:    pub error_message: Option<String>,
-crates/skybox/src/lib.rs:69:    pub pusher_channel: String,
-crates/skybox/src/lib.rs:70:    pub pusher_event: String,
-crates/skybox/src/lib.rs:72:    pub item_type: String,
-crates/skybox/src/lib.rs:75:    pub skybox_style_name: String,
-crates/skybox/src/lib.rs:76:    pub skybox_name: String,
-crates/skybox/src/lib.rs:165:    // Try to parse the String as JSON
-crates/skybox/src/lib.rs:177:pub async fn styles_for_chat() -> String {
-crates/skybox/src/lib.rs:185:            .collect::<String>(),
-crates/skybox/src/lib.rs:246:    prompt: String,
-crates/skybox/src/lib.rs:248:) -> Result<String, String> {
 crates/ai_songs_vote/src/lib.rs:14:    pub title: String,
 crates/ai_songs_vote/src/lib.rs:56:) -> Result<Vec<(String, Option<i64>)>> {
 crates/ai_songs_vote/src/lib.rs:76:) -> Result<Vec<(String, i64, f64)>> {
@@ -497,34 +461,7 @@ src/twitch_rewards.rs:66:) -> Result<Vec<String>> {
 src/twitch_rewards.rs:67:    let mut ids: Vec<String> = vec![];
 src/twitch_rewards.rs:90:    title: String,
 src/twitch_rewards.rs:190:    title: String,
-src/bin/update_ai_song_info.rs:12:    id: String,
-src/bin/update_ai_song_info.rs:13:    status: String,
-src/bin/update_ai_song_info.rs:15:    type_field: String,
-src/bin/update_ai_song_info.rs:16:    version: String,
-src/bin/update_ai_song_info.rs:17:    condition: HashMap<String, String>,
-src/bin/update_ai_song_info.rs:19:    created_at: String,
-src/bin/update_ai_song_info.rs:25:    method: String,
-src/bin/update_ai_song_info.rs:26:    callback: Option<String>,
-src/bin/update_ai_song_info.rs:31:    user_id: String,
-src/bin/update_ai_song_info.rs:32:    user_login: String,
-src/bin/update_ai_song_info.rs:33:    user_name: String,
-src/bin/update_ai_song_info.rs:34:    broadcaster_user_id: String,
-src/bin/update_ai_song_info.rs:35:    broadcaster_user_login: String,
-src/bin/update_ai_song_info.rs:36:    broadcaster_user_name: String,
-src/bin/update_ai_song_info.rs:37:    tier: Option<String>,
-src/bin/update_ai_song_info.rs:51:    enable: Vec<String>,
-src/bin/update_ai_song_info.rs:54:fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
 src/bin/websockets.rs:101:        String::from("Unknown browser")
-src/bin/music_video_creator_site.rs:66:type WebResult<T> = Result<T, (StatusCode, String)>;
-src/bin/music_video_creator_site.rs:68:async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:115:async fn show_users(State(state): State<AppState>) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:132:async fn charts(State(state): State<AppState>) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:150:) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:165:) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:183:    Path(username): Path<String>,
-src/bin/music_video_creator_site.rs:184:) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:200:) -> WebResult<Html<String>> {
-src/bin/music_video_creator_site.rs:235:) -> WebResult<Html<String>> {
 src/bin/music_video_creator_site.rs:241:fn internal_error<E: std::fmt::Display>(err: E) -> (StatusCode, String) {
 src/bin/music_video_creator_site.rs:245:fn not_found<E: std::fmt::Display>(err: E) -> (StatusCode, String) {
 src/bin/ai_test.rs:20:    image_prompt: String,
@@ -575,23 +512,6 @@ src/redemptions.rs:25:        pub user_input: Option<String>,
 src/redemptions.rs:56:    title: String,
 src/redemptions.rs:58:    user_name: String,
 src/redemptions.rs:61:    user_input: String,
-src/handlers/voices_handler.rs:31:    voice_id: String,
-src/handlers/voices_handler.rs:32:    name: String,
-src/handlers/voices_handler.rs:42:    name: String,
-src/handlers/voices_handler.rs:43:    description: String,
-src/handlers/voices_handler.rs:44:    labels: HashMap<String, String>,
-src/handlers/voices_handler.rs:45:    files: Vec<String>, // Vec of file paths
-src/handlers/voices_handler.rs:65:                .collect::<Vec<String>>();
-src/handlers/voices_handler.rs:90:    splitmsg: Vec<String>,
-src/handlers/voices_handler.rs:526:) -> Result<String> {
-src/handlers/voices_handler.rs:567:    voice_id: String,
-src/handlers/voices_handler.rs:571:    let mut data = String::new();
-src/handlers/voices_handler.rs:615:) -> Result<String> {
-src/handlers/voices_handler.rs:626:async fn _crop_audio(input_file: &str, crop_time: usize) -> Result<String> {
-src/handlers/voices_handler.rs:646:) -> Result<Vec<String>> {
-src/handlers/voices_handler.rs:648:    let mut mp3s: HashSet<String> = vec![].into_iter().collect();
-src/handlers/voices_handler.rs:652:    let vec_of_mp3s: Vec<String> = mp3s.into_iter().collect();
-src/handlers/voices_handler.rs:659:) -> Result<String> {
 src/handlers/ai_songs_downloader_handler.rs:20:    Download { id: String },
 src/handlers/ai_songs_downloader_handler.rs:21:    CreateSong { prompt: String },
 src/handlers/ai_songs_downloader_handler.rs:22:    CreateInstrumentalSong { prompt: String },
