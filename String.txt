@@ -143,20 +143,6 @@ crates/twitch_chat/src/client.rs:11:    pub broadcaster_username: String,
 crates/twitch_chat/src/client.rs:20:        broadcaster_username: String,
 crates/twitch_chat/src/client.rs:50:    msg: impl Into<String>,
 crates/user_service/src/models.rs:16:        pub contents: String,
-crates/subd-yew/src/bin/site.rs:20:fn _make_emote_url(emote: &Emote) -> String {
-crates/subd-yew/src/bin/site.rs:64:        //         .collect::<String>();
-crates/subd-yew/src/bin/site.rs:80:        //         .collect::<String>();
-crates/subd-yew/src/bin/site.rs:83:        let remaining = contents.collect::<String>();
-crates/subd-yew/src/bin/site.rs:184:// fn print_type_of<T>(_: &T) -> String {
-crates/subd-yew/src/bin/site.rs:190:    pub ws_address: String,
-crates/subd-yew/src/components/raffle.rs:27:    // existing_names: HashSet<String>,
-crates/subd-types/src/twitch.rs:12:    pub login: String,
-crates/subd-types/src/twitch.rs:13:    pub name: String,
-crates/subd-types/src/twitch.rs:18:    id: String,
-crates/subd-types/src/twitch.rs:19:    login: String,
-crates/subd-types/src/twitch.rs:26:    pub id: String,
-crates/subd-types/src/twitch.rs:53:    pub message_id: String,
-crates/subd-types/src/twitch.rs:71:    pub text: String,
 crates/subd-suno/src/models.rs:5:    pub id: String,
 crates/subd-suno/src/models.rs:6:    pub video_url: String,
 crates/subd-suno/src/models.rs:7:    pub audio_url: String,
@@ -206,107 +192,6 @@ crates/subd-suno/src/models.rs:176:    pub fn tags(mut self, tags: impl Into<Str
 crates/subd-suno/src/models.rs:181:    pub fn prompt(mut self, prompt: impl Into<String>) -> Self {
 crates/subd-suno/src/models.rs:186:    pub fn gpt_description_prompt(mut self, desc: impl Into<String>) -> Self {
 crates/subd-suno/src/models.rs:191:    pub fn type_field(mut self, type_field: impl Into<String>) -> Self {
-crates/subd-types/src/consts.rs:7:pub fn get_twitch_bot_oauth() -> String {
-crates/subd-types/src/consts.rs:8:    static TWITCH_BOT_OAUTH: OnceCell<String> = OnceCell::new();
-crates/subd-types/src/consts.rs:22:pub fn get_twitch_broadcaster_raw() -> String {
-crates/subd-types/src/consts.rs:23:    static TWITCH_BROADCASTER_OAUTH: OnceCell<String> = OnceCell::new();
-crates/subd-types/src/consts.rs:66:pub fn get_github_broadcaster_token() -> String {
-crates/subd-types/src/consts.rs:71:    String::from("token ")
-crates/subd-types/src/consts.rs:77:pub fn get_database_url() -> String {
-crates/subd-types/src/consts.rs:81:pub fn get_test_database_url() -> String {
-crates/subd-types/src/consts.rs:85:pub fn get_twitch_broadcaster_username() -> String {
-crates/subd-types/src/consts.rs:90:pub fn get_twitch_broadcaster_channel_id() -> String {
-crates/subd-types/src/consts.rs:95:pub fn get_twitch_bot_username() -> String {
-crates/subd-types/src/consts.rs:100:pub fn get_twitch_bot_channel_id() -> String {
-crates/subd-types/src/consts.rs:105:pub fn get_obs_websocket_address() -> String {
-crates/subd-types/src/consts.rs:110:pub fn get_obs_websocket_port() -> String {
-crates/subd-types/src/consts.rs:115:pub fn get_obs_test_scene() -> String {
-crates/subd-types/src/consts.rs:119:pub fn get_obs_test_source() -> String {
-crates/subd-types/src/consts.rs:123:pub fn get_obs_test_filter() -> String {
-crates/subd-types/src/consts.rs:127:pub fn get_ai_videos_dir() -> String {
-crates/subd-types/src/consts.rs:132:pub fn get_get_ai_images_dir() -> String {
-crates/subd-types/src/consts.rs:137:pub fn get_fal_responses_dir() -> String {
-crates/subd-types/src/consts.rs:142:pub fn get_obs_background_image_path() -> String {
-crates/subd-types/src/consts.rs:147:pub fn get_ai_twin_obs_source() -> String {
-crates/subd-types/src/consts.rs:151:pub fn get_sdf_effects_filter_name() -> String {
-crates/subd-types/src/consts.rs:157:pub fn get_sdf_effects_internal_filter_name() -> String {
-crates/subd-types/src/consts.rs:162:pub fn get_move_outline_filter_name() -> String {
-crates/subd-types/src/consts.rs:167:pub fn get_default_obs_source() -> String {
-crates/subd-types/src/consts.rs:171:pub fn get_default_obs_scene() -> String {
-crates/subd-types/src/consts.rs:175:pub fn get_primary_camera_scene() -> String {
-crates/subd-types/src/consts.rs:179:pub fn get_move_internal_filter_name() -> String {
-crates/subd-types/src/consts.rs:184:pub fn get_move_blur_filter_name() -> String {
-crates/subd-types/src/consts.rs:189:pub fn get_blur_filter_name() -> String {
-crates/subd-types/src/consts.rs:193:pub fn get_blur_internal_filter_name() -> String {
-crates/subd-types/src/consts.rs:198:pub fn get_move_scroll_filter_name() -> String {
-crates/subd-types/src/consts.rs:203:pub fn get_scroll_filter_name() -> String {
-crates/subd-types/src/consts.rs:207:pub fn get_scroll_internal_filter_name() -> String {
-crates/subd-types/src/consts.rs:212:pub fn get_stream_fx_internal_filter_name() -> String {
-crates/subd-types/src/consts.rs:217:pub fn get_move_stream_fx_filter_name() -> String {
-crates/subd-types/src/consts.rs:222:pub fn get_3d_transform_filter_name() -> String {
-crates/subd-types/src/consts.rs:227:pub fn get_meme_scene() -> String {
-crates/subd-types/src/consts.rs:231:pub fn get_default_stream_character_source() -> String {
-crates/subd-types/src/consts.rs:236:pub fn get_twitch_default_source() -> String {
-crates/subd-types/src/consts.rs:240:pub fn get_twitch_mod_default_voice() -> String {
-crates/subd-types/src/consts.rs:245:pub fn get_twitch_default_voice() -> String {
-crates/subd-types/src/consts.rs:250:pub fn get_twitch_staff_obs_source() -> String {
-crates/subd-types/src/consts.rs:255:pub fn get_twitch_staff_voice() -> String {
-crates/subd-types/src/consts.rs:259:pub fn get_twitch_helper_voice() -> String {
-crates/subd-types/src/consts.rs:263:pub fn get_soundboard_text_source_name() -> String {
-crates/subd-types/src/consts.rs:268:pub fn get_move_source_filter_kind() -> String {
-crates/subd-types/src/lib.rs:26:pub struct TwitchUserID(pub String);
-crates/subd-types/src/lib.rs:35:    type Error = String;
-crates/subd-types/src/lib.rs:67:    pub user_name: String,
-crates/subd-types/src/lib.rs:70:    pub contents: String,
-crates/subd-types/src/lib.rs:75:    pub voice_text: String,
-crates/subd-types/src/lib.rs:76:    pub message: String,
-crates/subd-types/src/lib.rs:77:    pub username: String,
-crates/subd-types/src/lib.rs:78:    pub voice: Option<String>,
-crates/subd-types/src/lib.rs:80:    pub pitch: Option<String>,
-crates/subd-types/src/lib.rs:81:    pub stretch: Option<String>,
-crates/subd-types/src/lib.rs:82:    pub source: Option<String>,
-crates/subd-types/src/lib.rs:83:    pub music_bg: Option<String>,
-crates/subd-types/src/lib.rs:84:    pub prompt: Option<String>,
-crates/subd-types/src/lib.rs:89:    pub voice_text: String,
-crates/subd-types/src/lib.rs:90:    pub message: String,
-crates/subd-types/src/lib.rs:91:    pub username: String,
-crates/subd-types/src/lib.rs:92:    pub voice: Option<String>,
-crates/subd-types/src/lib.rs:94:    pub pitch: Option<String>,
-crates/subd-types/src/lib.rs:95:    pub stretch: Option<String>,
-crates/subd-types/src/lib.rs:96:    pub source: Option<String>,
-crates/subd-types/src/lib.rs:97:    pub music_bg: Option<String>,
-crates/subd-types/src/lib.rs:98:    pub dalle_prompt: Option<String>,
-crates/subd-types/src/lib.rs:103:    // pub voice: String,
-crates/subd-types/src/lib.rs:104:    // pub voice_text: String,
-crates/subd-types/src/lib.rs:105:    pub text_source: String,
-crates/subd-types/src/lib.rs:106:    pub message: String,
-crates/subd-types/src/lib.rs:111:    pub hotkey: String,
-crates/subd-types/src/lib.rs:116:    pub source: String,
-crates/subd-types/src/lib.rs:122:    pub scene: String,
-crates/subd-types/src/lib.rs:123:    pub source: String,
-crates/subd-types/src/lib.rs:129:    // pub msg: String,
-crates/subd-types/src/lib.rs:135:    // pub msg: String,
-crates/subd-types/src/lib.rs:141:    pub msg: String,
-crates/subd-types/src/lib.rs:147:    pub msg: String,
-crates/subd-types/src/lib.rs:178:        scene: String,
-crates/subd-types/src/lib.rs:187:    RequestTwitchMessage(String),
-crates/subd-types/src/lib.rs:207:        title: String,
-crates/subd-types/src/lib.rs:208:        entries: HashMap<String, usize>,
-crates/subd-types/src/lib.rs:211:        users: HashSet<String>,
-crates/subd-types/src/lib.rs:220:    Suggest { text: String },
-crates/subd-types/src/lib.rs:235:    pub text: String,
-crates/subd-types/src/lib.rs:242:    Start { display_name: String },
-crates/subd-types/src/lib.rs:243:    Finish { display_name: String, success: bool },
-crates/subd-types/src/lib.rs:244:    Format { sender: String },
-crates/subd-types/src/lib.rs:250:        T: ToString + 'static,
-crates/subd-types/src/lib.rs:259:        T: ToString + 'static,
-crates/subd-types/src/lib.rs:269:        T: ToString + 'static,
-crates/subd-types/src/lib.rs:281:        display_name: String,
-crates/subd-types/src/lib.rs:291:    pub id: String,
-crates/subd-types/src/lib.rs:292:    pub login: String,
-crates/subd-types/src/lib.rs:293:    pub name: String,
-crates/subd-types/src/lib.rs:308:    GithubSponsor { tier: String },
-crates/subd-types/src/lib.rs:414:    pub fn display_name(&self) -> String {
 crates/subd-suno/src/lib.rs:18:    pub prompt: String,
 crates/subd-suno/src/lib.rs:147:    user_name: String,
 crates/subd-suno/src/lib.rs:148:    id: &String,

@@ -144,12 +144,13 @@ pub async fn download_and_play(
     pool: &sqlx::PgPool,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     _tx: &broadcast::Sender<subd_types::Event>,
-    user_name: String,
+    username: &str,
     id: &String,
 ) -> Result<()> {
     let id = id.clone();
     let twitch_client = twitch_client.clone();
     let pool = pool.clone();
+    let username = username.to_string().clone();
 
     // We need to handle the await here
     tokio::spawn(async move {
@@ -169,9 +170,7 @@ pub async fn download_and_play(
                     let content = response.bytes().await;
                     match content {
                         Ok(content) => {
-                            if let Err(e) =
-                                just_download(&content, id.clone()).await
-                            {
+                            if let Err(e) = just_download(&content, &id).await {
                                 eprintln!("Error downloading file: {}", e);
                                 continue;
                             }
@@ -196,7 +195,7 @@ pub async fn download_and_play(
                         title: suno_response.title.to_string(),
                         tags: suno_response.metadata.tags.to_string(),
                         prompt: suno_response.metadata.prompt,
-                        username: user_name.clone(),
+                        username: username.to_string(),
                         audio_url: suno_response.audio_url.to_string(),
                         lyric: suno_response.lyric,
                         gpt_description_prompt: suno_response
@@ -226,7 +225,7 @@ pub async fn download_and_play(
 
                     let info = format!(
                         "@{}'s song {} added to the Queue.",
-                        user_name, id
+                        username, id
                     );
 
                     if let Err(e) = send_message(&twitch_client, info).await {
@@ -257,7 +256,7 @@ pub async fn parse_suno_response_download_and_play(
     tx: &broadcast::Sender<subd_types::Event>,
     json_response: serde_json::Value,
     index: usize,
-    user_name: String,
+    user_name: &str,
 ) -> Result<()> {
     let song_data = json_response
         .get(index)
@@ -276,7 +275,7 @@ pub async fn parse_suno_response_download_and_play(
         title: suno_response.title.to_string(),
         tags: suno_response.metadata.tags.to_string(),
         prompt: suno_response.metadata.prompt,
-        username: user_name.clone(),
+        username: user_name.to_string(),
         audio_url: suno_response.audio_url.to_string(),
         lyric: suno_response.lyric,
         gpt_description_prompt: suno_response
@@ -324,7 +323,7 @@ pub async fn parse_suno_response_download_and_play(
 pub async fn just_download(
     content: &[u8],
     // response: reqwest::Response,
-    id: String,
+    id: &str,
 ) -> Result<BufReader<File>> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mut file = fs::File::create(&file_name).await?;
