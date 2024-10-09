@@ -231,15 +231,12 @@ async fn process_ai_scene(
 // =========================================================================
 
 async fn ask_chat_gpt(user_input: &str, base_prompt: &str) -> Result<String> {
-    let response = subd_openai::ask_chat_gpt(
-        user_input.to_string(),
-        base_prompt.to_string(),
-    )
-    .await
-    .map_err(|e| {
-        eprintln!("Error occurred: {:?}", e);
-        anyhow!("Error response")
-    })?;
+    let response = subd_openai::ask_chat_gpt(user_input, base_prompt)
+        .await
+        .map_err(|e| {
+            eprintln!("Error occurred: {:?}", e);
+            anyhow!("Error response")
+        })?;
 
     let content = response.content.ok_or_else(|| anyhow!("No content"))?;
 

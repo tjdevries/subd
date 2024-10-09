@@ -1,163 +1,92 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Neon&display=swap');
-
+/* Global Styles */
 body {
-    font-family: 'Press Start 2P', cursive;
-    background: black;
-    color: #39FF14;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #232526, #414345);
+    color: #FFFFFF;
     overflow-x: hidden;
+    word-wrap: break-word;
+    line-height: 1.6;
+    perspective: 1000px;
+    mix-blend-mode: normal;
 }
 
-header.header-container {
+h1, h2, h3 {
+    font-family: 'Pacifico', cursive;
+    text-shadow: 4px 4px #111;
+}
+
+p, a {
+    font-family: 'Open Sans', sans-serif;
+}
+
+header {
     text-align: center;
     padding: 50px 0;
-    background: linear-gradient(180deg, #0f0c29, #302b63, #24243e);
-    color: white;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    animation: neon-glow 1.5s ease-in-out infinite alternate;
-    border-bottom: 3px solid #39FF14;
+    background-color: rgba(255, 165, 0, 0.3);
+    backdrop-filter: blur(10px);
 }
 
-.header {
-    font-size: 3em;
-    font-family: 'Neon', sans-serif;
-    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 30px #39ff14;
+nav {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px 0;
+    backdrop-filter: blur(5px);
 }
 
-.header a {
+nav a {
+    margin: 0 15px;
     text-decoration: none;
-    color: inherit;
-    transition: 0.5s;
+    color: cyan;
+    font-size: 1.5em;
+    transition: all 0.3s ease;
 }
-
-.header a:hover {
-    color: #f35626;
-    text-shadow: 0 0 5px #f35626, 0 0 10px #f35626, 0 0 15px #f35626;
-    transform: scale(1.1);
-}
-
-nav.nav-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    justify-items: center;
-    background: #333;
-    padding: 10px;
-    border-bottom: 2px solid #39ff14;
-    position: -webkit-sticky;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.nav-link {
-    color: white;
-    font-size: 1.1em;
-    font-family: 'Luckiest Guy', cursive;
-    text-shadow: 0 0 5px #39ff14;
-    transition: all 0.3s ease-in-out;
-}
-
-.nav-link:hover {
-    color: #f35626;
-    text-shadow: 0 0 10px #f35626;
+nav a:hover {
+    color: lime;
+    text-shadow: 0 0 10px lime, 0 0 20px lime, 0 0 30px lime;
     transform: rotate(360deg);
 }
 
-.unplayed-songs, .songs, .users, .top-songs {
-    padding: 20px;
+.header-container {
+    animation: headerAnimation 5s infinite;
+}
+
+@keyframes headerAnimation {
+    0%, 100% {
+        transform: perspective(100px) rotateX(0deg);
+    }
+    50% {
+        transform: perspective(100px) rotateX(180deg);
+    }
+}
+
+.article {
     margin: 20px auto;
-    max-width: 1000px;
-    background: rgba(0,0,0,0.8);
+    width: 80%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(15px);
     border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,255,0,0.5);
-    border: 3px solid #39ff14;
+    border: 2px solid lime;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-.song-title, .sub-header {
-    color: #39FF14;
-    text-shadow: 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 30px #39ff14;
-}
-
-.sub-header {
-    animation: fadeInUp 2s;
-}
-
-.song-title a {
-    color: inherit;
-    text-decoration: none;
-    transition: color 0.3s ease-in-out;
-}
-
-.song-title a:hover {
-    color: #f35626;
-    text-shadow: 0 0 10px #f35626;
-}
-
-.song {
-    border-bottom: 2px solid #333;
-    padding: 10px 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.song:hover {
-    background: rgba(57, 255, 20, 0.1);
-    transform: scale(1.02);
-}
-
-.song-audio audio {
+.song-images img, .song-videos video {
     width: 100%;
+    height: auto;
+    border-radius: 15px;
+    transition: transform 0.6s ease-in-out;
 }
 
-.song-audio audio::-webkit-media-controls-panel {
-    background-color: #39ff14;
-    border-radius: 5px;
-    box-shadow: 0 0 5px #39ff14;
+.song-images img:hover, .song-videos video:hover {
+    transform: scale(1.1) rotateY(360deg);
+    box-shadow: 0 0 15px yellow;
 }
 
-.image img {
-    max-width: 100%;
-    border: 3px solid #39ff14;
-    transition: transform 0.5s ease;
-}
-
-.image:hover img {
-    transform: scale(1.1);
-}
-
-.image-voting {
-    font-size: 0.8em;
-    text-align: center;
-    color: #ffffff;
-}
-
-.image-votes {
-    font-size: 0.8em;
-    text-align: center;
-    color: #ffffff;
-}
-
-.video {
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #39ff14;
-    transition: transform 0.5s;
-}
-
-.video:hover {
-    transform: scale(1.1);
-}
-
-@keyframes neon-glow {
-    from {
-        text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14;
-    }
-
-    to {
-        text-shadow: 0 0 10px #f35626, 0 0 20px #f35626, 0 0 30px #f35626, 0 0 40px #f35626;
-    }
+.unplayed-song, .song, .user, .top-song {
+    animation: fadeInUp 2s;
+    transition: all 0.4s ease-in-out;
 }
 
 @keyframes fadeInUp {
@@ -171,12 +100,40 @@ nav.nav-container {
     }
 }
 
-@media (max-width: 768px) {
-    nav.nav-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.song-title a {
+    color: #FF1493;
+    text-decoration: none;
+    transition: all 0.4s;
+}
 
-    .header {
-        font-size: 2em;
-    }
+.song-title a:hover {
+    color: #FFD700;
+    text-shadow: 2px 2px #FF4500;
+    transform: rotate(-15deg);
+}
+
+.audio {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.song-lyrics p {
+    text-align: justify;
+    padding: 15px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-variant: small-caps;
+}
+
+/* Import Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;700&display=swap');
+
+/* Layout and Shape Specifics */
+.songs, .users, .top-songs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
 }

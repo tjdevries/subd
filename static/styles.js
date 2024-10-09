@@ -1,105 +1,90 @@
 import * as THREE from 'three';
-import * as D3 from 'd3';
+import * as d3 from 'd3';
 import * as mermaid from 'mermaid';
 
-console.log('JavaScript loaded: Initializing animations and visualizations.');
+// Function to initialize a 3D scene using Three.js
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing 3D scene with Three.js');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-// Initialize mermaid for charts
-mermaid.initialize({ startOnLoad: true });
-console.log('Mermaid initialized for creating charts.');
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
 
-// Set a neon theme for the site
-const neonStyle = document.createElement('style');
-neonStyle.innerHTML = `
-  body {
-    background-color: #000;
-    color: #0ff;
-    font-family: 'Lucida Console', Monaco, monospace;
-  }
-  a {
-    color: #0f0;
-    text-shadow: 0 0 3px #0f0, 0 0 5px #fff;
-  }
-  .header h1, .sub-header {
-    text-shadow: 0 0 5px #0ff, 0 0 10px #00f;
-  }
-  .song-title, .song-id, .song-tags, .song-description {
-    text-shadow: 0 0 3px #0ff;
-  }
-`;
-document.head.appendChild(neonStyle);
-console.log('Applied neon theme to the site.');
+    camera.position.z = 5;
 
-// Create a 3D animation using three.js
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-const light = new THREE.PointLight(0xFFFF00);
-const cubeGeometry = new THREE.BoxGeometry();
-const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x0ff });
-const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-document.body.appendChild(renderer.domElement);
+    const animate = function () {
+        requestAnimationFrame(animate);
 
-light.position.set(10, 10, 10);
-scene.add(light);
-camera.position.z = 5;
-scene.add(cube);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
 
-console.log('3D scene setup complete. Adding 3D elements to the scene.');
+        renderer.render(scene, camera);
+    };
 
-function animate3D() {
-  requestAnimationFrame(animate3D);
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera);
-}
+    animate();
+    console.log('3D cube animation started!');
+});
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-animate3D();
-console.log('Animated 3D cube rotation started.');
+// Function to draw charts using D3.js
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Drawing charts using D3.js');
+    const svg = d3.select('body').append('svg')
+        .attr('width', 600)
+        .attr('height', 400);
 
-// Create a bar chart using D3.js
-console.log('Generating bar chart with D3.js');
+    const data = [30, 80, 45, 60, 20, 90, 50];
+    const barWidth = 40;
+    const barPadding = 5;
 
-const data = [4, 8, 15, 16, 23, 42];
-const width = 420;
-const barHeight = 20;
+    svg.selectAll('rect')
+        .data(data)
+        .enter()
+        .append('rect')
+        .attr('x', (d, i) => i * (barWidth + barPadding))
+        .attr('y', d => 400 - d * 4)
+        .attr('width', barWidth)
+        .attr('height', d => d * 4)
+        .attr('fill', 'neon');
 
-const x = D3.scaleLinear()
-  .domain([0, D3.max(data)])
-  .range([0, width]);
+    console.log('Bar chart created with D3.js!');
+});
 
-const chart = D3.select('body')
-  .append('svg')
-  .attr('width', width)
-  .attr('height', barHeight * data.length);
+// Function to render mermaid diagrams
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Initializing Mermaid diagrams');
+    mermaid.initialize({ startOnLoad: true });
+    const graphDefinition = `graph TD;
+        A[AI Songs] --> B{Vote}
+        B -->|Positive| C(Vote Count)
+        B -->|Negative| D(Song List)`;
 
-const bar = chart.selectAll('g')
-  .data(data)
-  .enter().append('g')
-  .attr('transform', (d, i) => `translate(0,${i * barHeight})`);
+    const graphContainer = document.createElement('div');
+    graphContainer.className = 'mermaid';
+    graphContainer.innerHTML = graphDefinition;
+    document.body.appendChild(graphContainer);
 
-bar.append('rect')
-  .attr('width', x)
-  .attr('height', barHeight - 1)
-  .style('fill', '#0f0');
+    mermaid.contentLoaded();
+    console.log('Mermaid diagram rendered!');
+});
 
-bar.append('text')
-  .attr('x', d => x(d) - 3)
-  .attr('y', barHeight / 2)
-  .attr('dy', '.35em')
-  .text(d => d);
+// Additional animations and logic
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Adding neon-inspired animations');
+    document.querySelectorAll('.song-title').forEach(element => {
+        element.style.transition = 'color 0.5s ease-in-out';
 
-console.log('Bar chart successfully created.');
-
-// Example mermaid chart
-const mermaidElem = document.createElement('div');
-mermaidElem.classList.add('mermaid');
-mermaidElem.innerHTML = `graph TD;
-    A[Start] --> B{Is it?};
-    B -->|Yes| C[Great];
-    B -->|No| D[Not great];
-    C --> E[Do it again];`;
-document.body.appendChild(mermaidElem);
-mermaid.init(undefined, mermaidElem);
-console.log('Mermaid chart created and displayed.');
+        element.addEventListener('mouseenter', () => {
+            element.style.color = 'lime';
+            console.log(`Hovered over: ${element.textContent}`);
+        });
+        element.addEventListener('mouseleave', () => {
+            element.style.color = '';
+        });
+    });
+});

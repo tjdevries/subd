@@ -192,21 +192,25 @@ pub async fn generate_ai_css(
 }
 
 pub async fn ask_chat_gpt(
-    user_input: String,
-    base_content: String,
+    user_input: &str,
+    base_content: &str,
 ) -> Result<ChatCompletionMessage> {
     set_key(env::var("OPENAI_API_KEY")?);
 
     let messages = vec![
         ChatCompletionMessage {
             role: ChatCompletionMessageRole::System,
-            content: Some(ChatCompletionContent::Message(Some(base_content))),
+            content: Some(ChatCompletionContent::Message(Some(
+                base_content.to_string(),
+            ))),
             name: None,
             function_call: None,
         },
         ChatCompletionMessage {
             role: ChatCompletionMessageRole::User,
-            content: Some(ChatCompletionContent::Message(Some(user_input))),
+            content: Some(ChatCompletionContent::Message(Some(
+                user_input.to_string(),
+            ))),
             name: None,
             function_call: None,
         },
