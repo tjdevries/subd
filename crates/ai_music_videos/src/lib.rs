@@ -236,7 +236,7 @@ async fn create_image_from_prompt(
     let images = fal_ai::create_from_fal_api_return_filename(
         &prompt,
         Some(folder.clone()),
-        index.to_string(),
+        &index.to_string(),
     )
     .await?;
     let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;
@@ -268,7 +268,7 @@ async fn generate_runway_video_and_image(
     let images = fal_ai::create_from_fal_api_return_filename(
         image_prompt,
         Some(folder.clone()),
-        index.to_string(),
+        &index.to_string(),
     )
     .await?;
     let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;

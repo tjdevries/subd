@@ -1,42 +1,3 @@
-crates/subd-elevenlabs/src/lib.rs:15:    voice_id: String,
-crates/subd-elevenlabs/src/lib.rs:16:    name: String,
-crates/subd-elevenlabs/src/lib.rs:27:    // text_source: String,
-crates/subd-elevenlabs/src/lib.rs:28:    pub voice: Option<String>,
-crates/subd-elevenlabs/src/lib.rs:29:    pub source: String,
-crates/subd-elevenlabs/src/lib.rs:30:    pub username: String,
-crates/subd-elevenlabs/src/lib.rs:35:    pub category: String,
-crates/subd-elevenlabs/src/lib.rs:36:    pub display_name: String,
-crates/subd-elevenlabs/src/lib.rs:37:    pub model_id: String,
-crates/subd-elevenlabs/src/lib.rs:38:    pub name: String,
-crates/subd-elevenlabs/src/lib.rs:41:pub fn twitch_chat_filename(username: String, voice: String) -> String {
-crates/subd-elevenlabs/src/lib.rs:47:pub fn chop_text(starting_text: String) -> String {
-crates/subd-elevenlabs/src/lib.rs:64:    voice: String,
-crates/subd-elevenlabs/src/lib.rs:65:    username: String,
-crates/subd-elevenlabs/src/lib.rs:82:    contents: String,
-crates/subd-elevenlabs/src/lib.rs:83:    voice: String,
-crates/subd-elevenlabs/src/lib.rs:84:    username: String,
-crates/subd-elevenlabs/src/lib.rs:108:    contents: String,
-crates/subd-elevenlabs/src/lib.rs:109:    username: String,
-crates/subd-elevenlabs/src/lib.rs:174:fn add_postfix_to_filepath(filepath: String, postfix: String) -> String {
-crates/subd-elevenlabs/src/lib.rs:185:pub fn normalize_tts_file(local_audio_path: String) -> Result<String> {
-crates/subd-elevenlabs/src/lib.rs:202:    local_audio_path: String,
-crates/subd-elevenlabs/src/lib.rs:203:    stretch: String,
-crates/subd-elevenlabs/src/lib.rs:204:) -> Result<String> {
-crates/subd-elevenlabs/src/lib.rs:223:pub fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
-crates/subd-elevenlabs/src/lib.rs:242:pub fn add_reverb(local_audio_path: String) -> Result<String> {
-crates/subd-elevenlabs/src/lib.rs:272:pub fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
-crates/subd-elevenlabs/src/lib.rs:294:pub fn sanitize_chat_message(raw_msg: String) -> String {
-crates/subd-elevenlabs/src/lib.rs:312:        .collect::<Vec<String>>()
-crates/subd-elevenlabs/src/lib.rs:316:pub fn find_random_voice() -> (String, String) {
-crates/subd-audio/src/lib.rs:15:pub async fn play_sound(sink: &Sink, soundname: String) -> Result<()> {
-crates/subd-audio/src/lib.rs:98:    voice: String,
-crates/subd-audio/src/lib.rs:99:    mut local_audio_path: String,
-crates/subd-audio/src/lib.rs:100:) -> Result<String> {
-crates/subd-audio/src/lib.rs:131:fn normalize_tts_file(local_audio_path: &str) -> Result<String> {
-crates/subd-audio/src/lib.rs:146:fn stretch_audio(local_audio_path: &str, stretch: &str) -> Result<String> {
-crates/subd-audio/src/lib.rs:162:fn change_pitch(local_audio_path: String, pitch: String) -> Result<String> {
-crates/subd-audio/src/lib.rs:180:fn add_reverb(local_audio_path: String) -> Result<String> {
-crates/subd-audio/src/lib.rs:204:fn add_postfix_to_filepath(filepath: &str, postfix: &str) -> String {
 crates/twitch_stream_state/src/lib.rs:17:        pub dalle_model: String,
 crates/twitch_stream_state/src/lib.rs:59:pub async fn get_current_song_id(pool: &PgPool) -> Result<String> {
 crates/twitch_stream_state/src/lib.rs:66:pub async fn get_ai_background_theme(pool: &PgPool) -> Result<String> {
@@ -60,31 +21,6 @@ crates/ai_telephone/src/lib.rs:151:    archive_dir: Option<String>,
 crates/ai_telephone/src/lib.rs:152:) -> Result<String> {
 crates/ai_telephone/src/lib.rs:187:    og_image: String,
 crates/ai_telephone/src/lib.rs:219:    id: String,
-crates/ai_scenes_coordinator/src/lib.rs:17:pub fn load_ai_scenes() -> Result<HashMap<String, models::AIScene>> {
-crates/ai_scenes_coordinator/src/lib.rs:87:) -> Result<String> {
-crates/ai_scenes_coordinator/src/lib.rs:123:    voice_override: Option<String>,
-crates/ai_scenes_coordinator/src/lib.rs:125:) -> Result<String> {
-crates/ai_scenes_coordinator/src/lib.rs:147:fn find_voice_id_by_name(name: &str) -> Option<(String, String)> {
-crates/ai_scenes_coordinator/src/lib.rs:163:fn find_random_voice() -> (String, String) {
-crates/ai_scenes_coordinator/src/lib.rs:180:fn twitch_chat_filename(username: &str, voice: &str) -> String {
-crates/ai_scenes_coordinator/src/lib.rs:185:async fn build_face_scene_request(voice: &str) -> Result<Option<String>> {
-crates/ai_scenes_coordinator/src/lib.rs:206:fn _sanitize_chat_message(raw_msg: &str) -> String {
-crates/ai_scenes_coordinator/src/lib.rs:218:        .collect::<Vec<String>>()
-crates/ai_scenes_coordinator/src/models.rs:11:    pub reward_title: String,
-crates/ai_scenes_coordinator/src/models.rs:12:    pub base_prompt: String,
-crates/ai_scenes_coordinator/src/models.rs:13:    pub base_dalle_prompt: String,
-crates/ai_scenes_coordinator/src/models.rs:14:    pub voice: String,
-crates/ai_scenes_coordinator/src/models.rs:15:    pub music_bg: String,
-crates/ai_scenes_coordinator/src/models.rs:22:    pub voice_id: String,
-crates/ai_scenes_coordinator/src/models.rs:23:    pub name: String,
-crates/ai_scenes_coordinator/src/models.rs:34:    // text_source: String,
-crates/ai_scenes_coordinator/src/models.rs:35:    pub voice: Option<String>,
-crates/ai_scenes_coordinator/src/models.rs:36:    pub source: String,
-crates/ai_scenes_coordinator/src/models.rs:37:    pub username: String,
-crates/ai_scenes_coordinator/src/models.rs:42:    pub category: String,
-crates/ai_scenes_coordinator/src/models.rs:43:    pub display_name: String,
-crates/ai_scenes_coordinator/src/models.rs:44:    pub model_id: String,
-crates/ai_scenes_coordinator/src/models.rs:45:    pub name: String,
 crates/subd-openai/src/dalle.rs:16:    pub prompt: String,
 crates/subd-openai/src/dalle.rs:17:    pub username: String,
 crates/subd-openai/src/dalle.rs:29:    url: String,
@@ -594,22 +530,6 @@ src/bin/music_video_creator_site.rs:245:fn not_found<E: std::fmt::Display>(err: 
 src/bin/ai_test.rs:20:    image_prompt: String,
 src/bin/ai_test.rs:21:    camera_move: String,
 src/bin/ai_test.rs:34:            content: chat_completion::Content::Text(String::from(prompt)),
-src/bin/begin.rs:25:    id: String,
-src/bin/begin.rs:26:    status: String,
-src/bin/begin.rs:28:    type_field: String,
-src/bin/begin.rs:29:    version: String,
-src/bin/begin.rs:30:    condition: HashMap<String, String>,
-src/bin/begin.rs:32:    created_at: String,
-src/bin/begin.rs:38:    method: String,
-src/bin/begin.rs:39:    callback: Option<String>,
-src/bin/begin.rs:44:    user_id: String,
-src/bin/begin.rs:45:    user_login: String,
-src/bin/begin.rs:46:    user_name: String,
-src/bin/begin.rs:47:    broadcaster_user_id: String,
-src/bin/begin.rs:48:    broadcaster_user_login: String,
-src/bin/begin.rs:49:    broadcaster_user_name: String,
-src/bin/begin.rs:50:    tier: Option<String>,
-src/bin/begin.rs:64:    enable: Vec<String>,
 src/bin/chat.rs:231://         .collect::<Vec<String>>();
 src/bin/chat.rs:401:    //                 .collect::<Vec<String>>();
 src/bin/chat.rs:495://     msg: impl Into<String>,

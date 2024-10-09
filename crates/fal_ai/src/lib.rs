@@ -26,7 +26,7 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
 pub async fn create_from_fal_api_return_filename(
     prompt: &str,
     save_dir: Option<String>,
-    filename: String,
+    filename: &str,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     // let model = "fal-ai/fast-sdxl";
