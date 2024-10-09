@@ -201,7 +201,7 @@ async fn simple_post_request<'a, C: twitch_api::HttpClient>(
 async fn process_ai_scene(
     tx: broadcast::Sender<Event>,
     scene: &ai_scenes_coordinator::models::AIScene,
-    user_input: String,
+    user_input: &str,
     enable_dalle: bool,
     enable_stable_diffusion: bool,
 ) -> Result<()> {
@@ -286,11 +286,11 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
         pool.clone(),
         reward_manager,
         event.id,
-        command.clone(),
+        &command,
         reward.id,
         reward.cost,
-        event.user_name.clone(),
-        user_input.clone(),
+        &event.user_name,
+        &user_input,
     )
     .await?;
 
@@ -305,7 +305,7 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
         process_ai_scene(
             tx,
             scene,
-            user_input,
+            &user_input,
             state.dalle_mode,
             state.enable_stable_diffusion,
         )
@@ -321,11 +321,11 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     pool: Arc<sqlx::PgPool>,
     reward_manager: Arc<RewardManager<'a, C>>,
     id: Uuid,
-    command: String,
+    command: &str,
     reward_id: Uuid,
     reward_cost: i32,
-    user_name: String,
-    user_input: String,
+    user_name: &str,
+    user_input: &str,
 ) -> Result<()> {
     if redemptions::find_redemption_by_twitch_id(&pool, id)
         .await
@@ -348,7 +348,7 @@ async fn find_or_save_redemption<'a, C: twitch_api::HttpClient>(
     );
     redemptions::save_redemptions(
         &pool,
-        command.clone(),
+        command,
         reward_cost,
         user_name,
         id,

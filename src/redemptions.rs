@@ -53,12 +53,12 @@ impl redemptions::Model {
 
 pub async fn save_redemptions(
     pool: &sqlx::PgPool,
-    title: String,
+    title: &str,
     cost: i32,
-    user_name: String,
+    user_name: &str,
     twitch_id: Uuid,
     reward_id: Uuid,
-    user_input: String,
+    user_input: &str,
 ) -> Result<PgQueryResult> {
     // Watch out, we have confused up the idea of reward_id and twitch_id
     // we have unique constraint on reward_id, which is the static ID to a reward in Twitch

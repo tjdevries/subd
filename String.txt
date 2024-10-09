@@ -736,44 +736,12 @@ src/handlers/music_scenes_handler.rs:40:                .collect::<Vec<String>>(
 src/handlers/music_scenes_handler.rs:65:    splitmsg: Vec<String>,
 src/handlers/music_scenes_handler.rs:282:fn get_random_mp3_file_name(folder_path: &str) -> Option<String> {
 src/handlers/music_scenes_handler.rs:310:    let new_music = match selected_file.file_name().to_str().map(String::from) {
-src/handlers/stream_character_handler.rs:19:    challenge: Option<String>,
-src/handlers/stream_character_handler.rs:24:    id: String,
-src/handlers/stream_character_handler.rs:25:    status: String,
-src/handlers/stream_character_handler.rs:27:    type_field: String,
-src/handlers/stream_character_handler.rs:28:    version: String,
-src/handlers/stream_character_handler.rs:29:    condition: HashMap<String, String>,
-src/handlers/stream_character_handler.rs:31:    created_at: String,
-src/handlers/stream_character_handler.rs:37:    method: String,
-src/handlers/stream_character_handler.rs:38:    callback: Option<String>,
-src/handlers/stream_character_handler.rs:43:    user_id: String,
-src/handlers/stream_character_handler.rs:44:    user_login: String,
-src/handlers/stream_character_handler.rs:45:    user_name: String,
-src/handlers/stream_character_handler.rs:46:    broadcaster_user_id: String,
-src/handlers/stream_character_handler.rs:47:    broadcaster_user_login: String,
-src/handlers/stream_character_handler.rs:48:    broadcaster_user_name: String,
-src/handlers/stream_character_handler.rs:49:    tier: Option<String>,
 src/handlers/ai_telephone_handler.rs:44:                .collect::<Vec<String>>();
 src/handlers/ai_telephone_handler.rs:77:    splitmsg: Vec<String>,
 src/handlers/reward_handler.rs:48:                .collect::<Vec<String>>();
 src/handlers/reward_handler.rs:196:    title: String,
 src/handlers/reward_handler.rs:199:) -> Result<String> {
 src/handlers/reward_handler.rs:227:) -> Result<String> {
-src/handlers/skybox_handler.rs:20:    Prompt(String),
-src/handlers/skybox_handler.rs:26:    pub name: String,
-src/handlers/skybox_handler.rs:27:    pub max_char: String,
-src/handlers/skybox_handler.rs:28:    pub image: Option<String>,
-src/handlers/skybox_handler.rs:34:    pub prompt: String,
-src/handlers/skybox_handler.rs:35:    pub negative_text: String,
-src/handlers/skybox_handler.rs:36:    pub animation_mode: String,
-src/handlers/skybox_handler.rs:99:                .collect::<Vec<String>>();
-src/handlers/skybox_handler.rs:128:    splitmsg: Vec<String>,
-src/handlers/skybox_handler.rs:130:) -> Result<(), String> {
-src/handlers/skybox_handler.rs:141:            let default_skybox_id = String::from("2449796");
-src/handlers/skybox_handler.rs:192:                        .collect::<Vec<String>>()
-src/handlers/skybox_handler.rs:199:                        .collect::<Vec<String>>()
-src/handlers/skybox_handler.rs:219:                .collect::<Vec<String>>()
-src/handlers/skybox_handler.rs:236:pub fn find_style_id(splitmsg: Vec<String>) -> Result<i32, String> {
-src/handlers/skybox_handler.rs:255:pub fn chunk_string(s: &str, chunk_size: usize) -> Vec<String> {
 src/handlers/stream_background_handler.rs:38:                .collect::<Vec<String>>();
 src/handlers/stream_background_handler.rs:61:    splitmsg: Vec<String>,
 src/handlers/ai_songs_vote_handler.rs:40:                .collect::<Vec<String>>();
