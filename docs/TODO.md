@@ -1,9 +1,5 @@
 # TODO
 
-A browser extension that changes the websites CSS based on AI
-
-A very simple JS library you can include on a site, that queries for new styles on refresh
-
 ## Top TODO
 
 - Websockets
@@ -19,10 +15,6 @@ A very simple JS library you can include on a site, that queries for new styles 
   - websockets
 - Get website looking better
   - Simpler calls to the DB in the website
-  - more shared templates
-  - better linking everywhere on the page
-- "meta-tag" on home page?
-  - Websockets will fix this
 - Setup voting to converting to video creation
   - once you have 10 votes on an image a video is created
 - Improve the Structured LLM responses
@@ -33,7 +25,6 @@ A very simple JS library you can include on a site, that queries for new styles 
 - Create way to vote on video
 - Explore !theme not working for Event Sub
 - Explore Bits/Subs/Polls etc.
-- Fix Elevenlabs, no pokimane
 - Big project to save all data and experiements
   - Claude VS GPT, Different GPT models
   - Different Image and Video Models
