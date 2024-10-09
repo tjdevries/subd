@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+
+:root {
+  --primary-color: #4B0082;
+  --secondary-color: #D8BFD8;
+  --accent-color: #FF6347;
+  --background-color: #F5F5F5;
+  --font-primary: 'Poppins', sans-serif;
+  --font-accent: 'Rock Salt', cursive;
+  --font-special: 'Orbitron', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--background-color);
+  color: var(--primary-color);
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+header.header-container {
+  background: var(--primary-color);
+  color: var(--background-color);
+  padding: 20px;
+  text-align: center;
+  border-bottom: 5px solid var(--secondary-color);
+}
+
+header h1 {
+  font-family: var(--font-accent);
+  font-size: 3rem;
+  transition: transform 0.2s, filter 0.3s;
+}
+
+header h1:hover {
+  transform: rotate(3deg) scale(1.05);
+  filter: hue-rotate(90deg);
+}
+
+nav.nav-container {
+  display: flex;
+  justify-content: center;
+  background: var(--primary-color);
+  padding: 10px;
+  border-top: 1px solid var(--secondary-color);
+}
+
+.nav-container a {
+  text-decoration: none;
+  color: var(--background-color);
+  padding: 10px 15px;
+  font-weight: 700;
+  transition: transform 0.2s ease-in-out, background 0.3s ease;
+}
+
+nav a:hover {
+  background: var(--accent-color);
+  transform: translateY(-5px) rotate(-5deg);
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.song, .chart-container, .user {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.song:hover, .chart-container:hover, .user:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.song .title, .chart-container .title, .user .user-link a {
+  font-family: var(--font-special);
+  font-size: 1.5rem;
+  color: var(--accent-color);
+  transition: color 0.3s, letter-spacing 0.3s;
+}
+
+.song .title:hover, .chart-container .title:hover, .user .user-link a:hover {
+  color: var(--primary-color);
+  letter-spacing: 1px;
+}
+
+.song a, .chart-container a, .user a {
+  color: var(--primary-color);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.song a:hover, .chart-container a:hover, .user a:hover {
+  text-shadow: 2px 2px 5px var(--secondary-color);
+}
+
+.ai_song_image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: transform 0.3s;
+}
+
+.ai_song_image img {
+  border-radius: 10px;
+  transform-origin: center center;
+  transition: transform 0.5s ease-in-out;
+}
+
+.ai_song_image img:hover {
+  transform: scale(1.1) rotate(10deg);
+}
+
+.image_voting {
+  font-family: var(--font-special);
+  padding: 10px;
+  text-align: center;
+  color: var(--secondary-color);
+}
+
+.current-song-info {
+  background: var(--secondary-color) linear-gradient(135deg, var(--background-color), var(--secondary-color));
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.videos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+video {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  outline: none;
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+video:hover {
+  filter: brightness(0.9);
+  transform: scale(1.05);
+}
+
+.lyrics {
+  font-style: italic;
+  color: var(--accent-color);
+  padding: 20px;
+  text-align: center;
+  background: conic-gradient(from 180deg, var(--primary-color), var(--secondary-color));
+  border-radius: 5px;
+}

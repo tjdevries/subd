@@ -148,7 +148,7 @@ pub async fn handle_requests(
             update_obs_source(obs_client, &filename).await
         }
         Command::CreateMusicVideoImages { id, count } => {
-            for _ in 0..=count {
+            for _ in 0..count {
                 let pool_clone = pool.clone();
                 let id_clone = id.clone();
                 tokio::spawn(async move {

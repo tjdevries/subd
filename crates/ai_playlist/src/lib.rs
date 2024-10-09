@@ -7,7 +7,7 @@ pub mod models;
 
 pub async fn get_videos_and_image_scores(
     pool: &PgPool,
-    current_song: &Option<models::ai_songs::Model>,
+    current_song: Option<&models::ai_songs::Model>,
 ) -> (Vec<String>, Vec<(String, String, i64, i64)>) {
     if let Some(song) = current_song {
         let music_directory = format!("./tmp/music_videos/{}/", song.song_id);

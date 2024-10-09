@@ -40,7 +40,7 @@ pub async fn create_music_video_image(
     id: String,
     prompt: Option<String>,
 ) -> Result<String> {
-    println!("\tStarting to create NEW Music Video!");
+    println!("\tAttempting to create Music Video Image!");
 
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);

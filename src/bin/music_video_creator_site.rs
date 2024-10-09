@@ -80,7 +80,7 @@ async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
         });
     let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
         &state.pool,
-        &current_song_info.current_song,
+        current_song_info.current_song.as_ref(),
     )
     .await;
     let users =
@@ -209,28 +209,18 @@ async fn show_ai_song(
         ai_songs_vote::total_votes_by_id(&state.pool, current_song.song_id)
             .await
             .unwrap_or(0);
-    let image_scores = ai_playlist::models::get_all_image_votes_for_song(
+    let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
         &state.pool,
-        current_song.song_id,
+        Some(&current_song),
     )
-    .await
-    .unwrap_or_default();
+    .await;
 
-    // Needs current_song
-    let music_directory =
-        format!("./tmp/music_videos/{}/", current_song.song_id);
     let base_path = format!("/images/{}", current_song.song_id);
-
-    // Needs music_directory
-    let images =
-        subd_utils::get_files_by_ext(&music_directory, &["png", "jpg", "jpeg"]);
-    let videos = subd_utils::get_files_by_ext(&music_directory, &["mp4"]);
 
     let context = context! {
         stats,
         current_song,
         current_song_votes_count,
-        images,
         videos,
         image_scores,
         base_path,

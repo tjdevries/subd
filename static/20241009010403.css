@@ -1,0 +1,209 @@
+/* Importing fun and unique fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&family=Roboto:wght@100;400;900&display=swap');
+
+/* General Styles */
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #121212;
+  color: #EEE;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.header-container, .nav-container, .users-container, .charts-container {
+  background-color: #1F1F1F;
+  padding: 20px;
+  border: 1px solid #333;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Header Styles */
+.header {
+  font-size: 3em;
+  text-shadow: 2px 2px #000;
+  text-align: center;
+  color: #00BFFF;
+  animation: text-fade 5s infinite alternate;
+}
+
+.sub-header {
+  font-size: 1.2em;
+  color: #B0C4DE;
+  text-align: center;
+}
+
+/* Navigation Styles */
+.nav-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.nav-link {
+  font-size: 1em;
+  color: #FFFFFF;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.nav-link::before { /* Making links dynamic on hover */
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #00BFFF;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #00BFFF;
+}
+
+.nav-link:hover::before {
+  visibility: visible;
+  width: 100%;
+}
+
+/* Songs Section */
+.unplayed_songs {
+  padding: 20px;
+  background: linear-gradient(to right, #303030, #505050);
+}
+
+.unplayed_song a {
+  display: block;
+  text-decoration: none;
+  color: #EEE;
+  font-size: 1em;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 10px;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.unplayed_song a:hover {
+  background-color: #00BFFF;
+  box-shadow: 0 0 10px #00BFFF;
+}
+
+/* Current Song Section */
+.current-song {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  background-color: #1F1F1F;
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px auto;
+  max-width: 80%;
+}
+
+.current-song-info {
+  color: #EEE;
+}
+
+.current-song-info h3 {
+  font-size: 2em;
+  margin-bottom: 10px;
+}
+
+.current-song-info .title {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #87CEFA;
+}
+
+.ai_song_image img {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  filter: contrast(1.2);
+  transition: transform 0.5s ease, filter 0.5s ease;
+}
+
+.ai_song_image img:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
+
+.image_voting, .image_votes {
+  font-size: 0.9em;
+  color: #B0C4DE;
+}
+
+/* Video Styles */
+.videos video {
+  width: 100%;
+  border-radius: 10px;
+  transition: transform 0.5s;
+}
+
+.videos video:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #00BFFF;
+}
+
+/* User Section */
+.user {
+  background-color: #222;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 10px;
+  transition: background-color 0.3s;
+}
+
+.user:hover {
+  background-color: #444;
+}
+
+.user-link a {
+  color: #00BFFF;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.1em;
+  display: block;
+  transition: color 0.3s;
+}
+
+.user-link a:hover {
+  color: #FFF;
+}
+
+/* Charts Section */
+.chart-container {
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #000000;
+  background-color: #191919;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.chart-container:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 20px #00BFFF;
+}
+
+.song-link a {
+  color: #00BFFF;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+/* Animations & Keyframes */
+@keyframes text-fade {
+  from {
+    color: #00BFFF;
+  }
+  to {
+    color: #FF4500;
+  }
+}

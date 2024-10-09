@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Revalia&family=Gloria+Hallelujah&display=swap');
+
+body {
+    background-color: #121212;
+    color: #f5f5f5;
+    font-family: 'Press Start 2P', cursive;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+.header-container {
+    background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+    padding: 20px;
+    text-align: center;
+    text-shadow: 2px 2px #000;
+    animation: colorchange 20s infinite alternate;
+}
+
+.header a {
+    color: #f5f5f5;
+    text-decoration: none;
+    transition: color 0.4s;
+}
+
+.header a:hover {
+    color: #ffcc00;
+    transform: rotate(360deg);
+}
+
+.sub-header {
+    font-family: 'Gloria Hallelujah', cursive;
+    animation: browsemove 3s infinite alternate-reverse;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+    background: #333;
+}
+
+.nav-link {
+    margin: 0 15px;
+    color: #f5f5f5;
+    font-family: 'Revalia', cursive;
+    position: relative;
+    transition: all 0.4s;
+}
+
+.nav-link:after {
+    content: '';
+    display: block;
+    height: 3px;
+    background: #ffcc00;
+    transition: width .3s;
+    width: 0;
+}
+
+.nav-link:hover {
+    color: #ffcc00;
+    transform: translateY(-5px);
+}
+
+.nav-link:hover:after {
+    width: 100%;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-gap: 20px;
+    padding: 20px;
+    animation: slide 3s infinite alternate;
+}
+
+.song {
+    background: #222;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.3s;
+    box-shadow: 4px 4px 10px #000;
+}
+
+.song:hover {
+    transform: scale(1.05);
+}
+
+.title {
+    font-size: 1.2em;
+    text-align: center;
+    padding: 10px 0;
+    color: #ffcc00;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.song_link a {
+    color: #f5f5f5;
+    padding: 10px;
+    display: block;
+    text-align: center;
+    transition: color 0.3s;
+}
+
+.song_link a:hover {
+    color: #00ff00;
+    transform: rotate(-30deg);
+}
+
+.current-song {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin: 20px 0;
+    padding: 20px;
+    background: #111;
+    border-radius: 10px;
+}
+
+.current-song-info {
+    flex: 1;
+    margin: 10px;
+    color: #f5f5f5;
+    font-family: 'Gloria Hallelujah', cursive;
+}
+
+.image_scores, 
+.videos {
+    flex: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 0 10px;
+    backdrop-filter: blur(10px);
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+}
+
+.ai_song_image {
+    transform: perspective(500px) rotateY(20deg);
+    transition: transform 0.4s;
+    transform-origin: left center;
+}
+
+.ai_song_image:hover {
+    transform: perspective(500px) rotateY(0deg);
+}
+
+.video video {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 2px 2px 8px #000;
+}
+
+.user-link a {
+    color: #ffcc00;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.user-link a:hover {
+    color: #ccff33;
+    text-decoration: underline;
+    transform: skewX(10deg);
+}
+
+@keyframes colorchange {
+    0% {background-color: #1a2a6c;}
+    25% {background-color: #b21f1f;}
+    50% {background-color: #fdbb2d;}
+    75% {background-color: #1a2a6c;}
+    100% {background-color: #b21f1f;}
+}
+
+@keyframes browsemove {
+    0% {transform: translateY(0px);}
+    100% {transform: translateY(20px);}
+}
+
+@keyframes slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-20px); }
+}
+
+.scrollbar {
+    scrollbar-color: #ccff33 #111;
+    scrollbar-width: thin;
+}
