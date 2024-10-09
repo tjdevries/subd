@@ -149,15 +149,19 @@ pub async fn handle_requests(
         }
         Command::CreateMusicVideoImages { id, count } => {
             for _ in 0..count {
+                // Do we need sleep a little before calling this so fast again??
                 let pool_clone = pool.clone();
                 let id_clone = id.clone();
                 tokio::spawn(async move {
-                    let _ = ai_music_videos::create_music_video_image(
+                    let res = ai_music_videos::create_music_video_image(
                         &pool_clone,
                         id_clone,
                         None,
                     )
                     .await;
+                    if let Err(e) = res {
+                        eprintln!("Error creating music video image: {}", e);
+                    }
                 });
             }
             Ok(())
@@ -211,24 +215,16 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
     let mut words = msg.contents.split_whitespace();
     match words.next() {
         Some("!create_music_video_images") | Some("!generate_images") => {
-            let id = match words.next() {
-                Some(id) => id.to_string(),
-                None => ai_playlist::get_current_song(pool)
-                    .await?
-                    .song_id
-                    .to_string(),
-            };
-            let splitmsg = msg
+            let id = ai_playlist::get_current_song(pool)
+                .await?
+                .song_id
+                .to_string();
+            let count = msg
                 .contents
-                .split(' ')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>();
-
-            let count = if splitmsg.len() > 1 {
-                splitmsg[1].parse::<i64>().unwrap_or(1)
-            } else {
-                1
-            };
+                .split_whitespace()
+                .nth(1)
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or(1);
 
             println!("Generating Images: {} - Count: {}", id, count);
             Ok(Command::CreateMusicVideoImages { id, count })

@@ -22,7 +22,7 @@ pub async fn create_video_from_image(
     let description = subd_openai::ask_gpt_vision2(path_string, None).await?;
     println!("Description: {}", description);
 
-    let prompt = format!("Describe how this scene could transform based on the following description, add random fun transitions. Description: {}", description);
+    let prompt = format!("Describe how this scene could transform based on the following description, add random fun transitions, make the description concise. Description: {}", description);
     let scene = scenes_builder::generate_scene_from_prompt(prompt).await?;
     let video_prompt =
         format!("{} {}", scene.scene_description, scene.camera_move);
@@ -42,10 +42,15 @@ pub async fn create_music_video_image(
 ) -> Result<String> {
     println!("\tAttempting to create Music Video Image!");
 
-    let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
+    let ai_song = match ai_playlist::find_song_by_id(pool, &id).await {
+        Ok(song) => song,
+        Err(e) => {
+            println!("Error finding song by id: {} | {:?}", id, e);
+            return Err(e);
+        }
+    };
     let ai_song = Arc::new(ai_song);
 
-    // I need to ask for a better prompt
     let image_prompt = match prompt {
         Some(p) => {
             format!(
@@ -54,22 +59,44 @@ pub async fn create_music_video_image(
             )
         }
         None => {
-            let lyrics = ai_song.lyric.as_ref().unwrap();
+            let lyrics = match ai_song.lyric.as_ref() {
+                Some(l) => l,
+                None => {
+                    println!("Error: Song lyrics are missing");
+                    return Err(anyhow::anyhow!("Song lyrics are missing"));
+                }
+            };
             let title = &ai_song.title;
-            let scene = scenes_builder::generate_scene_prompt(
+            let scene = match scenes_builder::generate_scene_prompt(
                 lyrics.to_string(),
                 title.to_string(),
             )
-            .await?;
+            .await
+            {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("Error generating scene prompt: {:?}", e);
+                    return Err(e);
+                }
+            };
             scene.image_prompt.clone()
         }
     };
 
     let music_video_folder = format!("./tmp/music_videos/{}", id);
 
-    std::fs::create_dir_all(&music_video_folder)?;
+    if let Err(e) = std::fs::create_dir_all(&music_video_folder) {
+        println!("Error creating directory: {:?}", e);
+        return Err(e.into());
+    }
 
-    let image_files = std::fs::read_dir(&music_video_folder)?;
+    let image_files = match std::fs::read_dir(&music_video_folder) {
+        Ok(files) => files,
+        Err(e) => {
+            println!("Error reading directory: {:?}", e);
+            return Err(e.into());
+        }
+    };
 
     let highest_number = image_files
         .filter_map(|entry| entry.ok())
