@@ -252,7 +252,7 @@ async fn generate_runway_video_from_image(
     let filename = fal_ai::create_runway_video_from_image(
         video_prompt,
         image_name,
-        Some(folder.clone()),
+        Some(&folder),
     )
     .await?;
     Ok(filename)
@@ -276,7 +276,7 @@ async fn generate_runway_video_and_image(
     let filename = fal_ai::create_runway_video_from_image(
         video_prompt,
         first_image,
-        Some(folder.clone()),
+        Some(&folder),
     )
     .await?;
     Ok(filename)

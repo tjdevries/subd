@@ -88,12 +88,12 @@ pub async fn create_image_for_music_video(
 pub async fn create_runway_video_from_image(
     prompt: &str,
     image_file_path: &str,
-    save_dir: Option<String>,
+    save_dir: Option<&str>,
 ) -> Result<String> {
     let fal_service = fal_service::FalService::new();
     let video_dir = match save_dir {
         Some(dir) => dir,
-        None => subd_types::consts::get_ai_videos_dir(),
+        None => &subd_types::consts::get_ai_videos_dir(),
     };
     fal_service
         .create_runway_video_from_image(prompt, image_file_path, &video_dir)
