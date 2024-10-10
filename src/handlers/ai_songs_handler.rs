@@ -3,7 +3,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use events::EventHandler;
-use obws::Client as OBSClient;
 use rodio::Sink;
 use sqlx::PgPool;
 use std::time::Duration;

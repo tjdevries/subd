@@ -1,7 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use events::EventHandler;
-use obws::Client as OBSClient;
 use sqlx::PgPool;
 use subd_types::{Event, UserMessage};
 use tokio::sync::broadcast;
