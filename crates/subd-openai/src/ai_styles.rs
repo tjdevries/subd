@@ -157,7 +157,7 @@ pub async fn generate_ai_css(
 }
 
 // TODO: We should take in a list of these html files
-fn html_file_contents(base_path: Option<&str>) -> Result<String> {
+pub fn html_file_contents(base_path: Option<&str>) -> Result<String> {
     let base_path = base_path.unwrap_or("./templates");
     let file_names = [
         "base",

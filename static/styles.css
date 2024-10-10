@@ -1,63 +1,113 @@
-/* Beware, I'm a CSS chaos creator! */
-
-/* Styling the body for chaos */
+/* Base Styles */
 body {
-  font-family: 'Comic Sans MS', cursive;
-  background-color: pink;
-  text-align: center;
+    font-family: 'Comic Sans MS', cursive;
+    color: white;
+    background-color: black;
+    text-align: center;
 }
 
-/* Creating a funky animation for a chaotic effect */
-@keyframes chaos {
-  0% { transform: rotate(0); }
-  25% { transform: rotate(10deg); }
-  50% { transform: rotate(-10deg); }
-  75% { transform: rotate(5deg); }
-  100% { transform: rotate(-5deg); }
-}
-
-/* Applying the animation to all elements on the page */
-* {
-  animation: chaos 1s ease infinite;
-}
-
-/* Adding a surprise effect to hover */
-*:hover {
-  animation: none;
-  transform: rotate(360deg);
-  transition: transform 0.5s;
-}
-
-/* Spicing up the links for extra chaos */
 a {
-  color: red;
-  text-decoration: none;
-  border: 2px solid black;
-  padding: 5px;
-  border-radius: 10px;
-  background-color: yellow;
+    color: white;
+    text-decoration: none;
 }
 
-/* Giving the links a shaky animation */
-a:hover {
-  animation: shake 0.5s ease infinite;
+/* Header Styles */
+.header-container {
+    background-color: black;
+    padding: 20px;
+}
+
+.header {
+    font-size: 2em;
+}
+
+.sub-header {
+    font-size: 1.2em;
+}
+
+/* Navigation Styles */
+.nav-container {
+    background-color: #333;
+    padding: 10px;
+}
+
+.nav-link {
+    margin: 0 10px;
+}
+
+/* Section Styles */
+section {
+    padding: 20px;
+    margin: 20px auto;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Song Styles */
+.song {
+    background-color: #222;
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.song-title {
+    font-size: 1.5em;
+}
+
+.song-id, .song-tags, .song-description {
+    font-size: 1em;
+}
+
+.song-audio {
+    margin-top: 10px;
+}
+
+/* Song Animation */
+.song {
+    transform: rotate(0deg);
+    transition: transform 0.5s ease-in-out;
+}
+
+.song:hover {
+    transform: rotate(5deg);
+}
+
+/* Image Styles */
+.image {
+    margin: 10px;
+}
+
+.image-voting {
+    font-weight: bold;
+}
+
+.image img {
+    max-width: 100%;
+    border-radius: 5px;
+}
+
+/* Video Styles */
+.video {
+    margin: 10px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Lyrics Styles */
+.song-lyrics {
+    margin-top: 20px;
+}
+
+/* Fun Animation */
+.song:hover .song-title {
+    color: red;
+    animation: shake 0.5s infinite;
 }
 
 @keyframes shake {
-  0% { transform: translate(0); }
-  25% { transform: translate(-5px, 5px); }
-  50% { transform: translate(5px, -5px); }
-  75% { transform: translate(-5px, 5px); }
-  100% { transform: translate(5px, -5px); }
-}
-
-/* Adding a surprise effect for the h1 heading */
-h1 {
-  font-size: 3em;
-  color: blue;
-}
-
-h1:hover {
-  transform: scale(1.1);
-  transition: transform 0.5s;
+    0% { transform: rotate(0); }
+    25% { transform: rotate(5deg); }
+    50% { transform: rotate(-5deg); }
+    75% { transform: rotate(5deg); }
+    100% { transform: rotate(0); }
 }

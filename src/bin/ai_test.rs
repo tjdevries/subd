@@ -19,11 +19,14 @@ const SYSTEM_MESSAGE: &'static str =
 
 #[tokio::main]
 async fn main() {
-    // let _ = save_embedding_from_file().await;
+    let _ = save_embedding_from_file().await;
     let _ = ask_question().await;
 }
 
 async fn ask_question() {
+    // USe the RAG to get into
+    // Use the simple Query to get it structured
+
     //let embedding_model: OpenAIEmbeddingModel =
     //    OpenAIEmbeddingModel::TextEmbedding3Small;
     let embedding_model = TextEmbeddingAda002;
@@ -38,6 +41,11 @@ async fn ask_question() {
     println!("hmmm");
     store.store_batch(embeddings).await.unwrap();
 
+    let html_to_animate_folder = "./templates";
+    let contents = subd_openai::ai_styles::html_file_contents(Some(
+        html_to_animate_folder,
+    ))
+    .unwrap();
     // Create a new embedding client
     let embedding_client: OpenAIEmbeddingClient =
         OpenAIEmbeddingClient::try_new(TextEmbeddingAda002).unwrap();
@@ -68,8 +76,10 @@ async fn ask_question() {
         .retriever(retriever)
         .build();
     // Define our user prompt
-    let user_message: PromptMessage =
-        PromptMessage::HumanMessage("Generate CSS for the following".into());
+    let user_message: PromptMessage = PromptMessage::HumanMessage(format!(
+        "Generate CSS for the following HTML: {}",
+        contents
+    ));
 
     // Invoke the chain. Under the hood this will retrieve some similar text from
     // the retriever and then use the chat client to generate a response.
@@ -79,7 +89,13 @@ async fn ask_question() {
         .unwrap();
 
     println!("{}", response.content());
-    fs::write("./static/styles.css", response.content())
+    let filtered_content = response
+        .content()
+        .lines()
+        .filter(|line| !line.trim_start().starts_with("```"))
+        .collect::<Vec<&str>>()
+        .join("\n");
+    fs::write("./static/styles.css", filtered_content)
         .expect("Failed to write CSS file");
 }
 
