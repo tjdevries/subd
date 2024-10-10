@@ -19,7 +19,7 @@ const SYSTEM_MESSAGE: &'static str =
 
 #[tokio::main]
 async fn main() {
-    let _ = save_embedding_from_file().await;
+    // let _ = save_embedding_from_file().await;
     let _ = ask_question().await;
 }
 
@@ -59,7 +59,7 @@ async fn ask_question() {
         OpenAIChatCompletionClient::try_new(Gpt3Point5Turbo).unwrap();
 
     // Define our system prompt
-    let css_expert_prompt = fs::read_to_string("./prompts/css_expert.txt")
+    let css_expert_prompt = fs::read_to_string("./prompts/js_expert.txt")
         .expect("Failed to read file");
     let system_prompt: PromptMessage =
         PromptMessage::SystemMessage(css_expert_prompt.into());
@@ -77,7 +77,8 @@ async fn ask_question() {
         .build();
     // Define our user prompt
     let user_message: PromptMessage = PromptMessage::HumanMessage(format!(
-        "Generate CSS for the following HTML: {}",
+        "Generate JS for the following HTML: {}",
+        // "Generate CSS for the following HTML: {}",
         contents
     ));
 
@@ -95,7 +96,8 @@ async fn ask_question() {
         .filter(|line| !line.trim_start().starts_with("```"))
         .collect::<Vec<&str>>()
         .join("\n");
-    fs::write("./static/styles.css", filtered_content)
+    // fs::write("./static/styles.css", filtered_content)
+    fs::write("./static/styles.js", filtered_content)
         .expect("Failed to write CSS file");
 }
 

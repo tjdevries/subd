@@ -1,71 +1,55 @@
+// Importing necessary libraries for animations and interactivity
 import * as THREE from 'three';
-import * as d3 from 'd3';
+import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-// Initialize Three.js scene
-console.log('Initializing Three.js scene...');
-const scene = new THREE.Scene();
+// Function to display a welcome message in the console
+console.log('Welcome to AI Top of the Pops!');
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+// Function to animate the header with crazy unique fonts
+const header = document.querySelector('.header');
+header.style.fontWeight = 'bold';
+header.style.fontFamily = 'UniqueFont, sans-serif'; // Import the unique font library here
 
-const geometry = new THREE.TorusGeometry(10, 3, 16, 100);
-const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-const torus = new THREE.Mesh(geometry, material);
-scene.add(torus);
+// Function to create a dark, crazy visual effect on the page
+const body = document.querySelector('body');
+body.style.backgroundColor = '#121212'; // Dark background color
 
-camera.position.z = 20;
-
-function animate() {
-    requestAnimationFrame(animate);
-    torus.rotation.x += 0.01;
-    torus.rotation.y += 0.01;
-    console.log('Animating Torus...');
-    renderer.render(scene, camera);
-}
-
-animate();
-
-// Initialize D3.js animation
-console.log('Initializing D3.js animation...');
-const svg = d3.select("body").append("svg").attr("width", 500).attr("height", 300);
-const data = [10, 20, 30, 40, 50];
-
-const circles = svg.selectAll("circle")
-  .data(data)
-  .enter()
-  .append("circle")
-  .attr("cx", (d, i) => i * 100 + 50)
-  .attr("cy", 150)
-  .attr("r", d => d)
-  .style("fill", "steelblue");
-
-circles.transition()
-    .duration(1000)
-    .attr("cy", 50)
-    .style("fill", "orange")
-    .delay((d, i) => i * 500)
-    .on("start", function() { console.log('D3.js transition starting...'); });
-
-// Initialize mermaid diagram
-console.log('Initializing Mermaid diagram...');
-mermaid.initialize({ startOnLoad: true });
-document.addEventListener("DOMContentLoaded", function() {
-    document.querySelectorAll('.chart').forEach(el => {
-        el.innerHTML = `
-graph TD;
-    A[Theory] --> B(Mystery);
-    B --> C[Gravity];
-    C -->|Symmetry| D[Space];
-    C -->|Symmetry| E[Time];
-    F[Equations on Blackboard] --> G[Cosmic Ballet];
-    G --> H{Beauty?};
-    H --> I[Breakthrough];
-    H --> J[Jest];
-    `;
-        mermaid.contentLoaded();
-        console.log('Rendering mermaid diagram...');
+// Function to add animations and transitions to various elements on the page
+const animateElements = () => {
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.style.transition = 'transform 0.5s ease';
+        link.addEventListener('mouseover', () => {
+            link.style.transform = 'scale(1.1)';
+        });
+        link.addEventListener('mouseout', () => {
+            link.style.transform = 'scale(1)';
+        });
     });
-});
+
+    const songs = document.querySelectorAll('.song');
+    songs.forEach(song => {
+        song.style.transition = 'transform 0.5s ease';
+        song.addEventListener('mouseover', () => {
+            song.style.transform = 'rotate(5deg)';
+        });
+        song.addEventListener('mouseout', () => {
+            song.style.transform = 'rotate(0deg)';
+        });
+    });
+
+    const images = document.querySelectorAll('.image');
+    images.forEach(image => {
+        image.style.transition = 'opacity 0.5s ease';
+        image.addEventListener('mouseover', () => {
+            image.style.opacity = 0.7;
+        });
+        image.addEventListener('mouseout', () => {
+            image.style.opacity = 1;
+        });
+    });
+};
+
+// Call the animateElements function to add animations and transitions
+animateElements();

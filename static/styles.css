@@ -1,113 +1,207 @@
-/* Base Styles */
-body {
-    font-family: 'Comic Sans MS', cursive;
-    color: white;
-    background-color: black;
-    text-align: center;
-}
-
-a {
-    color: white;
-    text-decoration: none;
-}
-
-/* Header Styles */
+/* Styles for header section */
 .header-container {
-    background-color: black;
-    padding: 20px;
+  background-color: black;
+  color: white;
+  text-align: center;
+  padding: 20px;
 }
 
-.header {
-    font-size: 2em;
+.header a {
+  text-decoration: none;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff4081;
 }
 
 .sub-header {
-    font-size: 1.2em;
+  font-style: italic;
+  margin-top: 5px;
 }
 
-/* Navigation Styles */
+/* Styles for navigation */
 .nav-container {
-    background-color: #333;
-    padding: 10px;
+  background-color: #330033;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
 }
 
 .nav-link {
-    margin: 0 10px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  transition: transform 0.3s ease;
 }
 
-/* Section Styles */
-section {
-    padding: 20px;
-    margin: 20px auto;
-    background-color: rgba(255, 255, 255, 0.1);
+.nav-link:hover {
+  transform: scale(1.1);
 }
 
-/* Song Styles */
+/* Styles for unplayed songs section */
+.unplayed-songs {
+  margin-top: 20px;
+  background-color: #cc00cc;
+  padding: 10px;
+}
+
+.unplayed-song {
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #ff00ff;
+}
+
+.song-title a {
+  text-decoration: none;
+  color: blue;
+  font-weight: bold;
+}
+
+/* Styles for songs section */
+.songs {
+  margin-top: 20px;
+}
+
 .song {
-    background-color: #222;
-    margin: 20px 0;
-    padding: 15px;
-    border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 20px;
+  background-color: #660066;
+  color: white;
+}
+
+.song-title a {
+  text-decoration: none;
+  color: #ff8080;
+  font-weight: bold;
+}
+
+.song-id {
+  font-style: italic;
+}
+
+.song-description {
+  font-size: 14px;
+}
+
+/* Styles for users section */
+.users {
+  margin-top: 20px;
+}
+
+.user {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #993399;
+  color: white;
+}
+
+.user a {
+  text-decoration: none;
+  color: #ff66cc;
+  font-weight: bold;
+}
+
+/* Styles for charts section */
+.top-songs {
+  margin-top: 20px;
+}
+
+.top-song {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #cc66ff;
+  color: white;
 }
 
 .song-title {
-    font-size: 1.5em;
+  font-weight: bold;
 }
 
-.song-id, .song-tags, .song-description {
-    font-size: 1em;
-}
-
-.song-audio {
-    margin-top: 10px;
-}
-
-/* Song Animation */
+/* Styles for current song section */
 .song {
-    transform: rotate(0deg);
-    transition: transform 0.5s ease-in-out;
+  padding: 20px;
+  background-color: #663399;
+  color: white;
 }
 
-.song:hover {
-    transform: rotate(5deg);
+.song-header {
+  text-align: center;
 }
 
-/* Image Styles */
+.song-images {
+  margin-top: 20px;
+}
+
 .image {
-    margin: 10px;
-}
-
-.image-voting {
-    font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .image img {
-    max-width: 100%;
-    border-radius: 5px;
+  max-width: 100%;
 }
 
-/* Video Styles */
+.image-voting {
+  font-style: italic;
+}
+
+.image-votes {
+  font-weight: bold;
+}
+
 .video {
-    margin: 10px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  margin-bottom: 10px;
 }
 
-/* Lyrics Styles */
 .song-lyrics {
-    margin-top: 20px;
+  margin-top: 20px;
 }
 
-/* Fun Animation */
-.song:hover .song-title {
-    color: red;
-    animation: shake 0.5s infinite;
+.song-lyrics p {
+  line-height: 1.5;
+}
+
+/* Crazy animations for fun */
+
+@keyframes crazy {
+  0% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(360deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+.song-header h2 {
+  animation: crazy 3s infinite;
+}
+
+.song-title a {
+  transition: color 0.5s ease;
+}
+
+.song-title:hover a {
+  color: #ff6699;
+}
+
+.nav-link {
+  animation: shake 0.5s infinite;
 }
 
 @keyframes shake {
-    0% { transform: rotate(0); }
-    25% { transform: rotate(5deg); }
-    50% { transform: rotate(-5deg); }
-    75% { transform: rotate(5deg); }
-    100% { transform: rotate(0); }
+  0% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
 }
+
+Save the above CSS code into a `styles.css` file, and link it in your HTML file to see the fun and crazy styles applied to your website. Feel free to further customize and play around with the animations and styles!
