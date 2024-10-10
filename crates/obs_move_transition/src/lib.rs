@@ -58,7 +58,12 @@ pub async fn scale_source(
     let settings =
         move_source::MoveSource::new(source, filter_name.clone(), ms, duration);
 
-    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&settings).map_err(
+            |e| anyhow::anyhow!("Failed to serialize settings: {}", e)
+        )?
+    );
 
     update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
@@ -87,7 +92,12 @@ pub async fn rot_source(
     let settings =
         move_source::MoveSource::new(source, filter_name.clone(), ms, duration);
 
-    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&settings).map_err(
+            |e| anyhow::anyhow!("Failed to serialize settings: {}", e)
+        )?
+    );
 
     update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
         .await
@@ -128,7 +138,12 @@ pub async fn move_source(
         move_source::MoveSource::new(source, filter_name.clone(), ms, d);
 
     println!("Move Source Settings ===");
-    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&settings).map_err(
+            |e| anyhow::anyhow!("Failed to serialize settings: {}", e)
+        )?
+    );
     println!("=== Move Source Settings");
 
     update_filter_and_enable(&scene.into(), &filter_name, settings, obs_client)
@@ -240,7 +255,12 @@ pub async fn spin_source(
 
     let settings =
         move_value::Add::new(filter_name, "Rotation.Z", rotation_z, duration);
-    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&settings).map_err(
+            |e| anyhow::anyhow!("Failed to serialize settings: {}", e)
+        )?
+    );
 
     let move_transition_filter_name = format!("Move_{}", filter_name);
     update_filter_and_enable(

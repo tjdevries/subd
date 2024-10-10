@@ -181,12 +181,23 @@ pub async fn download_and_play(
                     }
 
                     // So we are failing on getting the audio resoponse and parsing it!
-                    let suno_response =
-                        get_audio_information(&id).await.unwrap();
+                    let suno_response = match get_audio_information(&id).await {
+                        Ok(response) => response,
+                        Err(e) => {
+                            eprintln!("Error getting audio information: {}", e);
+                            continue;
+                        }
+                    };
                     // we need to create the song here
                     let created_at =
                         sqlx::types::time::OffsetDateTime::now_utc();
-                    let song_id = Uuid::parse_str(&id).unwrap();
+                    let song_id = match Uuid::parse_str(&id) {
+                        Ok(uuid) => uuid,
+                        Err(e) => {
+                            eprintln!("Error parsing UUID: {}", e);
+                            continue;
+                        }
+                    };
 
                     //// This should be the builder
                     let new_song = ai_playlist::models::ai_songs::Model {
@@ -213,14 +224,20 @@ pub async fn download_and_play(
                         eprintln!("Error saving the song!: {}", e);
                     }
 
-                    // These unwraps are bad!!!
-                    let uuid_id = Uuid::parse_str(&id)
-                        .map_err(|e| anyhow!("Invalid UUID {}: {}", id, e))
-                        .unwrap();
+                    let uuid_id = match Uuid::parse_str(&id) {
+                        Ok(uuid) => uuid,
+                        Err(e) => {
+                            eprintln!("Error parsing UUID {}: {}", id, e);
+                            continue;
+                        }
+                    };
 
-                    ai_playlist::add_song_to_playlist(&pool, uuid_id)
-                        .await
-                        .unwrap();
+                    if let Err(e) =
+                        ai_playlist::add_song_to_playlist(&pool, uuid_id).await
+                    {
+                        eprintln!("Error adding song to playlist: {}", e);
+                        continue;
+                    }
 
                     let info = format!(
                         "@{}'s song {} added to the Queue.",

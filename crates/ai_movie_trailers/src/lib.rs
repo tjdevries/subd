@@ -24,7 +24,8 @@ pub async fn trigger_movie_trailer(
 
     let (_stream, stream_handle) =
         subd_audio::get_output_stream("pulse").expect("stream handle");
-    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
+    let sink = rodio::Sink::try_new(&stream_handle)
+        .map_err(|e| anyhow::anyhow!("Failed to create sink: {}", e))?;
     let file = BufReader::new(File::open(local_audio_path)?);
     sink.append(Decoder::new(BufReader::new(file))?);
     sink.sleep_until_end();

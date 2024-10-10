@@ -24,17 +24,40 @@ impl EventHandler for ChatGPTResponse {
         _rx: broadcast::Receiver<Event>,
     ) -> Result<()> {
         // TODO: This needs to be updated and re-considered
+        // TODO: this should be somewhere else
         let response_file =
             "/home/begin/code/BeginGPT/tmp/current/chatgpt_response.txt";
-        let metadata = fs::metadata(response_file).await.unwrap();
-        let mut last_modified = metadata.modified().unwrap();
+        let metadata = fs::metadata(response_file)
+            .await
+            .expect("Failed to read metadata");
+        let mut last_modified = metadata
+            .modified()
+            .expect("Failed to get last modified time");
 
         loop {
-            let metadata = fs::metadata(response_file).await.unwrap();
-            let current_modified = metadata.modified().unwrap();
+            let metadata = match fs::metadata(response_file).await {
+                Ok(meta) => meta,
+                Err(e) => {
+                    println!("Error reading metadata: {:?}", e);
+                    continue;
+                }
+            };
+            let current_modified = match metadata.modified() {
+                Ok(modified) => modified,
+                Err(e) => {
+                    println!("Error getting modified time: {:?}", e);
+                    continue;
+                }
+            };
 
             if current_modified > last_modified {
-                let mut file = fs::File::open(response_file).await.unwrap();
+                let mut file = match fs::File::open(response_file).await {
+                    Ok(f) => f,
+                    Err(e) => {
+                        println!("Error opening response file: {}", e);
+                        continue;
+                    }
+                };
 
                 let mut contents = String::new();
                 let _ = file.read_to_string(&mut contents).await;

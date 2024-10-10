@@ -28,11 +28,6 @@ src/handlers/ai_songs_downloader_handler.rs:192:        let path = std::fs::cano
 src/handlers/ai_songs_downloader_handler.rs:193:        let full_path = path.into_os_string().into_string().unwrap();
 src/handlers/twitch_eventsub_handler.rs:157:                tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
 src/handlers/twitch_eventsub_handler.rs:160:                .unwrap();
-src/handlers/chatgpt_response_handler.rs:29:        let metadata = fs::metadata(response_file).await.unwrap();
-src/handlers/chatgpt_response_handler.rs:30:        let mut last_modified = metadata.modified().unwrap();
-src/handlers/chatgpt_response_handler.rs:33:            let metadata = fs::metadata(response_file).await.unwrap();
-src/handlers/chatgpt_response_handler.rs:34:            let current_modified = metadata.modified().unwrap();
-src/handlers/chatgpt_response_handler.rs:37:                let mut file = fs::File::open(response_file).await.unwrap();
 src/handlers/implicit_sound_handler.rs:40:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
 src/handlers/explicit_sound_handler.rs:29:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
 src/handlers/explicit_sound_handler.rs:32:            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
@@ -49,14 +44,6 @@ crates/twitch_notifications/src/lib.rs:26:    let notification: Value = serde_js
 crates/twitch_notifications/src/lib.rs:31:        .unwrap()
 crates/twitch_notifications/src/lib.rs:33:        .unwrap()
 crates/twitch_notifications/src/lib.rs:44:                .body(notification["challenge"].as_str().unwrap().to_string())
-crates/obs_move_transition/src/lib.rs:61:    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
-crates/obs_move_transition/src/lib.rs:90:    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
-crates/obs_move_transition/src/lib.rs:131:    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
-crates/obs_move_transition/src/lib.rs:243:    println!("{}", serde_json::to_string_pretty(&settings).unwrap());
-crates/obs_move_transition/src/lib.rs:284:        let obs_client = create_obs_client().await.unwrap();
-crates/obs_move_transition/src/lib.rs:293:        let obs_client = create_obs_client().await.unwrap();
-crates/obs_move_transition/src/lib.rs:298:        let res = obs_client.filters().get(scene, filter_name).await.unwrap();
-crates/obs_move_transition/src/lib.rs:319:        let obs_client = create_obs_client().await.unwrap();
 crates/websockets/src/main.rs:60:        .unwrap();
 crates/websockets/src/main.rs:61:    tracing::debug!("listening on {}", listener.local_addr().unwrap());
 crates/websockets/src/main.rs:67:    .unwrap();
@@ -78,11 +65,6 @@ crates/ai_clones/src/lib.rs:189:            find_current_bogan_index(scene, &obs
 crates/ai_music_videos/src/scenes_builder.rs:37:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
 crates/ai_music_videos/src/scenes_builder.rs:66:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
 crates/ai_music_videos/src/scenes_builder.rs:100:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
-crates/subd-suno/src/lib.rs:185:                        get_audio_information(&id).await.unwrap();
-crates/subd-suno/src/lib.rs:189:                    let song_id = Uuid::parse_str(&id).unwrap();
-crates/subd-suno/src/lib.rs:219:                        .unwrap();
-crates/subd-suno/src/lib.rs:223:                        .unwrap();
-crates/subd-suno/src/lib.rs:353:        let result = get_audio_information(id).await.unwrap();
 crates/ai_music_videos/src/lib.rs:131:    let lyrics = ai_song.lyric.as_ref().unwrap();
 crates/fal_ai/src/lib.rs:135:        let res = create_turbo_image(prompt).await.unwrap();
 crates/fal_ai/src/lib.rs:144:        let res = create_from_fal_api(prompt).await.unwrap();
