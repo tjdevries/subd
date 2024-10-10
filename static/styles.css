@@ -1,187 +1,110 @@
-/* Importing unique fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Permanent+Marker&family=Roboto:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Indie+Flower&family=Lobster&display=swap');
 
-/* Basic Page Styles */
 body {
     font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #ff69b4, #8b00ff);
     color: #fff;
-    background-color: #1a1a1a;
-    margin: 0;
-    animation: background-color-change 5s infinite alternate;
-}
-
-h1, h2, h3 {
-    font-family: 'Lobster', cursive;
-    text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-}
-
-/* Header Styles */
-.header-container {
-    background-color: #333;
     padding: 20px;
+    animation: backgroundAnimation 10s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+@keyframes backgroundAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.header {
+    font-family: 'Lobster', cursive;
     text-align: center;
-    border-bottom: 5px solid #ff4500;
-    animation: header-slide-in 2s forwards;
+    color: #ffeb3b;
+    text-shadow: 2px 2px #ff5722;
 }
 
-.header a {
-    color: #ff4500;
-    text-decoration: none;
-    transition: color 0.3s ease, transform 0.3s ease;
-}
-
-.header a:hover {
-    color: #00ff9d;
-    transform: rotate(360deg);
-}
-
-/* Navigation Styles */
-.nav-container {
-    display: flex;
-    justify-content: center;
-    background-color: #444;
-    padding: 10px;
-    box-shadow: 0 4px 2px -2px gray;
+.sub-header {
+    font-family: 'Indie Flower', cursive;
+    text-align: center;
+    color: #ffeb3b;
+    text-shadow: 1px 1px #ff5722;
 }
 
 .nav-link {
-    color: #ff4500;
-    margin: 0 15px;
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 20px;
+    transition: transform 0.5s, background 0.5s;
+    color: white;
     text-decoration: none;
-    font-size: 1.2em;
-    position: relative;
-    transition: all 0.5s;
+    border: 2px solid transparent;
 }
 
 .nav-link:hover {
-    color: #00ff9d;
-    transform: scale(1.2);
-    text-shadow: 10px 10px 20px rgba(0, 0, 0, 0.7);
-    text-decoration: underline;
+    transform: scale(1.1) rotate(10deg);
+    background: rgba(255, 255, 255, 0.3);
+    border-color: #ffeb3b;
 }
 
-/* Animation Keyframes */
-@keyframes header-slide-in {
-    from { transform: translateY(-100%); }
-    to { transform: translateY(0); }
+h2, h3 {
+    animation: textPop 1s ease infinite alternate;
 }
 
-@keyframes background-color-change {
-    from { background-color: #1a1a1a; }
-    to { background-color: #0f0f0f; }
+@keyframes textPop {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
 }
 
-/* Unplayed Songs Section Styles */
-.unplayed-song {
-    background-color: #2a2a2a;
-    margin: 10px;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px 2px #00ff9d;
-    transition: transform 0.3s ease-in-out;
-}
-
-.unplayed-song:hover {
-    transform: translateX(10px) scale(1.05);
-    border-color: #ff4500;
-}
-
-/* Song Section Styles */
-.song {
-    background: conic-gradient(#444, #222);
-    margin: 15px;
-    padding: 20px;
+.article {
     border-radius: 15px;
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
-    transition: all 0.3s ease;
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 20px;
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.song:hover {
-    box-shadow: 0px 0px 20px 5px #ff4500;
-    transform: scale(1.02);
-    mix-blend-mode: lighten;
+.article:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
 
-.song-title {
-    font-family: 'Permanent Marker', cursive;
-    color: #ff4500;
+.song-title a, .song-id a {
+    text-decoration: none;
+    color: #00e5ff;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.song-title a:hover, .song-id a:hover {
+    color: #00c3e3;
+    text-shadow: 0 0 10px #00e5ff;
 }
 
 .song-audio audio {
     width: 100%;
     outline: none;
-    transition: filter 0.3s ease;
 }
 
-.song-audio audio:hover {
-    filter: brightness(1.2);
-}
-
-/* User Section Styles */
-.users {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    padding: 20px;
-}
-
-.user {
-    background: radial-gradient(circle, #222, #111);
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    transition: box-shadow 0.5s ease;
-}
-
-.user:hover {
-    box-shadow: 0px 0px 15px 5px #00ff9d;
-}
-
-/* Chart Section Styles */
-.top-songs {
-    background-color: #333;
-    padding: 20px;
-}
-
-.top-song {
-    background-color: #222;
-    margin-bottom: 15px;
-    padding: 10px;
-    border-radius: 5px;
-    transition: all 0.3s;
-    border-left: 5px solid #ff4500;
-}
-
-.top-song a {
-    color: #00ff9d;
-    text-decoration: none;
-    transition: color 0.3s, transform 0.3s;
-}
-
-.top-song a:hover {
-    color: #ff4500;
-    transform: scale(1.1);
-    text-shadow: 0px 0px 5px #00ff9d;
-}
-
-/* Song Media Styles */
-.song-videos video {
-    border-radius: 5px;
-    transition: transform 0.3s;
+.image img {
     width: 100%;
+    border-radius: 10px;
+    transition: transform 0.5s ease;
 }
 
-.song-videos video:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 10px #ff4500);
-}
-
-.song-lyrics p {
-    font-style: italic;
-    transition: all 0.3s;
-}
-
-.song-lyrics p:hover {
+.image img:hover {
     transform: scale(1.05);
-    color: #00ff9d;
+}
+
+.video {
+    display: block;
+    margin: 10px auto;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.song-lyrics {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    font-variant: small-caps;
+    border-radius: 5px;
 }

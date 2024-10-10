@@ -163,6 +163,7 @@ pub async fn generate_ai_css(
         "Use a wide variety of bold unique fonts, which you need to specify to import.",
         "Use as many animations and transitions as possible.",
         "Make sure you use things like transform: rotate(360deg); Prioritize movement with transform.",
+        "include padding around the body.",
         &content_prompt,
         "Make it all savable as a styles.css file, for the following HTML:"];
 
@@ -368,6 +369,8 @@ fn backup_file(src: &str, backup_dir: &str) -> Result<String> {
         .ok_or_else(|| anyhow!("Invalid source file path"))?
         .to_string_lossy();
     let backup_filename = format!("{}/{}_{}", backup_dir, timestamp, filename);
+    fs::create_dir_all(backup_dir)
+        .map_err(|e| anyhow!("Failed to create backup directory: {}", e))?;
     fs::copy(src, &backup_filename)
         .map_err(|e| anyhow!("Failed to backup the file: {}", e))?;
     Ok(backup_filename)
