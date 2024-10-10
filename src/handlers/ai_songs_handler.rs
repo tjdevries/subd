@@ -34,34 +34,24 @@ impl EventHandler for AISongsHandler {
         loop {
             tokio::select! {
                 _ = interval.tick() => {
-                    // We could be also checking
-                    // This runs every 50ms
                     if self.sink.empty() {
-                        // println!("{}", "Sink is empty. Marking all songs as stopped.".red());
-                        // This is too many calls to the DB as well
-                        // we need to know if there is any songs to actually stop first
                         let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
                         let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
                         if let Ok(song) = next_song {
+                            let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
+                            let id = song.song_id.to_string();
 
-                            let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or("".to_string()));
+                            let _ = tokio::spawn(
+                                subd_openai::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
+                            let _ = tokio::spawn(
+                                subd_openai::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
 
-                            let _ = tokio::spawn(subd_openai::generate_ai_css("./static/styles.css", custom_prompt.clone(), None));
-                            let _ = tokio::spawn(subd_openai::generate_ai_js("./static/styles.js", custom_prompt.clone(), None));
-
-                            // is there a better way?
-                            let id = format!("{}", song.song_id);
-
-                            // We need ot not let it crash here
                             if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
                                 eprint!("Error playing Audio: {}", e);
                                 let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;
 
                             }
                         }
-
-
-                        // this needs to play the next song!!!!
                     }
                 }
                 result = rx.recv() => {

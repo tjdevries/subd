@@ -101,6 +101,7 @@ where
 }
 
 pub async fn generate_ai_js(
+    song_id: String,
     destination: &str,
     content: String,
     html_to_animate_folder: Option<&str>,
@@ -132,7 +133,7 @@ pub async fn generate_ai_js(
         get_chat_completion_with_retries(&instructor_client, req, 3).await?;
 
     println!("{:?}", result);
-    match backup_file(destination, "./static") {
+    match backup_file(destination, &format!("./archive/{}", song_id)) {
         Ok(_) => println!("Successfully backed up styles.js file"),
         Err(e) => println!("Failed to backup styles.js file: {}", e),
     };
@@ -141,6 +142,7 @@ pub async fn generate_ai_js(
 }
 
 pub async fn generate_ai_css(
+    song_id: String,
     destination: &str,
     content: String,
     html_to_style_folder: Option<&str>,
@@ -175,13 +177,15 @@ pub async fn generate_ai_css(
         }],
     );
 
+    // Can we get an ID in here
     let result: AIStylesResponse =
         get_chat_completion_with_retries(&instructor_client, req, 3).await?;
 
     println!("{:?}", result);
 
+    // Where should we save the CSS
     // This backup destination is wrong
-    match backup_file(destination, "./static") {
+    match backup_file(destination, &format!("./archive/{}", song_id)) {
         Ok(_) => println!("Successfully backed up CSS file"),
         Err(e) => println!("Failed to backup CSS file: {}", e),
     };
@@ -380,10 +384,12 @@ fn save_content_to_file(content: &str, dest: &str) -> Result<()> {
 mod tests {
     use super::*;
 
+    // This will backup in the wrong area if run
     #[tokio::test]
     async fn test_generating_css() {
         let css_file = "../../static/styles.css";
         let res = generate_ai_css(
+            "FAKE_SONG_ID".to_string(),
             css_file,
             "Neon".to_string(),
             Some("../../templates"),
@@ -393,6 +399,7 @@ mod tests {
 
         let js_file = "../../static/styles.js";
         let res = generate_ai_js(
+            "FAKE_SONG_ID".to_string(),
             js_file,
             "Neon".to_string(),
             Some("../../templates"),
