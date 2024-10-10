@@ -42,9 +42,9 @@ impl EventHandler for AISongsHandler {
                             let id = song.song_id.to_string();
 
                             let _ = tokio::spawn(
-                                subd_openai::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
+                                subd_openai::ai_styles::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
                             let _ = tokio::spawn(
-                                subd_openai::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
+                                subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
 
                             if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
                                 eprint!("Error playing Audio: {}", e);

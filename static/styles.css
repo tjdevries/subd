@@ -1,110 +1,131 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Indie+Flower&family=Lobster&display=swap');
-
 body {
-    font-family: 'Roboto', sans-serif;
-    background: linear-gradient(135deg, #ff69b4, #8b00ff);
-    color: #fff;
     padding: 20px;
-    animation: backgroundAnimation 10s ease-in-out infinite;
-    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    background: conic-gradient(from 180deg at 50% 50%, #FF6B6B, #FFD93D);
+    transition: background 1s ease-in-out;
 }
 
-@keyframes backgroundAnimation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+body:hover {
+    background: conic-gradient(from 180deg at 50% 50%, #FFD93D, #FF6B6B);
+}
+
+.header-container {
+    text-align: center;
+    animation: fade-in 3s ease-in-out;
+    animation-fill-mode: both;
+    mix-blend-mode: multiply;
 }
 
 .header {
-    font-family: 'Lobster', cursive;
-    text-align: center;
-    color: #ffeb3b;
-    text-shadow: 2px 2px #ff5722;
+    color: #045C9D;
+    text-shadow: 2px 2px #A7D0E1;
+    font-size: 3em;
+    animation: rotate-text 5s linear infinite;
 }
 
 .sub-header {
-    font-family: 'Indie Flower', cursive;
-    text-align: center;
-    color: #ffeb3b;
-    text-shadow: 1px 1px #ff5722;
+    color: #FF6B6B;
+    text-shadow: 1px 1px #FFD93D;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+    animation: slide-down 2s ease-in-out;
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
 }
 
 .nav-link {
-    display: inline-block;
-    margin: 10px;
-    padding: 10px 20px;
-    transition: transform 0.5s, background 0.5s;
-    color: white;
+    color: #FFFFFF;
     text-decoration: none;
-    border: 2px solid transparent;
+    font-size: 1.2em;
+    padding: 5px 15px;
+    transition: transform 0.3s ease;
+    background: #045C9D;
+    border-radius: 5px;
 }
 
 .nav-link:hover {
     transform: scale(1.1) rotate(10deg);
-    background: rgba(255, 255, 255, 0.3);
-    border-color: #ffeb3b;
+    background: #FFD93D;
 }
 
-h2, h3 {
-    animation: textPop 1s ease infinite alternate;
+.unplayed-songs h2,
+.songs h2,
+.users h2,
+.song-header h2,
+.top-songs h2 {
+    color: #FF6B6B;
+    font-variant: small-caps;
+    border-bottom: 3px dotted #045C9D;
+    text-shadow: 2px 2px 4px #FFF;
+    margin-bottom: 20px;
 }
 
-@keyframes textPop {
-    from { transform: scale(1); }
-    to { transform: scale(1.1); }
-}
-
-.article {
-    border-radius: 15px;
-    margin: 20px auto;
-    max-width: 600px;
-    padding: 20px;
-    background: rgba(0,0,0,0.5);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+.unplayed-song, .song, .user, .top-song {
+    background: linear-gradient(135deg, #FAF3F3, #FEE2E2);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.article:hover {
+.unplayed-song:hover, .song:hover, .user:hover, .top-song:hover {
     transform: translateY(-10px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
 }
 
-.song-title a, .song-id a {
+.song-title a {
     text-decoration: none;
-    color: #00e5ff;
-    transition: color 0.3s, text-shadow 0.3s;
+    color: #045C9D;
+    font-weight: bold;
+    transition: color 0.3s;
 }
 
-.song-title a:hover, .song-id a:hover {
-    color: #00c3e3;
-    text-shadow: 0 0 10px #00e5ff;
+.song-title a:hover {
+    color: #FF6B6B;
+    text-stroke: 1px #FFF;
 }
 
-.song-audio audio {
-    width: 100%;
-    outline: none;
+.song-description {
+    text-align: justify;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.song-audio {
+    margin-top: 15px;
+}
+
+.song-images, .song-videos, .song-lyrics {
+    margin: 20px 0;
+}
+
+.song-lyrics p {
+    white-space: pre-line;
+    font-style: italic;
+    color: #333;
+}
+
+.image, .video {
+    margin-bottom: 20px;
+    width: calc(50% - 10px);
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: filter 0.3s;
+    border: 2px solid #FFD93D;
 }
 
 .image img {
     width: 100%;
-    border-radius: 10px;
-    transition: transform 0.5s ease;
 }
 
-.image img:hover {
-    transform: scale(1.05);
-}
-
-.video {
-    display: block;
-    margin: 10px auto;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-}
-
-.song-lyrics {
-    background: rgba(255,255,255,0.1);
-    padding: 10px;
-    font-variant: small-caps;
-    border-radius: 5px;
+.image:hover, .video:hover {
+    filter: saturate(1.5);
 }
