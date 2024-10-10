@@ -11,6 +11,7 @@ use rag_toolchain::common::{Chunks, Embedding, OpenAIEmbeddingModel};
 use rag_toolchain::retrievers::DistanceFunction;
 use rag_toolchain::retrievers::PostgresVectorRetriever;
 use rag_toolchain::stores::{EmbeddingStore, PostgresVectorStore};
+use std::fs;
 use std::num::NonZeroU32;
 
 const SYSTEM_MESSAGE: &'static str =
@@ -18,7 +19,7 @@ const SYSTEM_MESSAGE: &'static str =
 
 #[tokio::main]
 async fn main() {
-    let _ = save_embedding_from_file().await;
+    // let _ = save_embedding_from_file().await;
     let _ = ask_question().await;
 }
 
@@ -50,8 +51,12 @@ async fn ask_question() {
         OpenAIChatCompletionClient::try_new(Gpt3Point5Turbo).unwrap();
 
     // Define our system prompt
+    let css_expert_prompt = fs::read_to_string("./prompts/css_expert.txt")
+        .expect("Failed to read file");
     let system_prompt: PromptMessage =
-        PromptMessage::SystemMessage(SYSTEM_MESSAGE.into());
+        PromptMessage::SystemMessage(css_expert_prompt.into());
+    //let system_prompt: PromptMessage =
+    //    PromptMessage::SystemMessage(SYSTEM_MESSAGE.into());
 
     // Create a new BasicRAGChain with over our open ai chat client and postgres vector retriever
     let chain: BasicRAGChain<
@@ -63,9 +68,8 @@ async fn ask_question() {
         .retriever(retriever)
         .build();
     // Define our user prompt
-    let user_message: PromptMessage = PromptMessage::HumanMessage(
-        "what kind of alcohol does the AI programmer drink".into(),
-    );
+    let user_message: PromptMessage =
+        PromptMessage::HumanMessage("Generate CSS for the following".into());
 
     // Invoke the chain. Under the hood this will retrieve some similar text from
     // the retriever and then use the chat client to generate a response.
@@ -75,6 +79,8 @@ async fn ask_question() {
         .unwrap();
 
     println!("{}", response.content());
+    fs::write("./static/styles.css", response.content())
+        .expect("Failed to write CSS file");
 }
 
 async fn save_embedding_from_file() -> Result<()> {

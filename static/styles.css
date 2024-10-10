@@ -1,131 +1,63 @@
+/* Beware, I'm a CSS chaos creator! */
+
+/* Styling the body for chaos */
 body {
-    padding: 20px;
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    background: conic-gradient(from 180deg at 50% 50%, #FF6B6B, #FFD93D);
-    transition: background 1s ease-in-out;
+  font-family: 'Comic Sans MS', cursive;
+  background-color: pink;
+  text-align: center;
 }
 
-body:hover {
-    background: conic-gradient(from 180deg at 50% 50%, #FFD93D, #FF6B6B);
+/* Creating a funky animation for a chaotic effect */
+@keyframes chaos {
+  0% { transform: rotate(0); }
+  25% { transform: rotate(10deg); }
+  50% { transform: rotate(-10deg); }
+  75% { transform: rotate(5deg); }
+  100% { transform: rotate(-5deg); }
 }
 
-.header-container {
-    text-align: center;
-    animation: fade-in 3s ease-in-out;
-    animation-fill-mode: both;
-    mix-blend-mode: multiply;
+/* Applying the animation to all elements on the page */
+* {
+  animation: chaos 1s ease infinite;
 }
 
-.header {
-    color: #045C9D;
-    text-shadow: 2px 2px #A7D0E1;
-    font-size: 3em;
-    animation: rotate-text 5s linear infinite;
+/* Adding a surprise effect to hover */
+*:hover {
+  animation: none;
+  transform: rotate(360deg);
+  transition: transform 0.5s;
 }
 
-.sub-header {
-    color: #FF6B6B;
-    text-shadow: 1px 1px #FFD93D;
+/* Spicing up the links for extra chaos */
+a {
+  color: red;
+  text-decoration: none;
+  border: 2px solid black;
+  padding: 5px;
+  border-radius: 10px;
+  background-color: yellow;
 }
 
-.nav-container {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin: 20px 0;
-    animation: slide-down 2s ease-in-out;
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
+/* Giving the links a shaky animation */
+a:hover {
+  animation: shake 0.5s ease infinite;
 }
 
-.nav-link {
-    color: #FFFFFF;
-    text-decoration: none;
-    font-size: 1.2em;
-    padding: 5px 15px;
-    transition: transform 0.3s ease;
-    background: #045C9D;
-    border-radius: 5px;
+@keyframes shake {
+  0% { transform: translate(0); }
+  25% { transform: translate(-5px, 5px); }
+  50% { transform: translate(5px, -5px); }
+  75% { transform: translate(-5px, 5px); }
+  100% { transform: translate(5px, -5px); }
 }
 
-.nav-link:hover {
-    transform: scale(1.1) rotate(10deg);
-    background: #FFD93D;
+/* Adding a surprise effect for the h1 heading */
+h1 {
+  font-size: 3em;
+  color: blue;
 }
 
-.unplayed-songs h2,
-.songs h2,
-.users h2,
-.song-header h2,
-.top-songs h2 {
-    color: #FF6B6B;
-    font-variant: small-caps;
-    border-bottom: 3px dotted #045C9D;
-    text-shadow: 2px 2px 4px #FFF;
-    margin-bottom: 20px;
-}
-
-.unplayed-song, .song, .user, .top-song {
-    background: linear-gradient(135deg, #FAF3F3, #FEE2E2);
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    margin-bottom: 15px;
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.unplayed-song:hover, .song:hover, .user:hover, .top-song:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-}
-
-.song-title a {
-    text-decoration: none;
-    color: #045C9D;
-    font-weight: bold;
-    transition: color 0.3s;
-}
-
-.song-title a:hover {
-    color: #FF6B6B;
-    text-stroke: 1px #FFF;
-}
-
-.song-description {
-    text-align: justify;
-    font-size: 0.9em;
-    color: #555;
-}
-
-.song-audio {
-    margin-top: 15px;
-}
-
-.song-images, .song-videos, .song-lyrics {
-    margin: 20px 0;
-}
-
-.song-lyrics p {
-    white-space: pre-line;
-    font-style: italic;
-    color: #333;
-}
-
-.image, .video {
-    margin-bottom: 20px;
-    width: calc(50% - 10px);
-    aspect-ratio: 16/9;
-    object-fit: cover;
-    border-radius: 8px;
-    overflow: hidden;
-    transition: filter 0.3s;
-    border: 2px solid #FFD93D;
-}
-
-.image img {
-    width: 100%;
-}
-
-.image:hover, .video:hover {
-    filter: saturate(1.5);
+h1:hover {
+  transform: scale(1.1);
+  transition: transform 0.5s;
 }
