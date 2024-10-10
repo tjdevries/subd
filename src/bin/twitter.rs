@@ -18,8 +18,11 @@ async fn main() -> Result<()> {
     let _phil_tweet = NumericId::new(1608588236452167681);
     let _phil_id = NumericId::new(34440817);
 
-    let _auth =
-        BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+    let _auth = BearerToken::new(
+        std::env::var("TWITTER_APP_BEARER_TOKEN").map_err(|e| {
+            anyhow::anyhow!("Failed to get TWITTER_APP_BEARER_TOKEN: {}", e)
+        })?,
+    );
     Ok(())
 
     // let tweet = TwitterApi::new(auth)

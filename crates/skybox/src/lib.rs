@@ -230,7 +230,8 @@ pub async fn request_skybox(
     prompt: String,
     style_id: i32,
 ) -> Result<String, String> {
-    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+    let skybox_api_key = env::var("SKYBOX_API_KEY")
+        .map_err(|e| format!("Failed to get SKYBOX_API_KEY: {}", e))?;
     let requests_url =
         format!("{}?api_key={}", SKYBOX_REMIX_URL, skybox_api_key);
     let prompt = prompt.trim_start().to_string();
