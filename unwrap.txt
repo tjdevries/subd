@@ -5,8 +5,6 @@ src/themesong/mod.rs:570:                .unwrap(),
 src/themesong/mod.rs:581:            .unwrap(),
 src/bin/youtubedl.rs:14:    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
 src/bin/youtubedl.rs:15:    let sink = rodio::Sink::try_new(&handle).unwrap();
-src/bin/ai_test.rs:25:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
-src/bin/ai_test.rs:41:        .unwrap();
 src/raffle.rs:101:            let user_name = self.users.get(user_id).unwrap();
 src/bin/insert_themesong.rs:25:    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
 src/bin/insert_themesong.rs:26:    let sink = rodio::Sink::try_new(&handle).unwrap();
@@ -32,9 +30,6 @@ crates/twitch_notifications/src/lib.rs:26:    let notification: Value = serde_js
 crates/twitch_notifications/src/lib.rs:31:        .unwrap()
 crates/twitch_notifications/src/lib.rs:33:        .unwrap()
 crates/twitch_notifications/src/lib.rs:44:                .body(notification["challenge"].as_str().unwrap().to_string())
-crates/websockets/src/main.rs:60:        .unwrap();
-crates/websockets/src/main.rs:61:    tracing::debug!("listening on {}", listener.local_addr().unwrap());
-crates/websockets/src/main.rs:67:    .unwrap();
 crates/subd-macros/src/lib.rs:48:    let mut model = models.pop().unwrap();
 crates/subd-macros/src/lib.rs:114:                colon_token: f.colon_token.unwrap(),
 crates/subd-macros/src/lib.rs:155:                primary_key.ident.unwrap(),

@@ -37,7 +37,9 @@ impl EventHandler for ImplicitSoundHandler {
     ) -> Result<()> {
         // Get all soundeffects loaded up once
         // so we can search through them all
-        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
+        let soundeffect_files = fs::read_dir("./MP3s").map_err(|e| {
+            anyhow::anyhow!("Failed to read MP3s directory: {}", e)
+        })?;
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for soundeffect_file in soundeffect_files {
             if let Ok(file) = soundeffect_file {

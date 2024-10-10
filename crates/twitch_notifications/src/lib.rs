@@ -23,31 +23,39 @@ pub async fn eventsub_post(
 
     //if verify_message(&hmac_hex, req.headers().get("Twitch-Eventsub-Message-Signature").unwrap().to_str().unwrap()) {
     println!("signatures match");
-    let notification: Value = serde_json::from_slice(&body).unwrap();
+    let notification: Value = match serde_json::from_slice(&body) {
+        Ok(value) => value,
+        Err(_) => return HttpResponse::BadRequest().finish(),
+    };
 
     match req
         .headers()
         .get("Twitch-Eventsub-Message-Type")
-        .unwrap()
-        .to_str()
-        .unwrap()
+        .and_then(|header| header.to_str().ok())
     {
-        "notification" => {
+        Some("notification") => {
             // Process the event's data
-            println!("Event type: {}", notification["subscription"]["type"]);
+            if let Some(event_type) =
+                notification["subscription"]["type"].as_str()
+            {
+                println!("Event type: {}", event_type);
+            }
             HttpResponse::NoContent().finish()
         }
-        "webhook_callback_verification" => {
-            // HttpResponse::Ok().content_type("text/plain").body(notification["challenge"].as_str().unwrap())
-            HttpResponse::Ok()
-                .content_type("text/plain")
-                .body(notification["challenge"].as_str().unwrap().to_string())
+        Some("webhook_callback_verification") => {
+            if let Some(challenge) = notification["challenge"].as_str() {
+                HttpResponse::Ok()
+                    .content_type("text/plain")
+                    .body(challenge.to_string())
+            } else {
+                HttpResponse::BadRequest().finish()
+            }
         }
-        "revocation" => {
+        Some("revocation") => {
             println!("notifications revoked!");
             HttpResponse::NoContent().finish()
         }
-        _ => HttpResponse::NoContent().finish(),
+        _ => HttpResponse::BadRequest().finish(),
     }
 }
 

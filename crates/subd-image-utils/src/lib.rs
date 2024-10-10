@@ -74,8 +74,14 @@ pub fn parse_data_url(data_url: &str) -> Result<(&str, &str)> {
     let captures = data_url_regex
         .captures(data_url)
         .ok_or_else(|| anyhow!("Invalid data URL"))?;
-    let mime_type = captures.name("mime").unwrap().as_str();
-    let base64_data = captures.name("data").unwrap().as_str();
+    let mime_type = captures
+        .name("mime")
+        .ok_or_else(|| anyhow!("Missing mime type in data URL"))?
+        .as_str();
+    let base64_data = captures
+        .name("data")
+        .ok_or_else(|| anyhow!("Missing base64 data in data URL"))?
+        .as_str();
     Ok((mime_type, base64_data))
 }
 

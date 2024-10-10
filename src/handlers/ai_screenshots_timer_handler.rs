@@ -110,7 +110,10 @@ pub fn generate_random_prompt() -> String {
                                          // "in an elon musk rocket ship on his way to mars".to_string(),
     ];
     let mut rng = rand::thread_rng();
-    let selected_choice = choices.choose(&mut rng).unwrap();
+    let selected_choice = choices.choose(&mut rng).unwrap_or_else(|| {
+        eprintln!("Error: Failed to choose a random prompt");
+        &choices[0] // Fallback to the first choice if selection fails
+    });
     selected_choice.to_string()
 }
 
