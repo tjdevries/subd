@@ -94,14 +94,28 @@ async fn main() -> Result<()> {
     // We need a list of all files in the folder
     let mp3s = get_files_by_ext("./ai_songs", &["mp3"]);
 
-    // TODO: remove unwraps
     for song in mp3s {
-        let id = Path::new(&song).file_stem().unwrap().to_str().unwrap();
+        let id = match Path::new(&song).file_stem().and_then(|s| s.to_str()) {
+            Some(stem) => stem,
+            None => {
+                println!(
+                    "Error: Unable to extract file stem for song: {}",
+                    song
+                );
+                continue;
+            }
+        };
         println!("Song Info: {:?}", id);
         //let delay = time::Duration::from_millis(50);
         //thread::sleep(delay);
 
-        let song_id = Uuid::parse_str(id).unwrap();
+        let song_id = match Uuid::parse_str(id) {
+            Ok(uuid) => uuid,
+            Err(e) => {
+                println!("Error parsing UUID for song {}: {}", id, e);
+                continue;
+            }
+        };
         let db_record = ai_playlist::models::find_by_id(&pool, song_id).await;
         // If we have a DB record move on
         if db_record.is_ok() {

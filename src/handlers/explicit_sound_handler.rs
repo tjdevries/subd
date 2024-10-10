@@ -26,10 +26,22 @@ impl EventHandler for ExplicitSoundHandler {
     ) -> Result<()> {
         // Load all soundeffects so we can search through
         // move to a function
-        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
+        let soundeffect_files = match fs::read_dir("./MP3s") {
+            Ok(files) => files,
+            Err(e) => {
+                eprintln!("Error reading MP3 directory: {}", e);
+                return Err(e.into());
+            }
+        };
         let mut mp3s: HashSet<String> = vec![].into_iter().collect();
         for soundeffect_file in soundeffect_files {
-            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
+            mp3s.insert(match soundeffect_file {
+                Ok(file) => file.path().display().to_string(),
+                Err(e) => {
+                    eprintln!("Error reading sound effect file: {}", e);
+                    continue;
+                }
+            });
         }
 
         loop {

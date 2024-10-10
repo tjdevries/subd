@@ -1,5 +1,3 @@
-src/bin/update_ai_song_info.rs:99:        let id = Path::new(&song).file_stem().unwrap().to_str().unwrap();
-src/bin/update_ai_song_info.rs:104:        let song_id = Uuid::parse_str(id).unwrap();
 src/redemptions.rs:106:    let ids: Vec<Uuid> = res.unwrap().iter().map(|r| r.reward_id).collect();
 src/themesong/mod.rs:89:    Ok(played_count.result.unwrap() > 0)
 src/themesong/mod.rs:336:        let (stream, handle) = rodio::OutputStream::try_default().unwrap();
@@ -24,22 +22,12 @@ src/bin/chat.rs:367:        .unwrap();
 src/handlers/ai_screenshots_timer_handler.rs:113:    let selected_choice = choices.choose(&mut rng).unwrap();
 src/bin/begin.rs:91:        let elevenlabs_auth = Auth::from_env().unwrap();
 src/bin/begin.rs:126:        "macos" => rodio::OutputStream::try_default().unwrap(),
-src/handlers/ai_songs_downloader_handler.rs:192:        let path = std::fs::canonicalize(filename).unwrap();
-src/handlers/ai_songs_downloader_handler.rs:193:        let full_path = path.into_os_string().into_string().unwrap();
-src/handlers/twitch_eventsub_handler.rs:157:                tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
-src/handlers/twitch_eventsub_handler.rs:160:                .unwrap();
 src/handlers/implicit_sound_handler.rs:40:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
 src/handlers/explicit_sound_handler.rs:29:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
 src/handlers/explicit_sound_handler.rs:32:            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
 src/handlers/obs_messages_handler.rs:469:        let obs_client = obs::create_obs_client().await.unwrap();
 src/handlers/obs_messages_handler.rs:481:            .unwrap();
 src/handlers/obs_messages_handler.rs:489:            obs_client.inputs().settings::<Value>(source).await.unwrap();
-src/handlers/skybox_status_handler.rs:48:                    .unwrap();
-src/handlers/skybox_status_handler.rs:84:                            let mut file = File::create(archive_file).unwrap();
-src/handlers/skybox_status_handler.rs:85:                            file.write_all(&image_data).unwrap();
-src/handlers/skybox_status_handler.rs:93:                            let mut file = File::create(new_skybox).unwrap();
-src/handlers/skybox_status_handler.rs:94:                            let render = skybox_template.render().unwrap();
-src/handlers/skybox_status_handler.rs:95:                            file.write_all(render.as_bytes()).unwrap();
 crates/twitch_notifications/src/lib.rs:26:    let notification: Value = serde_json::from_slice(&body).unwrap();
 crates/twitch_notifications/src/lib.rs:31:        .unwrap()
 crates/twitch_notifications/src/lib.rs:33:        .unwrap()
