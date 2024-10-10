@@ -1,207 +1,138 @@
-/* Styles for header section */
+/* Global Styles - Let's Start with a Rainbow Theme */
+body {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  background: linear-gradient(-45deg, #ff4b5c, #ffbd44, #ffe156, #6cdbeb, #ea68b2);
+  background-size: 400% 400%;
+  animation: rainbowBackground 15s ease infinite;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: #0044cc;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Header Styles */
 .header-container {
-  background-color: black;
-  color: white;
   text-align: center;
   padding: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
 }
 
 .header a {
-  text-decoration: none;
-  font-size: 24px;
-  font-weight: bold;
-  color: #ff4081;
+  color: #ff4b5c;
+  font-size: 3em;
 }
 
 .sub-header {
-  font-style: italic;
-  margin-top: 5px;
+  font-size: 1.2em;
+  opacity: 0.8;
 }
 
-/* Styles for navigation */
+/* Navigation Styles */
 .nav-container {
-  background-color: #330033;
   display: flex;
-  justify-content: space-around;
-  padding: 10px;
+  justify-content: center;
+  background-color: #333;
+  border-top: 2px solid #444;
 }
 
 .nav-link {
-  text-decoration: none;
   color: white;
-  font-weight: bold;
-  transition: transform 0.3s ease;
+  padding: 15px 20px;
+  display: block;
+  transition: background-color 0.3s;
 }
 
 .nav-link:hover {
-  transform: scale(1.1);
+  background-color: #555;
 }
 
-/* Styles for unplayed songs section */
-.unplayed-songs {
-  margin-top: 20px;
-  background-color: #cc00cc;
-  padding: 10px;
-}
-
-.unplayed-song {
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #ff00ff;
-}
-
-.song-title a {
-  text-decoration: none;
-  color: blue;
-  font-weight: bold;
-}
-
-/* Styles for songs section */
-.songs {
-  margin-top: 20px;
-}
-
-.song {
-  padding: 10px;
-  margin-bottom: 20px;
-  background-color: #660066;
-  color: white;
-}
-
-.song-title a {
-  text-decoration: none;
-  color: #ff8080;
-  font-weight: bold;
-}
-
-.song-id {
-  font-style: italic;
-}
-
-.song-description {
-  font-size: 14px;
-}
-
-/* Styles for users section */
-.users {
-  margin-top: 20px;
-}
-
-.user {
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: #993399;
-  color: white;
-}
-
-.user a {
-  text-decoration: none;
-  color: #ff66cc;
-  font-weight: bold;
-}
-
-/* Styles for charts section */
-.top-songs {
-  margin-top: 20px;
-}
-
-.top-song {
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: #cc66ff;
-  color: white;
-}
-
-.song-title {
-  font-weight: bold;
-}
-
-/* Styles for current song section */
-.song {
+/* Songs Section */
+section.songs, section.unplayed-songs, section.users, section.top-songs {
+  max-width: 800px;
+  margin: 30px auto;
+  background-color: white;
   padding: 20px;
-  background-color: #663399;
-  color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
+/* Song Articles */
+.song, .unplayed-song, .user, .top-song {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 0;
+}
+
+.song:last-child, .unplayed-song:last-child, .user:last-child, .top-song:last-child {
+  border-bottom: none;
+}
+
+.song-title a {
+  color: #ff4b5c;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+.song-title a:hover {
+  color: #ea68b2;
+}
+
+.song-audio {
+  margin-top: 10px;
+}
+
+/* Current Song Styles */
 .song-header {
-  text-align: center;
+  background-color: #ffbd44;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
 }
 
-.song-images {
-  margin-top: 20px;
+.song-lyrics, .song-images, .song-videos {
+  margin-bottom: 20px;
 }
 
-.image {
-  margin-bottom: 10px;
+.image, .video {
+  margin: 5px 0;
 }
 
 .image img {
-  max-width: 100%;
-}
-
-.image-voting {
-  font-style: italic;
-}
-
-.image-votes {
-  font-weight: bold;
+  width: 100%;
+  border-radius: 5px;
 }
 
 .video {
-  margin-bottom: 10px;
+  max-width: 100%;
+  border-radius: 5px;
 }
 
-.song-lyrics {
-  margin-top: 20px;
+/* Keyframes for rainbow background animation */
+@keyframes rainbowBackground {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-.song-lyrics p {
-  line-height: 1.5;
+/* Let's make the headers jiggle for extra fun */
+.header a, .sub-header, .nav-link {
+  animation: jiggle 3s infinite;
 }
 
-/* Crazy animations for fun */
-
-@keyframes crazy {
-  0% {
-    transform: rotate(0);
-  }
-  50% {
-    transform: rotate(360deg);
-  }
-  100% {
-    transform: rotate(-360deg);
-  }
+@keyframes jiggle {
+  0%, 100% { transform: translateY(0); }
+  15% { transform: translateY(-2px); }
+  30% { transform: translateY(2px); }
+  45% { transform: translateY(-1px); }
+  60% { transform: translateY(1px); }
+  75% { transform: translateY(-0.5px); }
+  90% { transform: translateY(0.5px); }
 }
-
-.song-header h2 {
-  animation: crazy 3s infinite;
-}
-
-.song-title a {
-  transition: color 0.5s ease;
-}
-
-.song-title:hover a {
-  color: #ff6699;
-}
-
-.nav-link {
-  animation: shake 0.5s infinite;
-}
-
-@keyframes shake {
-  0% {
-    transform: rotate(0);
-  }
-  25% {
-    transform: rotate(5deg);
-  }
-  75% {
-    transform: rotate(-5deg);
-  }
-  100% {
-    transform: rotate(0);
-  }
-}
-
-Save the above CSS code into a `styles.css` file, and link it in your HTML file to see the fun and crazy styles applied to your website. Feel free to further customize and play around with the animations and styles!

@@ -1,55 +1,87 @@
-// Importing necessary libraries for animations and interactivity
+// Importing necessary libraries from import map
 import * as THREE from 'three';
 import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-// Function to display a welcome message in the console
-console.log('Welcome to AI Top of the Pops!');
+// Initialize mermaid.js for chart rendering
+mermaid.initialize({ startOnLoad: true });
 
-// Function to animate the header with crazy unique fonts
-const header = document.querySelector('.header');
-header.style.fontWeight = 'bold';
-header.style.fontFamily = 'UniqueFont, sans-serif'; // Import the unique font library here
+// Log to console each step of the JavaScript magic
+console.log("JavaScript and libraries imported. Let's create some magic!");
 
-// Function to create a dark, crazy visual effect on the page
-const body = document.querySelector('body');
-body.style.backgroundColor = '#121212'; // Dark background color
+// Function to animate header with a rotating rainbow effect
+function animateRainbowHeader() {
+    const header = document.querySelector('.header-container h1');
+    let hue = 0;
+    setInterval(() => {
+        header.style.color = `hsl(${hue}, 100%, 50%)`;
+        hue = (hue + 1) % 360;
+    }, 50); // Rotate hue to create a rainbow transition
+    console.log("Animating the header with a rotating rainbow!");
+}
 
-// Function to add animations and transitions to various elements on the page
-const animateElements = () => {
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-        link.style.transition = 'transform 0.5s ease';
-        link.addEventListener('mouseover', () => {
-            link.style.transform = 'scale(1.1)';
-        });
-        link.addEventListener('mouseout', () => {
-            link.style.transform = 'scale(1)';
-        });
+// Function to create a 3D bouncing cube with three.js
+function create3DBouncingCube() {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    const animate = function () {
+        requestAnimationFrame(animate);
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+        cube.position.y = Math.sin(Date.now() * 0.001) * 0.5;
+        renderer.render(scene, camera);
+    };
+
+    animate();
+    console.log("3D Bouncing cube created and animated!");
+}
+
+// Function to generate charts with mermaid.js
+function generateCharts() {
+    const topSongsChart = `
+    graph LR
+    A[Top Songs] --> B{{"Song 1"}}
+    A --> C{{"Song 2"}}
+    A --> D{{"Song 3"}}
+    B --> B1["Score: 9.4"]
+    C --> C1["Score: 8.8"]
+    D --> D1["Score: 8.5"]
+    `;
+
+    const div = document.createElement('div');
+    div.className = 'mermaid';
+    div.innerHTML = topSongsChart;
+    document.querySelector('.charts-section').appendChild(div);
+    mermaid.contentLoaded();
+    console.log("Mermaid.js chart of top songs generated!");
+}
+
+// Add event listeners to nav links for smooth scrolling to sections
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        const targetId = this.getAttribute('href').substring(1);
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            e.preventDefault();
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+            console.log(`Smooth scroll to section: ${targetId}`);
+        }
     });
+});
 
-    const songs = document.querySelectorAll('.song');
-    songs.forEach(song => {
-        song.style.transition = 'transform 0.5s ease';
-        song.addEventListener('mouseover', () => {
-            song.style.transform = 'rotate(5deg)';
-        });
-        song.addEventListener('mouseout', () => {
-            song.style.transform = 'rotate(0deg)';
-        });
-    });
-
-    const images = document.querySelectorAll('.image');
-    images.forEach(image => {
-        image.style.transition = 'opacity 0.5s ease';
-        image.addEventListener('mouseover', () => {
-            image.style.opacity = 0.7;
-        });
-        image.addEventListener('mouseout', () => {
-            image.style.opacity = 1;
-        });
-    });
-};
-
-// Call the animateElements function to add animations and transitions
-animateElements();
+// Call the functions to initialize animations and charts
+animateRainbowHeader();
+create3DBouncingCube();
+generateCharts();
+console.log("All animations and charts are set! Enjoy the interactivity and visuals!");
