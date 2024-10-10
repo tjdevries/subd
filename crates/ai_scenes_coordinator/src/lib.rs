@@ -103,7 +103,7 @@ fn generate_and_save_tts_audio(
     // Generate the filename and save path
     let filename = twitch_chat_filename(username, voice);
     let full_filename = format!("{}.wav", filename);
-    let tts_folder = "/home/begin/code/subd/TwitchChatTTSRecordings";
+    let tts_folder = "./TwitchChatTTSRecordings";
     let local_audio_path = format!("{}/{}", tts_folder, full_filename);
 
     // Save the audio file locally

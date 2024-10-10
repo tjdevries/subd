@@ -81,6 +81,8 @@ rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336
 
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
 
+rag-toolchain = { git = "https://github.com/JackMatthewRimmer/rust-rag-toolchain" }
+
 # This broken for me
 # kalosm = { git = "https://github.com/floneum/floneum.git", rev = "0b51b6b347bc5653958669951402226c3c38b9e8" }
 # elevenlabs-api = "0.1.1"
@@ -102,7 +104,7 @@ async-trait = "0.1.57"
 chrono = { version = "0.4.19", features = [ "serde" ] }
 colored = "2.1.0"
 dotenv = "0.15.0"
-futures = "0.3.21"
+futures = "0.3"
 once_cell = "1.13.0"
 reqwest = { version = "0.11.11", features = ["stream","multipart","json"] }
 serde = { version = "1.0.1" }

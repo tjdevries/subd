@@ -8,7 +8,6 @@ use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
 
-// This should be in the move_trailer command
 pub async fn trigger_movie_trailer(
     ai_scene_req: &AiScenesRequest,
     locked_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -18,6 +17,7 @@ pub async fn trigger_movie_trailer(
         let _ = send_message(locked_client, music_bg.clone()).await;
     }
 
+    // Why are crreating a new stream_handle here?
     // We are supressing a whole bunch of alsa message
     let backup =
         subd_utils::redirect_stderr().expect("Failed to redirect stderr");
