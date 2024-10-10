@@ -34,7 +34,10 @@ pub struct RunwayPrompt {
 pub async fn generate_scene_from_prompt(
     prompt: String,
 ) -> Result<RunwayPrompt> {
-    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let client = Client::new(
+        env::var("OPENAI_API_KEY")
+            .map_err(|e| anyhow!("Failed to get OPENAI_API_KEY: {}", e))?,
+    );
     let instructor_client = from_openai(client);
 
     let req = ChatCompletionRequest::new(
@@ -63,7 +66,10 @@ pub async fn generate_scene_prompt(
     lyrics: String,
     title: String,
 ) -> Result<MusicVideoScene> {
-    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let client = Client::new(
+        env::var("OPENAI_API_KEY")
+            .map_err(|e| anyhow!("Failed to get OPENAI_API_KEY: {}", e))?,
+    );
     let instructor_client = from_openai(client);
 
     let prompt = format!(
@@ -97,7 +103,10 @@ pub async fn generate_scene_prompts(
     lyrics: String,
     title: String,
 ) -> Result<MusicVideoScenes> {
-    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
+    let client = Client::new(
+        env::var("OPENAI_API_KEY")
+            .map_err(|e| anyhow!("Failed to get OPENAI_API_KEY: {}", e))?,
+    );
     let instructor_client = from_openai(client);
 
     let prompt = format!(

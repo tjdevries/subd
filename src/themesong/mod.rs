@@ -86,7 +86,7 @@ pub async fn has_played_themesong_today(
     .fetch_one(pool)
     .await?;
 
-    Ok(played_count.result.unwrap() > 0)
+    Ok(played_count.result.unwrap_or(0) > 0)
 }
 
 #[tracing::instrument(skip(conn))]
@@ -333,6 +333,7 @@ pub struct ThemesongPlayer {
 
 impl ThemesongPlayer {
     pub fn new(pool: PgPool) -> Self {
+        // TODO: I don't think this should be built here
         let (stream, handle) = rodio::OutputStream::try_default().unwrap();
 
         // TODO: How to now leak this... it's ok though, it just gets called once

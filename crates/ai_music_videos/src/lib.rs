@@ -128,7 +128,13 @@ pub async fn create_music_video_images_and_video(
     let ai_song = ai_playlist::find_song_by_id(pool, &id).await?;
     let ai_song = Arc::new(ai_song);
 
-    let lyrics = ai_song.lyric.as_ref().unwrap();
+    let lyrics = match ai_song.lyric.as_ref() {
+        Some(l) => l,
+        None => {
+            println!("Error: Song lyrics are missing");
+            &String::new()
+        }
+    };
     let title = &ai_song.title;
     let scenes_prompts = scenes_builder::generate_scene_prompts(
         lyrics.to_string(),

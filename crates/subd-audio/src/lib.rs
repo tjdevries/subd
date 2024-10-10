@@ -39,7 +39,9 @@ pub fn get_output_stream_2(
     device_name: &str,
 ) -> Result<(OutputStream, OutputStreamHandle)> {
     let host = cpal::default_host();
-    let devices = host.output_devices().unwrap();
+    let devices = host
+        .output_devices()
+        .map_err(|e| anyhow::anyhow!("Failed to get output devices: {}", e))?;
 
     for device in devices {
         // Convert cpal::Device to rodio::Device

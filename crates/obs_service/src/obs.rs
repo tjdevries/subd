@@ -2,6 +2,7 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
+// TODO: Figure out how to remove this unwrap
 pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()

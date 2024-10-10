@@ -109,8 +109,10 @@ pub async fn use_random_voice(
     username: &str,
     tx: &broadcast::Sender<Event>,
 ) -> Result<()> {
-    let voices_contents = fs::read_to_string("data/voices.json").unwrap();
-    let voices: Vec<Voice> = serde_json::from_str(&voices_contents).unwrap();
+    let voices_contents = fs::read_to_string("data/voices.json")
+        .map_err(|e| anyhow::anyhow!("Failed to read voices file: {}", e))?;
+    let voices: Vec<Voice> = serde_json::from_str(&voices_contents)
+        .map_err(|e| anyhow::anyhow!("Failed to parse voices JSON: {}", e))?;
     let mut rng = thread_rng();
     let random_index = rng.gen_range(0..voices.len());
     let random_voice = &voices[random_index];

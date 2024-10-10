@@ -136,7 +136,7 @@ pub async fn find_current_bogan_index(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<i32> {
-    let res = obs_client.scene_items().list(scene).await.unwrap();
+    let res = obs_client.scene_items().list(scene).await?;
     Ok(res
         .iter()
         .map(|x| parse_scene_item_index(&x.source_name))

@@ -1,0 +1,11 @@
+crates/ai_music_videos/src/lib.rs:131:    let lyrics = ai_song.lyric.as_ref().unwrap();
+crates/subd-yew/src/bin/site.rs:382:        .unwrap()
+crates/subd-yew/src/bin/site.rs:384:        .unwrap()
+crates/subd-suno/src/lib.rs:370:        let result = get_audio_information(id).await.unwrap();
+crates/skybox/src/lib.rs:233:    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
+src/bin/music_video_creator_site.rs:36:    let listener = tokio::net::TcpListener::bind("0.0.0.0:4001").await.unwrap();
+src/bin/music_video_creator_site.rs:37:    axum::serve(listener, app).await.unwrap();
+src/bin/twitter.rs:22:        BearerToken::new(std::env::var("TWITTER_APP_BEARER_TOKEN").unwrap());
+src/bin/youtubedl.rs:14:    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
+src/bin/youtubedl.rs:15:    let sink = rodio::Sink::try_new(&handle).unwrap();
+src/raffle.rs:101:            let user_name = self.users.get(user_id).unwrap();

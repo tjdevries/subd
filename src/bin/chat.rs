@@ -306,7 +306,10 @@ async fn yew_inner_loop(
 
     tx.send(Event::RequestTwitchSubCount)?;
     tx.send(Event::LunchBytesStatus(
-        get_lb_status().lock().unwrap().clone(),
+        get_lb_status()
+            .lock()
+            .map_err(|e| anyhow!("Failed to lock LunchBytesStatus: {}", e))?
+            .clone(),
     ))?;
 
     println!("Looping new yew inner loop");
@@ -364,7 +367,9 @@ async fn handle_obs_stuff(
 
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
-        .unwrap();
+        .map_err(|e| {
+            anyhow::anyhow!("Failed to parse OBS websocket port: {}", e)
+        })?;
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))

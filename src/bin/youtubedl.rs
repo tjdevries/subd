@@ -11,8 +11,8 @@ async fn main() -> anyhow::Result<()> {
         // download_themesong(&mut db, &user_id, url, "00:01:03", "00:01:10").await?;
     }
 
-    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-    let sink = rodio::Sink::try_new(&handle).unwrap();
+    let (_stream, handle) = rodio::OutputStream::try_default()?;
+    let sink = rodio::Sink::try_new(&handle)?;
 
     // play_themesong(&mut db, &user_id, &sink).await?;
     sink.sleep_until_end();

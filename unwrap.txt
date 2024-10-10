@@ -18,36 +18,14 @@ src/bin/websockets.rs:85:    .unwrap();
 src/bin/chat.rs:309:        get_lb_status().lock().unwrap().clone(),
 src/bin/chat.rs:367:        .unwrap();
 src/handlers/ai_screenshots_timer_handler.rs:113:    let selected_choice = choices.choose(&mut rng).unwrap();
-src/bin/begin.rs:91:        let elevenlabs_auth = Auth::from_env().unwrap();
-src/bin/begin.rs:126:        "macos" => rodio::OutputStream::try_default().unwrap(),
-src/handlers/implicit_sound_handler.rs:40:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
-src/handlers/explicit_sound_handler.rs:29:        let soundeffect_files = fs::read_dir("./MP3s").unwrap();
-src/handlers/explicit_sound_handler.rs:32:            mp3s.insert(soundeffect_file.unwrap().path().display().to_string());
-src/handlers/obs_messages_handler.rs:469:        let obs_client = obs::create_obs_client().await.unwrap();
-src/handlers/obs_messages_handler.rs:481:            .unwrap();
-src/handlers/obs_messages_handler.rs:489:            obs_client.inputs().settings::<Value>(source).await.unwrap();
-crates/twitch_notifications/src/lib.rs:26:    let notification: Value = serde_json::from_slice(&body).unwrap();
-crates/twitch_notifications/src/lib.rs:31:        .unwrap()
-crates/twitch_notifications/src/lib.rs:33:        .unwrap()
-crates/twitch_notifications/src/lib.rs:44:                .body(notification["challenge"].as_str().unwrap().to_string())
 crates/subd-macros/src/lib.rs:48:    let mut model = models.pop().unwrap();
 crates/subd-macros/src/lib.rs:114:                colon_token: f.colon_token.unwrap(),
 crates/subd-macros/src/lib.rs:155:                primary_key.ident.unwrap(),
-crates/skybox/src/lib.rs:150:    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-crates/skybox/src/lib.rs:249:    let skybox_api_key = env::var("SKYBOX_API_KEY").unwrap();
-crates/subd-image-utils/src/lib.rs:77:    let mime_type = captures.name("mime").unwrap().as_str();
-crates/subd-image-utils/src/lib.rs:78:    let base64_data = captures.name("data").unwrap().as_str();
 crates/subd-gh/src/lib.rs:36:        .header(AUTHORIZATION, HeaderValue::from_str(&gh_token).unwrap())
 crates/subd-gh/src/lib.rs:46:    let result = match response_body.data.unwrap().user {
 crates/subd-gh/src/lib.rs:73:        .header(AUTHORIZATION, HeaderValue::from_str(&gh_token).unwrap())
 crates/subd-gh/src/lib.rs:85:    Ok(response_body.data.unwrap().user.unwrap().is_sponsored_by)
 crates/subd-audio/src/lib.rs:42:    let devices = host.output_devices().unwrap();
-crates/ai_clones/src/lib.rs:139:    let res = obs_client.scene_items().list(scene).await.unwrap();
-crates/ai_clones/src/lib.rs:185:        let obs_client = obs::create_obs_client().await.unwrap();
-crates/ai_clones/src/lib.rs:189:            find_current_bogan_index(scene, &obs_client).await.unwrap();
-crates/ai_music_videos/src/scenes_builder.rs:37:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
-crates/ai_music_videos/src/scenes_builder.rs:66:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
-crates/ai_music_videos/src/scenes_builder.rs:100:    let client = Client::new(env::var("OPENAI_API_KEY").unwrap().to_string());
 crates/ai_music_videos/src/lib.rs:131:    let lyrics = ai_song.lyric.as_ref().unwrap();
 crates/fal_ai/src/lib.rs:135:        let res = create_turbo_image(prompt).await.unwrap();
 crates/fal_ai/src/lib.rs:144:        let res = create_from_fal_api(prompt).await.unwrap();
@@ -59,6 +37,3 @@ crates/subd-yew/src/bin/site.rs:384:        .unwrap()
 crates/obs_service/src/obs.rs:8:        .unwrap();
 crates/obs_bootstrap/src/lib.rs:177:            .unwrap();
 crates/obs_bootstrap/src/lib.rs:208:            .unwrap();
-crates/ai_movie_trailers/src/lib.rs:27:    let sink = rodio::Sink::try_new(&stream_handle).unwrap();
-crates/ai_movie_trailers/src/utils.rs:80:    let mime_type = captures.name("mime").unwrap().as_str();
-crates/ai_movie_trailers/src/utils.rs:81:    let base64_data = captures.name("data").unwrap().as_str();

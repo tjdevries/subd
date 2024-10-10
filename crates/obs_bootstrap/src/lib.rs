@@ -171,10 +171,11 @@ pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
         }
     };
 
-    // TODO: This could through an Error Here
     let new_settings =
         serde_json::from_value::<SDFEffectsSettings>(filter_details.settings)
-            .unwrap();
+            .map_err(|e| {
+            anyhow::anyhow!("Failed to parse SDFEffectsSettings: {}", e)
+        })?;
 
     println!("\nFetched Settings: {:?}\n", new_settings);
 
@@ -205,7 +206,9 @@ pub async fn create_outline_filter(
 
     let new_settings =
         serde_json::from_value::<SDFEffectsSettings>(filter_details.settings)
-            .unwrap();
+            .map_err(|e| {
+            anyhow::anyhow!("Failed to parse SDFEffectsSettings: {}", e)
+        })?;
 
     let new_filter = obws::requests::filters::Create {
         source,

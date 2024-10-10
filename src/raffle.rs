@@ -98,7 +98,16 @@ impl RaffleState {
 
         let mut entries: HashMap<String, usize> = HashMap::new();
         for user_id in self.entries.iter() {
-            let user_name = self.users.get(user_id).unwrap();
+            let user_name = match self.users.get(user_id) {
+                Some(name) => name,
+                None => {
+                    eprintln!(
+                        "Error: User ID {:?} not found in users map",
+                        user_id
+                    );
+                    continue;
+                }
+            };
             entries
                 .entry(user_name.clone())
                 .and_modify(|counter| *counter += 1)

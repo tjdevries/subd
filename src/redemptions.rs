@@ -101,9 +101,9 @@ pub async fn find_recent_rewards(pool: &PgPool) -> Result<Vec<Uuid>> {
     // I want all from the Last hour
     let res = sqlx::query!("SELECT reward_id FROM redemptions WHERE created_at >= now() - interval '60 minutes'")
         .fetch_all(pool)
-        .await;
+        .await?;
 
-    let ids: Vec<Uuid> = res.unwrap().iter().map(|r| r.reward_id).collect();
+    let ids: Vec<Uuid> = res.iter().map(|r| r.reward_id).collect();
     Ok(ids)
 }
 
