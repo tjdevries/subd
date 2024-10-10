@@ -10,7 +10,6 @@ use twitch_irc::{
 };
 
 pub struct AISongsDownloader {
-    pub obs_client: OBSClient,
     pub pool: PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -32,14 +31,9 @@ impl EventHandler for AISongsDownloader {
     ) -> Result<()> {
         while let Ok(event) = rx.recv().await {
             if let Event::UserMessage(msg) = event {
-                if let Err(err) = handle_requests(
-                    &tx,
-                    &self.obs_client,
-                    &self.twitch_client,
-                    &self.pool,
-                    msg,
-                )
-                .await
+                if let Err(err) =
+                    handle_requests(&tx, &self.twitch_client, &self.pool, msg)
+                        .await
                 {
                     eprintln!("Error handling request: {}", err);
                 }
@@ -52,7 +46,6 @@ impl EventHandler for AISongsDownloader {
 /// Handles incoming requests based on the parsed command.
 pub async fn handle_requests(
     tx: &broadcast::Sender<Event>,
-    _obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
     msg: UserMessage,

@@ -18,7 +18,6 @@ use uuid::Uuid;
 
 pub struct AISongsHandler {
     pub sink: Sink,
-    pub obs_client: OBSClient,
     pub pool: PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,

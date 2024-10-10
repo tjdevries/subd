@@ -1,0 +1,124 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Montserrat:wght@400;700&display=swap');
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.header-container {
+    background-color: #ff6600;
+    color: white;
+    text-align: center;
+    padding: 1rem;
+    box-shadow: 0 8px 6px -6px black;
+    transition: background-color 0.5s ease;
+}
+
+.header-container:hover {
+    background-color: #ff4500;
+}
+
+h1, h2 {
+    font-family: 'Lobster', cursive;
+    margin: 0.5rem 0;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: #333;
+    padding: 0.5rem;
+    box-shadow: 0 4px 6px -4px black;
+    isolation: isolate;
+}
+
+.nav-link {
+    color: white;
+    margin: 0 1rem;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative;
+    display: inline-block;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #ff6600;
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+}
+
+.nav-link:hover {
+    color: #ff6600;
+    transform: rotate(5deg);
+}
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+article {
+    background-color: #fff;
+    margin: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+}
+
+article:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+.song-title a {
+    color: #ff6600;
+    text-decoration: none;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.song-title a:hover {
+    color: #333;
+    text-shadow: 2px 2px #ffcc00, 4px 4px #ff6600;
+    transform: skewX(-5deg);
+}
+
+.song-audio audio {
+    width: 100%;
+    border: 2px solid #333;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.image img, .video {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 10px;
+    transition: filter 0.3s ease;
+}
+
+.image img:hover, .video:hover {
+    filter: brightness(0.8);
+}
+
+.song-lyrics {
+    font-style: italic;
+    line-height: 1.6;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 1rem;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}

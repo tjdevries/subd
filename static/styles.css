@@ -1,157 +1,142 @@
-/* General Styles */
 body {
-    background: linear-gradient(135deg, #F8FFAE 0%, #43C6AC 100%);
-    font-family: 'Lucida Grande', 'Trebuchet MS', sans-serif;
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* Fun and unique font choice */
+    background: radial-gradient(circle, #ffcccc, #ff99cc, #cc66ff);
     color: #333;
     margin: 0;
-    
+    padding: 50px;
+    overflow-x: hidden;
+    /* Fun theme style inspired by the curiosity in the lyrics */
 }
 
-h1, h2, h3, h4, h5, h6 {
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* Link Styles */
-a {
-    text-decoration: none;
-    color: #3B5998;
-    transition: all 0.3s ease-in-out;
-    font-variant: small-caps;
-}
-a:hover {
-    color: #FF5E5E;
-    text-shadow: 1px 1px 10px #FFFF;
-    transform: rotate(360deg);
-    font-size: 1.2em;
-}
-
-/* Header Styles */
-header {
-    background: conic-gradient(from 180deg at 50% 50%, #FFD700, #FF4500, #FF4500, #FFD700);
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+header.header-container {
+    background: #e0e0e0;
+    padding: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     position: relative;
-    z-index: 1;
-    mix-blend-mode: multiply;
-}
-.header a {
-    font-size: 2.5em;
-    animation: colors 5s infinite;
-}
-.sub-header {
-    margin-top: 10px;
-    font-size: 1.2em;
-    color: #666;
-}
-
-/* Navbar Styles */
-.nav-container {
-    display: flex;
-    justify-content: center;
-    background: #333;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
     isolation: isolate;
 }
-.nav-link {
-    color: #fff;
-    padding: 10px 20px;
-    transition: background-color 0.2s, color 0.2s;
-}
-.nav-link:hover {
-    background: #FF6347;
-    color: #fff;
+
+h1.header {
+    font-family: 'Permanent Marker', cursive;
+    text-shadow: 2px 2px #ff66b2;
+    color: #cc0066;
+    animation: rotateHeader 5s infinite linear;
 }
 
-/* Song Section Styles */
-.songs, .unplayed-songs, .users, .top-songs {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+@keyframes rotateHeader {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+nav.nav-container {
+    background: linear-gradient(45deg, #962dab, #e335aa);
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    box-shadow: 0px 4px 4px #b300b3;
+}
+
+a.nav-link {
+    color: #fff;
+    font-size: 1.2em;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-variant: small-caps;
+}
+
+a.nav-link:hover {
+    color: #e6e600;
+    transform: scale(1.1);
+    text-shadow: 0px 0px 5px #ff9900;
+}
+
+section.unplayed-songs, section.songs, section.users, section.top-songs {
     padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    filter: drop-shadow(0 0 10px #660066);
 }
-.song, .unplayed-song, .user, .top-song {
-    background: #fff;
+
+h2 {
+    font-family: 'Fredericka the Great', cursive;
+    color: #660066;
+    text-shadow: 1px 1px #ffb3d9;
+}
+
+article.song, article.unplayed-song, article.user, article.top-song {
+    background: #ffe6f7;
+    border: 2px solid #ff66b2;
     border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    overflow: hidden;
-    resize: vertical;
-    transition: transform 0.3s ease-in-out;
+    padding: 15px;
+    transition: transform 0.4s;
 }
-.song:hover, .unplayed-song:hover, .user:hover, .top-song:hover {
-    transform: scale(1.05);
+
+article.song:hover, article.unplayed-song:hover, article.user:hover, article.top-song:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
 }
 
 .song-title a {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 1.5em;
-    transition: color 0.3s;
-    display: inline-block;
-    font-display: swap;
+    color: #b30047;
+    text-decoration: none;
+    transition: color 0.3s ease;
 }
 
-.song-audio {
-    filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+.song-title a:hover {
+    color: #ff33cc;
+    text-shadow: 0 0 5px #ff33cc;
+}
+
+.song-audio audio {
     width: 100%;
+    border-radius: 5px;
+    mix-blend-mode: multiply;
+    filter: hue-rotate(30deg);
 }
 
-/* Keyframes for Animation */
-@keyframes colors {
-  0% { color: #FF6347; }
-  25% { color: #FFD700; }
-  50% { color: #48D1CC; }
-  75% { color: #8A2BE2; }
-  100% { color: #FF6347; }
-}
-
-/* Current Song Styles */
-.song-header {
-    text-align: center;
-    padding: 10px;
-    animation: fadeIn 2s;
-    backface-visibility: hidden;
-}
-
-.song-images, .song-videos {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 20px;
-    padding: 10px;
-}
-
-.image, .video {
-    border: 3px solid #333;
+.song-images .image {
+    overflow: hidden;
     border-radius: 10px;
-    transition: filter 0.3s;
+    transition: transform 0.4s ease;
 }
 
-.image:hover, .video:hover {
-    filter: brightness(80%) sepia(1) hue-rotate(190deg);
+.song-images .image:hover {
+    transform: scale(1.1);
 }
 
-/* Lyrics Section */
-.song-lyrics {
-    background: repeating-linear-gradient(45deg, #FFF6E5, #FFF6E5 10px, #FFECB3 10px, #FFECB3 20px);
-    padding: 20px;
-    border-radius: 15px;
-    shape-outside: circle();
+.song-videos .video {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    background-clip: padding-box;
 }
 
-/* Additional Effects */
-article.transition {
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-article.transition:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+.song-lyrics, .song-description, .song-tags, .song-creator, .song-id, .song-average-score, .song-total-votes {
+    font-family: 'Courier New', Courier, monospace;
+    color: #99004d;
+    shape-outside: circle(50%);
+    margin: 10px 0;
+    transition: background 0.3s ease;
 }
 
-/* Footer */
-footer {
-    background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%);
+.song-lyrics:hover, .song-description:hover, .song-tags:hover, .song-creator:hover, .song-id:hover, .song-average-score:hover, .song-total-votes:hover {
+    background: #ffccf2;
+    border-radius: 5px;
+}
+
+.image-voting, .image-votes {
+    background: rgba(255, 222, 235, 0.8);
+    border-radius: 5px;
+    padding: 5px;
     text-align: center;
-    padding: 10px;
+    mix-blend-mode: screen;
 }

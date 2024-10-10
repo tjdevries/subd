@@ -2,11 +2,9 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
-// TODO: Figure out how to remove this unwrap
-pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
-    let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
-        .parse::<u16>()
-        .unwrap();
+pub async fn create_obs_client() -> Result<OBSClient> {
+    let obs_websocket_port =
+        subd_types::consts::get_obs_websocket_port().parse::<u16>()?;
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     OBSClient::connect(
         obs_websocket_address.clone(),
@@ -14,6 +12,7 @@ pub async fn create_obs_client() -> Result<OBSClient, obws::Error> {
         Some(""),
     )
     .await
+    .map_err(anyhow::Error::from)
 }
 
 // TODO: Find the proper home for this

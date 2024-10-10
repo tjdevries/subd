@@ -64,8 +64,9 @@ struct Args {
     enable: Vec<String>,
 }
 
+// Can I make this optional?
 struct AppResources {
-    obs_client: Client,
+    obs_client: Option<Client>,
     sink: rodio::Sink,
     twitch_client: TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     elevenlabs: Elevenlabs,
@@ -74,8 +75,7 @@ struct AppResources {
 impl AppResources {
     /// Creates a new instance of `AppResources` with fresh resources.
     async fn new(stream_handle: &rodio::OutputStreamHandle) -> Result<Self> {
-        // Initialize OBS client
-        let obs_client = create_obs_client().await?;
+        let obs_client = create_obs_client().await.ok();
 
         // This is how we play audio
         let sink = rodio::Sink::try_new(stream_handle)?;
@@ -142,6 +142,7 @@ async fn main() -> Result<()> {
         vec![
             "implict_soundeffects".to_string(),
             "explicit_soundeffects".to_string(),
+            "voices".to_string(),
             // "tts".to_string(),
             "ai_screenshots".to_string(),
             // "ai_screenshots_timer".to_string(),
@@ -156,6 +157,7 @@ async fn main() -> Result<()> {
             "dynamic_stream_background".to_string(),
             "channel_rewards".to_string(),
             "ai_songs".to_string(),
+            "ai_videos".to_string(),
             "fal".to_string(),
         ]
     } else {
@@ -185,12 +187,15 @@ async fn main() -> Result<()> {
                         .await,
                     ),
                 );
+            }
 
+            "voices" => {
+                println!("{}", "Enabling Voices control".green());
                 // Create new resources for this feature
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::voices_handler::VoicesHandler {
                     pool: pool.clone(),
-                    obs_client: resources.obs_client,
+                    obs_client: resources.obs_client.unwrap(),
                 });
             }
 
@@ -216,14 +221,13 @@ async fn main() -> Result<()> {
             }
 
             "tts" => {
-                println!("{}", "Enabling TTS".green());
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::elevenlabs_handler::ElevenLabsHandler {
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                         sink: resources.sink,
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         elevenlabs: resources.elevenlabs,
                     },
                 );
@@ -233,7 +237,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_screenshots_handler::AiScreenshotsHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
@@ -245,7 +249,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_screenshots_timer_handler::AiScreenshotsTimerHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
@@ -257,7 +261,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::ai_telephone_handler::AiTelephoneHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         sink: resources.sink,
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
@@ -271,7 +275,7 @@ async fn main() -> Result<()> {
                     pool: pool.clone(),
                     twitch_client: resources.twitch_client,
                     sink: resources.sink,
-                    obs_client: resources.obs_client,
+                    obs_client: resources.obs_client.unwrap(),
                     elevenlabs: resources.elevenlabs,
                 });
 
@@ -279,7 +283,7 @@ async fn main() -> Result<()> {
                 event_loop.push(
                     handlers::music_scenes_handler::MusicScenesHandler {
                         pool: pool.clone(),
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
             }
@@ -287,7 +291,7 @@ async fn main() -> Result<()> {
             "channel_rewards" => {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::reward_handler::RewardHandler {
-                    obs_client: resources.obs_client,
+                    obs_client: resources.obs_client.unwrap(),
                     pool: pool.clone(),
                     twitch_client: resources.twitch_client,
                 });
@@ -296,14 +300,14 @@ async fn main() -> Result<()> {
             "skybox" => {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::skybox_handler::SkyboxHandler {
-                    obs_client: resources.obs_client,
+                    obs_client: resources.obs_client.unwrap(),
                     pool: pool.clone(),
                 });
 
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::skybox_status_handler::SkyboxStatusHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         pool: pool.clone(),
                     },
                 );
@@ -312,7 +316,7 @@ async fn main() -> Result<()> {
                     handlers::skybox_handler::SkyboxRoutingHandler {
                         sink: resources.sink,
                         twitch_client: resources.twitch_client,
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         pool: pool.clone(),
                     },
                 );
@@ -322,7 +326,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::obs_messages_handler::OBSMessageHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         twitch_client: resources.twitch_client,
                         pool: pool.clone(),
                         sink: resources.sink,
@@ -332,21 +336,21 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::trigger_obs_hotkey_handler::TriggerHotkeyHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
 
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::transform_obs_test_handler::TransformOBSTextHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
 
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::source_visibility_handler::SourceVisibilityHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
             }
@@ -355,7 +359,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::stream_character_handler::StreamCharacterHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
             }
@@ -375,7 +379,7 @@ async fn main() -> Result<()> {
                 event_loop.push(
                     handlers::twitch_eventsub_handler::TwitchEventSubHandler {
                         pool: pool.clone(),
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                         twitch_client: resources.twitch_client,
                     },
                 );
@@ -385,7 +389,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(
                     handlers::stream_background_handler::StreamBackgroundHandler {
-                        obs_client: resources.obs_client,
+                        obs_client: resources.obs_client.unwrap(),
                     },
                 );
             }
@@ -396,9 +400,20 @@ async fn main() -> Result<()> {
                 event_loop.push(handlers::fal_handler::FalHandler {
                     pool: pool.clone(),
                     sink: resources.sink,
-                    obs_client: resources.obs_client,
+                    obs_client: resources.obs_client.unwrap(),
                     twitch_client: resources.twitch_client,
                 });
+            }
+
+            "ai_videos" => {
+                let resources = AppResources::new(&stream_handle).await?;
+                event_loop.push(
+                    handlers::ai_music_video_creator_handler::AIMusicVideoCreatorHandler{
+                        pool: pool.clone(),
+                        obs_client: resources.obs_client.unwrap(),
+                        twitch_client: resources.twitch_client,
+                    },
+                );
             }
 
             "ai_songs" => {
@@ -406,7 +421,6 @@ async fn main() -> Result<()> {
                 event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
                     sink: resources.sink,
-                    obs_client: resources.obs_client,
                     twitch_client: resources.twitch_client,
                 });
 
@@ -414,16 +428,6 @@ async fn main() -> Result<()> {
                 event_loop.push(
                     handlers::ai_songs_downloader_handler::AISongsDownloader {
                         pool: pool.clone(),
-                        obs_client: resources.obs_client,
-                        twitch_client: resources.twitch_client,
-                    },
-                );
-
-                let resources = AppResources::new(&stream_handle).await?;
-                event_loop.push(
-                    handlers::ai_music_video_creator_handler::AIMusicVideoCreatorHandler{
-                        pool: pool.clone(),
-                        obs_client: resources.obs_client,
                         twitch_client: resources.twitch_client,
                     },
                 );
@@ -432,7 +436,6 @@ async fn main() -> Result<()> {
                 event_loop.push(
                     handlers::ai_songs_vote_handler::AISongsVoteHandler {
                         pool: pool.clone(),
-                        obs_client: resources.obs_client,
                         twitch_client: resources.twitch_client,
                     },
                 );

@@ -12,7 +12,6 @@ use twitch_irc::{
 };
 
 pub struct AISongsVoteHandler {
-    pub obs_client: OBSClient,
     pub pool: PgPool,
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
@@ -42,7 +41,6 @@ impl EventHandler for AISongsVoteHandler {
             // THEORY: We don't know if this is an explicit OBS message at this stage
             match handle_telephone_requests(
                 &tx,
-                &self.obs_client,
                 &self.twitch_client,
                 &self.pool,
                 splitmsg,
@@ -62,7 +60,6 @@ impl EventHandler for AISongsVoteHandler {
 
 pub async fn handle_telephone_requests(
     _tx: &broadcast::Sender<Event>,
-    _obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     splitmsg: Vec<String>,
