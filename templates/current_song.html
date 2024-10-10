@@ -1,14 +1,14 @@
 <article class="song">
     <header class="song-header">
         <h2>Current Song</h2>
-        <h3 class="song-title">{{ current_song.title }}</h3>
-        <p class="song-tags">Tags: {{ current_song.tags }}</p>
-        <p class="song-creator">Creator: @{{ current_song.username }}</p>
-        <p class="song-id">
-            <a href="/ai_songs/{{ current_song.song_id }}">Song ID: {{ current_song.song_id }}</a>
-        </p>
-        <p class="song-average-score">Average Score: {{ score }}</p>
-        <p class="song-total-votes">Total Votes: {{ votes_count }}</p>
+            <h3 class="song-title">{{ current_song.title }}</h3>
+            <p class="song-tags">Tags: {{ current_song.tags }}</p>
+            <p class="song-creator">Creator: @{{ current_song.username }}</p>
+            <a href="/ai_songs/{{ current_song.song_id }}">
+                <p class="song-id">Song ID: {{ current_song.song_id }}</p>
+            </a>
+            <p class="song-average-score">Average Score: {{ score }}</p>
+            <p class="song-total-votes">Total Votes: {{ votes_count }}</p>
     </header>
 
     <section class="song-images">

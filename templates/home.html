@@ -3,13 +3,13 @@
 <section class="unplayed-songs">
     <h2>Songs in Playlist ({{ unplayed_songs|length }})</h2>
     {% for song in unplayed_songs %}
-    <article class="unplayed-song">
-        <h3 class="song-title">
-            <a href="/ai_songs/{{ song.song_id }}">
-                @{{ song.username }}'s {{ song.title }} - {{ song.song_id }}
-            </a>
-        </h3>
-    </article>
+    <a href="/ai_songs/{{ song.song_id }}">
+        <article class="unplayed-song">
+            <h3 class="song-title">
+                    @{{ song.username }}'s {{ song.title }} - {{ song.song_id }}
+            </h3>
+        </article>
+    </a>
     {% endfor %}
 </section>
 {% if current_song %}

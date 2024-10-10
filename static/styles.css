@@ -1,138 +1,135 @@
-/* Global Styles - Let's Start with a Rainbow Theme */
+/* Let's bring a splash of rainbow and fun into this CSS file! */
+
+/* Basic styles for the body and typography */
 body {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
-  background: linear-gradient(-45deg, #ff4b5c, #ffbd44, #ffe156, #6cdbeb, #ea68b2);
-  background-size: 400% 400%;
-  animation: rainbowBackground 15s ease infinite;
-  color: #333;
-  margin: 0;
-  padding: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    margin: 0;
+    padding: 0;
+    color: #333;
 }
 
-a {
-  color: #0044cc;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-/* Header Styles */
+/* Header styles with a rainbow animation on hover */
 .header-container {
-  text-align: center;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+    text-align: center;
+    background-color: #282c34;
+    padding: 20px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.header a {
-  color: #ff4b5c;
-  font-size: 3em;
+.header-container a {
+    text-decoration: none;
+    color: white;
+    transition: all 0.3s ease-in-out;
 }
 
-.sub-header {
-  font-size: 1.2em;
-  opacity: 0.8;
+.header-container a:hover {
+    background-image: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
 }
 
-/* Navigation Styles */
+/* For the nav, let's add a little reaction on hover */
 .nav-container {
-  display: flex;
-  justify-content: center;
-  background-color: #333;
-  border-top: 2px solid #444;
+    text-align: center;
+    background-color: #444;
+    padding: 10px 0;
 }
 
 .nav-link {
-  color: white;
-  padding: 15px 20px;
-  display: block;
-  transition: background-color 0.3s;
+    margin: 0 15px;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative;
 }
 
-.nav-link:hover {
-  background-color: #555;
+.nav-link::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #fff;
+    transition: transform 0.3s ease-out;
+    transform: scaleX(0);
+    position: absolute;
+    bottom: 0;
+    left: 0;
 }
 
-/* Songs Section */
-section.songs, section.unplayed-songs, section.users, section.top-songs {
-  max-width: 800px;
-  margin: 30px auto;
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.nav-link:hover::after {
+    transform: scaleX(1);
 }
 
-/* Song Articles */
-.song, .unplayed-song, .user, .top-song {
-  border-bottom: 1px solid #ddd;
-  padding: 10px 0;
+/* Magic rainbow border for song and user cards */
+.song, .user, .top-song, .unplayed-song {
+    border: 5px solid transparent;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px;
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: 0.5s;
+    position: relative;
 }
 
-.song:last-child, .unplayed-song:last-child, .user:last-child, .top-song:last-child {
-  border-bottom: none;
+.song:hover, .user:hover, .top-song:hover, .unplayed-song:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-image-slice: 1;
+    border-image-source: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet);
 }
 
-.song-title a {
-  color: #ff4b5c;
-  font-weight: bold;
-  transition: color 0.3s;
+/* Fun with audio controls */
+.song-audio audio {
+    width: 100%;
+    outline: none;
 }
 
-.song-title a:hover {
-  color: #ea68b2;
-}
-
-.song-audio {
-  margin-top: 10px;
-}
-
-/* Current Song Styles */
-.song-header {
-  background-color: #ffbd44;
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-}
-
-.song-lyrics, .song-images, .song-videos {
-  margin-bottom: 20px;
-}
-
-.image, .video {
-  margin: 5px 0;
-}
-
-.image img {
-  width: 100%;
-  border-radius: 5px;
-}
-
+/* Add some animation to the video elements */
 .video {
-  max-width: 100%;
-  border-radius: 5px;
+    border: 2px solid #666;
+    border-radius: 8px;
+    margin: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
 }
 
-/* Keyframes for rainbow background animation */
-@keyframes rainbowBackground {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.video:hover {
+    transform: scale(1.05);
 }
 
-/* Let's make the headers jiggle for extra fun */
-.header a, .sub-header, .nav-link {
-  animation: jiggle 3s infinite;
+/* Lyrics section styling */
+.song-lyrics p {
+    margin: 20px;
+    line-height: 1.6;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.5);
+    padding: 15px;
+    border-radius: 8px;
 }
 
-@keyframes jiggle {
-  0%, 100% { transform: translateY(0); }
-  15% { transform: translateY(-2px); }
-  30% { transform: translateY(2px); }
-  45% { transform: translateY(-1px); }
-  60% { transform: translateY(1px); }
-  75% { transform: translateY(-0.5px); }
-  90% { transform: translateY(0.5px); }
+/* Image figure hover effect fades in a border */
+.image img {
+    width: 100%;
+    display: block;
+    border-radius: 5px;
+    transition: border 0.3s ease;
+}
+
+.image:hover img {
+    border: 4px solid #e0e0e0;
+}
+
+/* Chart love - Magic placeholders for potential chart styling */
+.chart {
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+.chart:hover {
+    transform: translateY(-5px);
 }

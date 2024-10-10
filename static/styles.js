@@ -1,87 +1,103 @@
-// Importing necessary libraries from import map
 import * as THREE from 'three';
 import * as D3 from 'd3';
-import * as mermaid from 'mermaid';
+import mermaid from 'mermaid';
 
-// Initialize mermaid.js for chart rendering
-mermaid.initialize({ startOnLoad: true });
+// Page initialization
+console.log("Initializing page...");
+document.addEventListener('DOMContentLoaded', () => {
+    setupThreeJSScene();
+    setupMermaidChart();
+    enhanceNavLinks();
+    applyRainbowHeaderAnimation();
+});
 
-// Log to console each step of the JavaScript magic
-console.log("JavaScript and libraries imported. Let's create some magic!");
-
-// Function to animate header with a rotating rainbow effect
-function animateRainbowHeader() {
-    const header = document.querySelector('.header-container h1');
-    let hue = 0;
-    setInterval(() => {
-        header.style.color = `hsl(${hue}, 100%, 50%)`;
-        hue = (hue + 1) % 360;
-    }, 50); // Rotate hue to create a rainbow transition
-    console.log("Animating the header with a rotating rainbow!");
-}
-
-// Function to create a 3D bouncing cube with three.js
-function create3DBouncingCube() {
+// THREE.js Scene setup for playful 3D header animation
+function setupThreeJSScene() {
+    console.log("Setting up Three.js scene for the rainbow header...");
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / 200, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
 
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+    renderer.setSize(window.innerWidth, 200);
+    const header = document.querySelector('.header-container');
+    header.appendChild(renderer.domElement);
 
-    camera.position.z = 5;
+    const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const torusKnot = new THREE.Mesh(geometry, material);
+    scene.add(torusKnot);
+
+    camera.position.z = 30;
 
     const animate = function () {
         requestAnimationFrame(animate);
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-        cube.position.y = Math.sin(Date.now() * 0.001) * 0.5;
+
+        torusKnot.rotation.x += 0.01;
+        torusKnot.rotation.y += 0.01;
+
         renderer.render(scene, camera);
     };
-
     animate();
-    console.log("3D Bouncing cube created and animated!");
+    console.log("3D animation initialized!");
 }
 
-// Function to generate charts with mermaid.js
-function generateCharts() {
-    const topSongsChart = `
-    graph LR
-    A[Top Songs] --> B{{"Song 1"}}
-    A --> C{{"Song 2"}}
-    A --> D{{"Song 3"}}
-    B --> B1["Score: 9.4"]
-    C --> C1["Score: 8.8"]
-    D --> D1["Score: 8.5"]
-    `;
+// Animating the navigation links with color shifts
+function enhanceNavLinks() {
+    console.log("Adding animation to navigation links...");
+    const navLinks = document.querySelectorAll('.nav-link');
 
-    const div = document.createElement('div');
-    div.className = 'mermaid';
-    div.innerHTML = topSongsChart;
-    document.querySelector('.charts-section').appendChild(div);
-    mermaid.contentLoaded();
-    console.log("Mermaid.js chart of top songs generated!");
-}
+    navLinks.forEach((link, index) => {
+        link.style.transition = "color 0.5s ease, transform 0.5s ease";
+        link.style.color = `hsl(${(360 / navLinks.length) * index}, 80%, 60%)`;
 
-// Add event listeners to nav links for smooth scrolling to sections
-document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', function(e) {
-        const targetId = this.getAttribute('href').substring(1);
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            e.preventDefault();
-            targetSection.scrollIntoView({ behavior: 'smooth' });
-            console.log(`Smooth scroll to section: ${targetId}`);
-        }
+        link.addEventListener('mouseover', () => {
+            link.style.color = '#fff';
+            link.style.transform = 'scale(1.1)';
+        });
+
+        link.addEventListener('mouseout', () => {
+            link.style.color = `hsl(${(360 / navLinks.length) * index}, 80%, 60%)`;
+            link.style.transform = 'scale(1)';
+        });
     });
-});
+    console.log("Navigation animation set!");
+}
 
-// Call the functions to initialize animations and charts
-animateRainbowHeader();
-create3DBouncingCube();
-generateCharts();
-console.log("All animations and charts are set! Enjoy the interactivity and visuals!");
+// Mermaid.js chart example
+function setupMermaidChart() {
+    console.log("Initializing Mermaid.js chart...");
+    const chartDiv = document.createElement('div');
+    chartDiv.innerHTML = `
+    <div class="mermaid">
+        graph TD;
+        AI-Generated-->Rainbow;
+        Rainbow-->Music;
+        Music-->Charts;
+        Charts-->Fun;
+    </div>`;
+    document.body.appendChild(chartDiv);
+
+    mermaid.initialize({ theme: 'default' });
+    mermaid.contentLoaded();
+    console.log("Mermaid chart rendered successfully!");
+}
+
+// Rainbow color animation for headers
+function applyRainbowHeaderAnimation() {
+    console.log("Applying rainbow effect to header...");
+    const headers = document.querySelectorAll('h1, h2');
+
+    headers.forEach(header => {
+        header.style.background = 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)';
+        header.style.backgroundSize = '400% 100%';
+        header.style.webkitBackgroundClip = 'text';
+        header.style.webkitTextFillColor = 'transparent';
+
+        let degree = 0;
+        setInterval(() => {
+            degree += 5;
+            header.style.backgroundPosition = `${degree % 400}%`;
+        }, 100);
+    });
+    console.log("Rainbow header animation in place!");
+}
