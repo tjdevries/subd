@@ -117,15 +117,11 @@ impl ElevenLabsHandler {
 
         // Apply special voice effects
         if final_voice == "god" {
-            local_audio_path =
-                subd_elevenlabs::add_reverb(&local_audio_path)
-                    .unwrap_or_else(|err| {
-                        eprintln!(
-                            "Error processing 'god' voice: {:?}",
-                            err
-                        );
-                        local_audio_path
-                    });
+            local_audio_path = subd_elevenlabs::add_reverb(&local_audio_path)
+                .unwrap_or_else(|err| {
+                    eprintln!("Error processing 'god' voice: {:?}", err);
+                    local_audio_path
+                });
         }
 
         Ok(local_audio_path)
