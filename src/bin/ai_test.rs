@@ -20,13 +20,21 @@ const SYSTEM_MESSAGE: &'static str =
 
 #[tokio::main]
 async fn main() {
+    println!("It's time");
     let _ = save_embedding_from_file().await;
     let _ = ask_question().await;
 }
 
 async fn ask_question() -> Result<()> {
-    let _ = generate_js().await?;
-    let _ = generate_css().await?;
+    let result_js = generate_js().await;
+    if let Err(e) = result_js {
+        println!("Error generating JS: {}", e);
+    }
+
+    let result_css = generate_css().await;
+    if let Err(e) = result_css {
+        println!("Error generating CSS: {}", e);
+    }
     Ok(())
 }
 
@@ -61,6 +69,7 @@ async fn generate_js() -> Result<()> {
         .retriever(retriever)
         .build();
 
+    println!("Prompting");
     let user_message = PromptMessage::HumanMessage(format!(
         "Generate JS for the following HTML: {}",
         contents
