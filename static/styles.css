@@ -1,126 +1,126 @@
+/* Global Styles */
 body {
     padding: 20px;
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    background: linear-gradient(to right, #ff9a9e, #fad0c4);
+    margin: 0;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    background: linear-gradient(135deg, #f5a623, #f7e1a0);
     color: #333;
-    animation: backgroundAnimation 10s infinite alternate-reverse;
-}
-
-.header-container, .nav-container, section {
+    animation: gradientBackground 5s infinite alternate;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-areas: "header header" "nav nav" "main main";
     gap: 10px;
-    padding: 20px;
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, background 0.3s ease;
 }
 
-.header-container:hover, .nav-container:hover, section:hover {
-    transform: scale(1.02) rotate(2deg);
-    background: rgba(255, 255, 255, 1);
+@keyframes gradientBackground {
+    0% { background-color: #f5a623; }
+    100% { background-color: #f7e1a0; }
 }
 
-h1, h2, h3 {
-    font-family: 'Fredoka One', cursive;
-    text-shadow: 2px 2px #ff67d8;
+/* Header Styles */
+.header-container {
+    grid-area: header;
+    animation: slideIn 1s ease-out;
+}
+
+.header {
+    font-size: 2.5em;
+    text-align: center;
+    color: #fff;
+    text-shadow: 2px 2px 4px #ff0000;
+    letter-spacing: 2px;
+    transform: perspective(300px) rotateX(10deg);
+}
+
+.sub-header {
+    font-size: 1.2em;
+    text-align: center;
+    color: #008080;
+    opacity: 0.8;
+}
+
+/* Navigation Styles */
+.nav-container {
+    grid-area: nav;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    padding: 10px 0;
 }
 
 .nav-link {
-    font-family: 'Indie Flower', cursive;
+    margin: 0 15px;
     text-decoration: none;
-    padding: 10px 20px;
-    color: #fff;
-    background-color: #6a11cb;
-    border-radius: 25px;
-    transition: background-color 0.5s ease-in-out;
+    font-size: 1.2em;
+    color: #f5a623;
+    transition: color 0.3s, transform 0.3s;
 }
 
 .nav-link:hover {
-    background-color: #2575fc;
-    mix-blend-mode: screen;
-    transform: translateY(-5px) rotate(3deg);
+    color: #fff;
+    text-shadow: 0 0 5px #00f;
+    transform: scale(1.1) rotate(-5deg);
 }
 
-.unplayed-song, .song, .user, .top-song, .song-header {
-    background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
-    padding: 15px;
-    border-radius: 20px;
-    box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.5), 0 8px 16px 0 rgba(0, 0, 0, 0.1);
-    animation: borderAnimation 3s infinite alternate-reverse;
+/* Section Styles */
+.unplayed-songs, .songs, .users, .top-songs {
+    grid-area: main;
+    margin: 20px 0;
+    padding: 20px;
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 2s ease-in-out;
 }
 
-.unplayed-song:hover, .song:hover, .user:hover, .top-song:hover, .song-header:hover {
-    border-image: linear-gradient(45deg, #f3ec78, #af4261) 1;
-    transform: rotate(-1deg) scale(1.05);
-}
-
-nav a {
-    animation: linkAnimation 5s infinite alternate;
-}
-
-@keyframes backgroundAnimation {
-    0% {background: linear-gradient(to right, #ff9a9e, #fdcbf1);}
-    100% {background: linear-gradient(to right, #ffdde1, #fadecc);}
-}
-
-@keyframes borderAnimation {
-    0% {filter: hue-rotate(0deg);}
-    100% {filter: hue-rotate(360deg);}
-}
-
-@keyframes linkAnimation {
-    0%, 100% {text-shadow: 0 0 5px #fdcbf1, 0 0 15px #fdcbf1;}
-    50% {text-shadow: 0 0 20px #ff9a9e, 0 0 30px #ff9a9e;}
+.song, .user, .top-song {
+    margin-bottom: 20px;
+    border-bottom: 2px dashed #f5a623;
+    padding-bottom: 10px;
+    animation: zoomIn 0.5s;
 }
 
 .song-title a {
-    color: #ff6f61;
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-    display: inline-block;
-    font-weight: bold;
+    color: #0066cc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.2s, transform 0.2s;
 }
 
-.song-title a:after {
-    content: '';
-    display: block;
-    position: absolute;
-    left: 0;
-    bottom: 0;
+.song-title a:hover {
+    color: #ff0000;
+    transform: rotate(360deg) scale(1.2);
+    text-shadow: 0 0 10px #f0f;
+}
+
+/* Specific Song Styles */
+.song-id, .song-tags, .song-description, .song-average-score, .song-total-votes, .song-creator {
+    font-variant: small-caps;
+    filter: drop-shadow(2px 2px 2px black);
+}
+
+.song-images img {
     width: 100%;
-    height: 2px;
-    background-color: #fff;
-    transform: scaleX(0);
-    transition: transform 0.3s ease;
-}
-
-.song-title a:hover:after {
-    transform: scaleX(1);
-}
-
-.audio {
-    width: 100%;
-    backdrop-filter: blur(5px);
-}
-
-.video {
     border-radius: 10px;
+    transition: transform 0.5s ease-in-out;
 }
 
-.song-img, .user {
-    mix-blend-mode: multiply;
+.song-images img:hover {
+    transform: scale(1.1) rotate(10deg);
+    filter: brightness(1.2);
 }
 
-figure {
-    perspective: 1000px;
+/* Anims and Effects */
+@keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
-.nav-link:active {
-    transform: scale(0.9);
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Comic+Sans+MS&family=Fredoka+One&family=Indie+Flower&display=swap');
-/* Additional CSS */
+@keyframes zoomIn {
+    from { transform: scale(0.9); }
+    to { transform: scale(1); }
+}
