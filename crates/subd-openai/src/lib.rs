@@ -13,7 +13,9 @@ use serde_json::{json, Value};
 use std::{env, fs::File, io::Write};
 
 pub mod ai_styles;
+pub mod ai_wiki;
 pub mod dalle;
+pub mod utils;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct VisionResponse {

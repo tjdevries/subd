@@ -1,82 +1,81 @@
-// Import necessary libraries
 import * as THREE from 'three';
-import * as d3 from 'd3';
+import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
+console.log('Initializing visualizations...');
+
+// Create a Three.js scene with stars and animations
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const geometry = new THREE.SphereGeometry(0.1, 32, 32);
+const material = new THREE.MeshBasicMaterial({color: 0xffffff});
+const stars = [];
+
+console.log('Creating stars...');
+for (let i = 0; i < 1000; i++) {
+  const star = new THREE.Mesh(geometry, material);
+  star.position.x = THREE.MathUtils.randFloatSpread(200);
+  star.position.y = THREE.MathUtils.randFloatSpread(200);
+  star.position.z = THREE.MathUtils.randFloatSpread(200);
+  scene.add(star);
+  stars.push(star);
+}
+camera.position.z = 5;
+
+function animateStars() {
+  requestAnimationFrame(animateStars);
+
+  stars.forEach((star) => {
+    star.rotation.x += 0.001;
+    star.rotation.y += 0.001;
+  });
+
+  renderer.render(scene, camera);
+}
+animateStars();
+
+console.log('Rendering stars animation...');
+
+// D3.js Example - A spiraling path representing a journey
+d3.select("body").append("svg")
+  .attr("width", window.innerWidth)
+  .attr("height", window.innerHeight)
+  .append("path")
+  .datum(d3.range(0, 10 * Math.PI, Math.PI / 50))
+  .attr("fill", "none")
+  .attr("stroke", "steelblue")
+  .attr("stroke-width", 2)
+  .attr("d", d3.line()
+    .x((d) => window.innerWidth / 2 + d * Math.sin(d))
+    .y((d) => window.innerHeight / 2 + d * Math.cos(d))
+  );
+
+console.log('D3.js journey path created as a spiral..');
+
+// Mermaid.js Example - Journey graph
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM fully loaded and parsed');
+  const graphDefinition = `
+  graph LR;
+    A(Start) --> B{Decision};
+    B -->|Yes| C[Advance];
+    B -->|No| D[Fallback];
+    C --> E{Progress};
+    D --> E;
+    E --> F{End};
+  `;
 
-    // Initialize Mermaid for chart rendering
-    mermaid.initialize({ startOnLoad: true });
-    console.log('Mermaid initialized');
+  console.log('Initializing Mermaid diagram...');
+  const graphContainer = document.createElement('div');
+  graphContainer.classList.add('mermaid');
+  graphContainer.innerHTML = graphDefinition;
+  document.body.appendChild(graphContainer);
 
-    // Create a Three.js scene
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    // Add a spinning cube to the scene
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    camera.position.z = 5;
-
-    const animate = function() {
-        requestAnimationFrame(animate);
-
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-
-        renderer.render(scene, camera);
-    };
-
-    animate();
-    console.log('Three.js scene with spinning cube initialized');
-
-    // Using D3.js to create interactive visualizations
-    const data = [12, 31, 22, 17, 25, 18, 29, 14, 9];
-    const width = 500,
-        height = 500;
-
-    const svg = d3.select('body').append('svg')
-        .attr('width', width)
-        .attr('height', height);
-
-    svg.selectAll('circle')
-        .data(data)
-        .enter()
-        .append('circle')
-        .attr('cx', (d, i) => i * 50 + 25)
-        .attr('cy', height / 2)
-        .attr('r', d => d)
-        .style('fill', 'steelblue');
-
-    console.log('D3.js circles chart created');
-
-    // Mermaid flowchart example
-    const graphDefinition = `
-        graph TD;
-        A[Start] --> B[Do something fun with D3];
-        A --> C[Create a scene with Three.js];
-        C --> D[Spin the 3D Cube];
-        B --> D;
-    `;
-
-    const graphDiv = document.createElement('div');
-    graphDiv.className = 'mermaid';
-    graphDiv.textContent = graphDefinition;
-    document.body.appendChild(graphDiv);
-
-    console.log('Mermaid flowchart added to the DOM');
-
-    mermaid.contentLoaded();
-
-    console.log('Animation and visual effects setup complete.');
+  mermaid.initialize({ startOnLoad: true });
+  console.log('Mermaid graph rendered.');
 });
 
-// "Only D [Instrumental]" - Translates to visual animations and interactions displaying dynamic and rhythmic vibes.
-// This script aims to fill the page with lively animations, interactive charts, and an engaging 3D experience.
+console.log('Visualization complete.');

@@ -258,6 +258,7 @@ async fn parse_command(msg: &UserMessage, pool: &PgPool) -> Result<Command> {
 
         Some("!generate_image") => {
             let current_song = ai_playlist::get_current_song(pool).await?;
+            println!("Generating Image for Song: {}", current_song.song_id);
 
             let splitmsg = msg
                 .contents

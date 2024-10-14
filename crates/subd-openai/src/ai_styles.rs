@@ -1,3 +1,4 @@
+use crate::utils;
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use instruct_macros::InstructMacro;
@@ -95,11 +96,11 @@ pub async fn generate_ai_js(
         get_chat_completion_with_retries(&instructor_client, req, 3).await?;
 
     println!("{:?}", result);
-    match backup_file(destination, &format!("./archive/{}", song_id)) {
+    match utils::backup_file(destination, &format!("./archive/{}", song_id)) {
         Ok(_) => println!("Successfully backed up styles.js file"),
         Err(e) => println!("Failed to backup styles.js file: {}", e),
     };
-    save_content_to_file(&result.javascript, destination)?;
+    utils::save_content_to_file(&result.javascript, destination)?;
     Ok(())
 }
 
@@ -148,11 +149,11 @@ pub async fn generate_ai_css(
 
     // Where should we save the CSS
     // This backup destination is wrong
-    match backup_file(destination, &format!("./archive/{}", song_id)) {
+    match utils::backup_file(destination, &format!("./archive/{}", song_id)) {
         Ok(_) => println!("Successfully backed up CSS file"),
         Err(e) => println!("Failed to backup CSS file: {}", e),
     };
-    save_content_to_file(&result.css, destination)?;
+    utils::save_content_to_file(&result.css, destination)?;
     Ok(())
 }
 
@@ -178,27 +179,6 @@ pub fn html_file_contents(base_path: Option<&str>) -> Result<String> {
         contents.push(' ');
     }
     Ok(contents.trim().to_string())
-}
-
-fn backup_file(src: &str, backup_dir: &str) -> Result<String> {
-    let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
-    let filename = Path::new(src)
-        .file_name()
-        .ok_or_else(|| anyhow!("Invalid source file path"))?
-        .to_string_lossy();
-    let backup_filename = format!("{}/{}_{}", backup_dir, timestamp, filename);
-    fs::create_dir_all(backup_dir)
-        .map_err(|e| anyhow!("Failed to create backup directory: {}", e))?;
-    fs::copy(src, &backup_filename)
-        .map_err(|e| anyhow!("Failed to backup the file: {}", e))?;
-    Ok(backup_filename)
-}
-
-fn save_content_to_file(content: &str, dest: &str) -> Result<()> {
-    let mut file = File::create(dest)
-        .map_err(|e| anyhow!("Failed to create file {}: {}", dest, e))?;
-    file.write_all(content.as_bytes())
-        .map_err(|e| anyhow!("Failed to write to file {}: {}", dest, e))
 }
 
 #[cfg(test)]
