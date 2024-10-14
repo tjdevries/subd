@@ -15,9 +15,6 @@ use rag_toolchain::stores::{EmbeddingStore, PostgresVectorStore};
 use std::fs;
 use std::num::NonZeroU32;
 
-const SYSTEM_MESSAGE: &'static str =
-"You are to give straight forward answers using the supporting information you are provided";
-
 #[tokio::main]
 async fn main() {
     println!("It's time");

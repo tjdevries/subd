@@ -1,66 +1,82 @@
 // Import necessary libraries
 import * as THREE from 'three';
-import * as D3 from 'd3';
+import * as d3 from 'd3';
 import * as mermaid from 'mermaid';
 
-// Initialize Meridian for charts
-mermaid.initialize({ startOnLoad: true });
-console.log('Mermaid.js initialized');
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed');
 
-// Scene setup for three.js animation
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    // Initialize Mermaid for chart rendering
+    mermaid.initialize({ startOnLoad: true });
+    console.log('Mermaid initialized');
 
-// Create a rotating cube
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
-camera.position.z = 5;
+    // Create a Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-// Animating the cube
-console.log('Adding rotation animation to cube');
-function animate() {
-    requestAnimationFrame(animate);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-    renderer.render(scene, camera);
-}
-animate();
+    // Add a spinning cube to the scene
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
 
-// Create random data set for D3 chart
-const data = Array.from({ length: 10 }, () => Math.floor(Math.random() * 100));
+    camera.position.z = 5;
 
-// D3.js bar chart
-console.log('Creating a D3.js bar chart');
-const svg = D3.select("body")
-    .append("svg")
-    .attr("width", 500)
-    .attr("height", 300);
+    const animate = function() {
+        requestAnimationFrame(animate);
 
-svg.selectAll("rect")
-    .data(data)
-    .enter()
-    .append("rect")
-    .attr("x", (d, i) => i * 50)
-    .attr("y", (d) => 300 - d * 3)
-    .attr("width", 40)
-    .attr("height", (d) => d * 3)
-    .attr("fill", "#eb4034");
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
 
-// Log data being used for chart
-console.log('D3 chart data:', data);
+        renderer.render(scene, camera);
+    };
 
-// Mermaid chart (example: flowchart)
-console.log('Creating a mermaid flowchart');
-const chartDefinition = "graph LR\nA[Start] --> B{Is it good?}\nB -->|Yes| C[Proceed]\nB -->|No| D[Go back]";
-mermaid.render('graphDiv', chartDefinition, function(svgCode) {
-    document.getElementById('chart').innerHTML = svgCode;
+    animate();
+    console.log('Three.js scene with spinning cube initialized');
+
+    // Using D3.js to create interactive visualizations
+    const data = [12, 31, 22, 17, 25, 18, 29, 14, 9];
+    const width = 500,
+        height = 500;
+
+    const svg = d3.select('body').append('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    svg.selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('cx', (d, i) => i * 50 + 25)
+        .attr('cy', height / 2)
+        .attr('r', d => d)
+        .style('fill', 'steelblue');
+
+    console.log('D3.js circles chart created');
+
+    // Mermaid flowchart example
+    const graphDefinition = `
+        graph TD;
+        A[Start] --> B[Do something fun with D3];
+        A --> C[Create a scene with Three.js];
+        C --> D[Spin the 3D Cube];
+        B --> D;
+    `;
+
+    const graphDiv = document.createElement('div');
+    graphDiv.className = 'mermaid';
+    graphDiv.textContent = graphDefinition;
+    document.body.appendChild(graphDiv);
+
+    console.log('Mermaid flowchart added to the DOM');
+
+    mermaid.contentLoaded();
+
+    console.log('Animation and visual effects setup complete.');
 });
 
-// Ensure the directory for Mermaid is created in the HTML
-document.body.innerHTML += '<div id="chart"></div>';
-console.log('HTML for Mermaid chart created');
+// "Only D [Instrumental]" - Translates to visual animations and interactions displaying dynamic and rhythmic vibes.
+// This script aims to fill the page with lively animations, interactive charts, and an engaging 3D experience.

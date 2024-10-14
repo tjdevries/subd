@@ -119,24 +119,21 @@ async fn main() -> Result<()> {
         .await?;
     }
 
-    event_loop.run().await?;
-    Ok(())
+    event_loop.run().await
 }
 
 fn create_audio_stream(
 ) -> Result<(rodio::OutputStream, rodio::OutputStreamHandle)> {
-    match env::consts::OS {
-        "macos" => rodio::OutputStream::try_default().map_err(Into::into),
-        _ => {
-            let fe = subd_utils::redirect_stderr()?;
-            let fo = subd_utils::redirect_stdout()?;
-            let result = subd_audio::get_output_stream("pulse").map_err(|_| {
-                anyhow::anyhow!("Failed to get audio output stream")
-            });
-            subd_utils::restore_stderr(fe);
-            subd_utils::restore_stdout(fo);
-            result
-        }
+    if env::consts::OS == "macos" {
+        rodio::OutputStream::try_default().map_err(Into::into)
+    } else {
+        let fe = subd_utils::redirect_stderr()?;
+        let fo = subd_utils::redirect_stdout()?;
+        let result = subd_audio::get_output_stream("pulse")
+            .map_err(|_| anyhow::anyhow!("Failed to get audio output stream"));
+        subd_utils::restore_stderr(fe);
+        subd_utils::restore_stdout(fo);
+        result
     }
 }
 
