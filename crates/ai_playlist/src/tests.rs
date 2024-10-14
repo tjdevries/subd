@@ -123,8 +123,19 @@ async fn test_ai_song_creation() {
 
 // Helper Methods =======================================================
 
-// Deletes all songs and playlist entries. Use with caution.
 async fn delete_all_ai_songs_and_playlist(pool: &PgPool) -> Result<()> {
+    let db_name = sqlx::query!("SELECT current_database()")
+        .fetch_one(pool)
+        .await?
+        .current_database
+        .unwrap_or_default();
+
+    if !db_name.starts_with("test_") {
+        return Err(anyhow::anyhow!(
+            "This operation is only allowed on test databases"
+        ));
+    }
+
     sqlx::query!("DELETE FROM ai_song_playlist")
         .execute(pool)
         .await?;

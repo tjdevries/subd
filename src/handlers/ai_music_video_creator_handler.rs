@@ -151,7 +151,13 @@ pub async fn handle_requests(
             let filename =
                 ai_music_videos::create_music_video_images_and_video(pool, id)
                     .await?;
-            update_obs_source(obs_client, &filename).await
+
+            let scene = "AIFriends";
+            let source = "music-video";
+            obs_service::obs::update_obs_source(
+                obs_client, &filename, scene, source,
+            )
+            .await
         }
         Command::CreateMusicVideoImages { id, count } => {
             for index in 0..count {
@@ -182,41 +188,6 @@ pub async fn handle_requests(
             Ok(())
         }
     }
-}
-
-async fn update_obs_source(
-    obs_client: &OBSClient,
-    filename: &str,
-) -> Result<()> {
-    let path = std::fs::canonicalize(filename)?;
-    let full_path = path
-        .into_os_string()
-        .into_string()
-        .map_err(|_| anyhow!("Failed to convert path to string"))?;
-
-    let source = "music-video".to_string();
-    let _ = obs_service::obs_source::set_enabled(
-        "AIFriends",
-        &source,
-        false,
-        obs_client,
-    )
-    .await;
-    let _ = obs_service::obs_source::update_video_source(
-        obs_client,
-        source.clone(),
-        full_path,
-    )
-    .await;
-    let _ = obs_service::obs_source::set_enabled(
-        "AIFriends",
-        &source,
-        true,
-        obs_client,
-    )
-    .await;
-
-    obs_service::obs_scenes::change_scene(obs_client, "Movie Trailer").await
 }
 
 /// Parses a user's message into a `Command`.

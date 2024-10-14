@@ -85,9 +85,19 @@ async fn sync_lips_and_update(
     let video_bytes =
         sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
 
+    // We need to save all videos:
+    //   What do name them, how do we store the metadata
+    //   We could use a postgresql table
+    //   ai_friends_videos
+    //     - ID UUID
+    //     - friend_name TEXT
+    //     - content TEXT
+    //     - filename
+    //     - store the length of the sound file
     // We only save one version of the ai_friend lip-sync
     // We are saving he video
-    let video_path = format!("./ai_assets/{}.mp4", friend_name);
+    let timestamp = Utc::now().timestamp();
+    let video_path = format!("./ai_assets/{}-{}.mp4", friend_name, timestamp);
     match tokio::fs::write(&video_path, &video_bytes).await {
         Ok(_) => {}
         Err(e) => {
@@ -97,11 +107,19 @@ async fn sync_lips_and_update(
     }
     println!("Video saved to {}", video_path);
 
-    println!("Triggering OBS Source: {}", friend_name);
-    // This code is in the main section
-    // so not usable here
+    let source = friend_name;
     let scene = "AIFriends";
-    // let source = friend_name;
+
+    let intro_video_path = format!("./ai_assets/{}_intro.mp4", friend_name);
+    let res = obs_service::obs::update_obs_source(
+        obs_client,
+        &intro_video_path,
+        scene,
+        source,
+    )
+    .await?;
+    println!("Triggering OBS Source: {}", friend_name);
+    let scene = "AIFriends";
     let _ = obs_service::obs_source::set_enabled(
         scene,
         friend_name,
@@ -110,16 +128,29 @@ async fn sync_lips_and_update(
     )
     .await;
 
+    // We need to enable first
+    sleep(Duration::from_secs(5)).await;
+
+    let _res = obs_service::obs::update_obs_source(
+        obs_client,
+        &video_path,
+        scene,
+        source,
+    )
+    .await?;
+
     // Not sure if I have to wait ofr how long to wait
     sleep(Duration::from_millis(100)).await;
 
-    let _ = obs_service::obs_source::set_enabled(
-        scene,
-        friend_name,
-        true,
-        obs_client,
-    )
-    .await;
+    // // We need to trigger a move here
+    // // we need to play the intro first
+    // let _ = obs_service::obs_source::set_enabled(
+    //     scene,
+    //     friend_name,
+    //     true,
+    //     obs_client,
+    // )
+    // .await;
 
     Ok(())
 }
