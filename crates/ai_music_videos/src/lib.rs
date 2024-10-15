@@ -240,10 +240,10 @@ async fn create_image_from_prompt(
 
     let folder = format!("./tmp/music_videos/{}", id);
     let prompt = format!("{} {}", ai_song.title, prompt);
-    let images = fal_ai::create_from_fal_api_return_filename(
+    let images = fal_ai::create_and_save_image(
         &prompt,
+        Some(&index.to_string()),
         Some(&folder.clone()),
-        &index.to_string(),
     )
     .await?;
     let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;
@@ -272,10 +272,10 @@ async fn generate_runway_video_and_image(
     index: usize,
 ) -> Result<String> {
     let folder = format!("./tmp/music_videos/{}", id);
-    let images = fal_ai::create_from_fal_api_return_filename(
+    let images = fal_ai::create_and_save_image(
         image_prompt,
+        Some(&index.to_string()),
         Some(&folder.clone()),
-        &index.to_string(),
     )
     .await?;
     let first_image = images.first().ok_or_else(|| anyhow!("No Image"))?;

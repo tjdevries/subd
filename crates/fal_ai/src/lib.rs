@@ -23,10 +23,34 @@ pub async fn create_turbo_image(prompt: &str) -> Result<Vec<String>> {
 }
 
 /// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
-pub async fn create_from_fal_api_return_filename(
+pub async fn create_and_save_image_for_model(
     prompt: &str,
+    model: &str,
+) -> Result<Vec<String>> {
+    let fal_service = fal_service::FalService::new();
+    // let model = "fal-ai/fast-sdxl";
+    // let model = "fal-ai/stable-cascade";
+    // let model = "fal-ai/flux/dev";
+
+    let save_dir = "./tmp/fal_images";
+    let files = fal_service
+        .create_images_from_model_and_save(
+            model,
+            prompt,
+            "landscape_16_9",
+            save_dir,
+            None,
+            None,
+        )
+        .await?;
+    Ok(files)
+}
+
+/// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
+pub async fn create_and_save_image(
+    prompt: &str,
+    filename: Option<&str>,
     save_dir: Option<&str>,
-    filename: &str,
 ) -> Result<Vec<String>> {
     let fal_service = fal_service::FalService::new();
     // let model = "fal-ai/fast-sdxl";
@@ -41,7 +65,7 @@ pub async fn create_from_fal_api_return_filename(
             "landscape_16_9",
             dir,
             None,
-            Some(filename),
+            filename,
         )
         .await?;
     Ok(files)

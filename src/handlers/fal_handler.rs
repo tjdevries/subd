@@ -120,10 +120,10 @@ pub async fn handle_fal_commands(
                 // This seems wrong
                 let folder = format!("./tmp/music_videos/{}", "current");
                 let filename = format!("{}", Utc::now().timestamp());
-                let _ = fal_ai::create_from_fal_api_return_filename(
+                let _ = fal_ai::create_and_save_image(
                     &final_prompt,
+                    Some(&filename),
                     None,
-                    &filename,
                 )
                 .await;
             }
@@ -139,15 +139,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_fal_hit() {
-        let final_prompt = "Fun Hands";
-        let folder = format!("./tmp/music_videos/{}", "current");
-        let filename = format!("{}", Utc::now().timestamp());
-        let _ = fal_ai::create_from_fal_api_return_filename(
-            &final_prompt,
-            None,
-            &filename,
-        )
-        .await;
+        let prompt =
+            "Realistic Walugi in a dark Fantasy background, long moustache";
+        // let prompt = "Realistic Bowser in a dark Fantasy background";
+        //let prompt = "Waluigi is portrayed as a mischievous villain and an exaggerated mirror version of Luigi. He bears a large pink nose and crooked moustache. His stature is tall and his frame thin and lanky. He is the rival of Luigi and is the same age. His Super Smash Bros. Melee trophy describes him as hardworking by stating that he spends his time training and perfecting his skills in order to antagonise the Mario brothers. Although he has a scrawny physique, Waluigi is technically skilled and athletic, but sometimes cheats in-game. His design comprises black overalls, a purple long-sleeved shirt, a purple hat with a yellow \"Γ\" symbol";
+
+        // let prompt = "Anime Girl";
+        // let prompt = "newest, extremely aesthetic, best quality, 1girl, solo, pink hair, blue eyes, long hair, looking at viewer, smile, black background, holding a sign, the text on the sign says 'Hello'";
+
+        // This works and is hilarious
+        let model = "fal-ai/aura-flow";
+
+        // anime model
+        // real bad for some reason if not anime???
+        // soooo bad
+        // let model = "fal-ai/stable-cascade/sote-diffusion";
+
+        // This is good, real good
+        // not always realistic
+        let model = "fal-ai/flux-realism";
+
+        let model = "fal-ai/realistic-vision";
+        let _ = fal_ai::create_and_save_image_for_model(&prompt, model).await;
         assert!(false);
         // Ok now
     }
