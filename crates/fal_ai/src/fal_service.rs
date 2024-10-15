@@ -113,6 +113,45 @@ impl FalService {
         Ok(filename)
     }
 
+    pub async fn create_image_from_image(
+        &self,
+        prompt: &str,
+        image_file_path: &str,
+        save_dir: &str,
+    ) -> Result<String> {
+        println!("CREATE IMAGE FROM IMAGE");
+        let model = "fal-ai/flux/dev/image-to-image";
+        println!("Encoding image_file_path: {}", image_file_path);
+        let image_data_uri =
+            subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
+
+        // 0.95 is the default
+        // more strength, closer to the original image
+        let parameters = serde_json::json!({
+            "image_url": image_data_uri,
+            "prompt": prompt,
+            "strength": 0.89,
+        });
+
+        println!("Running model and getting JSON");
+        let json = self.run_model_and_get_json(model, parameters).await?;
+
+        println!("Create Image From Image Raw JSON: {:?}", json);
+
+        let image_url = json["images"][0]["url"]
+            .as_str()
+            .ok_or_else(|| anyhow!("Failed to extract image URL from JSON"))?;
+
+        let image_bytes =
+            subd_image_utils::download_image_to_vec(image_url, None).await?;
+
+        let timestamp = Utc::now().timestamp();
+        let filename = format!("{}/{}.mp4", save_dir, timestamp);
+        self.save_raw_bytes(&filename, &image_bytes).await?;
+
+        Ok(filename)
+    }
+
     pub async fn create_video_from_image(
         &self,
         image_file_path: &str,
@@ -221,6 +260,7 @@ impl FalService {
         model: &str,
         parameters: serde_json::Value,
     ) -> Result<serde_json::Value> {
+        println!("Running Model: {}", model);
         let response =
             self.client.run(model, parameters).await.map_err(|e| {
                 anyhow!("Failed to run model '{}': {:?}", model, e)
@@ -271,5 +311,28 @@ impl FalService {
         response.text().await.with_context(|| {
             format!("Error getting text from model '{}'", model)
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_create_image_from_image() {
+        let fal_service = FalService::new();
+        let prompt = "Dark Fantasy Anime";
+        // let prompt = "Dark Fantasy";
+        // let image_file_path = "./tmp/fal_images/1728970948.png";
+        let image_file_path = "/Users/beginbot/code/subd/tmp/cool_pepe.png";
+        //let image_file_path = "/Users/beginbot/code/subd/tmp/pepe_wizard.jpg";
+        let save_dir = "./tmp";
+        fal_service
+            .create_image_from_image(prompt, image_file_path, save_dir)
+            .await
+            .unwrap();
+        // assert!(false);
+        // create_image_from_image()
+        // Ok
     }
 }

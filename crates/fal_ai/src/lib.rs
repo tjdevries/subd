@@ -71,23 +71,23 @@ pub async fn create_and_save_image(
     Ok(files)
 }
 
-/// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
-pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
-    let fal_service = fal_service::FalService::new();
-    // let model = "fal-ai/fast-sdxl";
-    let model = "fal-ai/stable-cascade";
-    let save_dir = "./tmp/fal_images";
-    fal_service
-        .create_images_from_model_and_save(
-            model,
-            prompt,
-            "landscape_16_9",
-            save_dir,
-            Some("./tmp/dalle-1.png"),
-            None,
-        )
-        .await
-}
+///// Creates a fast SD image using the "fal-ai/fast-sdxl" model.
+//pub async fn create_from_fal_api(prompt: &str) -> Result<Vec<String>> {
+//    let fal_service = fal_service::FalService::new();
+//    // let model = "fal-ai/fast-sdxl";
+//    let model = "fal-ai/stable-cascade";
+//    let save_dir = "./tmp/fal_images";
+//    fal_service
+//        .create_images_from_model_and_save(
+//            model,
+//            prompt,
+//            "landscape_16_9",
+//            save_dir,
+//            Some("./tmp/dalle-1.png"),
+//            None,
+//        )
+//        .await
+//}
 
 /// Creates an image for a music video using the specified id, prompt, and index.
 pub async fn create_image_for_music_video(
@@ -168,12 +168,12 @@ mod tests {
         assert!(true);
     }
 
-    #[tokio::test]
-    #[tag(fal)]
-    async fn test_create_image_from_fal_api() {
-        let prompt = "fancy dog";
-        let res = create_from_fal_api(prompt).await.unwrap();
-        dbg!(res);
-        assert!(true);
-    }
+    //#[tokio::test]
+    //#[tag(fal)]
+    //async fn test_create_image_from_fal_api() {
+    //    let prompt = "fancy dog";
+    //    let res = create_from_fal_api(prompt).await.unwrap();
+    //    dbg!(res);
+    //    assert!(true);
+    //}
 }
