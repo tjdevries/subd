@@ -181,11 +181,13 @@ impl FalService {
             .map(|s| s.to_string())
             .unwrap_or_else(|| Utc::now().timestamp().to_string());
 
+        // Is there a chance we get multiple media_urls???
+        // Yes if we ask the model to return multiple
         let saved_media = stream::iter(media_urls.into_iter().enumerate())
             .then(move |(i, url)| {
                 let media_type = media_type.clone();
                 let save_path = format!(
-                    "{}/{}_{}.{}",
+                    "{}/{}-{}.{}",
                     save_dir,
                     base_filename,
                     i,

@@ -1,47 +1,143 @@
-body {margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(145deg, #1a2a6c, #b21f1f, #fdbb2d); animation: background-color 10s infinite alternate;}
+@import url('https://fonts.googleapis.com/css2?family=Just+Another+Hand&family=Press+Start+2P&family=Quicksand:wght@300;500;700&family=Roboto+Mono:wght@300;400;700&display=swap');
 
-@keyframes background-color {0% {background: #1a1a1a;} 100% {background: #333333;}}
+body {
+    font-family: 'Quicksand', sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    padding: 20px;
+    color: #ffffff;
+    transition: background 0.5s ease;
+}
 
-header {text-align: center; color: #ffffff; text-shadow: 1px 1px 2px #000000;}
+body:hover {
+    background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
+}
 
-h1.header a {color: #f7b733; text-decoration: none; transition: color 0.5s ease-in-out;}
-h1.header a:hover {color: #fc4a1a; transform: rotate(360deg);}
+.header-container {
+    text-align: center;
+    padding: 30px 0;
+    animation: slideIn 2s ease-in-out;
+}
 
-nav {display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;}
-nav a.nav-link {color: #ffffff; text-decoration: none; font-size: 1.1em; padding: 10px; transition: background-color 0.3s, transform 0.5s, box-shadow 0.6s;}
-nav a.nav-link:hover {background-color: #fdbb2d; transform: scale(1.1); box-shadow: 0px 0px 10px #f7b733;}
+.header {
+    font-family: 'Just Another Hand', cursive;
+    font-size: 3em;
+    animation: glow 2s infinite alternate;
+}
 
-section.songs, section.users, section.top-songs, section.unplayed-songs {background: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 20px 0; padding: 20px; backdrop-filter: blur(5px); box-shadow: 0 4px 8px rgba(0,0,0,0.2);}
+.sub-header {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 1.2em;
+    opacity: 0.7;
+}
 
-h2 {font-size: 2em; margin-bottom: 10px; color: #ffffff; text-shadow: 1px 1px 2px #000000;}
+@keyframes glow {
+    from {
+        text-shadow: 0 0 10px #ffffff, 0 0 20px #ff80ff, 0 0 30px #ff80ff, 0 0 40px #ff80ff, 0 0 70px #ff80ff, 0 0 80px #ff80ff, 0 0 100px #ff80ff, 0 0 150px #ff80ff;
+    }
+    to {
+        text-shadow: 0 0 20px #ffffff, 0 0 30px #ff80ff, 0 0 40px #ff80ff, 0 0 50px #ff80ff, 0 0 80px #ff80ff, 0 0 90px #ff80ff, 0 0 110px #ff80ff, 0 0 160px #ff80ff;
+    }
+}
 
-article.song, article.user, article.unplayed-song, article.top-song {padding: 15px; border-bottom: 1px solid #777777; transition: background-color 0.3s, transform 0.3s;}
-article.song:hover, article.user:hover, article.unplayed-song:hover, article.top-song:hover {background-color: #fdbb2d; transform: translateY(-5px);}
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+    background-color: rgba(15, 32, 39, 0.8);
+    backdrop-filter: blur(5px);
+}
 
-.song-title {font-size: 1.4em; color: #ffffff;} .song-title a {text-decoration: none; color: #00d2ff; transition: color 0.3s;}
-.song-title a:hover {color: #3a7bd5; text-shadow: 1px 1px 2px #ff9a9e;}
+.nav-link {
+    color: #ffffff;
+    text-transform: uppercase;
+    font-weight: bold;
+    position: relative;
+    font-family: 'Roboto Mono', monospace;
+    transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
 
-.song-audio audio {width: 100%; border-radius: 4px;}
+.nav-link:hover {
+    color: #ff80ff;
+    transform: rotate(3deg);
+    text-shadow: 0 0 10px #ff80ff;
+}
 
-.song-images img {max-width: 100%; height: auto; border-radius: 4px; transition: transform 0.3s;}
-.song-images img:hover {transform: scale(1.05);}
+.unplayed-songs, .songs, .users, .top-songs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
 
-.image-voting, .image-votes {font-variant: small-caps; color: #e4e4e4;}
+.unplayed-song, .song, .user, .top-song {
+    background-color: #203a43;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 
-.song-lyrics p {font-size: 1.1em; line-height: 1.6; color: #fbf7ff; animation-duration: 4s; animation-fill-mode: forwards;}
+.unplayed-song:hover, .song:hover, .user:hover, .top-song:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-10px);
+}
 
-@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+.song-title {
+    font-size: 1.5em;
+    color: #ff80ff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
 
-.container {display: grid; place-items: center; grid-template-areas:"header nav content";}
-.container header {grid-area: header;}
-.container nav {grid-area: nav;}
-.container .content {grid-area: content;}
+.song-title:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
 
-figure {margin: 0; transition: filter 0.3s, background-clip 0.3s;}
-figure:hover {filter: brightness(1.2); background-clip: content-box;}
+.song-audio audio {
+    width: 100%;
+    border: 2px solid #ff80ff;
+}
 
-.footer {text-align: center; color: #b3b3b3; padding: 5px; font-size: 0.8em;}
+.song-images img, .song-videos video {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
+    transition: transform 0.5s;
+}
 
-.blend-mode {background: url('texture.jpg'); mix-blend-mode: multiply; border: 1px solid #3a3a3a;}
+.song-images img:hover, .song-videos video:hover {
+    transform: scale(1.05);
+}
+
+.song-lyrics {
+    font-family: 'Just Another Hand', cursive;
+    font-size: 1.2em;
+    color: #ffffff;
+    line-height: 1.5;
+}
+
+.song-lyrics p {
+    margin: 0 0 10px;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes rotate360 {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

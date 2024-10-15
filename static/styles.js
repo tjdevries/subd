@@ -1,96 +1,86 @@
-// File: /static/styles.js
-
 import * as THREE from 'three';
 import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-// Initialize mermaid
-mermaid.initialize({ startOnLoad: true });
-console.log('Mermaid initialized');
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Page loaded, setting up animations and charts.');
 
-// Function for animated background using Three.js
-function initThreeJSBackground() {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
+  // THREE.js setup for a 3D scene featuring an owl and a raven
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+  console.log('Three.js renderer set up.');
 
-    const geometry = new THREE.SphereGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0xfffff, wireframe: true });
-    const sphere = new THREE.Mesh(geometry, material);
-    scene.add(sphere);
+  // Add lighting
+  const darkNight = new THREE.AmbientLight(0x404040); // soft white light
+  const moonLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  darkNight.position.set(10, 10, 10).normalize();
+  scene.add(darkNight);
+  scene.add(moonLight);
 
-    camera.position.z = 5;
+  let owl, raven;
+  // Owl
+  owl = new THREE.Mesh(
+    new THREE.ConeGeometry(5, 20, 32),
+    new THREE.MeshBasicMaterial({color: 0xffff00})
+  );
+  owl.position.x = -10;
+  scene.add(owl);
 
-    function animate() {
-        requestAnimationFrame(animate);
+  // Raven
+  raven = new THREE.Mesh(
+    new THREE.BoxGeometry(),
+    new THREE.MeshBasicMaterial({color: 0x000000})
+  );
+  raven.position.x = 10;
+  scene.add(raven);
 
-        sphere.rotation.x += 0.01;
-        sphere.rotation.y += 0.01;
+  console.log('Owl and Raven meshes added to scene.');
 
-        renderer.render(scene, camera);
-    }
+  camera.position.z = 50;
 
-    animate();
-    console.log('Three.js background animation initialized');
-}
+  function animate() {
+    requestAnimationFrame(animate);
 
-initThreeJSBackground();
+    // Animating the owl and raven movement akin to their nocturnal brawl
+    owl.rotation.x += 0.01;
+    owl.rotation.y += 0.01;
 
-// Function for D3 chart
-function initD3Chart() {
-    const data = [30, 86, 168, 281, 303, 365];
-    const width = 420;
-    const barHeight = 20;
+    raven.rotation.y += 0.02;
+    raven.rotation.z += 0.02;
 
-    const chart = D3.select("body")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", barHeight * data.length);
+    renderer.render(scene, camera);
+  }
 
-    const bar = chart.selectAll("g")
-        .data(data)
-        .enter().append("g")
-        .attr("transform", (d, i) => "translate(0," + i * barHeight + ")");
+  animate();
 
-    bar.append("rect")
-        .attr("width", d => d)
-        .attr("height", barHeight - 1);
+  console.log('Animation loop started.');
 
-    bar.append("text")
-        .attr("x", d => d - 3)
-        .attr("y", barHeight / 2)
-        .attr("dy", ".35em")
-        .text(d => d);
+  // D3.js for dynamic background animations
+  const svg = D3.select('body').append('svg').attr('width', window.innerWidth).attr('height', window.innerHeight);
+  svg.append('text').text('Feathered Fury').attr('x', 100).attr('y', 100).style('font-size', '40px').style('fill', 'white');
 
-    console.log('D3 chart created');
-}
+  console.log('D3.js text element added.');
 
-initD3Chart();
+  // Mermaid.js for visualizing fight sequences
+  mermaid.initialize({startOnLoad:true});
+  const graphDefinition = `
+    graph TD;
+      A(Owl Scouts) --> B{Moves}
+      B -->|Soft Wing| C(Owl Wisdom)
+      B -->|Sharp Claw| D(Raven Dive)
+      C --> E[Victory]
+      D --> E
+  `;
+  console.log('Mermaid.js chart initialized.');
 
-// Function for animated Mermaid charts
-function initMermaid() {
-    const graphDefinition = `graph TD;
-        A[Start] --> B{Is it?};
-        B -- Yes --> C[OK];
-        C --> D[Rethink];
-        D --> A;
-        B -- No --> E[Lament];
-        E --> F[End];
-    `;
+  mermaid.render('mermaid', graphDefinition, (svgCode) => {
+    document.body.innerHTML += svgCode;
+    console.log('Mermaid graph rendered.');
+  });
 
-    const mermaidDiv = document.createElement('div');
-    mermaidDiv.classList.add('mermaid');
-    mermaidDiv.innerHTML = graphDefinition;
-    document.body.appendChild(mermaidDiv);
-
-    mermaid.init(undefined, mermaidDiv);
-    console.log('Mermaid chart initialized');
-}
-
-initMermaid();
-
-// Export the JavaScript as a module
-console.log('JavaScript animation and charts setup completed');
+  console.log('All scripts executed.');
+});

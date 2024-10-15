@@ -240,6 +240,8 @@ async fn create_image_from_prompt(
 
     let folder = format!("./tmp/music_videos/{}", id);
     let prompt = format!("{} {}", ai_song.title, prompt);
+
+    println!("Calling create_and_save_image w/ {}", index);
     let images = fal_ai::create_and_save_image(
         &prompt,
         Some(&index.to_string()),

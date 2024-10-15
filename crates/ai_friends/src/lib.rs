@@ -241,9 +241,10 @@ mod tests {
     use super::*;
     use test_tag::tag;
 
+    #[ignore]
     #[tokio::test]
     #[tag(fal)]
-    async fn test_sitcom() {
+    async fn test_sitcom_intro() {
         let obs_client = obs_service::obs::create_obs_client().await.unwrap();
 
         let source = "melkey";
@@ -267,5 +268,50 @@ mod tests {
         )
         .await;
         println!("Result: {:?}", res);
+    }
+
+    #[tokio::test]
+    #[tag(fal)]
+    async fn test_sitcom() {
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
+        let friend_name = "teej";
+
+        let fal_image_file_path = "/home/begin/code/subd/archive/teej_5.png";
+        let fal_audio_file_path =
+            "/home/begin/code/subd/ai_assets/teej_intro.mp3";
+        let video_bytes =
+            sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
+                .await
+                .unwrap();
+
+        let video_path =
+            format!("./ai_assets/new_{}_{}.mp4", friend_name, "intro");
+        match tokio::fs::write(&video_path, &video_bytes).await {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Error writing video: {:?}", e);
+            }
+        };
+        // let source = "melkey";
+        // let scene = "AIFriends";
+        //
+        // let video = "melkey-1728945940.mp4";
+        // let video_path = format!("/home/begin/code/subd/ai_assets/{}", video);
+        // println!("Triggering Update");
+        //
+        // let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+        //     .expect("Failed to get audio output stream");
+        // let sink = rodio::Sink::try_new(&stream_handle)
+        //     .map_err(|e| anyhow::anyhow!("Failed to create sink: {}", e))
+        //     .unwrap();
+        // let res = trigger_friend_intro_and_answer(
+        //     &obs_client,
+        //     &sink,
+        //     scene,
+        //     source,
+        //     &video_path,
+        // )
+        // .await;
+        // println!("Result: {:?}", res);
     }
 }
