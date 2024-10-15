@@ -29,6 +29,7 @@ pub async fn trigger_ai_friend(
 
     match sync_lips_and_update(
         obs_client,
+        twitch_client,
         sink,
         image_file_path,
         local_audio_path,
@@ -85,6 +86,7 @@ pub async fn sync_lips_to_voice(
 
 async fn sync_lips_and_update(
     obs_client: &OBSClient,
+    twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     sink: &Sink,
     fal_image_file_path: &str,
     fal_audio_file_path: &str,
@@ -95,6 +97,7 @@ async fn sync_lips_and_update(
     let video_bytes =
         sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
 
+    let _ = send_message(twitch_client, "!pause").await;
     // We need to save all videos:
     //   What do name them, how do we store the metadata
     //   We could use a postgresql table
