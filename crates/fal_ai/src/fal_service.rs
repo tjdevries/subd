@@ -29,7 +29,7 @@ impl FalService {
         }
     }
 
-    pub async fn create_image(
+    pub async fn create_images_from_model_and_save(
         &self,
         model: &str,
         prompt: &str,
@@ -42,32 +42,40 @@ impl FalService {
             "prompt": prompt,
             "image_size": image_size,
         });
+        let raw_json = self.run_model(model, parameters).await?;
 
-        let raw_json =
-            self.run_model_and_get_raw_json(model, parameters).await?;
-
+        // Use the passed in filename
+        // or use a timestamp as the file name
         let filename = match filename {
             Some(f) => f.to_string(),
             None => {
                 format!("{}", Utc::now().timestamp())
             }
         };
-        let json_save_path = format!("{}/{}.json", save_dir, filename);
 
+        // Use the filename and save_dir to determine
+        // where to save the JSON
+        let json_save_path = format!("{}/{}.json", save_dir, filename);
         println!("Saving JSON to: {}", json_save_path);
+
+        // Save the JSON response
         self.save_raw_json(&json_save_path, &raw_json).await?;
 
-        let file_responses =
-            self.process_images(&raw_json, save_dir, &filename).await?;
+        // Process the JSON and extract out file_responses
+        let file_responses = self
+            .parse_json_and_download_images(&raw_json, save_dir, &filename)
+            .await?;
 
-        // TODO: Consider improving this
-        // while only handle the first file
+        // TODO: Consider improving this, since we are only handling the first file
+        // This saves the image downloaded from previous call
+        // to an extra path to be referenced by OBS
         if let Some(extra_path) = obs_background_image_path {
             println!("Saving Extra Image to: {}", extra_path);
             self.save_raw_bytes(extra_path, &file_responses[0].image_bytes)
                 .await?;
         }
 
+        // Collect all the images paths and return
         let files = file_responses.into_iter().map(|m| m.image_path).collect();
 
         Ok(files)
@@ -160,7 +168,7 @@ impl FalService {
             .with_context(|| format!("Failed to save bytes to '{}'", path))
     }
 
-    async fn process_images(
+    async fn parse_json_and_download_images(
         &self,
         raw_json: &[u8],
         save_dir: &str,
@@ -227,7 +235,7 @@ impl FalService {
             .context("Failed to parse response body into JSON")
     }
 
-    async fn run_model_and_get_raw_json(
+    async fn run_model(
         &self,
         model: &str,
         parameters: serde_json::Value,

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use chrono::Utc;
 use events::EventHandler;
 use fal_ai;
 use obws::Client as OBSClient;
@@ -114,11 +115,40 @@ pub async fn handle_fal_commands(
                 println!("Creating image for prompt: {}", final_prompt);
 
                 // TODO: Can we use another model here???
-                fal_ai::create_turbo_image(&final_prompt).await?;
-                // fal_ai::create_fast_sd_image(final_prompt).await?;
+                // fal_ai::create_turbo_image(&final_prompt).await?;
+
+                // This seems wrong
+                let folder = format!("./tmp/music_videos/{}", "current");
+                let filename = format!("{}", Utc::now().timestamp());
+                let _ = fal_ai::create_from_fal_api_return_filename(
+                    &final_prompt,
+                    None,
+                    &filename,
+                )
+                .await;
             }
         }
     };
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_fal_hit() {
+        let final_prompt = "Fun Hands";
+        let folder = format!("./tmp/music_videos/{}", "current");
+        let filename = format!("{}", Utc::now().timestamp());
+        let _ = fal_ai::create_from_fal_api_return_filename(
+            &final_prompt,
+            None,
+            &filename,
+        )
+        .await;
+        assert!(false);
+        // Ok now
+    }
 }
