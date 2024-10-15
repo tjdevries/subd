@@ -104,6 +104,8 @@ impl ai_songs::Model {
                 INSERT INTO ai_songs
                 (song_id, title, tags, prompt, username, audio_url, gpt_description_prompt, lyric, downloaded)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (song_id)
+                DO UPDATE SET gpt_description_prompt = $7
                 RETURNING 
                     song_id, 
                     title, 
@@ -245,7 +247,7 @@ pub async fn get_image_votes_or_default_with_extensions(
         GROUP BY image_name
         "#,
         &image_names,
-        &song_id,
+        &song_id
     )
     .fetch_all(pool)
     .await?;

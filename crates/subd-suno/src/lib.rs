@@ -217,6 +217,7 @@ pub async fn download_and_play(
                         downloaded: false,
                     };
 
+                    // We need to be calling an update here
                     // This should be an update
                     // We only need to message if there's an error
                     // We need to handle the error here
