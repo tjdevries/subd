@@ -13,6 +13,7 @@ tokio.workspace = true
 fal_ai = { path = "../fal_ai/" }
 obws = "0.10"
 subd-types = { path = "../subd-types/" }
+subd-audio = { path = "../subd-audio/" }
 twitch_chat = { path = "../twitch_chat/" }
 obs_service = { path = "../obs_service/" }
 subd-image-utils = { path = "../subd-image-utils/" }
@@ -21,3 +22,4 @@ anyhow.workspace = true
 bytes = "1.7.1"
 colored.workspace = true
 test-tag = "0.1.4"
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }

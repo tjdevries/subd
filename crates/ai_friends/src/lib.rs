@@ -3,8 +3,13 @@ use bytes::Bytes;
 use chrono::Utc;
 use colored::Colorize;
 use obws::Client as OBSClient;
+use rodio::*;
+use std::fs::File;
+use std::io::BufReader;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
+// use tokio::fs::File;
+// use tokio::io::BufReader;
 use tokio::time::{sleep, Duration};
 use twitch_chat::client::send_message;
 use twitch_irc::{
@@ -14,6 +19,7 @@ use twitch_irc::{
 pub async fn trigger_ai_friend(
     obs_client: &OBSClient,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    sink: &Sink,
     ai_scene_req: &AiScenesRequest,
     image_file_path: &str,
     local_audio_path: &str,
@@ -23,6 +29,7 @@ pub async fn trigger_ai_friend(
 
     match sync_lips_and_update(
         obs_client,
+        sink,
         image_file_path,
         local_audio_path,
         friend_name,
@@ -78,10 +85,13 @@ pub async fn sync_lips_to_voice(
 
 async fn sync_lips_and_update(
     obs_client: &OBSClient,
+    sink: &Sink,
     fal_image_file_path: &str,
     fal_audio_file_path: &str,
     friend_name: &str,
 ) -> Result<()> {
+    let source = friend_name;
+    let scene = "AIFriends";
     let video_bytes =
         sync_lips_to_voice(fal_image_file_path, fal_audio_file_path).await?;
 
@@ -105,64 +115,95 @@ async fn sync_lips_and_update(
             return Err(anyhow!("Error writing video: {:?}", e));
         }
     }
-    println!("Video saved to {}", video_path);
 
-    let source = friend_name;
-    let scene = "AIFriends";
+    trigger_friend_intro_and_answer(
+        obs_client,
+        sink,
+        scene,
+        source,
+        &video_path,
+    )
+    .await
+}
 
-    let intro_video_path = format!("./ai_assets/{}_intro.mp4", friend_name);
-    let res = obs_service::obs::update_obs_source(
+async fn trigger_friend_intro_and_answer(
+    obs_client: &OBSClient,
+    sink: &Sink,
+    scene: &str,
+    friend_name: &str,
+    video_path: &str,
+) -> Result<()> {
+    // TODO: update this
+    let intro_video_path =
+        format!("/home/begin/code/subd/ai_assets/{}_intro.mp4", friend_name);
+    println!("Upating OBS Source: {}", intro_video_path);
+    let _res = obs_service::obs::update_obs_video_source(
         obs_client,
         &intro_video_path,
         scene,
-        source,
+        friend_name,
     )
     .await?;
+
+    // We need to play applause
+    let local_audio_path = "/home/begin/code/subd/MP3s/sitcom_laugh.mp3";
+    let file = BufReader::new(File::open(local_audio_path)?);
+    sink.append(Decoder::new(BufReader::new(file))?);
+
     println!("Triggering OBS Source: {}", friend_name);
-    let scene = "AIFriends";
     let _ = obs_service::obs_source::set_enabled(
         scene,
-        friend_name,
-        false,
+        &friend_name,
+        true,
         obs_client,
     )
     .await;
 
-    // We need to enable first
+    // Then we need to update the other file
+    // Not sure if I have to wait ofr how long to wait
+    println!("we are sleeping");
     sleep(Duration::from_secs(5)).await;
 
-    let _res = obs_service::obs::update_obs_source(
+    let _res = obs_service::obs::update_obs_video_source(
         obs_client,
-        &video_path,
+        video_path,
         scene,
-        source,
+        friend_name,
     )
     .await?;
-
-    // Not sure if I have to wait ofr how long to wait
-    sleep(Duration::from_millis(100)).await;
-
-    // // We need to trigger a move here
-    // // we need to play the intro first
-    // let _ = obs_service::obs_source::set_enabled(
-    //     scene,
-    //     friend_name,
-    //     true,
-    //     obs_client,
-    // )
-    // .await;
-
     Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
     use test_tag::tag;
 
-    #[test]
+    #[tokio::test]
     #[tag(fal)]
-    fn test_lip_syncing() {
-        // Test here
+    async fn test_sitcom() {
+        let obs_client = obs_service::obs::create_obs_client().await.unwrap();
+
+        let source = "melkey";
+        let scene = "AIFriends";
+
+        let video = "melkey-1728945940.mp4";
+        let video_path = format!("/home/begin/code/subd/ai_assets/{}", video);
+        println!("Triggering Update");
+
+        let (_stream, stream_handle) = subd_audio::get_output_stream("pulse")
+            .expect("Failed to get audio output stream");
+        let sink = rodio::Sink::try_new(&stream_handle)
+            .map_err(|e| anyhow::anyhow!("Failed to create sink: {}", e))
+            .unwrap();
+        let res = trigger_friend_intro_and_answer(
+            &obs_client,
+            &sink,
+            scene,
+            source,
+            &video_path,
+        )
+        .await;
+        println!("Result: {:?}", res);
     }
 }
