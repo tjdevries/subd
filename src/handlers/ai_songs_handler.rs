@@ -265,6 +265,10 @@ async fn handle_info_command(
                 return Ok(());
             }
         };
+        let res =
+            subd_suno::get_audio_information(&format!("{}", song.song_id))
+                .await?;
+        println!("\tSuno Response: {:?}", res);
         let score =
             match ai_songs_vote::get_average_score(pool, song.song_id).await {
                 Ok(ranking) => ranking.avg_score.to_string(),
@@ -421,26 +425,28 @@ async fn handle_play_command(
     let audio_info = subd_suno::get_audio_information(id).await?;
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
+    // We should only be able to play songs that exist in the DB
+    let song = ai_playlist::find_song_by_id(pool, id).await?;
     // We don't know if the song is downloaded here!!!!
     // At this point it should be downloaded I think???
-    let song_id = Uuid::parse_str(&audio_info.id)?;
-    let new_song = ai_playlist::models::ai_songs::Model {
-        song_id,
-        title: audio_info.title,
-        tags: audio_info.metadata.tags,
-        prompt: audio_info.metadata.prompt,
-        username: msg.user_name.clone(),
-        audio_url: audio_info.audio_url,
-        lyric: audio_info.lyric,
-        gpt_description_prompt: audio_info.metadata.gpt_description_prompt,
-        last_updated: Some(created_at),
-        created_at: Some(created_at),
-        // We need to not update this!!!!!
-        downloaded: true,
-    };
+    // let song_id = Uuid::parse_str(&audio_info.id)?;
+    // let new_song = ai_playlist::models::ai_songs::Model {
+    //     song_id,
+    //     title: audio_info.title,
+    //     tags: audio_info.metadata.tags,
+    //     prompt: audio_info.metadata.prompt,
+    //     username: msg.user_name.clone(),
+    //     audio_url: audio_info.audio_url,
+    //     lyric: audio_info.lyric,
+    //     gpt_description_prompt: audio_info.metadata.gpt_description_prompt,
+    //     last_updated: Some(created_at),
+    //     created_at: Some(created_at),
+    //     // We need to not update this!!!!!
+    //     downloaded: true,
+    // };
 
     // Save the song if it doesn't already exist
-    let _ = new_song.save(pool).await;
+    // let _ = new_song.save(pool).await;
 
     // This is all we really need
     // Play the audio

@@ -1,73 +1,83 @@
+// Import required modules
 import * as THREE from 'three';
-import * as D3 from 'd3';
-import * as mermaid from 'mermaid';
+import * as d3 from 'd3';
+import mermaid from 'mermaid';
 
-// Initialize mermaid for rendering markdown-like diagrams as charts
-document.addEventListener('DOMContentLoaded', () => {
-    mermaid.initialize({ startOnLoad: true });
-    console.log('Mermaid initialized for chart rendering.');
-});
+console.log('Initializing Three.js scene...');
 
-// Set up a basic Three.js scene for fun floating 3D objects
-function initializeThreeJSScene() {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.z = 5;
+// THREE.js Initialization
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-    console.log('Three.js renderer has been added to the page.');
+// Create a rotating cube in the scene
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
 
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    console.log('3D cube added to the scene.');
+camera.position.z = 5;
 
-    function animate() {
-        requestAnimationFrame(animate);
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-        renderer.render(scene, camera);
-        console.log('3D cube rotation updated.');
-    }
-    animate();
-}
+const animateThreeJSScene = function () {
+    requestAnimationFrame(animateThreeJSScene);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
+    console.log('Rendering Three.js scene...');
+};
 
-// Create a simple D3 chart for a dynamic visual representation of stats
-function createD3Chart() {
-    const data = [ {{ stats.ai_songs_count }}, {{ stats.ai_votes_count }} ];
-    const svg = D3.select('body').append('svg').attr('width', 300).attr('height', 300);
-    console.log('SVG element created for D3 chart.');
-    
-    svg.selectAll('rect')
-       .data(data)
-       .enter()
-       .append('rect')
-       .attr('x', (d, i) => i * 60)
-       .attr('y', d => 300 - d)
-       .attr('width', 50)
-       .attr('height', d => d)
-       .attr('fill', 'orange');
-    console.log('D3 bar chart rendered with AI stats data.');
-}
+animateThreeJSScene();
 
-// Chart examples using Mermaid syntax
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.mermaid').forEach((element) => {
-        element.innerHTML = `
-            graph TD;
-            A[Start] --> B{Is it?};
-            B -->|Yes| C[Load 3D Scene];
-            B -->|No| D[Load D3 Charts];
-            C --> E[Enjoy Animation];
-            D --> E;
-        `;
-    });
-    console.log('Mermaid charts rendered.');
-});
+console.log('Initializing D3.js chart...');
 
-initializeThreeJSScene();
-createD3Chart();
-console.log('Animation and charts initialized successfully.');
+// D3.js Example: Creating a Fun Bar Chart
+const data = [30, 86, 168, 281, 303, 365];
+const x = d3.scaleLinear()
+    .domain([0, d3.max(data)])
+    .range([0, 500]);
+
+const chart = d3.select("body")
+    .append("svg")
+    .attr("width", 500)
+    .attr("height", 20 * data.length);
+
+const bar = chart.selectAll("g")
+    .data(data)
+    .enter().append("g")
+    .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+bar.append("rect")
+    .attr("width", x)
+    .attr("height", 19);
+
+bar.append("text")
+    .attr("x", d => x(d) - 3)
+    .attr("y", 9.5)
+    .attr("dy", ".35em")
+    .text(d => d);
+
+console.log('D3.js chart created with dynamic data.');
+
+console.log('Initializing Mermaid chart...');
+
+// Mermaid.js Initialization
+mermaid.initialize({startOnLoad:true});
+
+// Create a simple flowchart using Mermaid
+const mermaidCode = `
+  graph TD;
+    A[Get your wig on] --> B[Chillin' out];
+    A --> C[Time to jive];
+    B --> D[Cowabunga ride the waves];
+    C --> D;
+`;
+
+const mermaidElement = document.createElement('div');
+mermaidElement.classList.add('mermaid');
+mermaidElement.innerHTML = mermaidCode;
+document.body.appendChild(mermaidElement);
+
+mermaid.contentLoaded();
+console.log('Mermaid chart rendered.');

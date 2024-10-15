@@ -271,6 +271,7 @@ pub async fn parse_suno_response_download_and_play(
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &sqlx::PgPool,
     tx: &broadcast::Sender<subd_types::Event>,
+    prompt: &str,
     json_response: serde_json::Value,
     index: usize,
     user_name: &str,
@@ -286,6 +287,7 @@ pub async fn parse_suno_response_download_and_play(
     let created_at = sqlx::types::time::OffsetDateTime::now_utc();
     let song_id = Uuid::parse_str(&suno_response.id)?;
 
+    println!("Saving a AI Songs w/ the prompt: {}", prompt.to_string());
     // This should be the builder
     let new_song = ai_playlist::models::ai_songs::Model {
         song_id,
@@ -295,10 +297,7 @@ pub async fn parse_suno_response_download_and_play(
         username: user_name.to_string(),
         audio_url: suno_response.audio_url.to_string(),
         lyric: suno_response.lyric,
-        gpt_description_prompt: suno_response
-            .metadata
-            .gpt_description_prompt
-            .to_string(),
+        gpt_description_prompt: prompt.to_string(),
         last_updated: Some(created_at),
         created_at: Some(created_at),
         downloaded: false,
