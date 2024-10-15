@@ -1,159 +1,47 @@
-body {
-    font-family: 'Alfa Slab One', cursive;
-    font-size: 16px;
-    margin: 20px auto;
-    padding: 10px;
-    background: radial-gradient(circle, #f2f7ff, #c4e0e5);
-    color: #333;
-    display: grid;
-    grid-template-areas: 'header header' 'nav nav' 'main main';
-    row-gap: 20px;
-}
+body {margin: 0; padding: 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(145deg, #1a2a6c, #b21f1f, #fdbb2d); animation: background-color 10s infinite alternate;}
 
-.header-container {
-    grid-area: header;
-    background: linear-gradient(to right, #ffafbd, #ffc3a0);
-    text-align: center;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
+@keyframes background-color {0% {background: #1a1a1a;} 100% {background: #333333;}}
 
-.header-container h1 {
-    font-family: 'Pacifico', cursive;
-    color: #fff;
-    text-shadow: 2px 2px 4px #000;
-}
+header {text-align: center; color: #ffffff; text-shadow: 1px 1px 2px #000000;}
 
-.header-container h2 {
-    font-family: 'Concert One', cursive;
-    color: #fff;
-    font-size: 1.2em;
-}
+h1.header a {color: #f7b733; text-decoration: none; transition: color 0.5s ease-in-out;}
+h1.header a:hover {color: #fc4a1a; transform: rotate(360deg);}
 
-.nav-container {
-    grid-area: nav;
-    display: flex;
-    justify-content: space-around;
-    background: #83a4d4;
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
+nav {display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;}
+nav a.nav-link {color: #ffffff; text-decoration: none; font-size: 1.1em; padding: 10px; transition: background-color 0.3s, transform 0.5s, box-shadow 0.6s;}
+nav a.nav-link:hover {background-color: #fdbb2d; transform: scale(1.1); box-shadow: 0px 0px 10px #f7b733;}
 
-.nav-link {
-    font-family: 'Bebas Neue', cursive;
-    color: #fff;
-    text-transform: uppercase;
-    font-size: 1.1em;
-    transition: transform 0.3s ease, color 0.3s ease;
-    text-decoration: none;
-}
+section.songs, section.users, section.top-songs, section.unplayed-songs {background: rgba(255, 255, 255, 0.1); border-radius: 10px; margin: 20px 0; padding: 20px; backdrop-filter: blur(5px); box-shadow: 0 4px 8px rgba(0,0,0,0.2);}
 
-.nav-link:hover {
-    transform: rotate(360deg);
-    color: #fdeff9;
-}
+h2 {font-size: 2em; margin-bottom: 10px; color: #ffffff; text-shadow: 1px 1px 2px #000000;}
 
-.unplayed-songs,
-.songs,
-.users,
-.top-songs,
-.song  {
-    background: conic-gradient(from 90deg, #ff9a9e, #fad0c4, #fbc2eb);
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 12px;
-    transition: box-shadow 0.3s ease-in-out;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
+article.song, article.user, article.unplayed-song, article.top-song {padding: 15px; border-bottom: 1px solid #777777; transition: background-color 0.3s, transform 0.3s;}
+article.song:hover, article.user:hover, article.unplayed-song:hover, article.top-song:hover {background-color: #fdbb2d; transform: translateY(-5px);}
 
-.unplayed-songs:hover,
-.songs:hover,
-.users:hover,
-.top-songs:hover,
-.song:hover {
-    box-shadow: 0 8px 12px rgba(0,0,0,0.2);
-}
+.song-title {font-size: 1.4em; color: #ffffff;} .song-title a {text-decoration: none; color: #00d2ff; transition: color 0.3s;}
+.song-title a:hover {color: #3a7bd5; text-shadow: 1px 1px 2px #ff9a9e;}
 
-.unplayed-song, .song {
-    position: relative;
-    padding: 10px;
-}
+.song-audio audio {width: 100%; border-radius: 4px;}
 
-.song-title {
-    font-family: 'Bangers', cursive;
-    color: #fff;
-    text-shadow: 1px 1px 2px #000;
-}
+.song-images img {max-width: 100%; height: auto; border-radius: 4px; transition: transform 0.3s;}
+.song-images img:hover {transform: scale(1.05);}
 
-.song-title a {
-    color: inherit;
-    text-decoration: none;
-    transition: color 0.3s;
-}
+.image-voting, .image-votes {font-variant: small-caps; color: #e4e4e4;}
 
-.song-title a:hover {
-    color: #ffe57f;
-    text-shadow: none;
-}
+.song-lyrics p {font-size: 1.1em; line-height: 1.6; color: #fbf7ff; animation-duration: 4s; animation-fill-mode: forwards;}
 
-.song-id, .song-tags, .song-description, .song-average-score, .song-total-votes {
-    font-family: 'Chivo', sans-serif;
-    color: #333;
-}
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
 
-.song-audio, .song-images, .song-videos, .song-lyrics {
-    margin: 10px 0;
-}
+.container {display: grid; place-items: center; grid-template-areas:"header nav content";}
+.container header {grid-area: header;}
+.container nav {grid-area: nav;}
+.container .content {grid-area: content;}
 
-.audio, .video {
-    width: 100%;
-    border-radius: 10px;
-    transition: transform 0.3s ease;
-}
+figure {margin: 0; transition: filter 0.3s, background-clip 0.3s;}
+figure:hover {filter: brightness(1.2); background-clip: content-box;}
 
-audio:hover, video:hover {
-    transform: scale(1.05);
-}
+.footer {text-align: center; color: #b3b3b3; padding: 5px; font-size: 0.8em;}
 
-.song-lyrics p {
-    text-shadow: 1px 1px 2px #666;
-    color: #444;
-    line-height: 1.6;
-}
-
-.image {
-    display: inline-block;
-    margin: 5px;
-}
-
-figure img {
-    width: 100px;
-    height: auto;
-    border: 2px solid #f0f0f0;
-    box-shadow: 2px 2px 4px #aaa;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-figure img:hover {
-    transform: scale(1.1);
-    box-shadow: 3px 3px 6px #bbb;
-}
-
-figcaption {
-    font-family: 'Nunito', sans-serif;
-    font-size: 0.8em;
-    text-align: center;
-    color: #666;
-}
-
-@keyframes wave {
-    0% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0); }
-}
-
-.song-title:hover {
-    animation: wave 1.5s infinite;
-}
+.blend-mode {background: url('texture.jpg'); mix-blend-mode: multiply; border: 1px solid #3a3a3a;}

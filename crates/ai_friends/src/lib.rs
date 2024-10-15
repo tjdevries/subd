@@ -4,17 +4,71 @@ use chrono::Utc;
 use colored::Colorize;
 use obws::Client as OBSClient;
 use rodio::*;
+use serde::Serialize;
+use sqlx::postgres::types::PgInterval;
+use sqlx::types::time::OffsetDateTime;
+use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
+use std::time;
+use subd_macros::database_model;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
-// use tokio::fs::File;
-// use tokio::io::BufReader;
 use tokio::time::{sleep, Duration};
 use twitch_chat::client::send_message;
 use twitch_irc::{
     login::StaticLoginCredentials, SecureTCPTransport, TwitchIRCClient,
 };
+use uuid::Uuid;
+
+#[database_model]
+pub mod ai_friends_videos {
+
+    use super::*;
+
+    #[derive(Serialize)]
+    pub struct Model {
+        pub id: Uuid,
+        pub friend_name: String,
+        pub question: String,
+        pub response: String,
+        pub filename: String,
+
+        // How can we let this be default
+        pub sound_length: PgInterval,
+        pub user_id: Uuid,
+    }
+}
+impl ai_friends_videos::Model {
+    #[allow(dead_code)]
+
+    pub async fn save(&self, pool: &PgPool) -> Result<Self> {
+        Ok(sqlx::query_as!(
+                Self,
+                r#"
+                INSERT INTO ai_friends_videos
+                (friend_name, question, response, filename, sound_length, user_id)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING 
+                    id, 
+                    friend_name, 
+                    question, 
+                    response, 
+                    filename, 
+                    sound_length, 
+                    user_id
+                "#,
+                self.friend_name,
+                self.question,
+                self.response,
+                self.filename,
+                self.sound_length,
+                self.user_id,
+            )
+            .fetch_one(pool)
+            .await?)
+    }
+}
 
 pub async fn trigger_ai_friend(
     obs_client: &OBSClient,

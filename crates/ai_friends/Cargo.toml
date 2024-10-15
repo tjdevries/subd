@@ -14,11 +14,14 @@ fal_ai = { path = "../fal_ai/" }
 obws = "0.10"
 subd-types = { path = "../subd-types/" }
 subd-audio = { path = "../subd-audio/" }
+subd-macros = { path = "../subd-macros/" }
+uuid.workspace = true
 twitch_chat = { path = "../twitch_chat/" }
 obs_service = { path = "../obs_service/" }
 subd-image-utils = { path = "../subd-image-utils/" }
 chrono.workspace = true
 anyhow.workspace = true
+sqlx.workspace = true
 bytes = "1.7.1"
 colored.workspace = true
 test-tag = "0.1.4"

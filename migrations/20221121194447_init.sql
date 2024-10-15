@@ -5,6 +5,16 @@ CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
 
+CREATE TABLE ai_friends_videos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    friend_name TEXT NOT NULL,
+    question TEXT NOT NULL,
+    response TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    sound_length INTERVAL NOT NULL,
+    user_id UUID NOT NULL references users
+);
+
 -- CREATE TYPE ai_song_status AS ENUM (
 --   'STREAMING',
 --   'COMPLETED',

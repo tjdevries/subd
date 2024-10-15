@@ -1,97 +1,96 @@
+// File: /static/styles.js
+
 import * as THREE from 'three';
-import * as d3 from 'd3';
+import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-// Initializing Mermaid for the chart rendering
-mermaid.initialize({startOnLoad:true});
+// Initialize mermaid
+mermaid.initialize({ startOnLoad: true });
+console.log('Mermaid initialized');
 
-console.log("Mermaid initialized.");
+// Function for animated background using Three.js
+function initThreeJSBackground() {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
 
-// Summarized Content of the Song
-const songContent = {
-    theme: "God is a Song and the Pope is the DJ",
-    verses: [
-        "God is a song on the radio high - Spinning the world make it touch the sky",
-        "Saints on the turntables spinning the vinyl",
-        "Glory in the bass Jesus in the keys"
-    ],
-    chorus: "Heavenly tunes making every soul sway",
-    bridge: "Divine in the melody pulpit in the song"
-};
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-console.log("Song content loaded:", songContent);
+    const geometry = new THREE.SphereGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0xfffff, wireframe: true });
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
 
-// Initialize scene for three.js
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+    camera.position.z = 5;
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-console.log("Three.js scene initialized.");
+    function animate() {
+        requestAnimationFrame(animate);
 
-camera.position.z = 5;
+        sphere.rotation.x += 0.01;
+        sphere.rotation.y += 0.01;
 
-// Create 3D objects (e.g., rotating vinyl record to symbolize the DJ theme)
-const geometry = new THREE.CircleGeometry(2, 64);
-const material = new THREE.MeshBasicMaterial({color: 0xaaaaaa});
-const record = new THREE.Mesh(geometry, material);
+        renderer.render(scene, camera);
+    }
 
-scene.add(record);
-console.log("Vinyl record object added to scene.");
-
-// Animation loop
-function animate() {
-    requestAnimationFrame(animate);
-
-    // Rotate the record for animation
-    record.rotation.z += 0.01;
-
-    renderer.render(scene, camera);
+    animate();
+    console.log('Three.js background animation initialized');
 }
 
-animate();
-console.log("Animation loop started.");
+initThreeJSBackground();
 
-// Adding D3.js chart for song statistics
-const data = [ {name: "Heavenly Beats", value: 10}, {name: "Holy Streets", value: 15}, {name: "Cosmic Rave", value: 20} ];
+// Function for D3 chart
+function initD3Chart() {
+    const data = [30, 86, 168, 281, 303, 365];
+    const width = 420;
+    const barHeight = 20;
 
-const svg = d3.select("body").append("svg")
-    .attr("width", 300)
-    .attr("height", 200);
-console.log("D3.js SVG initialized.");
+    const chart = D3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", barHeight * data.length);
 
-svg.selectAll("rect")
-  .data(data)
-  .enter().append("rect")
-    .attr("x", (d, i) => i * (300 / data.length))
-    .attr("y", d => 200 - d.value * 10)
-    .attr("width", 40)
-    .attr("height", d => d.value * 10)
-    .attr("fill", "orange");
+    const bar = chart.selectAll("g")
+        .data(data)
+        .enter().append("g")
+        .attr("transform", (d, i) => "translate(0," + i * barHeight + ")");
 
-svg.selectAll("text")
-  .data(data)
-  .enter().append("text")
-    .text(d => d.name)
-    .attr("x", (d, i) => i * (300 / data.length) + 10)
-    .attr("y", d => 200 - (d.value * 10) - 3)
-    .attr("fill", "white");
+    bar.append("rect")
+        .attr("width", d => d)
+        .attr("height", barHeight - 1);
 
-console.log("D3.js chart elements added and configured.");
+    bar.append("text")
+        .attr("x", d => d - 3)
+        .attr("y", barHeight / 2)
+        .attr("dy", ".35em")
+        .text(d => d);
 
-// Mermaid diagrams for visual poem
-const mermaidGraph = `graph LR
-A((God's Song)) -->|holy beats| B(Pope's DJ Set)
-B --> C{Heavenly Playlists}
-C -->|gospel| D[Hearts Dance]
-C -->|symphony| E[Souls in Sway]
-D --> F[Divine Melodies]
-E --> F`;
+    console.log('D3 chart created');
+}
 
-mermaid.render('theGraph', mermaidGraph, (svgCode, bindFunctions) => {
-    document.getElementById('mermaid').innerHTML = svgCode;
-    console.log("Mermaid graph rendered:", svgCode);
-});
+initD3Chart();
 
-console.log("Script execution complete.");
+// Function for animated Mermaid charts
+function initMermaid() {
+    const graphDefinition = `graph TD;
+        A[Start] --> B{Is it?};
+        B -- Yes --> C[OK];
+        C --> D[Rethink];
+        D --> A;
+        B -- No --> E[Lament];
+        E --> F[End];
+    `;
+
+    const mermaidDiv = document.createElement('div');
+    mermaidDiv.classList.add('mermaid');
+    mermaidDiv.innerHTML = graphDefinition;
+    document.body.appendChild(mermaidDiv);
+
+    mermaid.init(undefined, mermaidDiv);
+    console.log('Mermaid chart initialized');
+}
+
+initMermaid();
+
+// Export the JavaScript as a module
+console.log('JavaScript animation and charts setup completed');
