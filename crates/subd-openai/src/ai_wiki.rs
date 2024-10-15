@@ -1,6 +1,5 @@
 use crate::utils;
 use anyhow::{anyhow, Result};
-use chrono::Utc;
 use instruct_macros::InstructMacro;
 use instruct_macros_types::{Parameter, ParameterInfo, StructInfo};
 use instructor_ai::from_openai;
@@ -10,12 +9,7 @@ use openai_api_rs::v1::{
     common::GPT4_O,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    env,
-    fs::{self, File},
-    io::Write,
-    path::Path,
-};
+use std::env;
 
 #[derive(InstructMacro, Debug, Serialize, Deserialize)]
 struct AIWikiResponse {
@@ -54,7 +48,7 @@ pub async fn generate_ai_wiki(
     username: String,
     destination: &str,
     content: String,
-    html_to_animate_folder: Option<&str>,
+    _html_to_animate_folder: Option<&str>,
 ) -> Result<()> {
     let client = create_openai_client()?;
     let instructor_client = from_openai(client);

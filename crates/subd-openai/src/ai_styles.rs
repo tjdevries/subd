@@ -1,6 +1,5 @@
 use crate::utils;
 use anyhow::{anyhow, Result};
-use chrono::Utc;
 use instruct_macros::InstructMacro;
 use instruct_macros_types::{Parameter, ParameterInfo, StructInfo};
 use instructor_ai::from_openai;
@@ -10,12 +9,7 @@ use openai_api_rs::v1::{
     common::GPT4_O,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    env,
-    fs::{self, File},
-    io::Write,
-    path::Path,
-};
+use std::{env, fs};
 
 #[derive(InstructMacro, Debug, Serialize, Deserialize)]
 struct MusicVideoScenes {

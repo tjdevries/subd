@@ -1,16 +1,6 @@
 use anyhow::{anyhow, Result};
 use chrono::Utc;
-use instruct_macros::InstructMacro;
-use instruct_macros_types::{Parameter, ParameterInfo, StructInfo};
-use instructor_ai::from_openai;
-use openai_api_rs::v1::api::Client;
-use openai_api_rs::v1::{
-    chat_completion::{self, ChatCompletionRequest},
-    common::GPT4_O,
-};
-use serde::{Deserialize, Serialize};
 use std::{
-    env,
     fs::{self, File},
     io::Write,
     path::Path,
