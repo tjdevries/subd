@@ -1,24 +1,32 @@
-use crate::models;
-use crate::utils;
+use crate::{models, utils};
 use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use fal_rust::client::{ClientCredentials, FalClient};
 use futures::stream::{self, StreamExt, TryStreamExt};
-use serde_json::json;
+use serde_json::{json, Value};
 use tokio::fs::create_dir_all;
 
 pub struct FalService {
     client: FalClient,
 }
 
-struct SavedImageResponse {
-    image_path: String,
-    image_bytes: Vec<u8>,
+struct SavedMediaResponse {
+    path: String,
+    bytes: Vec<u8>,
 }
 
-impl Default for FalService {
-    fn default() -> Self {
-        Self::new()
+#[derive(Clone)]
+enum MediaType {
+    Image,
+    Video,
+}
+
+impl MediaType {
+    fn extension(&self) -> &str {
+        match self {
+            MediaType::Image => "png",
+            MediaType::Video => "mp4",
+        }
     }
 }
 
@@ -28,7 +36,15 @@ impl FalService {
             client: FalClient::new(ClientCredentials::from_env()),
         }
     }
+}
 
+impl Default for FalService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl FalService {
     pub async fn create_images_from_model_and_save(
         &self,
         model: &str,
@@ -38,62 +54,34 @@ impl FalService {
         obs_background_image_path: Option<&str>,
         filename: Option<&str>,
     ) -> Result<Vec<String>> {
-        let parameters = json!({
-            "prompt": prompt,
-            "image_size": image_size,
-        });
-        let raw_json = self.run_model(model, parameters).await?;
+        let parameters = json!({ "prompt": prompt, "image_size": image_size });
 
-        let filename = filename
+        let (media_responses, json_response) = self
+            .generate_media(
+                model,
+                parameters,
+                save_dir,
+                filename,
+                MediaType::Image,
+            )
+            .await?;
+
+        let base_filename = filename
             .map(ToString::to_string)
             .unwrap_or_else(|| Utc::now().timestamp().to_string());
-        let json_save_path = format!("{}/{}.json", save_dir, filename);
+        let json_save_path = format!("{}/{}.json", save_dir, base_filename);
         println!("Saving JSON to: {}", json_save_path);
 
-        self.save_raw_bytes(&json_save_path, &raw_json).await?;
-
-        let file_responses = self
-            .parse_json_and_download_images(&raw_json, save_dir, &filename)
-            .await?;
+        let raw_json = serde_json::to_vec(&json_response)?;
+        self.save_bytes(&json_save_path, &raw_json).await?;
 
         if let Some(extra_path) = obs_background_image_path {
             println!("Saving Extra Image to: {}", extra_path);
-            self.save_raw_bytes(extra_path, &file_responses[0].image_bytes)
+            self.save_bytes(extra_path, &media_responses[0].bytes)
                 .await?;
         }
 
-        Ok(file_responses.into_iter().map(|m| m.image_path).collect())
-    }
-
-    pub async fn create_runway_video_from_image(
-        &self,
-        prompt: &str,
-        image_file_path: &str,
-        save_dir: &str,
-    ) -> Result<String> {
-        let model = "fal-ai/runway-gen3/turbo/image-to-video";
-        let image_data_uri =
-            subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
-        let parameters = json!({
-            "image_url": image_data_uri,
-            "prompt": prompt,
-        });
-
-        println!("\tAttempting to Generate Video w/ Runway");
-        let json = self.run_model_and_get_json(model, parameters).await?;
-
-        println!("Create Video From Image Raw JSON: {:?}", json);
-
-        let video_url = json["video"]["url"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Failed to extract video URL from JSON"))?;
-
-        let video_bytes = subd_image_utils::download_video(video_url).await?;
-
-        let filename = format!("{}/{}.mp4", save_dir, Utc::now().timestamp());
-        self.save_raw_bytes(&filename, &video_bytes).await?;
-
-        Ok(filename)
+        Ok(media_responses.into_iter().map(|m| m.path).collect())
     }
 
     pub async fn create_image_from_image(
@@ -102,9 +90,7 @@ impl FalService {
         image_file_path: &str,
         save_dir: &str,
     ) -> Result<String> {
-        println!("CREATE IMAGE FROM IMAGE");
         let model = "fal-ai/flux/dev/image-to-image";
-        println!("Encoding image_file_path: {}", image_file_path);
         let image_data_uri =
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
@@ -114,25 +100,14 @@ impl FalService {
             "strength": 0.89,
         });
 
-        println!("Running model and getting JSON");
-        let json = self.run_model_and_get_json(model, parameters).await?;
+        let (media_responses, _) = self
+            .generate_media(model, parameters, save_dir, None, MediaType::Image)
+            .await?;
 
-        println!("Create Image From Image Raw JSON: {:?}", json);
-
-        let image_url = json["images"][0]["url"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Failed to extract image URL from JSON"))?;
-
-        let image_bytes =
-            subd_image_utils::download_image_to_vec(image_url, None).await?;
-
-        let filename = format!("{}/{}.png", save_dir, Utc::now().timestamp());
-        self.save_raw_bytes(&filename, &image_bytes).await?;
-
-        Ok(filename)
+        Ok(media_responses.into_iter().next().unwrap().path)
     }
 
-    pub async fn create_video_from_image(
+    pub async fn create_video_from_image_old(
         &self,
         image_file_path: &str,
         save_dir: &str,
@@ -142,20 +117,34 @@ impl FalService {
             subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
 
         let parameters = json!({ "image_url": image_data_uri });
-        let json = self.run_model_and_get_json(model, parameters).await?;
 
-        println!("Create Video From Image Raw JSON: {:?}", json);
+        let (media_responses, _) = self
+            .generate_media(model, parameters, save_dir, None, MediaType::Video)
+            .await?;
 
-        let video_url = json["video"]["url"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Failed to extract video URL from JSON"))?;
+        Ok(media_responses.into_iter().next().unwrap().path)
+    }
 
-        let video_bytes = subd_image_utils::download_video(video_url).await?;
+    pub async fn create_video_from_image(
+        &self,
+        prompt: Option<&str>,
+        image_file_path: &str,
+        save_dir: &str,
+        model: &str,
+    ) -> Result<String> {
+        let image_data_uri =
+            subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
+        let mut parameters = json!({ "image_url": image_data_uri });
 
-        let filename = format!("{}/{}.mp4", save_dir, Utc::now().timestamp());
-        self.save_raw_bytes(&filename, &video_bytes).await?;
+        if let Some(prompt) = prompt {
+            parameters["prompt"] = json!(prompt);
+        }
 
-        Ok(filename)
+        let (media_responses, _) = self
+            .generate_media(model, parameters, save_dir, None, MediaType::Video)
+            .await?;
+
+        Ok(media_responses.into_iter().next().unwrap().path)
     }
 
     pub async fn submit_sadtalker_request(
@@ -171,95 +160,148 @@ impl FalService {
         self.run_model_and_get_text(model, parameters).await
     }
 
-    async fn save_raw_bytes(&self, path: &str, bytes: &[u8]) -> Result<()> {
-        utils::save_raw_bytes(path, bytes)
-            .await
-            .with_context(|| format!("Failed to save bytes to '{}'", path))
-    }
-
-    async fn parse_json_and_download_images(
+    async fn generate_media(
         &self,
-        raw_json: &[u8],
+        model: &str,
+        parameters: Value,
         save_dir: &str,
-        name: &str,
-    ) -> Result<Vec<SavedImageResponse>> {
-        let data: models::FalData = serde_json::from_slice(raw_json)
-            .context("Failed to parse raw JSON into FalData")?;
+        filename: Option<&str>,
+        media_type: MediaType,
+    ) -> Result<(Vec<SavedMediaResponse>, Value)> {
+        let json_response =
+            self.run_model_and_get_json(model, parameters).await?;
+        let media_urls =
+            self.extract_media_urls(&json_response, media_type.clone())?;
 
         create_dir_all(save_dir).await.with_context(|| {
             format!("Failed to create directory '{}'", save_dir)
         })?;
 
-        stream::iter(data.images.iter().enumerate())
-            .then(|(_i, image)| async move {
-                let filename = format!("{}/{}.png", save_dir, name);
-                let image_bytes =
-                    self.save_image(&image.url, &filename).await?;
-                Ok::<SavedImageResponse, anyhow::Error>(SavedImageResponse {
-                    image_path: filename,
-                    image_bytes,
-                })
+        let base_filename = filename
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| Utc::now().timestamp().to_string());
+
+        let saved_media = stream::iter(media_urls.into_iter().enumerate())
+            .then(move |(i, url)| {
+                let media_type = media_type.clone();
+                let save_path = format!(
+                    "{}/{}_{}.{}",
+                    save_dir,
+                    base_filename,
+                    i,
+                    media_type.extension()
+                );
+                async move {
+                    let media_bytes = self
+                        .download_and_save_media(&url, &save_path, media_type)
+                        .await?;
+                    Ok::<SavedMediaResponse, anyhow::Error>(
+                        SavedMediaResponse {
+                            path: save_path,
+                            bytes: media_bytes,
+                        },
+                    )
+                }
             })
-            .try_collect::<Vec<SavedImageResponse>>()
-            .await
+            .try_collect::<Vec<SavedMediaResponse>>()
+            .await?;
+
+        Ok((saved_media, json_response))
     }
 
-    async fn save_image(
+    pub async fn create_runway_video_from_image(
         &self,
-        image_url: &str,
+        prompt: &str,
+        image_file_path: &str,
+        save_dir: &str,
+    ) -> Result<String> {
+        let model = "fal-ai/runway-gen3/turbo/image-to-video";
+        let image_data_uri =
+            subd_image_utils::encode_file_as_data_uri(image_file_path).await?;
+
+        let parameters = json!({
+            "image_url": image_data_uri,
+            "prompt": prompt,
+        });
+
+        let (media_responses, _) = self
+            .generate_media(model, parameters, save_dir, None, MediaType::Video)
+            .await?;
+
+        Ok(media_responses.into_iter().next().unwrap().path)
+    }
+
+    fn extract_media_urls(
+        &self,
+        json_response: &Value,
+        media_type: MediaType,
+    ) -> Result<Vec<String>> {
+        match media_type {
+            MediaType::Image => {
+                let images =
+                    json_response["images"].as_array().ok_or_else(|| {
+                        anyhow!("Failed to parse images array from JSON")
+                    })?;
+                images
+                    .iter()
+                    .map(|image| {
+                        image["url"].as_str().map(|s| s.to_string()).ok_or_else(
+                            || anyhow!("Failed to extract image URL from JSON"),
+                        )
+                    })
+                    .collect()
+            }
+            MediaType::Video => {
+                let video_url = json_response["video"]["url"]
+                    .as_str()
+                    .ok_or_else(|| {
+                        anyhow!("Failed to extract video URL from JSON")
+                    })?
+                    .to_string();
+                Ok(vec![video_url])
+            }
+        }
+    }
+
+    async fn download_and_save_media(
+        &self,
+        url: &str,
         save_path: &str,
+        media_type: MediaType,
     ) -> Result<Vec<u8>> {
-        let image_bytes = subd_image_utils::get_image_bytes(image_url)
+        let media_bytes = match media_type {
+            MediaType::Image => subd_image_utils::get_image_bytes(url).await?,
+            MediaType::Video => {
+                subd_image_utils::download_video(url).await?.to_vec()
+            }
+        };
+
+        self.save_bytes(save_path, &media_bytes).await?;
+        println!("Saved media to {}", save_path);
+        Ok(media_bytes)
+    }
+
+    async fn save_bytes(&self, path: &str, bytes: &[u8]) -> Result<()> {
+        utils::save_raw_bytes(path, bytes)
             .await
-            .with_context(|| {
-                format!("Failed to get image bytes from '{}'", image_url)
-            })?;
-
-        self.save_raw_bytes(save_path, &image_bytes).await?;
-
-        println!("Saved image to {}", save_path);
-        Ok(image_bytes)
+            .with_context(|| format!("Failed to save bytes to '{}'", path))
     }
 
     async fn run_model_and_get_json(
         &self,
         model: &str,
-        parameters: serde_json::Value,
-    ) -> Result<serde_json::Value> {
+        parameters: Value,
+    ) -> Result<Value> {
         println!("Running Model: {}", model);
-        let response =
-            self.client.run(model, parameters).await.map_err(|e| {
-                anyhow!("Failed to run model '{}': {:?}", model, e)
-            })?;
-
-        let body = response
-            .text()
-            .await
-            .context("Failed to get response text from model")?;
-        serde_json::from_str(&body)
+        let response = self.run_model(model, parameters).await?;
+        serde_json::from_slice(&response)
             .context("Failed to parse response body into JSON")
-    }
-
-    async fn run_model(
-        &self,
-        model: &str,
-        parameters: serde_json::Value,
-    ) -> Result<bytes::Bytes> {
-        self.client
-            .run(model, parameters)
-            .await
-            .map_err(|e| anyhow!("Failed to run model '{}': {:?}", model, e))?
-            .bytes()
-            .await
-            .with_context(|| {
-                format!("Failed to get bytes from model '{}'", model)
-            })
     }
 
     async fn run_model_and_get_text(
         &self,
         model: &str,
-        parameters: serde_json::Value,
+        parameters: Value,
     ) -> Result<String> {
         let response =
             self.client.run(model, parameters).await.map_err(|e| {
@@ -277,6 +319,22 @@ impl FalService {
         response.text().await.with_context(|| {
             format!("Error getting text from model '{}'", model)
         })
+    }
+
+    async fn run_model(
+        &self,
+        model: &str,
+        parameters: Value,
+    ) -> Result<bytes::Bytes> {
+        self.client
+            .run(model, parameters)
+            .await
+            .map_err(|e| anyhow!("Failed to run model '{}': {:?}", model, e))?
+            .bytes()
+            .await
+            .with_context(|| {
+                format!("Failed to get bytes from model '{}'", model)
+            })
     }
 }
 

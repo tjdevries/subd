@@ -139,7 +139,7 @@ pub async fn create_video_from_image(
         None => subd_types::consts::get_ai_videos_dir(),
     };
     fal_service
-        .create_video_from_image(image_file_path, &video_dir)
+        .create_video_from_image_old(image_file_path, &video_dir)
         .await
 }
 
