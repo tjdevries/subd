@@ -6,6 +6,7 @@ use elevenlabs_api::{
 };
 use obws::Client as OBSClient;
 use rand::{seq::SliceRandom, thread_rng};
+use rodio::*;
 use std::{collections::HashMap, fs};
 use subd_types::AiScenesRequest;
 use twitch_irc::{
@@ -31,6 +32,7 @@ pub async fn run_ai_scene(
     obs_client: &OBSClient,
     pool: &sqlx::PgPool,
     elevenlabs: &Elevenlabs,
+    sink: &Sink,
     ai_scene_req: &AiScenesRequest,
 ) -> Result<()> {
     let final_voice = determine_voice_to_use(
@@ -58,6 +60,7 @@ pub async fn run_ai_scene(
         ai_friends::trigger_ai_friend(
             obs_client,
             twitch_client,
+            sink,
             ai_scene_req,
             &image_file_path,
             &local_audio_path,

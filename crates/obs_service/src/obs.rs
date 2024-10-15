@@ -3,6 +3,30 @@ use anyhow::Result;
 use obws;
 use obws::Client as OBSClient;
 
+pub async fn update_obs_video_source(
+    obs_client: &OBSClient,
+    filename: &str,
+    scene: &str,
+    source: &str,
+) -> Result<()> {
+    let path = std::fs::canonicalize(filename)?;
+    let full_path = path
+        .into_os_string()
+        .into_string()
+        .map_err(|_| anyhow!("Failed to convert path to string"))?;
+
+    let _ = crate::obs_source::set_enabled(&scene, &source, false, obs_client)
+        .await;
+    let _ = crate::obs_source::update_video_source(
+        obs_client,
+        source.to_string(),
+        full_path,
+        false,
+    )
+    .await;
+    crate::obs_source::set_enabled(&scene, &source, true, obs_client).await
+}
+
 pub async fn update_obs_source(
     obs_client: &OBSClient,
     filename: &str,
@@ -23,6 +47,7 @@ pub async fn update_obs_source(
         obs_client,
         source.to_string(),
         full_path,
+        true,
     )
     .await;
     let _ =

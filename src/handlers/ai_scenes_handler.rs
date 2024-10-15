@@ -38,6 +38,7 @@ impl EventHandler for AiScenesHandler {
                 &self.obs_client,
                 &self.pool,
                 &self.elevenlabs,
+                &self.sink,
                 &ai_scene_req,
             )
             .await;

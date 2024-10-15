@@ -230,11 +230,12 @@ pub async fn update_video_source(
     obs_client: &OBSClient,
     source: String,
     filename: String,
+    looping: bool,
 ) -> Result<()> {
     let settings = FfmpegSource {
         is_local_file: true,
         local_file: Path::new(&filename),
-        looping: true,
+        looping: looping,
         buffering_mb: 0,
         input: "",
         input_format: "",

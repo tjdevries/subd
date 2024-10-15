@@ -27,3 +27,4 @@ elevenlabs-api = { path = "../../../elevenlabs-api" }
 rand = "0.8.5"
 chrono.workspace = true
 serde.workspace = true
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }
