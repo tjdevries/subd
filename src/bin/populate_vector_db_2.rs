@@ -2,7 +2,7 @@ use anyhow::Result;
 use rag_toolchain::chunkers::{Chunker, TokenChunker};
 use rag_toolchain::clients::AsyncEmbeddingClient;
 use rag_toolchain::clients::OpenAIEmbeddingClient;
-use rag_toolchain::common::{Chunks, Embedding, OpenAIEmbeddingModel};
+use rag_toolchain::common::{Chunks, OpenAIEmbeddingModel};
 use rag_toolchain::stores::{EmbeddingStore, PostgresVectorStore};
 
 #[tokio::main]

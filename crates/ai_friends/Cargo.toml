@@ -19,6 +19,7 @@ uuid.workspace = true
 twitch_chat = { path = "../twitch_chat/" }
 obs_service = { path = "../obs_service/" }
 subd-image-utils = { path = "../subd-image-utils/" }
+serde.workspace = true
 chrono.workspace = true
 anyhow.workspace = true
 sqlx.workspace = true

@@ -1,17 +1,13 @@
 use anyhow::Result;
 use rag_toolchain::chains::BasicRAGChain;
-use rag_toolchain::chunkers::{Chunker, TokenChunker};
-use rag_toolchain::clients::AsyncEmbeddingClient;
 use rag_toolchain::clients::OpenAIChatCompletionClient;
 use rag_toolchain::clients::OpenAIEmbeddingClient;
-//use rag_toolchain::clients::OpenAIModel::Gpt3Point5Turbo;
 use rag_toolchain::clients::OpenAIModel::Gpt4o;
 use rag_toolchain::clients::PromptMessage;
 use rag_toolchain::common::OpenAIEmbeddingModel::TextEmbeddingAda002;
-use rag_toolchain::common::{Chunks, Embedding, OpenAIEmbeddingModel};
 use rag_toolchain::retrievers::DistanceFunction;
 use rag_toolchain::retrievers::PostgresVectorRetriever;
-use rag_toolchain::stores::{EmbeddingStore, PostgresVectorStore};
+use rag_toolchain::stores::PostgresVectorStore;
 use std::fs;
 use std::num::NonZeroU32;
 

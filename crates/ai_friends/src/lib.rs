@@ -6,11 +6,9 @@ use obws::Client as OBSClient;
 use rodio::*;
 use serde::Serialize;
 use sqlx::postgres::types::PgInterval;
-use sqlx::types::time::OffsetDateTime;
 use sqlx::PgPool;
 use std::fs::File;
 use std::io::BufReader;
-use std::time;
 use subd_macros::database_model;
 use subd_types::AiScenesRequest;
 use tokio::fs::create_dir_all;
@@ -33,10 +31,19 @@ pub mod ai_friends_videos {
         pub question: String,
         pub response: String,
         pub filename: String,
-
-        // How can we let this be default
-        pub sound_length: PgInterval,
         pub user_id: Uuid,
+        //#[serde(skip_serializing)]
+        //#[serde(default = "default_sound_length")]
+        //pub sound_length: PgInterval,
+    }
+
+    // Why ain't this working with database_model
+    fn _default_sound_length() -> PgInterval {
+        PgInterval {
+            months: 0,
+            days: 0,
+            microseconds: 0,
+        }
     }
 }
 impl ai_friends_videos::Model {
@@ -44,29 +51,27 @@ impl ai_friends_videos::Model {
 
     pub async fn save(&self, pool: &PgPool) -> Result<Self> {
         Ok(sqlx::query_as!(
-                Self,
-                r#"
+            Self,
+            r#"
                 INSERT INTO ai_friends_videos
-                (friend_name, question, response, filename, sound_length, user_id)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                (friend_name, question, response, filename, user_id)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING 
                     id, 
                     friend_name, 
                     question, 
                     response, 
                     filename, 
-                    sound_length, 
                     user_id
                 "#,
-                self.friend_name,
-                self.question,
-                self.response,
-                self.filename,
-                self.sound_length,
-                self.user_id,
-            )
-            .fetch_one(pool)
-            .await?)
+            self.friend_name,
+            self.question,
+            self.response,
+            self.filename,
+            self.user_id,
+        )
+        .fetch_one(pool)
+        .await?)
     }
 }
 
