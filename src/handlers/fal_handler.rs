@@ -170,7 +170,7 @@ mod tests {
         // let model = "fal-ai/stable-cascade";
         // let model = "fal-ai/flux/dev";
 
-        let _ = fal_ai::create_and_save_image_for_model(&prompt, model).await;
+        let _ = fal_ai::create_and_save_image_for_model(prompt, model).await;
         // Ok now
     }
 }
