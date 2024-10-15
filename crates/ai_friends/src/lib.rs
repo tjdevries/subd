@@ -199,7 +199,7 @@ async fn trigger_friend_intro_and_answer(
     let intro_video_path =
         format!("/home/begin/code/subd/ai_assets/{}_intro.mp4", friend_name);
     println!("Upating OBS Source: {}", intro_video_path);
-    let _res = obs_service::obs::update_obs_video_source(
+    obs_service::obs::update_obs_video_source(
         obs_client,
         &intro_video_path,
         scene,
@@ -215,7 +215,7 @@ async fn trigger_friend_intro_and_answer(
     println!("Triggering OBS Source: {}", friend_name);
     let _ = obs_service::obs_source::set_enabled(
         scene,
-        &friend_name,
+        friend_name,
         true,
         obs_client,
     )
@@ -226,7 +226,7 @@ async fn trigger_friend_intro_and_answer(
     println!("we are sleeping");
     sleep(Duration::from_secs(5)).await;
 
-    let _res = obs_service::obs::update_obs_video_source(
+    obs_service::obs::update_obs_video_source(
         obs_client,
         video_path,
         scene,

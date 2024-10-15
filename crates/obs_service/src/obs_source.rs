@@ -235,7 +235,7 @@ pub async fn update_video_source(
     let settings = FfmpegSource {
         is_local_file: true,
         local_file: Path::new(&filename),
-        looping: looping,
+        looping,
         buffering_mb: 0,
         input: "",
         input_format: "",

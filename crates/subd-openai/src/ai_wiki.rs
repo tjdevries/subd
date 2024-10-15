@@ -119,7 +119,7 @@ mod tests {
         let res = generate_ai_wiki(
             username.to_string(),
             wiki_file,
-            format!("Generate a Wikipedia article based on chat history for the user: {}", username.to_string()),
+            format!("Generate a Wikipedia article based on chat history for the user: {}", username),
             Some("../../templates"),
         )
         .await;

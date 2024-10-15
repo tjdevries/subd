@@ -15,7 +15,7 @@ pub async fn update_obs_video_source(
         .into_string()
         .map_err(|_| anyhow!("Failed to convert path to string"))?;
 
-    let _ = crate::obs_source::set_enabled(&scene, &source, false, obs_client)
+    let _ = crate::obs_source::set_enabled(scene, source, false, obs_client)
         .await;
     let _ = crate::obs_source::update_video_source(
         obs_client,
@@ -24,7 +24,7 @@ pub async fn update_obs_video_source(
         false,
     )
     .await;
-    crate::obs_source::set_enabled(&scene, &source, true, obs_client).await
+    crate::obs_source::set_enabled(scene, source, true, obs_client).await
 }
 
 pub async fn update_obs_source(
@@ -41,7 +41,7 @@ pub async fn update_obs_source(
         .into_string()
         .map_err(|_| anyhow!("Failed to convert path to string"))?;
 
-    let _ = crate::obs_source::set_enabled(&scene, &source, false, obs_client)
+    let _ = crate::obs_source::set_enabled(scene, source, false, obs_client)
         .await;
     let _ = crate::obs_source::update_video_source(
         obs_client,
@@ -51,7 +51,7 @@ pub async fn update_obs_source(
     )
     .await;
     let _ =
-        crate::obs_source::set_enabled(&scene, &source, true, obs_client).await;
+        crate::obs_source::set_enabled(scene, source, true, obs_client).await;
 
     crate::obs_scenes::change_scene(obs_client, "Movie Trailer").await
 }
