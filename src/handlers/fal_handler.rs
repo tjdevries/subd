@@ -113,7 +113,7 @@ pub async fn handle_fal_commands(
                 let final_prompt = format!("{} {}", theme, prompt);
                 println!("Creating image for prompt: {}", final_prompt);
 
-                // Can we use another model here???
+                // TODO: Can we use another model here???
                 fal_ai::create_turbo_image(&final_prompt).await?;
                 // fal_ai::create_fast_sd_image(final_prompt).await?;
             }
