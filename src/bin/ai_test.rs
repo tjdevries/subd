@@ -55,7 +55,7 @@ async fn generate_js() -> Result<()> {
     let chat_client = OpenAIChatCompletionClient::try_new(Gpt4o)?;
 
     let js_expert_prompt = fs::read_to_string("./prompts/js_expert.txt")?;
-    let system_prompt = PromptMessage::SystemMessage(js_expert_prompt.into());
+    let system_prompt = PromptMessage::SystemMessage(js_expert_prompt);
 
     let chain: BasicRAGChain<
         OpenAIChatCompletionClient,
@@ -108,7 +108,7 @@ async fn generate_css() -> Result<()> {
     //let chat_client = OpenAIChatCompletionClient::try_new(Gpt3Point5Turbo)?;
 
     let css_expert_prompt = fs::read_to_string("./prompts/css_expert.txt")?;
-    let system_prompt = PromptMessage::SystemMessage(css_expert_prompt.into());
+    let system_prompt = PromptMessage::SystemMessage(css_expert_prompt);
 
     let chain: BasicRAGChain<
         OpenAIChatCompletionClient,

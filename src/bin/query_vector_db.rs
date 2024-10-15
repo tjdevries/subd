@@ -40,7 +40,7 @@ async fn query_for_username(username: String) -> Result<()> {
 
     let base_prompt = fs::read_to_string("./prompts/twitch_user.txt")?;
     let prompt = format!("{} {}", base_prompt, username);
-    let system_prompt = PromptMessage::SystemMessage(prompt.into());
+    let system_prompt = PromptMessage::SystemMessage(prompt);
 
     let chain: BasicRAGChain<
         OpenAIChatCompletionClient,
@@ -52,9 +52,7 @@ async fn query_for_username(username: String) -> Result<()> {
         .build();
 
     println!("Prompting");
-    let user_message = PromptMessage::HumanMessage(format!(
-        "What are you're primary interests, be specific",
-    ));
+    let user_message = PromptMessage::HumanMessage("What are you're primary interests, be specific".to_string());
 
     let response = chain
         .invoke_chain(user_message, NonZeroU32::new(2).unwrap())
