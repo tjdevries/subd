@@ -70,8 +70,9 @@ pub async fn run_ai_scene(
     } else {
         println!("Triggering AI Movie Trailer Scene");
         ai_movie_trailers::trigger_movie_trailer(
-            ai_scene_req,
+            sink,
             twitch_client,
+            ai_scene_req,
             local_audio_path,
         )
         .await?;

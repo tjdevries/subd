@@ -1,5 +1,6 @@
 use anyhow::Result;
 use rodio::Decoder;
+use rodio::Sink;
 use std::fs::File;
 use std::io::BufReader;
 use subd_types::AiScenesRequest;
@@ -9,28 +10,18 @@ use twitch_irc::{
 };
 
 pub async fn trigger_movie_trailer(
-    ai_scene_req: &AiScenesRequest,
+    sink: &Sink,
     locked_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
+    ai_scene_req: &AiScenesRequest,
     local_audio_path: String,
 ) -> Result<()> {
     if let Some(music_bg) = &ai_scene_req.music_bg {
         let _ = send_message(locked_client, music_bg.clone()).await;
     }
 
-    // Why are crreating a new stream_handle here?
-    // We are supressing a whole bunch of alsa message
-    let backup =
-        subd_utils::redirect_stderr().expect("Failed to redirect stderr");
-
-    let (_stream, stream_handle) =
-        subd_audio::get_output_stream("pulse").expect("stream handle");
-    let sink = rodio::Sink::try_new(&stream_handle)
-        .map_err(|e| anyhow::anyhow!("Failed to create sink: {}", e))?;
     let file = BufReader::new(File::open(local_audio_path)?);
     sink.append(Decoder::new(BufReader::new(file))?);
     sink.sleep_until_end();
-
-    subd_utils::restore_stderr(backup);
 
     Ok(())
 }
