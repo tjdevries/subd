@@ -1,1 +1,192 @@
-body {\n    padding: 20px;\n    font-family: 'Courier New', Courier, monospace;\n    background: linear-gradient(135deg, #ff4081, #3f51b5);\n    color: #ffffff;\n    animation: backgroundFade 10s infinite alternate;\n}\n\n@keyframes backgroundFade {\n    0% {background-color: #ff4081;}\n    100% {background-color: #3f51b5;}\n}\n\n.header-container {\n    text-align: center;\n    margin-bottom: 20px;\n    padding: 20px;\n    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);\n    animation: headerFadeIn 3s ease-in-out;\n}\n\n@keyframes headerFadeIn {\n    0% {transform: translateY(-100%);}\n    100% {transform: translateY(0);}\n}\n\n.header a {\n    color: #ffeb3b;\n    text-shadow: 2px 2px 8px #000000;\n    text-decoration: none;\n    transition: color 0.3s, transform 0.3s;\n}\n\n.header a:hover {\n    color: #ffffff;\n    transform: scale(1.2) rotate(3deg);\n}\n\n.nav-container {\n    display: flex;\n    justify-content: center;\n    margin-bottom: 40px;\n    gap: 10px;\n}\n\n.nav-link {\n    color: white;\n    background-color: rgba(63, 81, 181, 0.8);\n    padding: 10px 20px;\n    border-radius: 8px;\n    text-decoration: none;\n    transition: background-color 0.5s, transform 0.5s;\n}\n\n.nav-link:hover {\n    background-color: #ff4081;\n    transform: skewX(-15deg) scale(1.1);\n}\n\n.songs, .users, .top-songs, .unplayed-songs {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));\n    gap: 20px;\n    margin-bottom: 40px;\n    animation: fadeInUp 2s ease-out;\n}\n\n@keyframes fadeInUp {\n    0% {transform: translateY(30px); opacity: 0;}\n    100% {transform: translateY(0); opacity: 1;}\n}\n\n.song-title a, h3 a {\n    color: #ffeb3b;\n    text-decoration: none;\n    position: relative;\n    transition: color 0.3s, text-shadow 0.3s;\n}\n\n.song-title a:hover, h3 a:hover {\n    color: #ffffff;\n    text-shadow: 2px 2px 8px #000000, 0 0 10px #ff4081;\n    transform: rotate(-2deg);\n}\n\naudio {\n    width: 100%;\n    margin-top: 15px;\n    border: 2px solid #3f51b5;\n    border-radius: 8px;\n    transition: border-color 0.5s;\n}\n\naudio:hover {\n    border-color: #ff4081;\n}\n\n.image img, .video {\n    width: 100%;\n    border-radius: 15px;\n    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);\n    transition: transform 0.3s, box-shadow 0.3s;\n}\n\n.image img:hover, .video:hover {\n    transform: scale(1.05);\n    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);\n}
+/* Importing fun and unique Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Pacifico&family=Rubik:wght@400;700&display=swap');
+
+/* Base styles for the body to add padding and set a background color */
+body {
+    padding: 20px;
+    background-color: #171A21;
+    font-family: 'Rubik', sans-serif;
+    color: #F0F1F6;
+    margin: 0;
+}
+
+.header-container {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.header {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3em;
+}
+
+.sub-header {
+    font-size: 1.2em;
+    opacity: 0.8;
+}
+
+nav.nav-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    gap: 15px;
+}
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    background-color: #e52e71;
+    color: #171A21;
+    transform: rotate(5deg) scale(1.1);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #fff;
+    transition: all 0.3s ease-out;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+section.songs,
+section.unplayed-songs,
+section.users {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.article.song,
+.article.unplayed-song,
+.article.previously-played-song,
+.article.user {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 15px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.song-title {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.5em;
+    color: #ff8a00;
+}
+
+.song-description {
+    font-size: 1em;
+    color: #b0b9c6;
+    margin: 10px 0;
+}
+
+.song:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.song-audio audio {
+    width: 100%;
+    border-radius: 5px;
+    backdrop-filter: blur(5px);
+}
+
+.song-videos video {
+    border-radius: 5px;
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.7);
+}
+
+.song-lyrics {
+    margin-top: 20px;
+    background-color: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-left: 5px solid #ff8a00;
+    border-radius: 10px;
+}
+
+.song-lyrics p {
+    color: #d0d7de;
+    line-height: 1.6em;
+}
+
+.song-images img {
+    width: 100%;
+    border-radius: 10px;
+    transition: transform 0.3s;
+}
+
+.song-images img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    filter: brightness(1.2);
+}
+
+.top-songs .top-song {
+    background: radial-gradient(circle, rgba(255,138,0,0.3) 0%, rgba(229,46,113,0.3) 100%);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+    cursor: pointer;
+}
+
+.top-songs .top-song:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+}
+
+.button {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #FFF;
+    background-color: #e52e71;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.button:hover {
+    background-color: #ff8a00;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    transform: translateY(-3px);
+}
+
+article section {
+    margin-top: 20px;
+}
+
+.image-voting {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+    padding: 5px;
+    background-color: rgba(23, 26, 33, 0.8);
+    border-radius: 10px;
+    color: #FFB400;
+}

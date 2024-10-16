@@ -72,12 +72,17 @@ async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
     let unplayed_songs = ai_playlist::get_unplayed_songs(&state.pool)
         .await
         .unwrap_or_default();
+    let current_song = ai_playlist::get_current_song(&state.pool).await.ok();
     let current_song_info = ai_songs_vote::get_current_song_info(&state.pool)
         .await
         .unwrap_or(ai_songs_vote::CurrentSongInfo {
             current_song: None,
             votes_count: 0,
         });
+    let previously_played_songs =
+        ai_playlist::get_previously_played_songs(&state.pool)
+            .await
+            .unwrap_or_default();
     let (videos, image_scores) = ai_playlist::get_videos_and_image_scores(
         &state.pool,
         current_song_info.current_song.as_ref(),
@@ -95,7 +100,6 @@ async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
     } else {
         "No Votes".to_string()
     };
-    let current_song = ai_playlist::get_current_song(&state.pool).await.ok();
 
     let votes_count = current_song_info.votes_count;
     let context = context! {
@@ -107,6 +111,7 @@ async fn home(State(state): State<AppState>) -> WebResult<Html<String>> {
         unplayed_songs,
         current_song,
         votes_count,
+        previously_played_songs,
     };
 
     render_template("home.html", context)

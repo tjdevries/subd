@@ -11,6 +11,16 @@
         </article>
     </a>
     {% endfor %}
+    <h2>Previously Played ({{ previously_played_songs |length }})</h2>
+    {% for song in previously_played_songs %}
+    <a href="/ai_songs/{{ song.song_id }}">
+        <article class="previously-played-song">
+            <h3 class="song-title">
+                @{{ song.username }}'s {{ song.title }} - {{ song.song_id }}
+            </h3>
+        </article>
+    </a>
+    {% endfor %}
 </section>
 {% if current_song %}
 {% include "current_song.html" %}
