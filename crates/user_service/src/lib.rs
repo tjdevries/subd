@@ -2,7 +2,7 @@ use anyhow::Result;
 use models::user_roles;
 use subd_types::{UserID, UserRoles};
 
-mod models;
+pub mod models;
 pub use models::user_roles::ModelUpdate as UserRolesUpdate;
 
 pub struct User {

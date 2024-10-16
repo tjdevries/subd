@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="users">
+    <h2>Users</h2>
+    {% for user in users %}
+    <article class="user">
+        <h3><a href="/users/{{ user[0] }}">{{ user[0] }}</a></h3>
+        <p>Total Songs: {{ user[1] }}</p>
+        <p>Average Song Score: {{ user[2] }}</p>
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}

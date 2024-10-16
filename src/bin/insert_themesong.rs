@@ -22,11 +22,11 @@ async fn main() -> anyhow::Result<()> {
     .fetch_one(&db)
     .await?;
 
-    let (_stream, handle) = rodio::OutputStream::try_default().unwrap();
-    let sink = rodio::Sink::try_new(&handle).unwrap();
+    let (_stream, handle) = rodio::OutputStream::try_default()?;
+    let sink = rodio::Sink::try_new(&handle)?;
 
     let x = Cursor::new(result.song);
-    sink.append(rodio::Decoder::new(BufReader::new(x)).unwrap());
+    sink.append(rodio::Decoder::new(BufReader::new(x))?);
 
     sink.sleep_until_end();
 

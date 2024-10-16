@@ -1,0 +1,67 @@
+/* body { */
+/*   font-family: Arial, sans-serif; */
+/*   display: flex; */
+/*   align-items: center; */
+/*   justify-content: center; */
+/*   flex-direction: column; */
+/*   height: 100vh; */
+/*   margin: 0; */
+/* } */
+
+/* .character-container { */
+/*   position: relative; */
+/* } */
+
+/* .character { */
+/*   font-size: 5rem; */
+/* } */
+
+/* .speech-bubble { */
+/*   position: absolute; */
+/*   background-color: #fff; */
+/*   border: 1px solid #000; */
+/*   border-radius: 5px; */
+/*   padding: 10px; */
+/*   width: 200px; */
+/*   top: -65px; */
+/*   left: 50px; */
+/*   display: none; */
+/* } */
+
+/* Try 2 */
+
+body {
+    font-family: Arial, sans-serif;
+}
+
+.inputArea {
+    display: flex;
+}
+
+#message {
+    flex-grow: 1;
+}
+
+.speech-bubble {
+    position: relative;
+    background: #f9f9f9;
+    border-radius: 0.4em;
+    padding: 1em;
+    margin-bottom: 2em;
+    box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+}
+
+.speech-bubble:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border: 20px solid transparent;
+    border-top-color: #f9f9f9;
+    border-bottom: 0;
+    border-left: 0;
+    margin-left: -10px;
+    margin-bottom: -20px;
+}

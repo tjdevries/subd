@@ -60,7 +60,7 @@ pub async fn update_user_roles_once_per_day(
     //     }
     // }
 
-    Ok(update_user_roles(conn, user_id, msg).await?)
+    update_user_roles(conn, user_id, msg).await
 }
 
 fn get_twitch_roles_from_msg(msg: &PrivmsgMessage) -> UserRoles {

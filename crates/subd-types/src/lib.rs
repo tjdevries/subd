@@ -1,11 +1,15 @@
+use anyhow::Result;
+use std::convert::From;
+use std::convert::TryFrom;
+
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
 };
 
 use serde::{Deserialize, Serialize};
-use twitch_api2::pubsub::channel_points::Redemption;
-pub use twitch_api2::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
+use twitch_api::pubsub::channel_points::Redemption;
+pub use twitch_api::pubsub::channel_subscriptions::ChannelSubscribeEventsV1Reply;
 
 #[cfg(feature = "sql")]
 pub mod consts;
@@ -13,13 +17,35 @@ pub mod consts;
 pub mod twitch;
 
 // TODO: How do we derive this better?
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash, Default,
+)]
 pub struct UserID(pub uuid::Uuid);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct TwitchUserID(pub String);
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+impl From<UserID> for uuid::Uuid {
+    fn from(val: UserID) -> Self {
+        val.0
+    }
+}
+
+impl TryFrom<TwitchUserID> for UserID {
+    type Error = String;
+
+    fn try_from(value: TwitchUserID) -> Result<Self, Self::Error> {
+        let res = uuid::Uuid::parse_str(&value.0);
+        match res {
+            Ok(s) => Ok(UserID(s)),
+            Err(e) => {
+                Err(format!("Error converting TwitchUserID to UserID: {}", e))
+            }
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Default)]
 #[cfg_attr(
     feature = "sql",
     derive(sqlx::Type),
@@ -30,9 +56,12 @@ pub enum UserPlatform {
     Youtube,
     Github,
     Discord,
+
+    #[default]
+    Internal,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserMessage {
     pub user_id: UserID,
     pub user_name: String,
@@ -41,18 +70,32 @@ pub struct UserMessage {
     pub contents: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct UberDuckRequest {
-    // Maybe Make this Optional
-    // pub voice: String,
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct AiScenesRequest {
     pub voice_text: String,
     pub message: String,
     pub username: String,
-    pub voice: String,
-
+    pub voice: Option<String>,
+    pub reverb: bool,
+    pub pitch: Option<String>,
+    pub stretch: Option<String>,
     pub source: Option<String>,
-    // HERE I CAN CHANGE THINGS!!!!
-    //
+    pub music_bg: Option<String>,
+    pub prompt: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
+pub struct ElevenLabsRequest {
+    pub voice_text: String,
+    pub message: String,
+    pub username: String,
+    pub voice: Option<String>,
+    pub reverb: bool,
+    pub pitch: Option<String>,
+    pub stretch: Option<String>,
+    pub source: Option<String>,
+    pub music_bg: Option<String>,
+    pub dalle_prompt: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,17 +124,44 @@ pub struct SourceVisibilityRequest {
     pub enabled: bool,
 }
 
-// TODO: Make UberDuckEvent
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiScreenshotsRequest {
+    // pub msg: String,
+    // pub style_id: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiTelephoneRequest {
+    // pub msg: String,
+    // pub style_id: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkyboxRequest {
+    pub msg: String,
+    pub style_id: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChannelRewardRequest {
+    pub msg: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Event {
     /// The primary Message event. Should be used wherever possible.
     UserMessage(UserMessage),
 
-    UberDuckRequest(UberDuckRequest),
+    ChannelRewardRequest(ChannelRewardRequest),
+    ElevenLabsRequest(ElevenLabsRequest),
+    AiScenesRequest(AiScenesRequest),
+    AiTelephoneRequest(AiTelephoneRequest),
+    AiScreenshotsRequest(AiScreenshotsRequest),
     TransformOBSTextRequest(TransformOBSTextRequest),
-    TriggerHotkeyRequest(TriggerHotkeyRequest),
     StreamCharacterRequest(StreamCharacterRequest),
     SourceVisibilityRequest(SourceVisibilityRequest),
+    SkyboxRequest(SkyboxRequest),
+    TriggerHotkeyRequest(TriggerHotkeyRequest),
 
     /// TwitchChatMessage is only used for messages
     /// that are explicitly for twitch related items. In general
@@ -249,15 +319,14 @@ pub struct UserRoles {
 }
 
 impl UserRoles {
-    pub fn add_role(&mut self, role: Role) -> () {
+    pub fn add_role(&mut self, role: Role) {
         self.roles.insert(role);
     }
 
     pub fn is_github_sponsor(&self) -> bool {
         self.roles
             .iter()
-            .find(|r| matches!(r, Role::GithubSponsor { tier: _ }))
-            .is_some()
+            .any(|r| matches!(&r, Role::GithubSponsor { tier: _ }))
     }
 
     pub fn is_twitch_mod(&self) -> bool {
@@ -277,10 +346,7 @@ impl UserRoles {
     }
 
     pub fn is_twitch_sub(&self) -> bool {
-        self.roles
-            .iter()
-            .find(|r| matches!(r, Role::TwitchSub(_)))
-            .is_some()
+        self.roles.iter().any(|r| matches!(&r, Role::TwitchSub(_)))
     }
 }
 

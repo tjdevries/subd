@@ -1,0 +1,27 @@
+[package]
+name = "ai_music_videos"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio.workspace = true
+
+fal_ai = { path = "../fal_ai/" }
+ai_playlist = { path = "../ai_playlist/" }
+subd-db = { path = "../subd-db/" }
+subd-openai = { path = "../subd-openai/" }
+chrono.workspace = true
+anyhow.workspace = true
+colored.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
+futures.workspace = true
+
+instructor-ai = "0.1.8"
+instruct-macros = "0.1.8"
+openai-api-rs = "4.1.0"
+instruct-macros-types = "0.1.8"
+
+serde = { workspace = true, features = ["derive"] }

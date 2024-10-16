@@ -39,7 +39,7 @@ pub async fn get_github_user(login: &str) -> Result<Option<GithubUser>> {
         .await?;
 
     let response_body: Response<get_user::ResponseData> = res.json().await?;
-    if let None = response_body.data {
+    if response_body.data.is_none() {
         return Ok(None);
     }
 

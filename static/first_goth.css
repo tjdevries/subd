@@ -1,0 +1,190 @@
+/* Import a gothic Google Font */
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
+
+body {
+    background-color: #0d0d0d;
+    color: #e6e6e6;
+    font-family: 'UnifrakturCook', cursive;
+    margin: 0;
+    padding: 0;
+}
+
+/* Spooky background image */
+body::before {
+    content: '';
+    background: url('https://example.com/spooky-background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    opacity: 0.2;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+/* Header styling */
+.header-container {
+    text-align: center;
+    padding: 50px 0;
+    background: linear-gradient(45deg, #1a1a1a, #333333);
+}
+
+.header-container h1, .header-container h2 {
+    margin: 10px 0;
+    color: #ff4d4d;
+    text-shadow: 2px 2px #000000;
+}
+
+/* Navigation styling */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background-color: #262626;
+    padding: 10px 0;
+}
+
+.nav-link {
+    color: #b3b3b3;
+    margin: 0 15px;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.nav-link::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 2px;
+    background: #ff4d4d;
+    transition: width 0.3s;
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+}
+
+.nav-link:hover {
+    color: #ff4d4d;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Unplayed songs section */
+.unplayed_songs {
+    padding: 20px;
+    background-color: #1a1a1a;
+}
+
+.unplayed_songs h2 {
+    color: #ff4d4d;
+    text-shadow: 1px 1px #000000;
+}
+
+.unplayed_song a {
+    color: #e6e6e6;
+    text-decoration: none;
+    display: block;
+    padding: 10px;
+    background-color: #262626;
+    margin: 10px 0;
+    border-left: 5px solid #ff4d4d;
+    transition: background-color 0.3s;
+}
+
+.unplayed_song a:hover {
+    background-color: #333333;
+}
+
+/* Current song section */
+.current-song {
+    padding: 20px;
+    background-color: #1a1a1a;
+}
+
+.current-song h3 {
+    color: #ff4d4d;
+    text-shadow: 1px 1px #000000;
+}
+
+.current-song-info {
+    margin-bottom: 20px;
+}
+
+.current-song-info div {
+    margin: 5px 0;
+}
+
+.current-song-info a {
+    color: #ff4d4d;
+    text-decoration: none;
+}
+
+.current-song-info a:hover {
+    text-decoration: underline;
+}
+
+/* Lyrics styling */
+.lyrics {
+    background-color: #262626;
+    padding: 20px;
+    border: 1px solid #333333;
+    color: #e6e6e6;
+    line-height: 1.6;
+    font-style: italic;
+}
+
+/* Animations */
+@keyframes flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        text-shadow:
+            0 0 4px #ff4d4d,
+            0 0 11px #ff4d4d,
+            0 0 19px #ff4d4d,
+            0 0 40px #ff4d4d,
+            0 0 80px #ff4d4d,
+            0 0 90px #ff4d4d,
+            0 0 100px #ff4d4d,
+            0 0 150px #ff4d4d;
+    }
+    20%, 24%, 55% {
+        text-shadow: none;
+    }
+}
+
+.header-container h1 {
+    animation: flicker 3s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #ff4d4d;
+    border-radius: 6px;
+    border: 3px solid #1a1a1a;
+}
+
+/* Link hover effect */
+a:hover {
+    color: #ff4d4d;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .nav-container {
+        flex-direction: column;
+    }
+
+    .nav-link {
+        margin: 10px 0;
+    }
+}

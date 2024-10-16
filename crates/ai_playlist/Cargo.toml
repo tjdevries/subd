@@ -1,0 +1,28 @@
+[package]
+name = "ai_playlist"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+anyhow.workspace = true
+
+subd-macros = { path = "../subd-macros/" }
+subd-utils = { path = "../subd-utils/" }
+subd-db = { path = "../subd-db/" }
+uuid.workspace = true
+
+time = { version = "0.3", features = ["serde"] }
+
+# serde = { version = "1.0.210",  features = ["derive"] }
+serde.workspace = true
+
+# including time in fucks like up I think
+# we have mismatched options sadly
+# sqlx = { version = "*", features = [ "postgres", "offline", "time", "chrono" ] }
+sqlx = { version = "*", features = [ "postgres", "offline"] }
+
+[dev-dependencies]
+
+tokio.workspace = true
+test-tag = "0.1.4"

@@ -24,17 +24,17 @@ use once_cell::sync::OnceCell;
 use reqwest::Client as ReqwestClient;
 
 use server::themesong;
-use server::user_messages;
 use subd_types::Event;
 use subd_types::LunchBytesStatus;
+use twitch_chat::client::TwitchChat;
+use twitch_chat::handlers::TwitchMessageHandler;
 
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tracing::info;
-use tracing_subscriber;
 use tracing_subscriber::util::SubscriberInitExt;
-use tracing_subscriber::EnvFilter;
+// use tracing_subscriber::EnvFilter;
 use twitch_irc::login::StaticLoginCredentials;
 use twitch_irc::ClientConfig;
 use twitch_irc::SecureTCPTransport;
@@ -306,7 +306,10 @@ async fn yew_inner_loop(
 
     tx.send(Event::RequestTwitchSubCount)?;
     tx.send(Event::LunchBytesStatus(
-        get_lb_status().lock().unwrap().clone(),
+        get_lb_status()
+            .lock()
+            .map_err(|e| anyhow!("Failed to lock LunchBytesStatus: {}", e))?
+            .clone(),
     ))?;
 
     println!("Looping new yew inner loop");
@@ -350,8 +353,6 @@ async fn handle_yew(
                 Ok(_) => {}
                 Err(err) => println!("SOME YEW FAILED WITH: {:?}", err),
             };
-
-            ()
         });
     }
 
@@ -366,7 +367,9 @@ async fn handle_obs_stuff(
 
     let obs_websocket_port = subd_types::consts::get_obs_websocket_port()
         .parse::<u16>()
-        .unwrap();
+        .map_err(|e| {
+            anyhow::anyhow!("Failed to parse OBS websocket port: {}", e)
+        })?;
     let obs_websocket_address = subd_types::consts::get_obs_websocket_address();
     let obs_client =
         OBSClient::connect(obs_websocket_address, obs_websocket_port, Some(""))
@@ -488,6 +491,7 @@ async fn handle_obs_stuff(
 
     Ok(())
 }
+
 // async fn say<
 //     T: twitch_irc::transport::Transport,
 //     L: twitch_irc::login::LoginCredentials,
@@ -504,7 +508,7 @@ async fn handle_obs_stuff(
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         // .with_max_level(Level::TRACE)
-        .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
+        // .with_env_filter(EnvFilter::new("chat=debug,server=debug"))
         .without_time()
         .with_target(false)
         .finish()
@@ -544,13 +548,10 @@ async fn main() -> Result<()> {
     let pool = subd_db::get_db_pool().await;
 
     // Turns twitch IRC things into our message events
-    event_loop.push(twitch_chat::TwitchChat::new(
-        pool.clone(),
-        "teej_dv".to_string(),
-    )?);
+    event_loop.push(TwitchChat::new(pool.clone(), "teej_dv".to_string())?);
 
     // Does stuff with twitch messages
-    event_loop.push(twitch_chat::TwitchMessageHandler::new(
+    event_loop.push(TwitchMessageHandler::new(
         pool.clone(),
         twitch_service::Service::new(
             pool.clone(),
@@ -558,8 +559,6 @@ async fn main() -> Result<()> {
         )
         .await,
     ));
-
-    event_loop.push(user_messages::UserMessageHandler {});
 
     event_loop.push(themesong::ThemesongListener::new());
     event_loop.push(themesong::ThemesongDownloader::new(

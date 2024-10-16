@@ -1,0 +1,49 @@
+<article class="song">
+    <header class="song-header">
+        <h2>Current Song</h2>
+            <h3 class="song-title">{{ current_song.title }}</h3>
+            <p class="song-tags">Tags: {{ current_song.tags }}</p>
+            <p class="song-creator">Creator: @{{ current_song.username }}</p>
+            <a href="/ai_songs/{{ current_song.song_id }}">
+                <p class="song-id">Song ID: {{ current_song.song_id }}</p>
+            </a>
+            <p class="song-average-score">Average Score: {{ score }}</p>
+            <p class="song-total-votes">Total Votes: {{ votes_count }}</p>
+    </header>
+
+    <section class="song-images">
+        <h3>Images</h3>
+        {% for image_score in image_scores %}
+        <figure class="image">
+            <img src="/images/{{ current_song.song_id }}/{{ image_score[0] }}" alt="{{ image_score[0] }}">
+            <figcaption>
+                <p class="image-voting">!love {{ image_score[1] }} | !hate {{ image_score[1] }}</p>
+                <p class="image-votes">Love: {{ image_score[2] }} | Hate: {{ image_score[3] }}</p>
+            </figcaption>
+        </figure>
+        {% endfor %}
+    </section>
+
+    <section class="song-videos">
+        <h3>Videos</h3>
+        {% for video in videos %}
+        <video class="video" width="300" autoplay muted loop>
+            <source src="/images/{{ current_song.song_id }}/{{ video }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        {% endfor %}
+    </section>
+
+    <section class="song-lyrics">
+        <h3>Lyrics</h3>
+        <p>
+            {{
+                current_song.lyric |
+                replace("\n", "<br />") |
+                replace("]", "]<br/>") |
+                replace("[", "<br />[") |
+                safe
+            }}
+        </p>
+    </section>
+</article>

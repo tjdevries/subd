@@ -1,0 +1,15 @@
+[package]
+name = "obs_service"
+version = "0.1.0"
+edition = "2021"
+
+# ======================================================
+
+[dependencies]
+
+subd-types = { path = "../subd-types" }
+serde = { workspace = true, features = ["derive"] }
+sqlx.workspace = true
+anyhow.workspace = true
+num-traits = "0.2.17"
+obws = "0.10"

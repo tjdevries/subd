@@ -8,10 +8,7 @@ edition = "2021"
 [dependencies]
 subd-types = { path = "../subd-types/", default-features = false, features = [] }
 
-serde.workspace = true
 serde_json.workspace = true
-chrono = { workspace = true, features = [ "wasmbind" ] }
-tungstenite = { version = "0.17.2", default-features = false, features = [ ] }
 twitch-irc = { version = "4.0.0", default-features = false, features = [
     "with-serde",
 ] }
@@ -22,6 +19,5 @@ gloo-timers = "0.2.4"
 wasm-logger = "0.2.0"
 log = "0.4.17"
 
-# This is cuz of wasm?
-getrandom = { version = "0.2", features = ["js"] }
-# ^^^^^^^
+# We needed this for wasm?
+# getrandom = { version = "0.2", features = ["js"] }

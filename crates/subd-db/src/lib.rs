@@ -8,6 +8,12 @@ pub async fn get_db_pool() -> sqlx::PgPool {
         .await
         .expect("To get postgres pool connection")
 }
+
+pub async fn get_test_db_pool() -> sqlx::PgPool {
+    sqlx::PgPool::connect(subd_types::consts::get_test_database_url().as_str())
+        .await
+        .expect("To get postgres test pool connection")
+}
 // pub async fn set_github_info_for_user(
 //     conn: &mut PgConnection,
 //     user: &UserID,

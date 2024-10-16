@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Music Videos</h2>
+    <div class="grid-container">
+        {% for song in songs %}
+            <div class="song">
+                <div class="username">{{ song.username }}</div>
+                <div class="title">{{ song.title }}</div>
+                <div class="tags">{{ song.tags }}</div>
+                <div class="gpt_description">{{ song.gpt_description_prompt }}</div>
+                <div class="song_source">
+                     <audio controls>
+                         <source src="/songs/{{ song.song_id }}.mp3" type="audio/mpeg">
+                         Your browser does not support the audio element.
+                     </audio>
+                </div>
+                <div class="song_link">
+                    <a href="/ai_songs/{{ song.song_id }}">
+                        {{ song.song_id }}
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}
