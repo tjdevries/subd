@@ -8,6 +8,7 @@ pub async fn update_obs_video_source(
     filename: &str,
     scene: &str,
     source: &str,
+    close_when_inactive: bool,
 ) -> Result<()> {
     let path = std::fs::canonicalize(filename)?;
     let full_path = path
@@ -15,13 +16,14 @@ pub async fn update_obs_video_source(
         .into_string()
         .map_err(|_| anyhow!("Failed to convert path to string"))?;
 
-    let _ = crate::obs_source::set_enabled(scene, source, false, obs_client)
-        .await;
+    let _ =
+        crate::obs_source::set_enabled(scene, source, false, obs_client).await;
     let _ = crate::obs_source::update_video_source(
         obs_client,
         source.to_string(),
         full_path,
         false,
+        close_when_inactive,
     )
     .await;
     crate::obs_source::set_enabled(scene, source, true, obs_client).await
@@ -41,12 +43,13 @@ pub async fn update_obs_source(
         .into_string()
         .map_err(|_| anyhow!("Failed to convert path to string"))?;
 
-    let _ = crate::obs_source::set_enabled(scene, source, false, obs_client)
-        .await;
+    let _ =
+        crate::obs_source::set_enabled(scene, source, false, obs_client).await;
     let _ = crate::obs_source::update_video_source(
         obs_client,
         source.to_string(),
         full_path,
+        true,
         true,
     )
     .await;

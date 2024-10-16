@@ -231,6 +231,7 @@ pub async fn update_video_source(
     source: String,
     filename: String,
     looping: bool,
+    close_when_inactive: bool,
 ) -> Result<()> {
     let settings = FfmpegSource {
         is_local_file: true,
@@ -242,7 +243,7 @@ pub async fn update_video_source(
         reconnect_delay_sec: 5,
         restart_on_activate: true,
         clear_on_media_end: true,
-        close_when_inactive: true,
+        close_when_inactive,
         speed_percent: 100,
         color_range: ColorRange::Auto,
         seekable: false,

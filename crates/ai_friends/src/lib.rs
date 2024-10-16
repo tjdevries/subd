@@ -204,6 +204,7 @@ async fn trigger_friend_intro_and_answer(
         &intro_video_path,
         scene,
         friend_name,
+        false,
     )
     .await?;
 
@@ -231,6 +232,7 @@ async fn trigger_friend_intro_and_answer(
         video_path,
         scene,
         friend_name,
+        true,
     )
     .await?;
     Ok(())

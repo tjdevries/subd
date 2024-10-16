@@ -420,13 +420,14 @@ async fn handle_play_command(
         None => return Ok(()),
     };
 
+    // TODO: consider if we do want to do updates
     // Do we need to do this everytime????
     // Fetch audio information
-    let audio_info = subd_suno::get_audio_information(id).await?;
-    let created_at = sqlx::types::time::OffsetDateTime::now_utc();
+    // let audio_info = subd_suno::get_audio_information(id).await?;
+    // let created_at = sqlx::types::time::OffsetDateTime::now_utc();
 
     // We should only be able to play songs that exist in the DB
-    let song = ai_playlist::find_song_by_id(pool, id).await?;
+    // let song = ai_playlist::find_song_by_id(pool, id).await?;
     // We don't know if the song is downloaded here!!!!
     // At this point it should be downloaded I think???
     // let song_id = Uuid::parse_str(&audio_info.id)?;

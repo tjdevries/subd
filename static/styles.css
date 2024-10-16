@@ -1,192 +1,107 @@
-/* Importing fun and unique Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Pacifico&family=Rubik:wght@400;700&display=swap');
 
-/* Base styles for the body to add padding and set a background color */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@300;400;700&display=swap');
+
 body {
+    font-family: 'Roboto', sans-serif;
     padding: 20px;
-    background-color: #171A21;
-    font-family: 'Rubik', sans-serif;
-    color: #F0F1F6;
-    margin: 0;
+    background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+    transition: background 0.6s ease-out;
 }
 
-.header-container {
-    text-align: center;
-    padding: 20px;
-    background: linear-gradient(90deg, #ff8a00, #e52e71);
-    color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+body:hover {
+    background: linear-gradient(135deg, #e3ffe7, #d9e7ff);
 }
 
 .header {
-    font-family: 'Fredoka One', cursive;
-    font-size: 3em;
+    font-family: 'Pacifico', cursive;
+    font-size: 2.5em;
+    text-align: center;
+    color: #333;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    animation: bounce 1.5s infinite;
 }
 
 .sub-header {
     font-size: 1.2em;
-    opacity: 0.8;
-}
-
-nav.nav-container {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-    gap: 15px;
+    color: #666;
+    text-align: center;
+    animation: fadeIn 2s ease-in;
 }
 
 .nav-link {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 10px 20px;
     color: #fff;
+    background-color: #ff7f50;
+    border-radius: 50px;
     text-decoration: none;
-    font-weight: bold;
-    padding: 10px 15px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    position: relative;
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
 .nav-link:hover {
-    background-color: #e52e71;
-    color: #171A21;
-    transform: rotate(5deg) scale(1.1);
+    background-color: #ffa07a;
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0px 4px 15px rgba(255, 127, 80, 0.4);
 }
 
-.nav-link::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    bottom: -2px;
-    left: 0;
-    background-color: #fff;
-    transition: all 0.3s ease-out;
+.unplayed-songs, .previously-played-songs, .users, .top-songs {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
 }
 
-.nav-link:hover::after {
-    width: 100%;
+.unplayed-song, .previously-played-song, .top-song {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+    transition: transform 0.3s ease;
 }
 
-section.songs,
-section.unplayed-songs,
-section.users {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.article.song,
-.article.unplayed-song,
-.article.previously-played-song,
-.article.user {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    padding: 15px;
-    transition: all 0.3s;
-    position: relative;
-    overflow: hidden;
+.unplayed-song:hover, .previously-played-song:hover, .top-song:hover {
+    transform: translateX(10px);
+    background: rgba(245, 245, 245, 0.8);
 }
 
 .song-title {
-    font-family: 'Pacifico', cursive;
-    font-size: 1.5em;
-    color: #ff8a00;
+    font-weight: 700;
+    color: #444;
+    margin: 0;
 }
 
-.song-description {
-    font-size: 1em;
-    color: #b0b9c6;
-    margin: 10px 0;
+.song-title a {
+    color: #ff7f50;
+    text-decoration: none;
+    background-image: linear-gradient(90deg, transparent, transparent 50%, #ffe135 50%);
+    background-position: 0 100%;
+    background-repeat: repeat-x;
+    background-size: 200% 2px;
+    transition: background-size 0.3s, background-position 0.3s;
 }
 
-.song:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+.song-title a:hover {
+    background-size: 200% 100%;
+    background-position: 100% 100%;
 }
 
-.song-audio audio {
-    width: 100%;
-    border-radius: 5px;
-    backdrop-filter: blur(5px);
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-20px);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
 }
 
-.song-videos video {
-    border-radius: 5px;
-    max-width: 100%;
-    height: auto;
-    box-shadow: 0 0 15px rgba(0,0,0,0.7);
-}
-
-.song-lyrics {
-    margin-top: 20px;
-    background-color: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-left: 5px solid #ff8a00;
-    border-radius: 10px;
-}
-
-.song-lyrics p {
-    color: #d0d7de;
-    line-height: 1.6em;
-}
-
-.song-images img {
-    width: 100%;
-    border-radius: 10px;
-    transition: transform 0.3s;
-}
-
-.song-images img:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-    filter: brightness(1.2);
-}
-
-.top-songs .top-song {
-    background: radial-gradient(circle, rgba(255,138,0,0.3) 0%, rgba(229,46,113,0.3) 100%);
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    transition: transform 0.3s ease-in-out;
-    cursor: pointer;
-}
-
-.top-songs .top-song:hover {
-    transform: translateY(-5px) scale(1.05);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-}
-
-.button {
-    display: inline-block;
-    margin: 10px;
-    padding: 10px 25px;
-    font-size: 1em;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: #FFF;
-    background-color: #e52e71;
-    border: none;
-    border-radius: 5px;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
-
-.button:hover {
-    background-color: #ff8a00;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    transform: translateY(-3px);
-}
-
-article section {
-    margin-top: 20px;
-}
-
-.image-voting {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 10px;
-    padding: 5px;
-    background-color: rgba(23, 26, 33, 0.8);
-    border-radius: 10px;
-    color: #FFB400;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }

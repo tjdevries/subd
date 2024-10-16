@@ -2,83 +2,91 @@ import * as THREE from 'three';
 import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-console.log('Initializing Symphony of Chaos Animation');
+/*
+Pineapple Fever: A song that expresses a deep and fun craving for pineapple pizza, capturing the sweetness, tanginess, and the joy of sharing this flavor sensation with someone special. The lyrics describe a tropical journey, a love that fuses culinary and emotional flavors, and the irresistible allure of pineapple.
+*/
 
-/** THREE.js Animation **/
-function createThreeJSScene() {
-    console.log('Setting up THREE.js scene');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+// Initialize Mermaid for chart rendering
+mermaid.initialize({ startOnLoad: true });
 
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+console.log('Mermaid initialized for charts.');
 
-    camera.position.z = 5;
-    console.log('Cube added to scene');
+// Example Mermaid chart for flavor ride:
+const chartDefinition = `
+graph TD;
+  Pizza -->|one bite| Flavor_Bliss[(Tropical Bliss)];
+  Flavor_Bliss --> Pineapple[(Pineapple)];
+  Flavor_Bliss --> Dough[(Dough)];
+  Pineapple -->|tangy| PalmTrees[(Palm Trees)];
+  Dough -->|delicious| PalmTrees;
+  
+  subgraph FlavorRide 
+      PalmTrees 
+  end
+`;
 
-    function animate() {
-        requestAnimationFrame(animate);
+mermaid.render("flavorRideDiagram", chartDefinition, function(svgCode) {
+  document.getElementById("flavor-ride").innerHTML = svgCode;
+  console.log('Mermaid chart rendered.');
+});
 
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
+// Create a Three.js Scene for animated visual experiences
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
 
-        renderer.render(scene, camera);
-    }
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    animate();
+console.log('Three.js scene initiated.');
+
+// Create a rotating pineapple
+const geometry = new THREE.ConeGeometry(5, 20, 32);
+const material = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Yellow color to mimic pineapple
+const pineapple = new THREE.Mesh(geometry, material);
+scene.add(pineapple);
+
+pineapple.position.y = 10;
+
+camera.position.z = 50;
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  pineapple.rotation.x += 0.01;
+  pineapple.rotation.y += 0.01;
+
+  renderer.render(scene, camera);
+  console.log('Pineapple rotating.');
 }
 
-/** D3.js Animation **/
-function createD3Chart() {
-    console.log('Creating D3.js chart');
-    const data = [12, 5, 6, 6, 9, 10];
-    const svg = D3.select('body')
-        .append('svg')
-        .attr('width', 300)
-        .attr('height', 200);
+animate();
 
-    svg.selectAll('rect')
-        .data(data)
-        .enter()
-        .append('rect')
-        .attr('x', (d, i) => i * 45)
-        .attr('y', (d, i) => 200 - (d * 10))
-        .attr('width', 40)
-        .attr('height', (d, i) => d * 10)
-        .attr('fill', 'orange');
+// Using D3.js to create a fun data visualization of "Pineapple Fever" loves
+const data = [10, 20, 30, 40]; // Arbitrary example data
 
-    console.log('D3 chart rendered');
-}
+const svg = D3.select('body').append('svg')
+  .attr('width', window.innerWidth)
+  .attr('height', 100);
 
-/** Mermaid.js Diagram **/
-function renderMermaidChart() {
-    console.log('Rendering mermaid diagram');
-    const chartDefinition = `graph TD;
-    A[Hard start] -->B{Is it?};
-    B -- Yes --> C[Good];
-    B -- No --> D[Bad];
-    C --> E[/Fine/];
-    D --> E;`;
+const xScale = D3.scaleBand()
+  .domain(data.map((value, index) => index))
+  .range([0, window.innerWidth])
+  .padding(0.1);
 
-    mermaid.render('diagram', chartDefinition, (svgCode) => {
-        const div = document.createElement('div');
-        div.innerHTML = svgCode;
-        document.body.appendChild(div);
-    });
+const yScale = D3.scaleLinear()
+  .domain([0, D3.max(data)])
+  .range([100, 0]);
 
-    console.log('Mermaid chart added to document');
-}
+svg.selectAll('.bar')
+  .data(data)
+  .enter()
+  .append('rect')
+  .classed('bar', true)
+  .attr('x', (d, i) => xScale(i))
+  .attr('y', d => yScale(d))
+  .attr('width', xScale.bandwidth())
+  .attr('height', d => 100 - yScale(d))
+  .attr('fill', '#ffff00');
 
-/** Init methods **/
-window.onload = function() {
-    console.log('Window loaded, starting animations');
-    createThreeJSScene();
-    createD3Chart();
-    renderMermaidChart();
-    console.log('All animations initialized');
-}
+console.log('D3.js bar chart created.');
