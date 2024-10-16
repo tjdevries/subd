@@ -11,6 +11,9 @@
         </article>
     </a>
     {% endfor %}
+</section>
+    
+<section class="previously-played-songs">
     <h2>Previously Played ({{ previously_played_songs |length }})</h2>
     {% for song in previously_played_songs %}
     <a href="/ai_songs/{{ song.song_id }}">
