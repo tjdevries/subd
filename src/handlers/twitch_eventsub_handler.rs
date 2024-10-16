@@ -291,6 +291,38 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     )
     .await?;
 
+    if command == "Generate new AI CSS" {
+        println!("Generating new AI CSS: {}", &user_input);
+
+        // if the song ended, then it won't be current
+        let current_song = ai_playlist::get_current_song(&pool).await;
+        let id = match current_song {
+            Ok(res) => res.song_id,
+            Err(_) => {
+                ai_playlist::find_last_played_songs(&pool, 1)
+                    .await?
+                    .get(1)
+                    .ok_or_else(|| anyhow!("No song found"))?
+                    .song_id
+            }
+        };
+
+        let id = format!("{}", id);
+        let _ = tokio::spawn(subd_openai::ai_styles::generate_ai_css(
+            id.to_string().clone(),
+            "./static/styles.css",
+            user_input.clone(),
+            None,
+        ));
+        let _ = tokio::spawn(subd_openai::ai_styles::generate_ai_js(
+            id.to_string().clone(),
+            "./static/styles.js",
+            user_input.clone(),
+            None,
+        ));
+        return Ok(());
+    }
+
     if command == "Set Theme" {
         println!("Setting the Theme: {}", &user_input);
         twitch_stream_state::set_ai_background_theme(&pool, &user_input)

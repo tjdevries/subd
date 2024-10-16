@@ -144,6 +144,7 @@ async fn route_messages<C: twitch_api::HttpClient>(
 
             return Ok(());
         }
+
         "!inflation" => {
             if not_beginbot {
                 return Ok(());

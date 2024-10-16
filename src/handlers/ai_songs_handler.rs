@@ -37,13 +37,14 @@ impl EventHandler for AISongsHandler {
                         let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
                         let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
                         if let Ok(song) = next_song {
-                            let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
                             let id = song.song_id.to_string();
 
-                            let _ = tokio::spawn(
-                                subd_openai::ai_styles::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
-                            let _ = tokio::spawn(
-                                subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
+                            // // We need to be able to toggle this
+                            // let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
+                            // let _ = tokio::spawn(
+                            //     subd_openai::ai_styles::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
+                            // let _ = tokio::spawn(
+                            //     subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
 
                             if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
                                 eprint!("Error playing Audio: {}", e);
