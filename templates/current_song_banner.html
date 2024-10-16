@@ -1,0 +1,9 @@
+{% block content %}
+{% if current_song %}
+<div style="background-color: #00ff00; font-family: Comic-Sans" >
+    <header class="song-header">
+    {{ current_song.title }} by @{{ current_song.username }} | Average Score: {{ score }} | Total Votes: {{ votes_count }}
+</header>
+</div>
+{% endif %}
+{% endblock %}

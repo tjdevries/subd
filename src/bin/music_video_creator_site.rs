@@ -56,6 +56,7 @@ async fn create_app() -> Router {
         .route("/all_users", get(show_users))
         .route("/charts", get(charts))
         .route("/music_videos", get(music_videos))
+        .route("/current_song", get(show_current_song))
         .nest_service("/images", ServeDir::new("./tmp/music_videos"))
         .nest_service("/songs", ServeDir::new("./ai_songs"))
         .nest_service("/static", ServeDir::new("./static"))
@@ -197,6 +198,42 @@ async fn show_ai_song_by_user(
     let context = context! { stats, songs };
 
     render_template("songs.html", context)
+}
+
+async fn show_current_song(
+    State(state): State<AppState>,
+) -> WebResult<Html<String>> {
+    let stats = ai_songs_vote::fetch_stats(&state.pool)
+        .await
+        .map_err(internal_error)?;
+
+    let current_song = ai_playlist::get_current_song(&state.pool).await.ok();
+    let current_song_info = ai_songs_vote::get_current_song_info(&state.pool)
+        .await
+        .unwrap_or(ai_songs_vote::CurrentSongInfo {
+            current_song: None,
+            votes_count: 0,
+        });
+
+    let score = if let Some(song) = current_song_info.current_song {
+        ai_songs_vote::get_average_score(&state.pool, song.song_id)
+            .await
+            .map(|res| res.avg_score.to_string())
+            .unwrap_or_else(|_| "No Votes".to_string())
+    } else {
+        "No Votes".to_string()
+    };
+
+    let votes_count = current_song_info.votes_count;
+
+    let context = context! {
+        score,
+        stats,
+        current_song,
+        votes_count,
+    };
+
+    render_template("current_song_banner.html", context)
 }
 
 async fn show_ai_song(

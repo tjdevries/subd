@@ -420,6 +420,7 @@ async fn main() -> Result<()> {
                 let resources = AppResources::new(&stream_handle).await?;
                 event_loop.push(handlers::ai_songs_handler::AISongsHandler {
                     pool: pool.clone(),
+                    obs_client: resources.obs_client.unwrap(),
                     sink: resources.sink,
                     twitch_client: resources.twitch_client,
                 });

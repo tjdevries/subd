@@ -3,6 +3,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use colored::Colorize;
 use events::EventHandler;
+use obws::Client as OBSClient;
 use rodio::Sink;
 use sqlx::PgPool;
 use std::time::Duration;
@@ -16,6 +17,7 @@ use twitch_irc::{
 use uuid::Uuid;
 
 pub struct AISongsHandler {
+    pub obs_client: OBSClient,
     pub sink: Sink,
     pub pool: PgPool,
     pub twitch_client:
@@ -34,11 +36,21 @@ impl EventHandler for AISongsHandler {
             tokio::select! {
                 _ = interval.tick() => {
                     if self.sink.empty() {
+                        let scene = "AISongStatus";
+                        let source = "current_song_banner";
+                        let _ = obs_service::obs_source::set_enabled(
+                            scene,
+                            source,
+                            false,
+                            &self.obs_client,
+                        )
+                        .await;
                         let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
                         let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
                         if let Ok(song) = next_song {
                             let id = song.song_id.to_string();
 
+                        // We need OBS to hide/show the current_song_banner
                             // // We need to be able to toggle this
                             // let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
                             // let _ = tokio::spawn(
@@ -49,8 +61,18 @@ impl EventHandler for AISongsHandler {
                             if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
                                 eprint!("Error playing Audio: {}", e);
                                 let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;
-
+                            } else {
+                                let scene = "AISongStatus";
+                                let source = "current_song_banner";
+                                let _ = obs_service::obs_source::set_enabled(
+                                    scene,
+                                    source,
+                                    true,
+                                    &self.obs_client,
+                                )
+                                .await;
                             }
+
                         }
                     }
                 }
@@ -68,6 +90,7 @@ impl EventHandler for AISongsHandler {
                         &self.sink,
                         &self.twitch_client,
                         &self.pool,
+                        &self.obs_client,
                         &splitmsg,
                         &msg,
                     )
@@ -92,6 +115,7 @@ async fn handle_requests(
     sink: &Sink,
     twitch_client: &TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pool: &PgPool,
+    obs_client: &OBSClient,
     splitmsg: &[String],
     msg: &UserMessage,
 ) -> Result<()> {
@@ -224,7 +248,26 @@ async fn handle_requests(
                     .await?
                 }
                 "!pause" | "!unpause" | "!skip" | "!stop" => {
-                    handle_playback_control(command, sink).await?
+                    // TODO: We want to pull these values in from somewhere centralized
+                    let scene = "AISongStatus";
+                    let source = "current_song_banner";
+                    println!("Toggling Current Song Banner Off");
+                    let _ = obs_service::obs_source::set_enabled(
+                        scene,
+                        source,
+                        false,
+                        &obs_client,
+                    )
+                    .await;
+                    handle_playback_control(command, sink).await?;
+                    let _ = obs_service::obs_source::set_enabled(
+                        scene,
+                        source,
+                        true,
+                        &obs_client,
+                    )
+                    .await;
+                    return Ok(());
                 }
                 "!nightcore" | "!doom" | "!normal" | "!speedup"
                 | "!slowdown" => handle_speed_control(command, sink).await?,
