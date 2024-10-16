@@ -1,1 +1,139 @@
-body {\n    padding: 20px;\n    background: radial-gradient(circle, rgba(238,174,202,1) 0%, rgba(148,187,233,1) 100%);\n    font-family: 'Quicksand', sans-serif;\n    color: #333;\n    overflow-x: hidden;\n    overflow-y: auto;\n    transition: background 0.5s ease-in-out;\n}\n\n@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300&family=Roboto+Mono:wght@400&display=swap');\n\n.header-container h1, .header-container h2 {\n    color: #ffffff;\n    text-shadow: 2px 2px #333;\n}\n\na {\n    text-decoration: none;\n    color: #2196F3;\n    transition: color 0.3s ease, transform 0.3s ease;\n}\na:hover {\n    color: #ff4081;\n    transform: scale(1.1) rotate(360deg);\n}\n\n.header-container {\n    padding: 20px;\n    background: rgba(255, 255, 255, 0.8);\n    border-radius: 10px;\n    box-shadow: 0 4px 8px rgba(0,0,0,0.1);\n    backdrop-filter: blur(5px);\n    animation: slideIn 1s ease-out both;\n}\n@keyframes slideIn {\n    from {\n      transform: translateY(-100%);\n    }\n    to {\n      transform: translateY(0);\n    }\n}\n\n.nav-container {\n    display: grid;\n    grid-template-columns: repeat(4, 1fr);\n    gap: 10px;\n    margin-top: 20px;\n    padding: 10px 20px;\n    background-color: rgba(255, 255, 255, 0.8);\n    border-radius: 5px;\n    box-shadow: 0 4px 6px rgba(0,0,0,0.1);\n}\n\n.nav-link {\n    text-align: center;\n    padding: 15px;\n    background-color: #f5f5f5;\n    border-radius: 5px;\n    transition: background-color 0.3s;\n}\n.nav-link:hover {\n    background-color: #ff4081;\n    color: #fff;\n}\n\n.unplayed-songs, .previously-played-songs, .songs, .users, .top-songs {\n    margin: 30px 0;\n    padding: 20px;\n    background: rgba(255, 255, 255, 0.9);\n    border-radius: 10px;\n    box-shadow: 0 4px 8px rgba(0,0,0,0.1);\n    animation: fadeIn 2s ease-out both;\n}\n@keyframes fadeIn {\n    from {\n        opacity: 0;\n    }\n    to {\n        opacity: 1;\n    }\n}\n\n.song-title {\n    font-weight: bold;\n    font-family: 'Roboto Mono', monospace;\n    font-size: 1.2rem;\n    color: #333;\n}\n.song {\n    border-bottom: 1px solid #ddd;\n    padding-bottom: 10px;\n    margin-bottom: 10px;\n}\n.song:hover {\n    background: #f9f9f9;\n    box-shadow: 0 0 10px #ccc;\n    transform: scale(1.02);\n    transition: all 0.3s ease;\n}\n\n.song-audio audio {\n    width: 100%;\n    outline: none;\n}\n\n.song-images, .song-videos, .song-lyrics {\n    margin: 20px 0;\n}\n\n.song-lyrics p {\n    white-space: pre-wrap;\n    line-height: 1.5;\n    font-size: 1rem;\n    color: #444;\n}\n\n.image, .video {\n    margin: 10px 0;\n    width: 100%;\n    border-radius: 10px;\n    overflow: hidden;\n    box-shadow: 0 6px 12px rgba(0,0,0,0.1);\n}\n.image figure {\n    position: relative;\n}\n\n.video video {\n    width: 100%;\n    height: auto;\n}
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lobster&family=Roboto:wght@300&family=Pacifico&display=swap');
+
+/* General Reset */
+body, h1, h2, h3, p, a, article, section, nav, header, img, figure, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(45deg, #f3e5f5, #e1bee7);
+    color: #3c3c3c;
+    padding: 20px;
+    animation: fadeIn 2s ease-in-out;
+    filter: brightness(95%);
+    backdrop-filter: blur(5px);
+    isolation: isolate;
+}
+
+h1, h2, h3 {
+    font-family: 'Lobster', cursive;
+}
+
+nav, section {
+    margin: 20px 0;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.header-container {
+    text-align: center;
+    background: radial-gradient(circle, #f48fb1, #f06292);
+    padding: 20px;
+    box-shadow: 0px 4px 6px #b39ddb;
+    color: #fff;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #d81b60;
+    color: #fff;
+    border-radius: 5px;
+    font-size: 1.2rem;
+}
+
+.nav-link {
+    color: inherit;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    transform: scale(1.1) rotate(10deg);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    mix-blend-mode: difference;
+}
+
+.unplayed-songs, .previously-played-songs, .songs, .users, .top-songs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    animation: slideIn 1s ease-in-out;
+}
+
+.article {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 15px;
+    transition: transform 0.4s, box-shadow 0.4s;
+    border-radius: 10px;
+}
+
+.article:hover {
+    transform: translate(0, -10px) scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    background-clip: padding-box;
+}
+
+.song-title a {
+    color: #d81b60;
+    text-decoration: none;
+    font-family: 'Pacifico', cursive;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.song-title a:hover {
+    color: #fbc02d;
+    text-shadow: 2px 2px 5px #f48fb1;
+    animation: shake 0.5s;
+}
+
+.song-audio, .song-images, .song-lyrics, .song-videos {
+    margin-top: 20px;
+}
+
+.video {
+    max-width: 100%;
+    border-radius: 10px;
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    transition: transform 0.6s;
+}
+
+.video:hover {
+    transform: rotateY(0deg);
+}
+
+.image img {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.image figcaption {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}

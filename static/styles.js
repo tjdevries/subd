@@ -1,82 +1,60 @@
-// Import necessary libraries
 import * as THREE from 'three';
 import * as D3 from 'd3';
 import * as mermaid from 'mermaid';
 
-console.log('Loaded libraries: THREE.js, D3.js, mermaid.js');
+// Initialize the scene for Three.js animations
+console.log('Initializing Three.js scene...');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// Initialize Three.js for 3D animations
-function initThreeJSAnimation() {
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    camera.position.z = 5;
-    
-    console.log('Cube created');
-
-    // Function for animation
-    function animate() {
-        requestAnimationFrame(animate);
-        cube.rotation.x += 0.01;
-        cube.rotation.y += 0.01;
-        renderer.render(scene, camera);
-        console.log('Cube rotated');
-    }
-
-    animate();
+// Add a rotating cube to the scene to symbolize the spinning thoughts about pigs
+console.log('Creating a rotating cube in the scene...');
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+camera.position.z = 5;
+function animateCube() {
+    requestAnimationFrame(animateCube);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
 }
+console.log('Starting cube animation...');
+animateCube();
 
-initThreeJSAnimation();
+// Adding D3.js visualization for pig statistics
+console.log('Loading D3 Visualization for pig statistics...');
+const pigData = [{ condition: 'Present', number: 10 }, { condition: 'Absent', number: 90 }];
+const svg = D3.select("body").append("svg").attr("width", 300).attr("height", 200);
+svg.selectAll("rect")
+   .data(pigData)
+   .enter()
+   .append("rect")
+   .attr("x", (d, i) => i * 50)
+   .attr("y", d => 200 - d.number * 2)
+   .attr("width", 40)
+   .attr("height", d => d.number * 2)
+   .attr("fill", "blue");
 
-// Setup Mermaid diagrams
+// Initialize mermaid.js for flowcharts
+console.log('Initializing Mermaid.js for flowchart animation...');
 mermaid.initialize({ startOnLoad: true });
+const graphDefinition = `
+  graph TB
+    A(Not enough pigs) --> B(Empty pens)
+    A --> C(Quiet days)
+    B --> D(April's gray without noise)
+    C --> D
+    D -->|Memory's maze| E[/Lost/]
+`;
+mermaid.render('mermaidChart', graphDefinition, function(svgCode) {
+    const div = document.createElement('div');
+    div.innerHTML = svgCode;
+    document.body.appendChild(div);
+});
 
-// Create a Mermaid chart
-function initMermaidChart() {
-    const graphDefinition = `graph TD;
-      A[Start] --> B{Where Did It Go};
-      B -->|Various Choices| C[Explore];
-      C --> D[End];
-    `;
-
-    const graphDiv = document.createElement('div');
-    graphDiv.class = 'mermaid';
-    graphDiv.innerHTML = graphDefinition;
-    document.body.appendChild(graphDiv);
-    console.log('Mermaid graph created');
-}
-
-initMermaidChart();
-
-// Basic D3.js chart example
-function initD3Chart() {
-    const dataset = [5, 10, 15, 20, 25];
-    const svg = D3.select('body').append('svg')
-        .attr('width', 300)
-        .attr('height', 200);
-
-    svg.selectAll('rect')
-        .data(dataset)
-        .enter()
-        .append('rect')
-        .attr('x', (d, i) => i * 30)
-        .attr('y', d => 200 - d * 5)
-        .attr('width', 25)
-        .attr('height', d => d * 5)
-        .attr('fill', 'teal');
-
-    console.log('D3 chart created');
-}
-
-initD3Chart();
-
-// Animation and logs influenced by song concept 'Where Did It Go'
-console.log('Begin animations inspired by concept: "Where Did It Go"');
+console.log('Finished setting up animations and visualizations!');

@@ -276,11 +276,12 @@ mod tests {
     #[tag(fal)]
     async fn test_sitcom() {
         let obs_client = obs_service::obs::create_obs_client().await.unwrap();
-        let friend_name = "teej";
+        let friend_name = "prime";
 
-        let fal_image_file_path = "/home/begin/code/subd/archive/teej_5.png";
+        let fal_image_file_path =
+            "/home/begin/code/subd/archive/green_prime.png";
         let fal_audio_file_path =
-            "/home/begin/code/subd/ai_assets/teej_intro.mp3";
+            "/home/begin/code/subd/ai_assets/prime_intro.mp3";
         let video_bytes =
             sync_lips_to_voice(fal_image_file_path, fal_audio_file_path)
                 .await

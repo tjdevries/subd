@@ -225,3 +225,12 @@ impl ElevenLabsHandler {
         Ok(local_audio_path)
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    #[tokio::test]
+    async fn test_creating_god_voice() {
+        //
+    }
+}
