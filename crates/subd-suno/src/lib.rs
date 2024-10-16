@@ -150,6 +150,13 @@ pub async fn download_and_play(
     let twitch_client = twitch_client.clone();
     let pool = pool.clone();
     let username = username.to_string().clone();
+    let song_id = match Uuid::parse_str(&id) {
+        Ok(uuid) => uuid,
+        Err(e) => {
+            eprintln!("Error parsing UUID: {}", e);
+            return Err(anyhow!("Error parsing UUID: {}", e));
+        }
+    };
 
     // We need to handle the await here
     tokio::spawn(async move {
@@ -181,60 +188,26 @@ pub async fn download_and_play(
                     }
 
                     // So we are failing on getting the audio resoponse and parsing it!
-                    let suno_response = match get_audio_information(&id).await {
-                        Ok(response) => response,
-                        Err(e) => {
-                            eprintln!("Error getting audio information: {}", e);
-                            continue;
-                        }
-                    };
-                    // we need to create the song here
-                    let created_at =
-                        sqlx::types::time::OffsetDateTime::now_utc();
-                    let song_id = match Uuid::parse_str(&id) {
-                        Ok(uuid) => uuid,
-                        Err(e) => {
-                            eprintln!("Error parsing UUID: {}", e);
-                            continue;
-                        }
-                    };
+                    // let suno_response = match get_audio_information(&id).await {
+                    //     Ok(response) => response,
+                    //     Err(e) => {
+                    //         eprintln!("Error getting audio information: {}", e);
+                    //         continue;
+                    //     }
+                    // };
 
-                    //// This should be the builder
-                    let new_song = ai_playlist::models::ai_songs::Model {
-                        song_id,
-                        title: suno_response.title.to_string(),
-                        tags: suno_response.metadata.tags.to_string(),
-                        prompt: suno_response.metadata.prompt,
-                        username: username.to_string(),
-                        audio_url: suno_response.audio_url.to_string(),
-                        lyric: suno_response.lyric,
-                        gpt_description_prompt: suno_response
-                            .metadata
-                            .gpt_description_prompt
-                            .to_string(),
-                        last_updated: Some(created_at),
-                        created_at: Some(created_at),
-                        downloaded: false,
-                    };
-
-                    // We need to be calling an update here
-                    // This should be an update
-                    // We only need to message if there's an error
-                    // We need to handle the error here
-                    if let Err(e) = new_song.save(&pool).await {
-                        eprintln!("Error saving the song!: {}", e);
-                    }
-
-                    let uuid_id = match Uuid::parse_str(&id) {
-                        Ok(uuid) => uuid,
-                        Err(e) => {
-                            eprintln!("Error parsing UUID {}: {}", id, e);
-                            continue;
-                        }
-                    };
+                    ai_playlist::mark_song_as_downloaded(&pool, song_id)
+                        .await
+                        .unwrap_or_else(|e| {
+                            eprintln!(
+                                "Error marking song as downloaded: {}",
+                                e
+                            );
+                            return;
+                        });
 
                     if let Err(e) =
-                        ai_playlist::add_song_to_playlist(&pool, uuid_id).await
+                        ai_playlist::add_song_to_playlist(&pool, song_id).await
                     {
                         eprintln!("Error adding song to playlist: {}", e);
                         continue;
@@ -313,26 +286,19 @@ pub async fn parse_suno_response_download_and_play(
     )
     .await?;
 
-    // This must be fucking me up!!!
-    let res = download_and_play(
-        pool,
-        twitch_client,
-        tx,
-        user_name,
-        song_id.to_string(),
-    )
-    .await;
+    download_and_play(pool, twitch_client, tx, user_name, song_id.to_string())
+        .await
 
-    match res {
-        Ok(_) => {
-            println!("Downloaded and played song: {}", song_id);
-            Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
-        }
-        Err(e) => {
-            eprintln!("Error downloading and playing song: {}", e);
-            Ok(())
-        }
-    }
+    // match res {
+    //     Ok(_) => {
+    //         println!("Downloaded and played song: {}", song_id);
+    //         Ok(ai_playlist::mark_song_as_downloaded(pool, song_id).await?)
+    //     }
+    //     Err(e) => {
+    //         eprintln!("Error downloading and playing song: {}", e);
+    //         Ok(())
+    //     }
+    // }
 }
 
 /// Downloads the audio file and saves it locally.
@@ -343,8 +309,6 @@ pub async fn just_download(
 ) -> Result<BufReader<File>> {
     let file_name = format!("ai_songs/{}.mp3", id);
     let mut file = fs::File::create(&file_name).await?;
-
-    // let content = response.bytes().await?;
 
     // now is a good time to mark a song as downloaded
     tokio::io::copy(&mut &content[..], &mut file).await?;

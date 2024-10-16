@@ -89,7 +89,6 @@ pub mod ai_songs {
         pub created_at: Option<OffsetDateTime>,
 
         // This has a default of false in the DB, so I think this could be optional
-        // need to double check migration and actual tables
         pub downloaded: bool,
     }
 }
@@ -105,7 +104,7 @@ impl ai_songs::Model {
                 (song_id, title, tags, prompt, username, audio_url, gpt_description_prompt, lyric, downloaded)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 ON CONFLICT (song_id)
-                DO UPDATE SET gpt_description_prompt = $7
+                DO UPDATE SET gpt_description_prompt = $7, lyric = $8
                 RETURNING 
                     song_id, 
                     title, 
@@ -131,6 +130,37 @@ impl ai_songs::Model {
             )
             .fetch_one(pool)
             .await?)
+    }
+
+    pub async fn update_downloaded(
+        pool: &PgPool,
+        song_id: Uuid,
+        downloaded: bool,
+    ) -> Result<Self> {
+        Ok(sqlx::query_as!(
+            Self,
+            r#"
+            UPDATE ai_songs
+            SET downloaded = $2
+            WHERE song_id = $1
+            RETURNING 
+                song_id, 
+                title, 
+                tags, 
+                prompt, 
+                username, 
+                audio_url, 
+                gpt_description_prompt, 
+                lyric, 
+                last_updated, 
+                created_at,
+                downloaded
+            "#,
+            song_id,
+            downloaded
+        )
+        .fetch_one(pool)
+        .await?)
     }
 }
 
