@@ -291,6 +291,7 @@ async fn handle_channel_rewards_request<'a, C: twitch_api::HttpClient>(
     )
     .await?;
 
+    // TODO: We should be reading this from some shared place
     if command == "Generate new AI CSS" {
         println!("Generating new AI CSS: {}", &user_input);
 

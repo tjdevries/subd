@@ -1,81 +1,86 @@
 import * as THREE from 'three';
-import * as D3 from 'd3';
-import * as mermaid from 'mermaid';
+import * as d3 from 'd3';
+import mermaid from 'mermaid';
 
-// Initializing Mermaid for creating flowcharts
-mermaid.initialize({
-  startOnLoad: true
-});
+// Initialize Mermaid
+mermaid.initialize({ startOnLoad: true });
 
-// Create a Gothic and Evil themed scene with Three.js
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+console.log('Mermaid initialized');
 
-// Adding gothic looking cube to the scene
-const geometry = new THREE.BoxGeometry();
-const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+// Function to create 3D animation using Three.js
+function create3DScene() {
+    console.log('Creating 3D scene');
 
-camera.position.z = 5;
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-// Animation function for the cube that rotates
-function animateCube() {
-  requestAnimationFrame(animateCube);
-  cube.rotation.x += 0.01;
-  cube.rotation.y += 0.01;
-  renderer.render(scene, camera);
-  console.log('Cube is rotating in a gothic universe');
+    // Sphere geometry
+    const geometry = new THREE.SphereGeometry(5, 32, 32);
+    const material = new THREE.MeshBasicMaterial({color: 0x00ff00, wireframe: true});
+    const sphere = new THREE.Mesh(geometry, material);
+    scene.add(sphere);
+
+    camera.position.z = 15;
+    camera.position.y = 5;
+
+    console.log('3D sphere added to scene');
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        sphere.rotation.x += 0.01;
+        sphere.rotation.y += 0.01;
+        renderer.render(scene, camera);
+    }
+
+    animate();
+    console.log('Animation started');
 }
 
-animateCube();
+// Function to create charts with Mermaid
+function createCharts() {
+    console.log('Creating Mermaid charts');
+    const graphDefinition = `
+        graph TD;
+        A[Start] --> B{Is it working?};
+        B -->|Yes| C[Great!];
+        B -->|No| D[Try again];
+    `;
+    document.querySelector('.charts').innerHTML = mermaid.render('graphDiv', graphDefinition);
+    console.log('Mermaid chart created');
+}
 
-// Adding some D3.js effect for goth-like interactivity
-const darkData = [10, 20, 30, 40, 50];
+// Function to create interactive visualization with D3.js
+function createInteractiveVisualization() {
+    console.log('Creating interactive visualization with D3');
+    const svg = d3.select('body').append('svg')
+        .attr('width', 960)
+        .attr('height', 500);
 
-const svg = D3.select("body").append("svg")
-              .attr("width", 300)
-              .attr("height", 200);
+    svg.append('circle')
+        .attr('cx', 480)
+        .attr('cy', 250)
+        .attr('r', 100)
+        .style('fill', 'coral')
+        .on('mouseover', function() {
+            d3.select(this).style('fill', 'purple');
+            console.log('Circle color changed to purple');
+        })
+        .on('mouseout', function() {
+            d3.select(this).style('fill', 'coral');
+            console.log('Circle color reverted back to coral');
+        });
 
-const barHeight = 20;
+    console.log('Interactive visualization created with D3.js');
+}
 
-// Rendering bars with dark colors
-const bar = svg.selectAll("g")
-  .data(darkData)
-  .enter().append("g")
-  .attr("transform", (d, i) => `translate(0,${i * barHeight})`);
-
-bar.append("rect")
-  .attr("width", d => d * 10)
-  .attr("height", barHeight - 1)
-  .style("fill", "#330000")
-  .style("stroke", "#660000");
-
-bar.append("text")
-  .attr("x", d => (d * 10) - 3)
-  .attr("y", barHeight / 2)
-  .attr("dy", ".35em")
-  .text(d => d);
-
-console.log('D3 dark-themed bars added');
-
-// Integrating Mermaid.js for a flowchart
-mermaid.contentLoaded();
-
-const chart = `graph TD
-    A[Start] --> B{Gothic Path?}
-    B -->|Yes| C[Embrace Darkness]
-    B -->|No| D[Return]
-    C --> E[End]
-    D --> F[Retry]
-`;
-
-mermaid.render('mermaidChart', chart, (svgCode) => {
-  const container = document.createElement('div');
-  container.innerHTML = svgCode;
-  document.body.appendChild(container);
-  console.log('Mermaid chart rendered');
-});
+console.log('Starting to create animated and interactive animations');
+create3DScene();
+createCharts();
+createInteractiveVisualization();
+console.log('All animations and interactions are set up');
+// Save as styles.js file
