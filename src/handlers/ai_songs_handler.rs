@@ -58,6 +58,24 @@ impl EventHandler for AISongsHandler {
                             // let _ = tokio::spawn(
                             //     subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
 
+                            let mp4_result = ai_music_videos::get_mp4_files(&id);
+                            if let Ok((_videos, final_videos)) = mp4_result {
+                                if let Some(final_video) = final_videos.first() {
+                                    println!("Final video: {}", final_video);
+
+                                let file_path = format!("./tmp/music_videos/{}/{}", id, final_video);
+
+                                let _ = obs_service::obs_source::update_video_source(
+                                    &self.obs_client,
+                                    "current_song_video".to_string(),
+                                    file_path,
+                                    false,
+                                    true,
+                                )
+                                .await;
+                                    // I really want to update a video source here
+                                }
+                            }
                             if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
                                 eprint!("Error playing Audio: {}", e);
                                 let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;

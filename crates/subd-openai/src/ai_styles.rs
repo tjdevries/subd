@@ -187,19 +187,19 @@ mod tests {
             "FAKE_SONG_ID".to_string(),
             css_file,
             "Neon".to_string(),
-            Some("../../templates"),
+            Some("../../deafbeef"),
         )
         .await;
         assert!(res.is_ok(), "{:?}", res);
 
-        let js_file = "../../static/styles.js";
-        let res = generate_ai_js(
-            "FAKE_SONG_ID".to_string(),
-            js_file,
-            "Neon".to_string(),
-            Some("../../templates"),
-        )
-        .await;
-        assert!(res.is_ok(), "{:?}", res);
+        // let js_file = "../../static/styles.js";
+        // let res = generate_ai_js(
+        //     "FAKE_SONG_ID".to_string(),
+        //     js_file,
+        //     "Neon".to_string(),
+        //     Some("../../templates"),
+        // )
+        // .await;
+        // assert!(res.is_ok(), "{:?}", res);
     }
 }

@@ -3,6 +3,8 @@ use chrono::Utc;
 use colored::Colorize;
 use futures::future::join_all;
 use sqlx::PgPool;
+use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 
 pub mod scenes_builder;
@@ -109,7 +111,7 @@ pub async fn create_music_video_images_and_video(
     let music_video_folder = format!("./tmp/music_videos/{}", id);
     let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
     let output_file =
-        format!("{}/{}_{}", music_video_folder, timestamp, "final_video.mp4");
+        format!("{}/{}_{}", music_video_folder, timestamp, "final.mp4");
     combine_videos(video_filenames, &output_file)?;
 
     Ok(output_file)
@@ -354,6 +356,37 @@ fn _create_slideshow_from_images(song_id: &str) -> Result<String> {
     } else {
         Err(anyhow!("Failed to create video"))
     }
+}
+
+pub fn get_mp4_files(song_id: &str) -> Result<(Vec<String>, Vec<String>)> {
+    let folder_path = format!("./tmp/music_videos/{}", song_id);
+    let path = Path::new(&folder_path);
+
+    let mut regular_mp4s = Vec::new();
+    let mut final_mp4s = Vec::new();
+
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let file_path = entry.path();
+
+        if let Some(extension) = file_path.extension() {
+            if extension == "mp4" {
+                let file_name = file_path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+                if file_name.ends_with("_final.mp3") {
+                    final_mp4s.push(file_name);
+                } else {
+                    regular_mp4s.push(file_name);
+                }
+            }
+        }
+    }
+
+    Ok((regular_mp4s, final_mp4s))
 }
 
 #[cfg(test)]
