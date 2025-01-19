@@ -13,6 +13,7 @@ use obs_move_transition::update_and_trigger_move_value_for_source;
 use obs_service::obs_scenes;
 use obs_service::obs_source;
 use obws;
+use obws::requests::sources::SourceId;
 use obws::Client as OBSClient;
 use rodio::*;
 use subd_types::{Event, UserMessage};
@@ -70,7 +71,7 @@ impl EventHandler for OBSMessageHandler {
 }
 
 pub async fn handle_obs_commands(
-    _tx: &broadcast::Sender<Event>,
+    tx: &broadcast::Sender<Event>,
     obs_client: &OBSClient,
     _twitch_client: &TwitchIRCClient<
         SecureTCPTransport,
@@ -103,6 +104,25 @@ pub async fn handle_obs_commands(
     };
 
     let _ = match command {
+        "!hotkey" => {
+            log::info!("HOTKEY TIME");
+            // let hotkey_event =
+            //     Event::TriggerHotkeyRequest(subd_types::TriggerHotkeyRequest {
+            //         hotkey: "E".to_string(), // The hotkey name/ID to trigger
+            //     });
+            // // Send the event
+            // tx.send(hotkey_event)?;
+
+            // let hotkey = obws::requests::hotkeys::KeyModifiers;
+            obs_service::obs_hotkeys::trigger_hotkey("H", &obs_client).await?;
+
+            // This works
+            // let _ =
+            //     obs_source::set_enabled("Scene 2", "Image", false, obs_client)
+            //         .await;
+            //
+            Ok(())
+        }
         "!stroke" => {
             let stroke_value = splitmsg
                 .get(1)
@@ -236,7 +256,7 @@ pub async fn handle_obs_commands(
             ];
             for filter in filters {
                 let filter_enabled = obws::requests::filters::SetEnabled {
-                    source,
+                    source: SourceId::Name(source),
                     filter,
                     enabled: true,
                 };
@@ -363,8 +383,10 @@ pub async fn handle_obs_commands(
         "!filter" => {
             let default_filter_name = "3D-Transform-Perspective".to_string();
             let filter: &str = splitmsg.get(1).unwrap_or(&default_filter_name);
-            let filter_details =
-                obs_client.filters().get("begin", filter).await?;
+            let filter_details = obs_client
+                .filters()
+                .get(SourceId::Name("begin"), filter)
+                .await?;
             println!("------------------------");
             println!("\n\tFilter Settings: {:?}", filter_details);
             println!("------------------------");

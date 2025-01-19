@@ -1,5 +1,5 @@
 use anyhow::Result;
-use obws::Client as OBSClient;
+use obws::{requests::sources::SourceId, Client as OBSClient};
 use serde::{Deserialize, Serialize};
 
 // I don't know why it's 1 sometimes and it's 2 others
@@ -143,12 +143,6 @@ pub struct SDFEffectsSettings {
     #[serde(rename = "Filter.SDFEffects.Shadow.Outer.Offset.Y")]
     pub shadow_outer_offset_y: Option<f32>,
 
-    #[serde(rename = "Filter.SDFEffects.SDF.Scale")]
-    pub sdf_scale: Option<f32>,
-
-    #[serde(rename = "Filter.SDFEffects.SDF.Threshold")]
-    pub sdf_threshold: Option<f32>,
-
     #[serde(rename = "Commit")]
     pub commit: Option<String>,
 
@@ -161,7 +155,10 @@ pub struct SDFEffectsSettings {
 pub async fn outline(source: &str, obs_client: &OBSClient) -> Result<()> {
     let filter_details = match obs_client
         .filters()
-        .get(source, &subd_types::consts::get_sdf_effects_filter_name())
+        .get(
+            SourceId::Name(source),
+            &subd_types::consts::get_sdf_effects_filter_name(),
+        )
         .await
     {
         Ok(val) => val,
@@ -193,7 +190,7 @@ pub async fn create_outline_filter(
     let filter_details = match obs_client
         .filters()
         .get(
-            &subd_types::consts::get_default_obs_source(),
+            SourceId::Name(&subd_types::consts::get_default_obs_source()),
             &subd_types::consts::get_sdf_effects_filter_name(),
         )
         .await
@@ -211,7 +208,7 @@ pub async fn create_outline_filter(
         })?;
 
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &subd_types::consts::get_sdf_effects_filter_name(),
         kind: &subd_types::consts::get_sdf_effects_internal_filter_name()
             .to_string(),
@@ -228,7 +225,7 @@ pub async fn create_outline_filter(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &stream_fx_filter_name,
         kind: &subd_types::consts::get_move_internal_filter_name().to_string(),
         settings: Some(new_settings),
@@ -248,7 +245,7 @@ pub async fn create_blur_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &subd_types::consts::get_blur_filter_name(),
         kind: &subd_types::consts::get_blur_internal_filter_name(),
         settings: Some(stream_fx_settings),
@@ -263,7 +260,7 @@ pub async fn create_blur_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &stream_fx_filter_name,
         kind: &subd_types::consts::get_move_internal_filter_name(),
         settings: Some(new_settings),
@@ -284,7 +281,7 @@ pub async fn create_scroll_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &subd_types::consts::get_scroll_filter_name(),
         kind: &subd_types::consts::get_scroll_internal_filter_name(),
         settings: Some(stream_fx_settings),
@@ -299,7 +296,7 @@ pub async fn create_scroll_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &stream_fx_filter_name,
         kind: &subd_types::consts::get_move_internal_filter_name().to_string(),
         settings: Some(new_settings),
@@ -323,7 +320,7 @@ pub async fn create_split_3d_transform_filters(
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
-            source,
+            source: SourceId::Name(source),
             filter: &filter_name,
             kind: &subd_types::consts::get_stream_fx_internal_filter_name(),
             settings: Some(stream_fx_settings),
@@ -340,7 +337,7 @@ pub async fn create_split_3d_transform_filters(
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
-            source,
+            source: SourceId::Name(source),
             filter: &stream_fx_filter_name,
             kind: &subd_types::consts::get_move_internal_filter_name(),
             settings: Some(new_settings),
@@ -358,7 +355,7 @@ pub async fn create_split_3d_transform_filters(
             ..Default::default()
         };
         let new_filter = obws::requests::filters::Create {
-            source,
+            source: SourceId::Name(source),
             filter: &stream_fx_filter_name,
             kind: &subd_types::consts::get_move_internal_filter_name(),
             settings: Some(new_settings),
@@ -380,7 +377,7 @@ pub async fn create_3d_transform_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &subd_types::consts::get_3d_transform_filter_name(),
         kind: &subd_types::consts::get_stream_fx_internal_filter_name(),
         settings: Some(stream_fx_settings),
@@ -395,7 +392,7 @@ pub async fn create_3d_transform_filters(
         ..Default::default()
     };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: &stream_fx_filter_name,
         kind: &subd_types::consts::get_move_internal_filter_name().to_string(),
         settings: Some(new_settings),
@@ -409,7 +406,8 @@ pub async fn remove_all_filters(
     source: &str,
     obs_client: &OBSClient,
 ) -> Result<()> {
-    let filters = match obs_client.filters().list(source).await {
+    let filters = match obs_client.filters().list(SourceId::Name(source)).await
+    {
         Ok(val) => val,
         Err(_) => return Ok(()),
     };
@@ -421,7 +419,7 @@ pub async fn remove_all_filters(
     for filter in filters {
         obs_client
             .filters()
-            .remove(source, &filter.name)
+            .remove(SourceId::Name(source), &filter.name)
             .await
             .expect("Error Deleting Filter");
     }

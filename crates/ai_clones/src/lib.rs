@@ -2,6 +2,8 @@ use anyhow::Result;
 use obs_move_transition::move_source;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::inputs::Create;
+use obws::requests::scenes::SceneId;
+use obws::requests::sources::SourceId;
 use obws::Client as OBSClient;
 use serde::{Deserialize, Serialize};
 use stable_diffusion::models::RequestType::Img2ImgFile;
@@ -102,7 +104,7 @@ async fn _create_chroma_key_filter(
 ) -> Result<()> {
     let chroma_key = ChromaKey { similarity: 420 };
     let new_filter = obws::requests::filters::Create {
-        source,
+        source: SourceId::Name(source),
         filter: "Chroma Key",
         kind: "chroma_key_filter_v2",
         settings: Some(chroma_key),
@@ -124,7 +126,7 @@ async fn create_move_source_filter(
     let new_filter: obws::requests::filters::Create<
         move_source::MoveSourceSettings,
     > = obws::requests::filters::Create {
-        source: scene,
+        source: SourceId::Name(scene),
         filter: &filter_name,
         kind: &subd_types::consts::get_move_source_filter_kind(),
         settings: Some(move_source_settings),
@@ -136,7 +138,7 @@ pub async fn find_current_bogan_index(
     scene: &str,
     obs_client: &OBSClient,
 ) -> Result<i32> {
-    let res = obs_client.scene_items().list(scene).await?;
+    let res = obs_client.scene_items().list(SceneId::Name(scene)).await?;
     Ok(res
         .iter()
         .map(|x| parse_scene_item_index(&x.source_name))
@@ -158,7 +160,7 @@ async fn create_new_bogan_source(
         unload: true,
     };
     let c = Create {
-        scene,
+        scene: SceneId::Name(scene),
         input: &new_source,
         kind: "image_source",
         settings: Some(settings),

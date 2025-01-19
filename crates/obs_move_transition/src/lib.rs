@@ -3,7 +3,7 @@ pub mod models;
 pub mod move_source;
 pub mod move_value;
 use anyhow::{Context, Result};
-use obws::Client as OBSClient;
+use obws::{requests::sources::SourceId, Client as OBSClient};
 
 use crate::models::Coordinates;
 
@@ -224,7 +224,7 @@ async fn update_filter<T: serde::Serialize>(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let settings = obws::requests::filters::SetSettings {
-        source,
+        source: SourceId::Name(source),
         filter: filter_name,
         settings: Some(new_settings),
         overlay: Some(false),
@@ -286,7 +286,7 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
         ))?;
 
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source,
+        source: SourceId::Name(source),
         filter: filter_name,
         enabled: true,
     };
@@ -297,6 +297,7 @@ pub async fn update_filter_and_enable<T: serde::Serialize>(
 mod tests {
     use super::*;
     use obs_service::obs::create_obs_client;
+    use obws::requests::sources::SourceId;
 
     #[tokio::test]
     #[ignore]
@@ -315,7 +316,11 @@ mod tests {
         let scene = "Memes";
         let source = "alex";
         let filter_name = "Move_alex";
-        let res = obs_client.filters().get(scene, filter_name).await.unwrap();
+        let res = obs_client
+            .filters()
+            .get(SourceId::Name(scene), filter_name)
+            .await
+            .unwrap();
         dbg!(&res);
 
         let _ = move_source(

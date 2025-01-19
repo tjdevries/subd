@@ -109,7 +109,11 @@ async fn ws_handler(
 /// Actual websocket statemachine (one will be spawned per connection)
 async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
     // send a ping (unsupported by some browsers) just to kick things off and get a response
-    if socket.send(Message::Ping(vec![1, 2, 3])).await.is_ok() {
+    if socket
+        .send(Message::Ping(vec![1, 2, 3].into()))
+        .await
+        .is_ok()
+    {
         println!("Pinged {who}...");
     } else {
         println!("Could not send ping {who}!");
@@ -139,7 +143,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
     // connecting to server and receiving their greetings.
     for i in 1..5 {
         if socket
-            .send(Message::Text(format!("Hi {i} times!")))
+            .send(Message::Text(format!("Hi {i} times!").into()))
             .await
             .is_err()
         {
@@ -159,7 +163,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
         for i in 0..n_msg {
             // In case of any websocket error, we exit.
             if sender
-                .send(Message::Text(format!("Server message {i} ...")))
+                .send(Message::Text(format!("Server message {i} ...").into()))
                 .await
                 .is_err()
             {
@@ -173,7 +177,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
         if let Err(e) = sender
             .send(Message::Close(Some(CloseFrame {
                 code: axum::extract::ws::close_code::NORMAL,
-                reason: Cow::from("Goodbye"),
+                reason: "Goodbye".into(),
             })))
             .await
         {

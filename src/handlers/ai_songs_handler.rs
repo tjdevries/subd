@@ -376,6 +376,7 @@ async fn handle_random_song_command(
     pool: &PgPool,
     amount: usize,
 ) -> Result<()> {
+    // This must be fucknig up
     // We could also make sure we don't pull duplicates
     for _ in 0..amount {
         let song = ai_playlist::find_random_song(pool).await?;

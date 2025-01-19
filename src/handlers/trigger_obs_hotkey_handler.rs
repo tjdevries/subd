@@ -10,6 +10,13 @@ pub struct TriggerHotkeyHandler {
     pub obs_client: OBSClient,
 }
 
+// let hotkey_event = Event::TriggerHotkeyRequest(TriggerHotkeyRequestMessage {
+//     hotkey: "MyHotkeyName".to_string(), // The hotkey name/ID to trigger
+// });
+//
+// // Send the event
+// tx.send(hotkey_event)?;
+
 #[async_trait]
 impl EventHandler for TriggerHotkeyHandler {
     async fn handle(
@@ -24,6 +31,7 @@ impl EventHandler for TriggerHotkeyHandler {
                 _ => continue,
             };
 
+            // I don't know if the hotkey is right
             obs_service::obs_hotkeys::trigger_hotkey(
                 &msg.hotkey,
                 &self.obs_client,

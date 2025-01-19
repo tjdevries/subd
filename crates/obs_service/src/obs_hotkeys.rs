@@ -10,10 +10,32 @@ pub const SUPER_KEY: obws::requests::hotkeys::KeyModifiers =
         command: true,
     };
 
+pub const NOTHING: obws::requests::hotkeys::KeyModifiers =
+    obws::requests::hotkeys::KeyModifiers {
+        shift: false,
+        control: false,
+        alt: false,
+        command: false,
+    };
+
 pub async fn trigger_hotkey(key: &str, obs_client: &OBSClient) -> Result<()> {
-    _ = obs_client
+    let list = obs_client.hotkeys().list().await?;
+    println!("OBS Hotkeys {:?}", list);
+
+    // This workes
+    // _ = obs_client
+    //     .hotkeys()
+    //     .trigger_by_name("libobs.hide_scene_item.1")
+    //     .await;
+
+    match obs_client
         .hotkeys()
         .trigger_by_sequence(key, SUPER_KEY)
-        .await;
+        .await
+    {
+        Ok(_) => log::info!("Hotkey triggered successfully"),
+        Err(e) => log::error!("Error triggering hotkey: {:?}", e),
+    }
+
     Ok(())
 }

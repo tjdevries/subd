@@ -1,5 +1,5 @@
 use anyhow::Result;
-use obws::Client as OBSClient;
+use obws::{requests::inputs::InputId, Client as OBSClient};
 use rand::Rng;
 
 // TODO late update this to handle multiple contracts
@@ -21,7 +21,7 @@ pub async fn updates_ab_browser(
         };
     let set_settings = obws::requests::inputs::SetSettings {
         settings: &browser_settings,
-        input: "AB-Browser",
+        input: InputId::Name("AB-Browser"),
         overlay: Some(true),
     };
     let _ = obs_client.inputs().set_settings(set_settings).await;

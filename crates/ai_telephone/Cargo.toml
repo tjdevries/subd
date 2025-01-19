@@ -11,7 +11,7 @@ ai_images = { path = "../ai_images/" }
 subd-audio = { path = "../subd-audio/" }
 subd-openai = { path = "../subd-openai/" }
 stable_diffusion = { path = "../stable_diffusion/" }
-obws = "0.10"
+obws = "0.14"
 obs_service = { path = "../obs_service/" }
 chrono.workspace = true
 anyhow.workspace = true

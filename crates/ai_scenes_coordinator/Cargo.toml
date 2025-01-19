@@ -17,7 +17,7 @@ twitch_stream_state = { path = "../twitch_stream_state/" }
 stream_character = { path = "../stream_character/" }
 ai_movie_trailers = { path = "../ai_movie_trailers/" }
 
-obws = "0.10.0"
+obws = "0.14.0"
 # obws.workspace = true
 # Twitch Deps
 twitch-irc.workspace = true

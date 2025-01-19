@@ -6,11 +6,11 @@ edition = "2021"
 
 [dependencies]
 
-subd-types = { path = "../subd-types/" }
+subd-types.workspace = true
 # stable_diffusion = { path = "../stable_diffusion/" }
 # obs_service = { path = "../obs_service/" }
 # obs_move_transition = { path = "../obs_move_transition/" }
-obws = "0.10"
+obws.workspace = true
 # chrono.workspace = true
 serde.workspace = true
 anyhow.workspace = true

@@ -5,6 +5,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
 use events::EventHandler;
+use obws::requests::inputs::InputId;
 use obws::Client as OBSClient;
 use stable_diffusion;
 use stable_diffusion::models::GenerateAndArchiveRequest;
@@ -83,7 +84,7 @@ pub async fn handle_stream_background_commands(
                 };
             let set_settings = obws::requests::inputs::SetSettings {
                 settings: &browser_settings,
-                input: "AB-Browser",
+                input: InputId::Name("AB-Browser"),
                 overlay: Some(true),
             };
             let _ = obs_client.inputs().set_settings(set_settings).await;

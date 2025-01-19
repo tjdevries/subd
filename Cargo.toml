@@ -16,24 +16,29 @@ events = { path = "crates/events" }
 fal_ai = { path = "crates/fal_ai" }
 obs_3d_filter = { path = "crates/obs_3d_filter" }
 obs_bootstrap = { path = "crates/obs_bootstrap" }
-obs_move_transition = { path = "crates/obs_move_transition" }
-obs_service = { path = "crates/obs_service" }
 skybox = { path = "crates/skybox" }
-stable_diffusion = { path = "crates/stable_diffusion" }
 stream_character = { path = "crates/stream_character" }
 subd-audio = { path = "crates/subd-audio" }
 subd-db = { path = "crates/subd-db" }
 subd-elevenlabs = { path = "crates/subd-elevenlabs" }
-subd-macros = { path = "crates/subd-macros" }
 subd-openai = { path = "crates/subd-openai" }
 subd-suno = { path = "crates/subd-suno" }
 subd-twitch = { path = "crates/subd-twitch" }
-subd-types = { path = "crates/subd-types" }
 subd-utils= { path = "crates/subd-utils" }
 twitch_chat = { path = "crates/twitch_chat" }
 twitch_service = { path = "crates/twitch_service" }
 twitch_stream_state = { path = "crates/twitch_stream_state" }
 user_service = { path = "crates/user_service" }
+
+subd-macros = { workspace = true }
+askama = { workspace = true }
+subd-types = { workspace = true }
+num-traits = { workspace = true }
+obs_move_transition = { workspace = true }
+obs_service = { workspace = true }
+stable_diffusion = { workspace = true }
+log = { workspace = true }
+obws = { workspace = true }
 
 anyhow.workspace = true
 once_cell.workspace = true
@@ -47,7 +52,6 @@ tungstenite.workspace = true
 twitch-irc.workspace = true
 uuid.workspace = true
 
-askama = "0.12.1"
 async-trait.workspace = true
 axum = { version = "*", features = ["macros", "ws"] }
 axum-extra = { version = "*", features=["typed-header"] }
@@ -61,8 +65,6 @@ instruct-macros = "0.1.8"
 instruct-macros-types = "0.1.8"
 instructor-ai = "0.1.8"
 minijinja = { version = "2.3.1", features = ["builtins", "loader"] }
-num-traits = "0.2.17"
-obws = "0.10"
 openai = { path = "../openai" }
 openai-api-rs = "4.1.0"
 psl = "2.0.89"
@@ -82,7 +84,6 @@ rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
 
 rag-toolchain = { git = "https://github.com/JackMatthewRimmer/rust-rag-toolchain" }
-log = "0.4.25"
 env_logger = "0.11.6"
 
 # This broken for me
@@ -101,6 +102,15 @@ members = ["crates/*"]
 
 [workspace.dependencies]
 
+subd-macros = { path = "crates/subd-macros" }
+askama = "0.12.1"
+subd-types = { path = "crates/subd-types" }
+num-traits = "0.2.17"
+obs_move_transition = { path = "crates/obs_move_transition" }
+obs_service = { path = "crates/obs_service" }
+stable_diffusion = { path = "crates/stable_diffusion" }
+log = "0.4.25"
+obws = "0.14"
 anyhow = "1.0.57"
 async-trait = "0.1.57"
 chrono = { version = "0.4.19", features = [ "serde" ] }

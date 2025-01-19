@@ -1,6 +1,7 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use obws;
+use obws::requests::sources::SourceId;
 use obws::Client as OBSClient;
 
 pub async fn update_obs_video_source(
@@ -80,7 +81,11 @@ pub async fn print_filter_info(
 ) -> Result<String> {
     println!("Finding Filter Details {:?}", words);
 
-    let filter_details = match obs_client.filters().get(source, words).await {
+    let filter_details = match obs_client
+        .filters()
+        .get(SourceId::Name(source), words)
+        .await
+    {
         Ok(details) => details,
         Err(_) => {
             println!("Error Fetching Filter Details: {:?}", words);

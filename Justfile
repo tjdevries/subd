@@ -55,7 +55,7 @@ sfx:
 	# twitch_chat_saving implict_soundeffects
 
 tts:
-	cargo run --bin begin -- --enable tts twitch_chat_saving implict_soundeffects
+	cargo run --bin begin -- --enable tts twitch_chat_saving implict_soundeffects obs
 	# cargo run --bin begin -- --enable tts twitch_chat_saving implict_soundeffects explicit_soundeffects
 	# cargo run --bin begin -- --enable tts --enable twitch_chat_saving implict_soundeffects
 

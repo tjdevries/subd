@@ -9,5 +9,5 @@ edition = "2021"
 anyhow.workspace = true
 
 subd-types = { path = "../subd-types/" }
-obws = "0.10"
+obws = "0.14"
 rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }

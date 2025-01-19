@@ -4,6 +4,8 @@ use async_trait::async_trait;
 use events::EventHandler;
 use obs_service::obs_scenes;
 use obs_service::obs_source;
+use obws::requests::inputs::InputId;
+use obws::requests::scenes::SceneId;
 use obws::Client as OBSClient;
 use rand::seq::SliceRandom;
 use std::fs;
@@ -125,12 +127,15 @@ async fn handle_commands(
                     Some(music_filename) => {
                         let items = obs_client
                             .scene_items()
-                            .list(background_scene)
+                            .list(SceneId::Name(background_scene))
                             .await?;
                         for item in items {
                             let enabled = match obs_client
                                 .scene_items()
-                                .enabled(background_scene, item.id)
+                                .enabled(
+                                    SceneId::Name(background_scene),
+                                    item.id,
+                                )
                                 .await
                             {
                                 Ok(enabled) => enabled,
@@ -181,7 +186,7 @@ async fn handle_commands(
                         let set_settings =
                             obws::requests::inputs::SetSettings {
                                 settings: &media_source,
-                                input: details.music,
+                                input: InputId::Name(details.music),
                                 overlay: Some(true),
                             };
                         let _ = obs_client

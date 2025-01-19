@@ -13,9 +13,9 @@ serde.workspace = true
 reqwest.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
-obws = "0.10"
-askama = "0.12.1"
-subd-macros = { path = "../subd-macros/" }
+obws.workspace = true
+askama.workspace = true
+subd-macros.workspace = true
 
 [dev-dependencies]
 

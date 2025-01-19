@@ -1,6 +1,7 @@
 use anyhow::Result;
 use askama::Template;
 use chrono::Utc;
+use obws::requests::sources::SourceId;
 use obws::Client as OBSClient;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -98,7 +99,7 @@ async fn enable_obs_filter(
     filter_name: &str,
 ) -> Result<()> {
     let filter_enabled = obws::requests::filters::SetEnabled {
-        source: "Primary",
+        source: SourceId::Name("Primary"),
         filter: filter_name,
         enabled: true,
     };

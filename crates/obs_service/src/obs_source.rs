@@ -6,11 +6,14 @@ use obws::requests::custom::source_settings::FfmpegSource;
 use obws::requests::custom::source_settings::ImageSource;
 use obws::requests::custom::source_settings::Slideshow;
 use obws::requests::custom::source_settings::SlideshowFile;
+use obws::requests::inputs::InputId;
 use obws::requests::inputs::SetSettings;
 use obws::requests::scene_items::{
     Position, Scale, SceneItemTransform, SetTransform,
 };
+use obws::requests::scenes::SceneId;
 use obws::requests::sources::SaveScreenshot;
+use obws::requests::sources::SourceId;
 use obws::Client as OBSClient;
 use sqlx::postgres::PgQueryResult;
 use sqlx::types::BigDecimal;
@@ -219,7 +222,7 @@ pub async fn update_slideshow_source(
     };
     let set_settings = SetSettings {
         settings: &slideshow_settings,
-        input: &source,
+        input: InputId::Name(&source),
         overlay: Some(true),
     };
     let _ = obs_client.inputs().set_settings(set_settings).await;
@@ -250,7 +253,7 @@ pub async fn update_video_source(
     };
     let set_settings = SetSettings {
         settings: &settings,
-        input: &source,
+        input: InputId::Name(&source),
         overlay: Some(true),
     };
     obs_client
@@ -271,7 +274,7 @@ pub async fn update_image_source(
     };
     let set_settings = SetSettings {
         settings: &image_settings,
-        input: &source,
+        input: InputId::Name(&source),
         overlay: Some(true),
     };
     obs_client
@@ -292,7 +295,7 @@ pub async fn save_screenshot(
     Ok(client
         .sources()
         .save_screenshot(SaveScreenshot {
-            source,
+            source: SourceId::Name(source),
             format: "png",
             file_path: p,
             width: None,
@@ -334,13 +337,12 @@ pub async fn scale_source(
 }
 
 // Scale for the X & Y of the source in terms of relation to each other,
-// and not the overall size in the scene
 pub async fn scale(
     scene: &str,
     id: i64,
     new_scale: Scale,
     obs_client: &OBSClient,
-) -> Result<(), obws::Error> {
+) -> Result<()> {
     let scene_transform = SceneItemTransform {
         scale: Some(new_scale),
         ..Default::default()
@@ -348,11 +350,15 @@ pub async fn scale(
 
     // I bet ID is wrong
     let set_transform = SetTransform {
-        scene,
+        scene: SceneId::Name(scene),
         item_id: dbg!(id),
         transform: scene_transform,
     };
-    obs_client.scene_items().set_transform(set_transform).await
+    obs_client
+        .scene_items()
+        .set_transform(set_transform)
+        .await
+        .map_err(|e| anyhow!("{}", e))
 }
 
 pub async fn old_trigger_grow(
@@ -366,7 +372,7 @@ pub async fn old_trigger_grow(
     if source == "all" {
         let sources = obs_client
             .scene_items()
-            .list(&subd_types::consts::get_default_obs_source())
+            .list(SceneId::Name(&subd_types::consts::get_default_obs_source()))
             .await?;
         for source in sources {
             let new_scale = Scale {
@@ -411,7 +417,7 @@ pub async fn move_source(
     x: f32,
     y: f32,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let id = find_id(scene, source, obs_client).await?;
 
     let new_position = Position {
@@ -424,7 +430,7 @@ pub async fn move_source(
     };
 
     let set_transform = SetTransform {
-        scene,
+        scene: SceneId::Name(scene),
         item_id: id,
         transform: scene_transform,
     };
@@ -440,7 +446,7 @@ pub async fn hide_source(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     set_enabled(scene, source, false, obs_client).await
 }
 
@@ -448,14 +454,11 @@ pub async fn show_source(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     set_enabled(scene, source, true, obs_client).await
 }
 
-pub async fn hide_sources(
-    scene: &str,
-    obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+pub async fn hide_sources(scene: &str, obs_client: &OBSClient) -> Result<()> {
     set_enabled_on_all_sources(scene, false, obs_client).await
 }
 
@@ -464,14 +467,14 @@ pub async fn set_enabled(
     source: &str,
     enabled: bool,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     let id = find_id(scene, source, obs_client).await?;
 
     let set_enabled: obws::requests::scene_items::SetEnabled =
         obws::requests::scene_items::SetEnabled {
             enabled,
             item_id: id,
-            scene,
+            scene: SceneId::Name(scene),
         };
 
     let _ = obs_client.scene_items().set_enabled(set_enabled).await;
@@ -482,8 +485,8 @@ async fn set_enabled_on_all_sources(
     scene: &str,
     enabled: bool,
     obs_client: &OBSClient,
-) -> Result<(), anyhow::Error> {
-    let items = obs_client.scene_items().list(scene).await?;
+) -> Result<()> {
+    let items = obs_client.scene_items().list(SceneId::Name(scene)).await?;
     for item in items {
         // If we can't set an item as enabled we just move on with our lives
         let _ =
@@ -502,7 +505,10 @@ pub async fn print_source_info_true(
     obs_client: &OBSClient,
 ) -> Result<()> {
     let id = find_id(scene, source, obs_client).await?;
-    let settings = obs_client.scene_items().transform(scene, id).await?;
+    let settings = obs_client
+        .scene_items()
+        .transform(SceneId::Name(scene), id)
+        .await?;
 
     println!("Source Settings: {:?}", settings);
     Ok(())
@@ -515,7 +521,10 @@ pub async fn print_source_info(
 ) -> Result<()> {
     let id = find_id(&subd_types::consts::get_meme_scene(), source, obs_client)
         .await?;
-    let settings = obs_client.scene_items().transform(scene, id).await?;
+    let settings = obs_client
+        .scene_items()
+        .transform(SceneId::Name(scene), id)
+        .await?;
 
     println!("Source Settings: {:?}", settings);
     Ok(())
@@ -529,14 +538,18 @@ pub async fn find_id(
     scene: &str,
     source: &str,
     obs_client: &OBSClient,
-) -> Result<i64, obws::Error> {
+) -> Result<i64> {
     let id_search = obws::requests::scene_items::Id {
-        scene,
+        scene: SceneId::Name(scene),
         source,
         ..Default::default()
     };
 
-    obs_client.scene_items().id(id_search).await
+    obs_client
+        .scene_items()
+        .id(id_search)
+        .await
+        .map_err(|e| anyhow!("{}", e))
 }
 
 #[derive(Debug)]

@@ -190,8 +190,10 @@ fn add_postfix_to_filepath(filepath: &str, postfix: &str) -> String {
 
 pub fn normalize_tts_file(local_audio_path: &str) -> Result<String> {
     let audio_dest_path = add_postfix_to_filepath(local_audio_path, "_norm");
+
+    // -hide_banner  \
     let ffmpeg_status = Command::new("ffmpeg")
-        .args(["-i", local_audio_path, &audio_dest_path])
+        .args(["-hide_banner", "-i", local_audio_path, &audio_dest_path])
         .status()
         .expect("Failed to execute ffmpeg");
 

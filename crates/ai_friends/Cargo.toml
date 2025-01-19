@@ -11,7 +11,7 @@ twitch-irc.workspace = true
 tokio.workspace = true
 
 fal_ai = { path = "../fal_ai/" }
-obws = "0.10"
+obws = "0.14"
 subd-types = { path = "../subd-types/" }
 subd-audio = { path = "../subd-audio/" }
 subd-macros = { path = "../subd-macros/" }
