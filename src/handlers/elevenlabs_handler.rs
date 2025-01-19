@@ -158,8 +158,11 @@ impl ElevenLabsHandler {
             let res = global_voice.expect("Expect a global_voice");
             res
         } else {
-            let res =
-                msg.voice.as_ref().unwrap_or(&user_voice.unwrap()).clone();
+            let res = msg
+                .voice
+                .as_ref()
+                .unwrap_or(&user_voice.unwrap_or("begin".to_string()))
+                .clone();
             res
         };
         Ok(final_voice)
