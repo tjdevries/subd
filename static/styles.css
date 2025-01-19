@@ -1,150 +1,116 @@
-/* Importing bold and unique fonts */
-@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&family=Permanent+Marker&family=Amatic+SC&display=swap');
-
+/* General Styles */
 body {
-    font-family: 'Indie Flower', cursive;
     padding: 20px;
-    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
-    color: #243B4A;
-    animation: fadeIn 2s ease-in;
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(145deg, #ffe5b4, #ffbdbd);
+    color: #333;
+    transition: background-color 0.5s, color 1s;
 }
 
+/* Header Styles */
 .header-container {
     text-align: center;
-    margin-bottom: 50px;
+    background-color: #fae3d9;
+    border-bottom: 5px solid #ffb3b3;
+    padding: 20px;
+    animation: pulse 5s infinite;
 }
 
-.header a {
-    font-family: 'Permanent Marker', cursive;
+.header-container h1 {
+    font-family: 'Pacifico', cursive;
     font-size: 3em;
-    color: #FAFAFA;
-    text-shadow: 2px 2px #66a6ff;
-    transition: transform 0.5s, color 0.5s;
+    color: #ff6363;
+    text-shadow: 2px 2px #ffbdbd;
 }
 
-.header a:hover {
-    color: #ff4e50;
+.header-container h1 a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.4s, text-shadow 0.4s;
+}
+
+.header-container h1 a:hover {
+    color: #fff;
+    text-shadow: 3px 3px #ff6363;
     transform: rotate(360deg);
 }
 
 .sub-header {
-    font-family: 'Amatic SC', cursive;
     font-size: 1.5em;
-    color: #FAFAFA;
+    color: #ff6363;
 }
 
+
+/* Navigation Styles */
 .nav-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    text-align: center;
-    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-around;
+    background-color: #ffbdbd;
+    border-bottom: 5px solid #fae3d9;
+    padding: 10px 0;
 }
 
 .nav-link {
+    font-family: 'Roboto', sans-serif;
     font-size: 1.2em;
-    font-family: 'Amatic SC', cursive;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #FAFAFA;
-    border-radius: 5px;
+    color: #333;
     text-decoration: none;
-    transition: all 0.4s ease;
+    transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .nav-link:hover {
-    background-color: #ff4e50;
-    color: #ffffff;
+    color: #ff6363;
     transform: scale(1.2);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 2px 2px 0 #fae3d9;
 }
 
-.unplayed-song, .previously-played-song, .song, .top-song {
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 10px;
-    margin: 10px;
+
+/* Content Styles */
+section {
     padding: 20px;
-    transition: box-shadow 0.3s ease;
-    mix-blend-mode: multiply;
+    margin: 15px 0;
+    background-color: rgba(255,255,255,0.8);
+    border-radius: 8px;
+    box-shadow: 5px 5px 15px #888;
+    animation: fadeIn 2s;
 }
 
-.unplayed-song:hover, .previously-played-song:hover, .song:hover, .top-song:hover {
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-    transform: translateY(-5px);
+.song-title {
+    font-family: 'Indie Flower', cursive;
+    color: #ff6363;
 }
 
-.song-title a {
-    font-family: 'Permanent Marker', cursive;
-    color: #243B4A;
+.song a {
     text-decoration: none;
-    transition: color 0.3s ease-in-out;
+    color: inherit;
+    transition: color 0.3s, transform 0.3s;
 }
 
-.song-title a:hover {
-    color: #ff4e50;
-    background-clip: text;
+.song a:hover {
+    color: #ffb3b3;
+    transform: skewX(-10deg) scale(1.1);
 }
 
-.audio {
-    margin-top: 10px;
+.song-id, .song-tags, .song-description {
+    font-family: 'Lato', sans-serif;
+    color: #555;
+    margin: 5px 0;
 }
 
-.user {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
-    transition: transform 0.3s ease, background-color 0.3s ease;
-}
-
-.user:hover {
-    background-color: #ff4e50;
-    color: #ffffff;
-    transform: rotate(2deg);
-}
-
-.image {
-    display: inline-block;
-    margin: 10px;
-}
-
-.image img {
-    width: 100%;
-    border-radius: 10px;
-    filter: brightness(90%);
-    transition: filter 0.3s ease;
-}
-
-.image:hover img {
-    filter: brightness(120%);
-}
-
-.video {
-    width: 100%;
-    border-radius: 10px;
-    margin-top: 20px;
-    transform: scale(0.95);
-    transition: transform 0.3s ease;
-}
-
-.video:hover {
-    transform: scale(1);
-}
-
-.song-lyrics {
-    font-family: 'Amatic SC', cursive;
-    font-size: 1.2em;
-    line-height: 1.8em;
-    color: #243B4A;
-    margin: 20px 0;
+/* Animation Keyframes */
+@keyframes pulse {
+    0% {
+        background-color: #fae3d9;
+    }
+    50% {
+        background-color: #fff1eb;
+    }
+    100% {
+        background-color: #fae3d9;
+    }
 }
 
 @keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    0% {opacity: 0;}
+    100% {opacity: 1;}
 }

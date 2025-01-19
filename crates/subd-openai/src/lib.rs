@@ -51,6 +51,8 @@ pub async fn ask_chat_gpt(
 ) -> Result<ChatCompletionMessage> {
     set_key(env::var("OPENAI_API_KEY")?);
 
+    // I don't know if I really want to use Systme for that
+    // I also don't know if I can make these calls simpler
     let messages = vec![
         ChatCompletionMessage {
             role: ChatCompletionMessageRole::System,
