@@ -14,3 +14,4 @@ sqlx.workspace = true
 subd-types = { path = "../subd-types/" }
 stream_character = { path = "../stream_character//" }
 tokio.workspace = true
+log = "0.4.25"

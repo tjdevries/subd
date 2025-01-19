@@ -11,6 +11,7 @@ use std::io::BufReader;
 use std::thread;
 use std::time;
 use subd_elevenlabs;
+use subd_elevenlabs::StreamCharacter;
 use subd_types::Event;
 use subd_types::TransformOBSTextRequest;
 use tokio::sync::broadcast;
@@ -74,17 +75,31 @@ impl EventHandler for ImplicitSoundHandler {
             };
 
             // This is how we determing the voice for the user
-            let stream_character = subd_elevenlabs::build_stream_character(
-                &self.pool,
-                &msg.user_name,
-            )
-            .await?;
+            let stream_character =
+                match subd_elevenlabs::build_stream_character(
+                    &self.pool,
+                    &msg.user_name,
+                )
+                .await
+                {
+                    Ok(character) => character,
+                    Err(e) => {
+                        log::error!("Failed to build stream character: {}", e);
+                        StreamCharacter {
+                            voice: None,
+                            source: "".to_string(),
+                            username: "".to_string(),
+                        }
+                    }
+                };
 
+            log::info!("Build Stream Character: {:?}", stream_character);
             let voice = match stream_character.voice {
                 Some(voice) => voice,
                 None => subd_types::consts::get_twitch_mod_default_voice(),
             };
 
+            log::info!("Matched Voice: {}", voice);
             // This is the current state of the stream:
             //    whether you are allowing all text to be read
             //    whether you are allowing soundeffects to happen automatically

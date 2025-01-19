@@ -1,6 +1,3 @@
--- Ayresia says I don't need this
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE users (
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid()
 );
@@ -46,7 +43,7 @@ CREATE TABLE ai_songs(
   
   -- This is something we have to consider
   -- ALTER TABLE ai_songs ADD COLUMN downloaded boolean NOT NULL DEFAULT false;
-  downloaded boolean NOT NULL DEFAULT false,
+  downloaded boolean NOT NULL DEFAULT false
 );
 
 CREATE TABLE ai_playlist(
@@ -105,8 +102,6 @@ CREATE TABLE user_roles (
   is_twitch_staff   boolean NOT NULL,
   -- TODO: Twitch sub should probably be a number or an enum
   is_twitch_sub     boolean NOT NULL
-
-  -- ...
 );
 
 CREATE TABLE suno_request (
@@ -151,20 +146,6 @@ CREATE TABLE twitch_users (
   display_name    TEXT NOT NULL
 );
 
-CREATE TABLE redemptions (
-title      TEXT NOT NULL ,
-
-  -- TODO: Add NOT NULL, after we populate/delete redemptions
-  twitch_id UUID NOT NULL,
-
-  -- reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
-  user_name  TEXT NOT NULL,
-  cost       INT NOT NULL,
-  user_input TEXT,
-  
-  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE skybox_requests (
   blockade_id INT NOT NULL,
   prompt TEXT NOT NULL,
@@ -196,3 +177,25 @@ CREATE TABLE image_votes (
     voted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, song_id, image_name)
 );
+
+CREATE TABLE IF NOT EXISTS twitch_rewards (
+    title TEXT NOT NULL,
+    cost INTEGER NOT NULL,
+    twitch_id UUID PRIMARY KEY NOT NULL,
+    enabled BOOLEAN NOT NULL
+);
+
+CREATE TABLE redemptions (
+title      TEXT NOT NULL ,
+
+  -- TODO: Add NOT NULL, after we populate/delete redemptions
+  twitch_id UUID NOT NULL,
+
+  reward_id  UUID NOT NULL references twitch_rewards (twitch_id),
+  user_name  TEXT NOT NULL,
+  cost       INT NOT NULL,
+  user_input TEXT,
+  
+  created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+

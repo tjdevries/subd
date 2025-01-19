@@ -134,14 +134,16 @@ async fn determine_voice_to_use(
         if state.global_voice {
             let global_voice =
                 stream_character::get_voice_from_username(pool, "beginbot")
-                    .await?;
+                    .await?
+                    .expect("Expected voice for beginbot");
             return Ok(global_voice);
         }
     }
 
     // Get the voice associated with the username
-    let user_voice =
-        stream_character::get_voice_from_username(pool, username).await?;
+    let user_voice = stream_character::get_voice_from_username(pool, username)
+        .await?
+        .expect("expected voice for username");
     Ok(user_voice)
 }
 

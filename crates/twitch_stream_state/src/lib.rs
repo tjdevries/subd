@@ -182,16 +182,29 @@ pub async fn get_twitch_state(
     pool: &PgPool,
 ) -> Result<twitch_stream_state::Model> {
     let res = sqlx::query!("SELECT * FROM twitch_stream_state")
-        .fetch_one(pool)
+        .fetch_optional(pool)
         .await?;
-    let model = twitch_stream_state::Model {
-        sub_only_tts: res.sub_only_tts,
-        explicit_soundeffects: res.explicit_soundeffects,
-        implicit_soundeffects: res.implicit_soundeffects,
-        global_voice: res.global_voice,
-        dalle_mode: res.dalle_mode,
-        dalle_model: res.dalle_model,
-        enable_stable_diffusion: res.enable_stable_diffusion,
+
+    let model = if let Some(res) = res {
+        twitch_stream_state::Model {
+            sub_only_tts: res.sub_only_tts,
+            explicit_soundeffects: res.explicit_soundeffects,
+            implicit_soundeffects: res.implicit_soundeffects,
+            global_voice: res.global_voice,
+            dalle_mode: res.dalle_mode,
+            dalle_model: res.dalle_model,
+            enable_stable_diffusion: res.enable_stable_diffusion,
+        }
+    } else {
+        twitch_stream_state::Model {
+            sub_only_tts: true,
+            explicit_soundeffects: true,
+            implicit_soundeffects: true,
+            global_voice: false,
+            dalle_mode: true,
+            dalle_model: "dalle-3".to_string(),
+            enable_stable_diffusion: true,
+        }
     };
     Ok(model)
 }

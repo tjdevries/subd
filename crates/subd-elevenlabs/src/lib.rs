@@ -144,12 +144,13 @@ pub async fn build_stream_character(
 ) -> Result<StreamCharacter> {
     let default_voice = subd_types::consts::get_twitch_default_voice();
 
+    // We need the other server running first
     let voice = match stream_character::get_voice_from_username(pool, username)
         .await
     {
         Ok(voice) => voice,
-        Err(_) => {
-            println!("No Voice Found, Using Default");
+        Err(e) => {
+            log::error!("No Voice Found, Using Default: {}", e);
 
             return Ok(StreamCharacter {
                 username: username.to_string(),
@@ -160,11 +161,14 @@ pub async fn build_stream_character(
         }
     };
 
+    // log::info!("Voice: {}", voice);
+    // log::info!("DA FUCK");
     let character = subd_types::consts::get_default_stream_character_source();
+    log::info!("DA FUCK AGAIN");
 
     Ok(StreamCharacter {
         username: username.to_string(),
-        voice: Some(voice.to_string()),
+        voice,
         source: character.to_string(),
     })
 }

@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
 use elevenlabs_api::{Auth, Elevenlabs};
+use env_logger::init;
 use obs_service::obs::create_obs_client;
 use obws::Client;
 use serde::{Deserialize, Serialize};
@@ -116,6 +117,7 @@ async fn main() -> Result<()> {
         }
     }
 
+    env_logger::init();
     // Create the event loop
     let mut event_loop = events::EventLoop::new();
 
@@ -227,7 +229,9 @@ async fn main() -> Result<()> {
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                         sink: resources.sink,
-                        obs_client: resources.obs_client.unwrap(),
+                        // obs_client: resources
+                        //     .obs_client
+                        //     .expect("Expect to be able to connect to OBS"),
                         elevenlabs: resources.elevenlabs,
                     },
                 );

@@ -82,6 +82,8 @@ rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336
 youtube_dl = { git = "https://github.com/twiclo/youtube-dl-rs", rev = "dbb9a878208175dee95533a6d2bd02344b8094bf", default-features = false, features = [ "yt-dlp" ] }
 
 rag-toolchain = { git = "https://github.com/JackMatthewRimmer/rust-rag-toolchain" }
+log = "0.4.25"
+env_logger = "0.11.6"
 
 # This broken for me
 # kalosm = { git = "https://github.com/floneum/floneum.git", rev = "0b51b6b347bc5653958669951402226c3c38b9e8" }

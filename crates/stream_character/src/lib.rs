@@ -42,10 +42,10 @@ impl user_stream_character_information::Model {
 pub async fn get_voice_from_username(
     pool: &PgPool,
     username: &str,
-) -> Result<String> {
+) -> Result<Option<String>> {
     let res = sqlx::query!(
         "SELECT voice FROM user_stream_character_information WHERE username = $1",
         username
-    ).fetch_one(pool).await?;
-    Ok(res.voice)
+    ).fetch_optional(pool).await?;
+    Ok(res.map(|r| r.voice))
 }

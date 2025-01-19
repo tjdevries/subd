@@ -32,6 +32,7 @@ impl EventHandler for TwitchChat {
         // we send an TwitchChatMessage event
         // which loop handles somewhere
         while let Some(message) = self.incoming.recv().await {
+            println!("Received message: {:?}", message);
             if let ServerMessage::Privmsg(private) = message {
                 tx.send(Event::TwitchChatMessage(
                     subd_types::twitch::TwitchMessage::from_msg(private),

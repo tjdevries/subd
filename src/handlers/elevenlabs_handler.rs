@@ -7,7 +7,7 @@ use elevenlabs_api::{
     *,
 };
 use events::EventHandler;
-use obws::Client as OBSClient;
+//use obws::Client as OBSClient;
 use rodio::*;
 use std::{fs::File, io::BufReader};
 use stream_character;
@@ -25,7 +25,7 @@ pub struct ElevenLabsHandler {
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pub elevenlabs: Elevenlabs,
-    pub obs_client: OBSClient,
+    // pub obs_client: OBSClient,
 }
 
 #[async_trait]
@@ -145,7 +145,7 @@ impl ElevenLabsHandler {
         let global_voice =
             stream_character::get_voice_from_username(&self.pool, "beginbot")
                 .await
-                .unwrap_or_else(|_| default_global_voice.clone());
+                .unwrap_or_else(|_| Some(default_global_voice.clone()));
 
         let user_voice = stream_character::get_voice_from_username(
             &self.pool,
@@ -155,9 +155,12 @@ impl ElevenLabsHandler {
         .unwrap_or_else(|_| global_voice.clone());
 
         let final_voice = if is_global_voice_enabled {
-            global_voice
+            let res = global_voice.expect("Expect a global_voice");
+            res
         } else {
-            msg.voice.as_ref().unwrap_or(&user_voice).clone()
+            let res =
+                msg.voice.as_ref().unwrap_or(&user_voice.unwrap()).clone();
+            res
         };
         Ok(final_voice)
     }
