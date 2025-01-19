@@ -7,7 +7,7 @@ use elevenlabs_api::{
     *,
 };
 use events::EventHandler;
-//use obws::Client as OBSClient;
+use obws::Client as OBSClient;
 use rodio::*;
 use std::{fs::File, io::BufReader};
 use stream_character;
@@ -25,7 +25,7 @@ pub struct ElevenLabsHandler {
     pub twitch_client:
         TwitchIRCClient<SecureTCPTransport, StaticLoginCredentials>,
     pub elevenlabs: Elevenlabs,
-    // pub obs_client: OBSClient,
+    pub obs_client: OBSClient,
 }
 
 #[async_trait]

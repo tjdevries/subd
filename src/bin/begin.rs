@@ -229,9 +229,9 @@ async fn main() -> Result<()> {
                         pool: pool.clone(),
                         twitch_client: resources.twitch_client,
                         sink: resources.sink,
-                        // obs_client: resources
-                        //     .obs_client
-                        //     .expect("Expect to be able to connect to OBS"),
+                        obs_client: resources
+                            .obs_client
+                            .expect("Expect to be able to connect to OBS"),
                         elevenlabs: resources.elevenlabs,
                     },
                 );
