@@ -41,6 +41,7 @@ python main.py
 
 ---
 
+## I think we have a rust one too
 ## Event Sub Server
 
 ```bash
