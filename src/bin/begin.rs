@@ -2,7 +2,6 @@ use anyhow::Result;
 use clap::Parser;
 use colored::Colorize;
 use elevenlabs_api::{Auth, Elevenlabs};
-use env_logger::init;
 use obs_service::obs::create_obs_client;
 use obws::Client;
 use serde::{Deserialize, Serialize};

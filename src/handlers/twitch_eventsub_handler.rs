@@ -94,7 +94,7 @@ struct AppState<'a, C: twitch_api::HttpClient> {
     // reward_manager: Box<dyn RewardManager<'a, twitch_api::HttpClient>>,
 }
 
-impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
     for broadcast::Sender<Event>
 {
     fn from_ref(app_state: &AppState<C>) -> broadcast::Sender<Event> {
@@ -102,7 +102,7 @@ impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
     }
 }
 
-impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
     for Arc<OBSClient>
 {
     fn from_ref(app_state: &AppState<C>) -> Arc<OBSClient> {
@@ -110,7 +110,7 @@ impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
     }
 }
 
-impl<'a, C: twitch_api::HttpClient> FromRef<AppState<'a, C>>
+impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
     for Arc<sqlx::PgPool>
 {
     fn from_ref(app_state: &AppState<C>) -> Arc<sqlx::PgPool> {

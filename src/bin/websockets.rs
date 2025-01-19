@@ -24,7 +24,6 @@ use axum::{
 };
 use axum_extra::TypedHeader;
 
-use std::borrow::Cow;
 use std::ops::ControlFlow;
 use std::{net::SocketAddr, path::PathBuf};
 use tower_http::{

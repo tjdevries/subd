@@ -274,7 +274,7 @@ async fn handle_requests(
                         scene,
                         source,
                         false,
-                        &obs_client,
+                        obs_client,
                     )
                     .await;
                     handle_playback_control(command, sink).await?;
@@ -282,7 +282,7 @@ async fn handle_requests(
                         scene,
                         source,
                         true,
-                        &obs_client,
+                        obs_client,
                     )
                     .await;
                     return Ok(());

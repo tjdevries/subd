@@ -114,7 +114,7 @@ pub async fn handle_obs_commands(
             // tx.send(hotkey_event)?;
 
             // let hotkey = obws::requests::hotkeys::KeyModifiers;
-            obs_service::obs_hotkeys::trigger_hotkey("H", &obs_client).await?;
+            obs_service::obs_hotkeys::trigger_hotkey("H", obs_client).await?;
 
             // This works
             // let _ =
@@ -507,8 +507,11 @@ mod tests {
         // I want to see what this so I can write a struct to Deserialize
         // But I don't know waht the values to be ignored
         // serde::Value
-        let settings =
-            obs_client.inputs().settings::<Value>(source).await.unwrap();
+        let settings = obs_client
+            .inputs()
+            .settings::<Value>(InputId::Name(source))
+            .await
+            .unwrap();
         println!("------------------------");
         println!("\n\tSource: {:?}", settings);
         println!("------------------------");
