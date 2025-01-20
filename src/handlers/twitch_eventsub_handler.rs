@@ -102,17 +102,13 @@ impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
     }
 }
 
-impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
-    for Arc<OBSClient>
-{
+impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>> for Arc<OBSClient> {
     fn from_ref(app_state: &AppState<C>) -> Arc<OBSClient> {
         app_state.obs_client.clone()
     }
 }
 
-impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>>
-    for Arc<sqlx::PgPool>
-{
+impl<C: twitch_api::HttpClient> FromRef<AppState<'_, C>> for Arc<sqlx::PgPool> {
     fn from_ref(app_state: &AppState<C>) -> Arc<sqlx::PgPool> {
         app_state.pool.clone()
     }

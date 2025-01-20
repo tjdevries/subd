@@ -155,7 +155,6 @@ impl ElevenLabsHandler {
         .unwrap_or_else(|_| global_voice.clone());
 
         let final_voice = if is_global_voice_enabled {
-            
             global_voice.expect("Expect a global_voice")
         } else {
             let res = msg

@@ -52,7 +52,9 @@ async fn query_for_username(username: String) -> Result<()> {
         .build();
 
     println!("Prompting");
-    let user_message = PromptMessage::HumanMessage("What are you're primary interests, be specific".to_string());
+    let user_message = PromptMessage::HumanMessage(
+        "What are you're primary interests, be specific".to_string(),
+    );
 
     let response = chain
         .invoke_chain(user_message, NonZeroU32::new(2).unwrap())
