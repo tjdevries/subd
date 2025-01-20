@@ -27,7 +27,13 @@ pub async fn get_audio_information(id: &str) -> Result<models::SunoResponse> {
 
     let client = Client::new();
     let response = client.get(&url).send().await?;
-    let suno_response: Vec<models::SunoResponse> = response.json().await?;
+    let raw_json = response.text().await?;
+    let tmp_file_path =
+        format!("tmp/suno_responses/{}.json", chrono::Utc::now().timestamp());
+    fs::write(&tmp_file_path, &raw_json).await?;
+    println!("Raw JSON saved to: {}", tmp_file_path);
+    let suno_response: Vec<models::SunoResponse> =
+        serde_json::from_str(&raw_json)?;
 
     suno_response
         .into_iter()

@@ -38,6 +38,10 @@ pub struct SunoResponse {
     pub upvote_count: i32,
     #[serde(default)]
     pub is_public: bool,
+
+    // I think this is where this goes
+    pub gpt_description_prompt: String,
+    pub tags: String,
 }
 
 impl SunoResponse {
@@ -132,6 +136,10 @@ impl SunoResponseBuilder {
             play_count: self.play_count.unwrap_or_default(),
             upvote_count: self.upvote_count.unwrap_or_default(),
             is_public: self.is_public.unwrap_or_default(),
+
+            // TODO: Fix
+            gpt_description_prompt: "".to_string(),
+            tags: "".to_string(),
         }
     }
 }

@@ -79,6 +79,8 @@ fn get_files_by_ext(directory: &str, extensions: &[&str]) -> Vec<String> {
 async fn main() -> Result<()> {
     println!("{}", "\n=== Starting AI Songs updater ===\n".cyan());
 
+    env_logger::init();
+
     let args = Args::parse();
     // Create the event loop
     // Determine which features to enable
@@ -105,9 +107,15 @@ async fn main() -> Result<()> {
                 continue;
             }
         };
-        println!("Song Info: {:?}", id);
-        //let delay = time::Duration::from_millis(50);
-        //thread::sleep(delay);
+
+        // So we have a song ID
+        println!("Song ID: {:?}", id);
+
+        // So we don't hit the suno API to hard
+        use std::time::Duration;
+
+        let delay = Duration::from_millis(3000);
+        std::thread::sleep(delay);
 
         let song_id = match Uuid::parse_str(id) {
             Ok(uuid) => uuid,
@@ -116,11 +124,15 @@ async fn main() -> Result<()> {
                 continue;
             }
         };
+
         let db_record = ai_playlist::models::find_by_id(&pool, song_id).await;
         // If we have a DB record move on
         if db_record.is_ok() {
+            log::info!("Song {} already in DB", id);
             continue;
         };
+
+        log::info!("Creating new DB Entry for Song: {}", song_id);
 
         // We need to check if it's in the DB
         let created_at = sqlx::types::time::OffsetDateTime::now_utc();
@@ -135,23 +147,29 @@ async fn main() -> Result<()> {
         let new_song = ai_playlist::models::ai_songs::Model {
             song_id,
             title: res.title,
-            tags: res.metadata.tags,
             prompt: res.metadata.prompt,
             username: "beginbot".to_string(),
             audio_url: res.audio_url,
             lyric: res.lyric,
-            gpt_description_prompt: res.metadata.gpt_description_prompt,
+            gpt_description_prompt: res.gpt_description_prompt,
+            tags: res.tags,
             last_updated: Some(created_at),
             created_at: Some(created_at),
             downloaded: true,
         };
-        println!("Result: {:?}", new_song.gpt_description_prompt);
 
-        //
-        //// Save the song if it doesn't already exist
-        // let _ = new_song.save(&pool).await;
+        // We aren't getting back the prompt info how we want
+        log::info!("New Song: {:?}", new_song);
+        log::info!("GPT Description: {:?}", new_song.gpt_description_prompt);
 
-        // We need to now call out and create a new ai_song
+        match new_song.save(&pool).await {
+            Ok(_) => {
+                println!("Successfully saved song {} to database", song_id)
+            }
+            Err(e) => {
+                println!("Error saving song {} to database: {}", song_id, e)
+            }
+        };
 
         //match audio_info {
         //    Ok(i) => {
