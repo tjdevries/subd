@@ -98,7 +98,9 @@ update_tags:
 	cargo run --bin update_ai_song_info
 
 small:
-	cargo run --bin begin -- --enable ai_scenes twitch_chat_saving twitch_eventsub obs explicit_soundeffects channel_rewards ai_songs fal voices ai_videos
+	RUST_LOG=info cargo run \
+		--bin begin -- \
+		--enable ai_scenes twitch_chat_saving twitch_eventsub obs explicit_soundeffects channel_rewards ai_songs fal voices ai_videos
 
 mini-mac:
 	cargo run --bin begin -- --enable twitch_chat_saving ai_songs

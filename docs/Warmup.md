@@ -1,5 +1,15 @@
 # Warmup
 
+## Features to Check
+
+- Saving Twitch Chat Messages
+- TTS Works
+- Twitch Chat Rewards
+- FAL BG image
+- AI Movie Trailers
+
+-----
+
 This is meant to a series of commands to test
 if the system is working.
 

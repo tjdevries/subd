@@ -34,91 +34,105 @@ impl EventHandler for AISongsHandler {
         let mut interval = interval(Duration::from_millis(100));
         loop {
             tokio::select! {
-                _ = interval.tick() => {
-                    if self.sink.empty() {
-                        let scene = "AISongStatus";
-                        let source = "current_song_banner";
-                        let _ = obs_service::obs_source::set_enabled(
-                            scene,
-                            source,
-                            false,
-                            &self.obs_client,
-                        )
-                        .await;
-                        let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
-                        let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
-                        if let Ok(song) = next_song {
-                            let id = song.song_id.to_string();
+                            _ = interval.tick() => {
+                                if self.sink.empty() {
+                                    let scene = "AISongStatus";
+                                    let source = "current_song_banner";
+                                    let _ = obs_service::obs_source::set_enabled(
+                                        scene,
+                                        source,
+                                        false,
+                                        &self.obs_client,
+                                    )
+                                    .await;
+                                    let _ = ai_playlist::mark_songs_as_stopped(&self.pool).await;
 
-                        // We need OBS to hide/show the current_song_banner
-                            // // We need to be able to toggle this
-                            // let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
-                            // let _ = tokio::spawn(
-                            //     subd_openai::ai_styles::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
-                            // let _ = tokio::spawn(
-                            //     subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
+                                    // I think since this doesn't get a song it spaces
+                                    log::info!("Finding Next Song");
+                                    let next_song = ai_playlist::find_next_song_to_play(&self.pool).await;
+                                    log::info!("Next Song: {:?}", next_song);
+                                match next_song {
+                Ok(song) => {
+                                        //
+                                        let id = song.song_id.to_string();
 
-                            let mp4_result = ai_music_videos::get_mp4_files(&id);
-                            if let Ok((_videos, final_videos)) = mp4_result {
-                                if let Some(final_video) = final_videos.first() {
-                                    println!("Final video: {}", final_video);
+                                    // We need OBS to hide/show the current_song_banner
+                                        // // We need to be able to toggle this
+                                        // let custom_prompt = format!("{} {}", song.title, song.lyric.unwrap_or_default());
+                                        // let _ = tokio::spawn(
+                                        //     subd_openai::ai_styles::generate_ai_css(id.clone(), "./static/styles.css", custom_prompt.clone(), None));
+                                        // let _ = tokio::spawn(
+                                        //     subd_openai::ai_styles::generate_ai_js(id.clone(), "./static/styles.js", custom_prompt.clone(), None));
 
-                                let file_path = format!("./tmp/music_videos/{}/{}", id, final_video);
+                                        let mp4_result = ai_music_videos::get_mp4_files(&id);
+                                        if let Ok((_videos, final_videos)) = mp4_result {
+                                            if let Some(final_video) = final_videos.first() {
+                                                println!("Final video: {}", final_video);
 
-                                let _ = obs_service::obs_source::update_video_source(
-                                    &self.obs_client,
-                                    "current_song_video".to_string(),
-                                    file_path,
-                                    false,
-                                    true,
-                                )
-                                .await;
-                                    // I really want to update a video source here
+                                            let file_path = format!("./tmp/music_videos/{}/{}", id, final_video);
+
+                                            let _ = obs_service::obs_source::update_video_source(
+                                                &self.obs_client,
+                                                "current_song_video".to_string(),
+                                                file_path,
+                                                false,
+                                                true,
+                                            )
+                                            .await;
+                                                // I really want to update a video source here
+                                            }
+                                        }
+                                        if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
+                                            eprint!("Error playing Audio: {}", e);
+                                            let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;
+                                        } else {
+                                            let scene = "AISongStatus";
+                                            let source = "current_song_banner";
+                                            let _ = obs_service::obs_source::set_enabled(
+                                                scene,
+                                                source,
+                                                true,
+                                                &self.obs_client,
+                                            )
+                                            .await;
+                                        }
+
+                                        ////
+                                    }
+                                    Err(_e) => {
+
+                            // If we don't have a song, then we just sleep for a bit a check later
+                                                                   use tokio::time::sleep;
+                                                                   sleep(Duration::from_secs(5)).await;
+                                    }
+            }
                                 }
                             }
-                            if let Err(e) = subd_suno::play_audio(&self.pool, &self.sink, &id).await {
-                                eprint!("Error playing Audio: {}", e);
-                                let _ = ai_playlist::mark_song_as_played(&self.pool, song.song_id).await;
-                            } else {
-                                let scene = "AISongStatus";
-                                let source = "current_song_banner";
-                                let _ = obs_service::obs_source::set_enabled(
-                                    scene,
-                                    source,
-                                    true,
+                            result = rx.recv() => {
+                                let event = result?;
+                                let msg = match event {
+                                    Event::UserMessage(msg) => msg,
+                                    _ => continue,
+                                };
+
+                                let splitmsg: Vec<String> =
+                                    msg.contents.split_whitespace().map(String::from).collect();
+
+                                if let Err(err) = handle_requests(
+                                    &self.sink,
+                                    &self.twitch_client,
+                                    &self.pool,
                                     &self.obs_client,
+                                    &splitmsg,
+                                    &msg,
                                 )
-                                .await;
+                                .await
+                                {
+                                    eprintln!("Error in AISongsHandler: {err}");
+                                    continue;
+                                }
                             }
-
                         }
-                    }
-                }
-                result = rx.recv() => {
-                    let event = result?;
-                    let msg = match event {
-                        Event::UserMessage(msg) => msg,
-                        _ => continue,
-                    };
-
-                    let splitmsg: Vec<String> =
-                        msg.contents.split_whitespace().map(String::from).collect();
-
-                    if let Err(err) = handle_requests(
-                        &self.sink,
-                        &self.twitch_client,
-                        &self.pool,
-                        &self.obs_client,
-                        &splitmsg,
-                        &msg,
-                    )
-                    .await
-                    {
-                        eprintln!("Error in AISongsHandler: {err}");
-                        continue;
-                    }
-                }
-            }
         }
     }
 }
@@ -271,18 +285,12 @@ async fn handle_requests(
                     let source = "current_song_banner";
                     println!("Toggling Current Song Banner Off");
                     let _ = obs_service::obs_source::set_enabled(
-                        scene,
-                        source,
-                        false,
-                        obs_client,
+                        scene, source, false, obs_client,
                     )
                     .await;
                     handle_playback_control(command, sink).await?;
                     let _ = obs_service::obs_source::set_enabled(
-                        scene,
-                        source,
-                        true,
-                        obs_client,
+                        scene, source, true, obs_client,
                     )
                     .await;
                     return Ok(());
