@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Charts</h2>
+<section class="top-songs">
+    {% for song in top_songs %}
+    <a href="/ai_songs/{{ song.song_id }}">
+        <article class="top-song">
+            <h3 class="song-title">{{ song.title }}</h3>
+            <p class="song-average-score">Average Score: {{ song.avg_score }}</p>
+            <p class="song-id">
+                    Song ID: {{ song.song_id }}
+            </p>
+        </article>
+    </a>
+    {% endfor %}
+</section>
+{% endblock %}

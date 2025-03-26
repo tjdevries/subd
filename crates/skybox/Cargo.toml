@@ -1,0 +1,22 @@
+[package]
+name = "skybox"
+version = "0.0.1"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+sqlx.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+reqwest.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+obws.workspace = true
+askama.workspace = true
+subd-macros.workspace = true
+
+[dev-dependencies]
+
+tokio.workspace = true

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon"/ >
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.138.0/build/three.module.js",
+                "d3": "https://d3js.org/d3.v7.min.js",
+                "mermaid": "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body styles="padding:20px">
+    <!--This is how we need to import the JS libraries above-->
+    <script type="module" src="/static/styles.js">
+        import * as THREE from 'three';
+        import * as D3 from 'd3';
+        import * as mermaid from 'mermaid';
+
+        </script>
+    <header class="header-container">
+        <h1 class="header"><a href="/">AI Top of the Pops</a></h1>
+        <h2 class="sub-header">Total AI Songs Created: {{ stats.ai_songs_count }}</h2>
+        <h2 class="sub-header">Total AI Song Votes: {{ stats.ai_votes_count }}</h2>
+    </header>
+    <nav class="nav-container">
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/all_songs">Songs</a>
+        <a class="nav-link" href="/all_users">Users</a>
+        <a class="nav-link" href="/charts">Charts</a>
+    </nav>
+    {% block content %}{% endblock %}
+</body>
+</html>

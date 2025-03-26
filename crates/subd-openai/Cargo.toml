@@ -1,0 +1,27 @@
+[package]
+name = "subd-openai"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+anyhow.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+ai_images = { path = "../ai_images/" }
+subd-image-utils = { path = "../subd-image-utils/" }
+instruct-macros = "0.1.8"
+instruct-macros-types = "0.1.8"
+instructor-ai = "0.1.8"
+openai-api-rs = "4.1.0"
+
+# openai = "1.0.0-alpha.16"
+openai = { path = "../../../openai" }
+warp = "0.3.7"
+
+[dev-dependencies]
+
+tokio.workspace = true

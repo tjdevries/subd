@@ -1,0 +1,18 @@
+[package]
+
+name = "ai_telephone"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+subd-image-utils= { path = "../subd-image-utils/" }
+ai_images = { path = "../ai_images/" }
+subd-audio = { path = "../subd-audio/" }
+subd-openai = { path = "../subd-openai/" }
+stable_diffusion = { path = "../stable_diffusion/" }
+obws = "0.14"
+obs_service = { path = "../obs_service/" }
+chrono.workspace = true
+anyhow.workspace = true
+rodio = { git = "https://github.com/RustAudio/rodio", rev = "023ee21e21808685336b654a1c167ea0c182b4e8", default-features = false, features = [ "symphonia-all" ] }

@@ -1,0 +1,18 @@
+[package]
+name = "ai_songs_vote"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+anyhow.workspace = true
+sqlx.workspace = true
+
+serde = { version = "1.0", features = ["derive"] }
+subd-macros = { path = "../subd-macros/" }
+ai_playlist = { path = "../ai_playlist/" }
+uuid.workspace = true
+
+[dev-dependencies]
+
+tokio.workspace = true
+test-tag = "0.1.4"

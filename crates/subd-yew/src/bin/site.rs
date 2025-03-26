@@ -100,7 +100,7 @@ fn render_message(message: &TwitchMessage) -> Html {
 }
 
 fn default_messages() -> Vec<TwitchMessage> {
-    return vec![];
+    vec![]
 
     // let channel_username = subd_types::consts::get_twitch_broadcaster_username();
     // let channel_username = "teej_dv".to_string();
@@ -371,7 +371,7 @@ fn main() {
         .lines()
         .find(|l| l.starts_with("SUBD_YEW_WS_ADDRESS"))
         .expect("ws_address")
-        .split_once("=")
+        .split_once('=')
         .expect("ws_addres =")
         .1
         .trim_matches('"');
@@ -380,7 +380,7 @@ fn main() {
         .lines()
         .find(|l| l.starts_with("SUBD_YEW_WS_PORT"))
         .unwrap()
-        .split_once("=")
+        .split_once('=')
         .unwrap()
         .1
         .trim_matches('"');

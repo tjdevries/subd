@@ -1,0 +1,379 @@
+
+/* Avant-Garde Stylesheet */
+
+/* Importing a sleek font */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;900&display=swap');
+
+/* Global reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Cursor styling */
+body, a {
+    cursor: none;
+}
+
+.current-song {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-gap: 50px;
+    padding: 50px;
+    text-align: center;
+}
+
+.current-song-info {
+    position: relative;
+    padding: 50px;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    overflow: hidden;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.current-song-info::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, transparent 40%, rgba(255,255,255,0.1) 60%);
+    transform: rotate(45deg);
+    animation: lightSweep 5s linear infinite;
+}
+
+@keyframes lightSweep {
+    0% { transform: rotate(45deg) translateX(-100%); }
+    100% { transform: rotate(45deg) translateX(100%); }
+}
+
+.current-song-info h3 {
+    font-size: 3em;
+    font-weight: 900;
+    margin-bottom: 20px;
+}
+
+.current-song-info div {
+    font-size: 1.2em;
+    margin: 10px 0;
+}
+
+.current-song-info a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 2px solid #fff;
+    transition: color 0.3s, border-color 0.3s;
+}
+
+.current-song-info a:hover {
+    color: #ff0055;
+    border-color: #ff0055;
+}
+
+/* Image Scores Section */
+.image_scores {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-gap: 30px;
+    padding: 0 50px;
+}
+
+.ai_song_image {
+    position: relative;
+    overflow: hidden;
+}
+
+.ai_song_image img {
+    width: 100%;
+    height: auto;
+    transition: transform 0.5s;
+}
+
+.ai_song_image:hover img {
+    transform: scale(1.1);
+}
+
+.image_voting,
+.image_votes {
+    margin-top: 15px;
+    font-size: 1.1em;
+    letter-spacing: 1px;
+}
+
+.image_voting {
+    display: flex;
+    justify-content: space-around;
+}
+
+.image_voting::before,
+.image_voting::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #fff;
+    margin: auto;
+}
+
+.image_voting::before {
+    margin-right: 10px;
+}
+
+.image_voting::after {
+    margin-left: 10px;
+}
+
+/* Videos Section */
+.videos {
+    position: relative;
+    padding: 50px;
+    background: #111;
+    clip-path: polygon(0 10%, 100% 0%, 100% 90%, 0% 100%);
+    margin-top: 50px;
+}
+
+.video {
+    margin: 20px;
+    overflow: hidden;
+    position: relative;
+}
+
+.video video {
+    width: 100%;
+    filter: grayscale(100%);
+    transition: filter 0.5s, transform 0.5s;
+}
+
+.video:hover video {
+    filter: grayscale(0%);
+    transform: scale(1.05);
+}
+
+/* Lyrics Section */
+.lyrics {
+    background: #fff;
+    color: #000;
+    padding: 50px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    line-height: 1.6;
+    position: relative;
+    overflow: hidden;
+}
+
+.lyrics::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 180deg at 50% 50%, transparent 0deg, #000 360deg);
+    animation: rotateBG 10s linear infinite;
+    mix-blend-mode: overlay;
+}
+
+@keyframes rotateBG {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Custom Scrollbar */
+.lyrics::-webkit-scrollbar {
+    width: 12px;
+}
+
+.lyrics::-webkit-scrollbar-track {
+    background: #ddd;
+}
+
+.lyrics::-webkit-scrollbar-thumb {
+    background: #333;
+}
+
+.lyrics::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .current-song {
+        padding: 20px;
+    }
+
+    .current-song-info {
+        padding: 30px;
+    }
+
+    .image_scores {
+        padding: 0 20px;
+    }
+
+    .videos {
+        padding: 30px;
+    }
+
+    .lyrics {
+        padding: 30px;
+    }
+}
+
+/* Avant-Garde Stylesheet for Header and Navigation */
+
+/* Importing a modern font */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;700&display=swap');
+
+/* Global reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'Roboto Mono', monospace;
+    overflow-x: hidden;
+}
+
+/* Cursor styling */
+body, a {
+    cursor: none;
+}
+
+/* Header Styles */
+.header-container {
+    position: relative;
+    text-align: center;
+    padding: 100px 20px 50px 20px;
+    background: linear-gradient(135deg, #ff0080, #ff8c00, #40e0d0);
+    background-size: 600% 600%;
+    animation: gradientAnimation 10s ease infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+    overflow: hidden;
+}
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.header-container::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, transparent 20%, rgba(255,255,255,0.1) 80%);
+    animation: rotate 20s linear infinite;
+    mix-blend-mode: overlay;
+}
+
+@keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.header {
+    font-size: 4em;
+    font-weight: 700;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+}
+
+.header a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.3s, text-shadow 0.3s;
+}
+
+.header a:hover {
+    color: #ff0055;
+    text-shadow: 0 0 10px #ff0055;
+}
+
+.sub-header {
+    font-size: 1.5em;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin: 10px 0;
+    opacity: 0.8;
+}
+
+/* Navigation Styles */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    background: #111;
+    padding: 20px 0;
+}
+
+.nav-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.2em;
+    margin: 0 30px;
+    position: relative;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: color 0.3s;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    width: 0%;
+    height: 2px;
+    bottom: -5px;
+    left: 50%;
+    background-color: #ff0055;
+    transition: width 0.3s, left 0.3s;
+}
+
+.nav-link:hover {
+    color: #ff0055;
+}
+
+.nav-link:hover::before {
+    width: 100%;
+    left: 0;
+}
+
+/* Content Block Placeholder */
+{% block content %}{% endblock %}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header {
+        font-size: 2.5em;
+    }
+
+    .sub-header {
+        font-size: 1em;
+    }
+
+    .nav-link {
+        margin: 0 15px;
+        font-size: 1em;
+    }
+}

@@ -1,0 +1,19 @@
+[package]
+
+name = "ai_clones"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+subd-types.workspace = true
+stable_diffusion.workspace = true
+obs_service.workspace = true
+obs_move_transition.workspace = true
+obws.workspace = true
+chrono.workspace = true
+serde.workspace = true
+anyhow.workspace = true
+
+# Test
+tokio.workspace = true

@@ -58,17 +58,17 @@ impl Component for RaffleComponent {
             Msg::StartHide => {
                 self.state = State::Show;
                 self.timeout = Some(Self::get_timeout(ctx, Msg::SetHide));
-                return false;
+                false
             }
             Msg::SetHide => {
                 self.state = State::Hide;
                 self.timeout = None;
-                return true;
+                true
             }
             Msg::SetActive => {
                 self.state = State::Active;
                 self.timeout = None;
-                return false;
+                false
             }
         }
     }

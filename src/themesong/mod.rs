@@ -9,7 +9,7 @@ use subd_types::{Event, ThemesongDownload, ThemesongPlay, UserID, UserRoles};
 use tokio::{fs::File, io::AsyncReadExt, sync::broadcast};
 use tracing::info;
 
-use crate::audio;
+// use crate::audio;
 
 const THEMESONG_LOCATION: &str = "/tmp/themesong";
 
@@ -30,7 +30,7 @@ pub async fn play_themesong_for_today(
 }
 
 pub async fn delete_themesong(pool: &PgPool, display_name: &str) -> Result<()> {
-    let _display_name = display_name.replace("@", "").to_lowercase();
+    let _display_name = display_name.replace('@', "").to_lowercase();
     // let user_id =
     //     subd_db::get_user_from_twitch_user_name(conn, display_name.as_str())
     //         .await?;
@@ -86,7 +86,7 @@ pub async fn has_played_themesong_today(
     .fetch_one(pool)
     .await?;
 
-    Ok(played_count.result.unwrap() > 0)
+    Ok(played_count.result.unwrap_or(0) > 0)
 }
 
 #[tracing::instrument(skip(conn))]
@@ -179,7 +179,7 @@ pub async fn should_play_themesong(
         return Ok(false);
     }
 
-    if !can_user_access_themesong(&user_roles) {
+    if !can_user_access_themesong(user_roles) {
         return Ok(false);
     }
 
@@ -303,11 +303,11 @@ pub fn validate_duration(start: &str, end: &str, maxtime: f64) -> Result<()> {
     // 01:10, 01:23
 
     let (start_minutes, start_seconds) = start
-        .split_once(":")
+        .split_once(':')
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
     let (end_minutes, end_seconds) = end
-        .split_once(":")
+        .split_once(':')
         .ok_or(anyhow::anyhow!("Must be single : split str"))?;
 
     // TODO: Support ms for ppl
@@ -333,6 +333,7 @@ pub struct ThemesongPlayer {
 
 impl ThemesongPlayer {
     pub fn new(pool: PgPool) -> Self {
+        // TODO: I don't think this should be built here
         let (stream, handle) = rodio::OutputStream::try_default().unwrap();
 
         // TODO: How to now leak this... it's ok though, it just gets called once
@@ -388,6 +389,12 @@ impl events::EventHandler for ThemesongPlayer {
 }
 
 pub struct ThemesongListener {}
+
+impl Default for ThemesongListener {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ThemesongListener {
     pub fn new() -> Self {
@@ -454,7 +461,7 @@ impl events::EventHandler for ThemesongDownloader {
 
             let splitmsg = msg
                 .contents
-                .split(" ")
+                .split(' ')
                 .map(|s| s.to_string())
                 .collect::<Vec<String>>();
 

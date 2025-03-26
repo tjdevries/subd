@@ -7,7 +7,12 @@ Banned/
 Silence/
 data/
 obs_data/
+tmp/
 TwitchChatTTSRecordings/
+archive/
+playground/
+build/
+venv/
 
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
 # More information here https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
@@ -25,3 +30,5 @@ subd.db-wal
 subd.*.db
 .env
 test.wav
+.oauth_token.json
+.DS_Store

@@ -11,8 +11,6 @@ use syn::Pat;
 use syn::PatIdent;
 use syn::PatType;
 use syn::Token;
-use syn::VisPublic;
-use syn::Visibility;
 
 // impl Parse for Item {
 //     fn parse(input: ParseStream) -> Result<Self> {
@@ -38,9 +36,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let mut content = vec![];
     for item in input_content {
         match item {
-            syn::Item::Struct(s) if s.ident.to_string() == "Model" => {
-                models.push(s)
-            }
+            syn::Item::Struct(s) if s.ident == "Model" => models.push(s),
             _ => content.push(item),
         };
     }
@@ -62,10 +58,10 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path
+                        a.path()
                             .segments
                             .iter()
-                            .any(|s| s.ident.to_string() == "primary_key")
+                            .any(|s| s.ident == "primary_key")
                     })
                     .is_some()
                 {
@@ -76,10 +72,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 if f.attrs
                     .iter()
                     .find(|a| {
-                        a.path
-                            .segments
-                            .iter()
-                            .any(|s| s.ident.to_string() == "immutable")
+                        a.path().segments.iter().any(|s| s.ident == "immutable")
                     })
                     .is_some()
                 {
@@ -87,10 +80,8 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 }
 
                 let mut new_field = f.clone();
-                new_field.vis = Visibility::Public(VisPublic {
-                    pub_token: syn::token::Pub {
-                        span: Span::call_site().into(),
-                    },
+                new_field.vis = syn::Visibility::Public(syn::token::Pub {
+                    span: Span::call_site().into(),
                 });
                 let ty = f.ty.clone();
                 new_field.ty = syn::Type::Verbatim(
@@ -109,29 +100,27 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     };
 
     let mut new_args: Punctuated<FnArg, Token![,]> = Punctuated::new();
-    model.fields.iter().for_each(|f| match &f.ident {
-        Some(ident) => new_args.push(FnArg::Typed(PatType {
-            attrs: vec![],
-            pat: Box::new(Pat::Ident(PatIdent {
+    model.fields.iter().for_each(|f| {
+        if let Some(ident) = &f.ident {
+            new_args.push(FnArg::Typed(PatType {
                 attrs: vec![],
-                by_ref: None,
-                mutability: None,
-                ident: ident.clone(),
-                subpat: None,
-            })),
-            colon_token: f.colon_token.unwrap(),
-            ty: Box::new(f.ty.clone()),
-        })),
-        None => (),
+                pat: Box::new(Pat::Ident(PatIdent {
+                    attrs: vec![],
+                    by_ref: None,
+                    mutability: None,
+                    ident: ident.clone(),
+                    subpat: None,
+                })),
+                colon_token: f.colon_token.unwrap(),
+                ty: Box::new(f.ty.clone()),
+            }))
+        }
     });
 
     let self_body = model
         .fields
         .iter()
-        .filter_map(|f| match &f.ident {
-            Some(ident) => Some(ident.clone()),
-            None => None,
-        })
+        .filter_map(|f| f.ident.clone())
         .collect::<Punctuated<Ident, Token![,]>>();
 
     // Remove attrs (todo, only immutable attrs)
@@ -153,10 +142,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let field_list = model
         .fields
         .iter()
-        .filter_map(|f| match &f.ident {
-            Some(ident) => Some(ident.to_string()),
-            None => None,
-        })
+        .filter_map(|f| f.ident.as_ref().map(|ident| ident.to_string()))
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -166,7 +152,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
                 "SELECT {} FROM {} WHERE {} = $1",
                 field_list,
                 name,
-                primary_key.ident.unwrap().to_string(),
+                primary_key.ident.unwrap(),
             );
 
             quote! {
@@ -189,7 +175,7 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
     let vis = input.vis;
     TokenStream::from(quote! {
          #vis mod #name {
-            #[derive(Debug)]
+            #[derive(Debug, Default)]
             #model
 
             #[derive(Debug, Default)]
@@ -197,9 +183,10 @@ pub fn database_model(_attr: TokenStream, tokens: TokenStream) -> TokenStream {
 
             #(#content)*
 
+            // Should I pass in default here???
             impl Model {
                 pub fn new(#new_args) -> Self {
-                    Self { #self_body }
+                    Self { #self_body, ..Default::default() }
                 }
 
                 #read

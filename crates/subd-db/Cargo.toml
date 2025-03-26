@@ -6,14 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-subd-types = { path = "../subd-types/" }
-subd-gh = { path = "../subd-gh/" }
 
+subd-types = { path = "../subd-types/" }
 anyhow.workspace = true
-chrono.workspace = true
-once_cell.workspace = true
 sqlx.workspace = true
 tokio = { workspace = true, features = [ "macros", "rt" ] }
-uuid.workspace = true
-
-rodio = { git = "https://github.com/RustAudio/rodio", rev = "55d957f", default-features = false, features = [ "symphonia-all" ] }

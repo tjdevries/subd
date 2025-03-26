@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 subd-types = { path = "../subd-types/" }
 subd-macros = { path = "../subd-macros/" }
+subd-db = { path = "../subd-db/" }
 
 anyhow.workspace = true
 sqlx.workspace = true
+tokio.workspace = true

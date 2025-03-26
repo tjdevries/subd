@@ -34,6 +34,27 @@ impl user_messages::Model {
         .fetch_one(pool)
         .await?)
     }
+
+    pub async fn get_messages_by_username(
+        username: &str,
+        pool: &PgPool,
+    ) -> Result<Vec<Self>> {
+        Ok(sqlx::query_as!(
+                        Self,
+                        r#"
+                        SELECT user_messages.user_id, platform as "platform: UserPlatform", contents
+                        FROM user_messages
+                        JOIN twitch_users ON user_messages.user_id = twitch_users.user_id
+                        WHERE twitch_users.display_name = $1
+                        AND NOT contents LIKE '!%'
+                        AND NOT contents LIKE '@%'
+                        AND array_length(regexp_split_to_array(contents, '\s+'), 1) >= 6
+                        "#,
+                        username
+                    )
+                    .fetch_all(pool)
+                    .await?)
+    }
 }
 
 #[database_model]
@@ -181,5 +202,42 @@ impl user_roles::Model {
         //         RETURNING *
         // ";
         // sqlx::query(query).execute(conn).await?;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_user_messages_by_username() {
+            let pool = subd_db::get_db_pool().await;
+
+            let username = "beginbot";
+            let messages =
+                user_messages::Model::get_messages_by_username(username, &pool)
+                    .await
+                    .unwrap();
+
+            assert!(
+                !messages.is_empty(),
+                "No messages found for the test user"
+            );
+
+            assert_eq!(messages.len(), 100);
+
+            // we could populate a vector DB
+            for message in messages {
+                assert_eq!(message.platform, UserPlatform::Twitch);
+                assert!(
+                    !message.contents.is_empty(),
+                    "Message content should not be empty"
+                );
+            }
+        }
     }
 }

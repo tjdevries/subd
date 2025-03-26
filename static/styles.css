@@ -1,0 +1,116 @@
+/* General Styles */
+body {
+    padding: 20px;
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(145deg, #ffe5b4, #ffbdbd);
+    color: #333;
+    transition: background-color 0.5s, color 1s;
+}
+
+/* Header Styles */
+.header-container {
+    text-align: center;
+    background-color: #fae3d9;
+    border-bottom: 5px solid #ffb3b3;
+    padding: 20px;
+    animation: pulse 5s infinite;
+}
+
+.header-container h1 {
+    font-family: 'Pacifico', cursive;
+    font-size: 3em;
+    color: #ff6363;
+    text-shadow: 2px 2px #ffbdbd;
+}
+
+.header-container h1 a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.4s, text-shadow 0.4s;
+}
+
+.header-container h1 a:hover {
+    color: #fff;
+    text-shadow: 3px 3px #ff6363;
+    transform: rotate(360deg);
+}
+
+.sub-header {
+    font-size: 1.5em;
+    color: #ff6363;
+}
+
+
+/* Navigation Styles */
+.nav-container {
+    display: flex;
+    justify-content: space-around;
+    background-color: #ffbdbd;
+    border-bottom: 5px solid #fae3d9;
+    padding: 10px 0;
+}
+
+.nav-link {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.2em;
+    color: #333;
+    text-decoration: none;
+    transition: color 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.nav-link:hover {
+    color: #ff6363;
+    transform: scale(1.2);
+    text-shadow: 2px 2px 0 #fae3d9;
+}
+
+
+/* Content Styles */
+section {
+    padding: 20px;
+    margin: 15px 0;
+    background-color: rgba(255,255,255,0.8);
+    border-radius: 8px;
+    box-shadow: 5px 5px 15px #888;
+    animation: fadeIn 2s;
+}
+
+.song-title {
+    font-family: 'Indie Flower', cursive;
+    color: #ff6363;
+}
+
+.song a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.song a:hover {
+    color: #ffb3b3;
+    transform: skewX(-10deg) scale(1.1);
+}
+
+.song-id, .song-tags, .song-description {
+    font-family: 'Lato', sans-serif;
+    color: #555;
+    margin: 5px 0;
+}
+
+/* Animation Keyframes */
+@keyframes pulse {
+    0% {
+        background-color: #fae3d9;
+    }
+    50% {
+        background-color: #fff1eb;
+    }
+    100% {
+        background-color: #fae3d9;
+    }
+}
+
+@keyframes fadeIn {
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+}

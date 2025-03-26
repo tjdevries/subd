@@ -1,0 +1,32 @@
+
+// use crate::image_generation;
+// use crate::images;
+// impl image_generation::GenerateImage for StableDiffusionRequest {
+//     fn generate_image(
+//         &self,
+//         prompt: String,
+//         save_folder: Option<String>,
+//         set_as_obs_bg: bool,
+//     ) -> Pin<Box<(dyn warp::Future<Output = String> + std::marker::Send + '_)>>
+//     {
+//         let username = "beginbot".to_string();
+//         let timestamp = Utc::now().format("%Y%m%d%H%M%S").to_string();
+//         let unique_identifier = format!("{}_{}", timestamp, username);
+//
+//         let res = async move {
+//             let _ = stable_diffusion_from_prompt(
+//                 unique_identifier,
+//                 prompt,
+//                 save_folder,
+//                 set_as_obs_bg,
+//             )
+//             .await;
+//
+//             // We do this because of async traits, they ruined our life
+//             // Why do we need to return a string
+//             "".to_string()
+//         };
+//
+//         Box::pin(res)
+//     }
+// }
